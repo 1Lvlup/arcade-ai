@@ -39,7 +39,18 @@ serve(async (req) => {
 
     // Convert file to base64 for LlamaCloud
     const fileBuffer = await file.arrayBuffer();
-    const base64Content = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+    
+    // Convert to base64 using chunk-based approach to avoid stack overflow
+    const uint8Array = new Uint8Array(fileBuffer);
+    const chunkSize = 8192; // Process in 8KB chunks
+    let binaryString = '';
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64Content = btoa(binaryString);
 
     // LlamaCloud parse configuration matching your setup
     const parseConfig = {

@@ -139,8 +139,36 @@ serve(async (req) => {
       internal_is_screenshot_job: false,
       parse_mode: "parse_document_with_agent",
       system_prompt: null,
-      system_prompt_append: "Output policy (strict, do not ignore):\\n\\nMerge titles with their body. If an element is just a heading (e.g., "Main Menu", "Diagnostics"), merge it with the immediately following paragraph/list/table so the chunk is semantically whole.\\n\\nDeduplicate repeated headings on the same page. Keep the longest variant (the one with the body).\\n\\nOmit recurring legal boilerplate. Include it once; otherwise drop it.\\n\\nNormalize tables/menus from images into clean text lists: Label: Value or bullets. Drop stray layout characters.\\n\\nNo title-only chunks. Every chunk must contain explanatory content, not just a section name.\\n\\nKeep all technical values (fuse ratings, voltages, menu defaults) verbatim.\\n\\nFor every image/diagram/figure, also emit a structured FIGURE block (in the output stream next to normal text):\\nFIGURE:\\n- page_number: <int>\\n- figure_id: <stable id like MANUAL-<page>-<index>>\\n- figure_title: <if present>\\n- caption_text: <exact caption>\\n- ocr_text: <OCR from inside the image>\\n- callouts: [{label:\\\"1\\\", text:\\\"coil mount bracket\\\"}, ...]\\n- image_url: <TEMP asset URL provided by this job>\\n- bbox_pdf_coords: <optional normalized [x1,y1,x2,y2]>\\n",
-      user_prompt: "This is an arcade game operator's manual. Prioritize fidelity for:\\n1) Fuse charts/power specs/dimensions (keep as tables).\\n2) Diagnostic/System menus (capture full path like \\\"Main Menu > Diagnostics > Light Tests\\\"; keep options one per line).\\n3) Troubleshooting tables (Problem | Possible Cause | Solution).\\n4) Parts/assembly drawings & callouts (item #, part #, description, qty; include figure notes).\\nFor menu screenshots and wiring diagrams, transcribe every visible label/value. For figures, emit the FIGURE block with OCR and callouts.",
+      system_prompt_append: `Output policy (strict, do not ignore):
+
+Merge titles with their body. If an element is just a heading (e.g., "Main Menu", "Diagnostics"), merge it with the immediately following paragraph/list/table so the chunk is semantically whole.
+
+Deduplicate repeated headings on the same page. Keep the longest variant (the one with the body).
+
+Omit recurring legal boilerplate. Include it once; otherwise drop it.
+
+Normalize tables/menus from images into clean text lists: Label: Value or bullets. Drop stray layout characters.
+
+No title-only chunks. Every chunk must contain explanatory content, not just a section name.
+
+Keep all technical values (fuse ratings, voltages, menu defaults) verbatim.
+
+For every image/diagram/figure, also emit a structured FIGURE block (in the output stream next to normal text):
+FIGURE:
+- page_number: <int>
+- figure_id: <stable id like MANUAL-<page>-<index>>
+- figure_title: <if present>
+- caption_text: <exact caption>
+- ocr_text: <OCR from inside the image>
+- callouts: [{"label":"1", "text":"coil mount bracket"}, ...]
+- image_url: <TEMP asset URL provided by this job>
+- bbox_pdf_coords: <optional normalized [x1,y1,x2,y2]>`,
+      user_prompt: `This is an arcade game operator's manual. Prioritize fidelity for:
+1) Fuse charts/power specs/dimensions (keep as tables).
+2) Diagnostic/System menus (capture full path like "Main Menu > Diagnostics > Light Tests"; keep options one per line).
+3) Troubleshooting tables (Problem | Possible Cause | Solution).
+4) Parts/assembly drawings & callouts (item #, part #, description, qty; include figure notes).
+For menu screenshots and wiring diagrams, transcribe every visible label/value. For figures, emit the FIGURE block with OCR and callouts.`,
       page_error_tolerance: 0.05,
       replace_failed_page_mode: "raw_text",
       replace_failed_page_with_error_message_prefix: null,

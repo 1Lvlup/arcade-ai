@@ -1,54 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GamepadIcon, Zap } from 'lucide-react';
-
-interface FecTenant {
-  id: string;
-  name: string;
-  email: string;
-}
 
 export default function Auth() {
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [fecTenants, setFecTenants] = useState<FecTenant[]>([]);
   
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedFecId, setSelectedFecId] = useState('');
-  const [newFecName, setNewFecName] = useState('');
 
-  useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
-
-  useEffect(() => {
-    // Fetch available FEC tenants for signup
-    const fetchFecTenants = async () => {
-      const { data } = await supabase
-        .from('fec_tenants')
-        .select('id, name, email')
-        .order('name');
-      if (data) {
-        setFecTenants(data);
-      }
-    };
-    fetchFecTenants();
-  }, []);
+  // Redirect if already logged in
+  if (user) {
+    navigate('/');
+    return null;
+  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,52 +42,33 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    let fecTenantId = selectedFecId;
-
-    // If creating a new FEC, create it first
-    if (!selectedFecId && newFecName) {
-      const { data: newFec, error: fecError } = await supabase
-        .from('fec_tenants')
-        .insert([{ name: newFecName, email }])
-        .select()
-        .single();
-
-      if (fecError) {
-        toast({
-          title: 'Failed to create FEC',
-          description: fecError.message,
-          variant: 'destructive',
-        });
-        setLoading(false);
-        return;
-      }
-      fecTenantId = newFec.id;
-    }
-
-    if (!fecTenantId) {
+    
+    if (!email || !password) {
       toast({
-        title: 'Please select or create an FEC',
-        variant: 'destructive',
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
       });
-      setLoading(false);
       return;
     }
 
-    const { error } = await signUp(email, password, fecTenantId);
+    setLoading(true);
+    
+    const { error } = await signUp(email, password);
+    
     if (error) {
       toast({
-        title: 'Sign up failed',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } else {
       toast({
-        title: 'Success!',
-        description: 'Please check your email to confirm your account.',
+        title: "Success!",
+        description: "Please check your email to confirm your account.",
       });
     }
+    
     setLoading(false);
   };
 
@@ -200,36 +156,6 @@ export default function Auth() {
                       className="border-primary/30 focus:border-primary"
                     />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label>FEC (Family Entertainment Center)</Label>
-                    <Select value={selectedFecId} onValueChange={setSelectedFecId}>
-                      <SelectTrigger className="border-primary/30 focus:border-primary">
-                        <SelectValue placeholder="Select existing FEC or create new" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fecTenants.map((fec) => (
-                          <SelectItem key={fec.id} value={fec.id}>
-                            {fec.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {!selectedFecId && (
-                    <div className="space-y-2">
-                      <Label htmlFor="new-fec-name">Or Create New FEC</Label>
-                      <Input
-                        id="new-fec-name"
-                        type="text"
-                        value={newFecName}
-                        onChange={(e) => setNewFecName(e.target.value)}
-                        placeholder="Enter your FEC name"
-                        className="border-primary/30 focus:border-primary"
-                      />
-                    </div>
-                  )}
 
                   <Button 
                     type="submit" 

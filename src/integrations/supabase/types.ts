@@ -19,6 +19,7 @@ export type Database = {
           content: string
           created_at: string | null
           embedding: string | null
+          fec_tenant_id: string | null
           game_title: string | null
           id: number
           manual_section: string | null
@@ -31,6 +32,7 @@ export type Database = {
           content: string
           created_at?: string | null
           embedding?: string | null
+          fec_tenant_id?: string | null
           game_title?: string | null
           id?: number
           manual_section?: string | null
@@ -43,6 +45,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           embedding?: string | null
+          fec_tenant_id?: string | null
           game_title?: string | null
           id?: number
           manual_section?: string | null
@@ -51,7 +54,15 @@ export type Database = {
           subsection?: string | null
           tokens?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "docs_fec_tenant_id_fkey"
+            columns: ["fec_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "fec_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fec_tenants: {
         Row: {
@@ -141,6 +152,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_current_user_fec_tenant_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       match_chunks: {
         Args: {
           game?: string

@@ -36,21 +36,7 @@ serve(async (req) => {
       .replace(/^-+|-+$/g, '');
 
     console.log(`Processing manual: ${title} with ID: ${manual_id}`);
-
-    // Convert file to base64 for LlamaCloud
-    const fileBuffer = await file.arrayBuffer();
-    
-    // Convert to base64 using chunk-based approach to avoid stack overflow
-    const uint8Array = new Uint8Array(fileBuffer);
-    const chunkSize = 8192; // Process in 8KB chunks
-    let binaryString = '';
-    
-    for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.slice(i, i + chunkSize);
-      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
-    }
-    
-    const base64Content = btoa(binaryString);
+    console.log(`File details: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
 
     // LlamaCloud parse configuration matching your setup
     const parseConfig = {
@@ -187,30 +173,93 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
       markdown_table_multiline_header_separator: null
     };
 
-    // Submit to LlamaCloud
+    // Submit to LlamaCloud using multipart form-data
+    console.log('Preparing LlamaCloud upload request...');
+    
+    const llamaFormData = new FormData();
+    llamaFormData.append('file', file);
+    llamaFormData.append('parsing_instruction', parseConfig.parsing_instruction);
+    llamaFormData.append('disable_ocr', parseConfig.disable_ocr.toString());
+    llamaFormData.append('annotate_links', parseConfig.annotate_links.toString());
+    llamaFormData.append('adaptive_long_table', parseConfig.adaptive_long_table.toString());
+    llamaFormData.append('compact_markdown_table', parseConfig.compact_markdown_table.toString());
+    llamaFormData.append('disable_reconstruction', parseConfig.disable_reconstruction.toString());
+    llamaFormData.append('disable_image_extraction', parseConfig.disable_image_extraction.toString());
+    llamaFormData.append('invalidate_cache', parseConfig.invalidate_cache.toString());
+    llamaFormData.append('outlined_table_extraction', parseConfig.outlined_table_extraction.toString());
+    llamaFormData.append('merge_tables_across_pages_in_markdown', parseConfig.merge_tables_across_pages_in_markdown.toString());
+    llamaFormData.append('output_pdf_of_document', parseConfig.output_pdf_of_document.toString());
+    llamaFormData.append('do_not_cache', parseConfig.do_not_cache.toString());
+    llamaFormData.append('fast_mode', parseConfig.fast_mode.toString());
+    llamaFormData.append('skip_diagonal_text', parseConfig.skip_diagonal_text.toString());
+    llamaFormData.append('preserve_layout_alignment_across_pages', parseConfig.preserve_layout_alignment_across_pages.toString());
+    llamaFormData.append('preserve_very_small_text', parseConfig.preserve_very_small_text.toString());
+    llamaFormData.append('gpt4o_mode', parseConfig.gpt4o_mode.toString());
+    llamaFormData.append('do_not_unroll_columns', parseConfig.do_not_unroll_columns.toString());
+    llamaFormData.append('extract_layout', parseConfig.extract_layout.toString());
+    llamaFormData.append('high_res_ocr', parseConfig.high_res_ocr.toString());
+    llamaFormData.append('html_make_all_elements_visible', parseConfig.html_make_all_elements_visible.toString());
+    llamaFormData.append('layout_aware', parseConfig.layout_aware.toString());
+    llamaFormData.append('specialized_chart_parsing_agentic', parseConfig.specialized_chart_parsing_agentic.toString());
+    llamaFormData.append('specialized_chart_parsing_plus', parseConfig.specialized_chart_parsing_plus.toString());
+    llamaFormData.append('specialized_chart_parsing_efficient', parseConfig.specialized_chart_parsing_efficient.toString());
+    llamaFormData.append('specialized_image_parsing', parseConfig.specialized_image_parsing.toString());
+    llamaFormData.append('precise_bounding_box', parseConfig.precise_bounding_box.toString());
+    llamaFormData.append('html_remove_navigation_elements', parseConfig.html_remove_navigation_elements.toString());
+    llamaFormData.append('html_remove_fixed_elements', parseConfig.html_remove_fixed_elements.toString());
+    llamaFormData.append('guess_xlsx_sheet_name', parseConfig.guess_xlsx_sheet_name.toString());
+    llamaFormData.append('webhook_url', parseConfig.webhook_url);
+    llamaFormData.append('is_formatting_instruction', parseConfig.is_formatting_instruction.toString());
+    llamaFormData.append('premium_mode', parseConfig.premium_mode.toString());
+    llamaFormData.append('continuous_mode', parseConfig.continuous_mode.toString());
+    llamaFormData.append('auto_mode', parseConfig.auto_mode.toString());
+    llamaFormData.append('auto_mode_trigger_on_table_in_page', parseConfig.auto_mode_trigger_on_table_in_page.toString());
+    llamaFormData.append('auto_mode_trigger_on_image_in_page', parseConfig.auto_mode_trigger_on_image_in_page.toString());
+    llamaFormData.append('structured_output', parseConfig.structured_output.toString());
+    llamaFormData.append('extract_charts', parseConfig.extract_charts.toString());
+    llamaFormData.append('spreadsheet_extract_sub_tables', parseConfig.spreadsheet_extract_sub_tables.toString());
+    llamaFormData.append('spreadsheet_force_formula_computation', parseConfig.spreadsheet_force_formula_computation.toString());
+    llamaFormData.append('inline_images_in_markdown', parseConfig.inline_images_in_markdown.toString());
+    llamaFormData.append('strict_mode_image_extraction', parseConfig.strict_mode_image_extraction.toString());
+    llamaFormData.append('strict_mode_image_ocr', parseConfig.strict_mode_image_ocr.toString());
+    llamaFormData.append('strict_mode_reconstruction', parseConfig.strict_mode_reconstruction.toString());
+    llamaFormData.append('strict_mode_buggy_font', parseConfig.strict_mode_buggy_font.toString());
+    llamaFormData.append('save_images', parseConfig.save_images.toString());
+    llamaFormData.append('hide_headers', parseConfig.hide_headers.toString());
+    llamaFormData.append('hide_footers', parseConfig.hide_footers.toString());
+    llamaFormData.append('ignore_document_elements_for_layout_detection', parseConfig.ignore_document_elements_for_layout_detection.toString());
+    llamaFormData.append('output_tables_as_HTML', parseConfig.output_tables_as_HTML.toString());
+    llamaFormData.append('internal_is_screenshot_job', parseConfig.internal_is_screenshot_job.toString());
+    llamaFormData.append('parse_mode', parseConfig.parse_mode);
+    llamaFormData.append('system_prompt_append', parseConfig.system_prompt_append);
+    llamaFormData.append('user_prompt', parseConfig.user_prompt);
+    llamaFormData.append('page_error_tolerance', parseConfig.page_error_tolerance.toString());
+    llamaFormData.append('replace_failed_page_mode', parseConfig.replace_failed_page_mode);
+    
+    console.log('Sending request to LlamaCloud...');
     const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/v1/parsing/upload', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${llamaCloudApiKey}`,
-        'Content-Type': 'application/json',
+        // Remove Content-Type header to let the browser set the multipart boundary
       },
-      body: JSON.stringify({
-        base64_content: base64Content,
-        filename: file.name,
-        ...parseConfig,
-        // Add manual_id as metadata if supported
-        metadata: { manual_id, title }
-      }),
+      body: llamaFormData,
     });
 
+    console.log(`LlamaCloud response status: ${llamaResponse.status}`);
+    console.log(`LlamaCloud response headers:`, Object.fromEntries(llamaResponse.headers.entries()));
+    
     if (!llamaResponse.ok) {
       const errorText = await llamaResponse.text();
-      console.error('LlamaCloud error:', errorText);
+      console.error('LlamaCloud error response:', errorText);
+      console.error('LlamaCloud response status:', llamaResponse.status);
+      console.error('LlamaCloud response statusText:', llamaResponse.statusText);
       throw new Error(`LlamaCloud upload failed: ${errorText}`);
     }
 
     const result = await llamaResponse.json();
-    console.log('LlamaCloud job submitted:', result);
+    console.log('LlamaCloud job submitted successfully:', result);
+    console.log('Job ID:', result.id);
 
     // Create initial document record
     const { error: docError } = await supabase

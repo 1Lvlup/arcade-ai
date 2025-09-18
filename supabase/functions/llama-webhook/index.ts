@@ -1,274 +1,221 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.17";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
-const awsAccessKeyId = Deno.env.get('AWS_ACCESS_KEY_ID')!;
-const awsSecretAccessKey = Deno.env.get('AWS_SECRET_ACCESS_KEY')!;
-const awsRegion = Deno.env.get('AWS_REGION')!;
-const s3Bucket = Deno.env.get('S3_BUCKET')!;
-
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
+const awsAccessKeyId = Deno.env.get("AWS_ACCESS_KEY_ID")!;
+const awsSecretAccessKey = Deno.env.get("AWS_SECRET_ACCESS_KEY")!;
+const awsRegion = Deno.env.get("AWS_REGION")!;
+const s3Bucket = Deno.env.get("S3_BUCKET")!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// S3 utilities
-async function uploadToS3(buffer: Uint8Array, key: string, contentType = "image/png"): Promise<string> {
+const aws = new AwsClient({
+  accessKeyId: awsAccessKeyId,
+  secretAccessKey: awsSecretAccessKey,
+  region: awsRegion,
+  service: "s3",
+});
+
+async function uploadToS3(buffer: Uint8Array, key: string, contentType = "application/octet-stream") {
   const url = `https://${s3Bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
-  
-  // Create AWS signature
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const time = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '') + 'Z';
-  
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': contentType,
-      'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
-      'x-amz-date': time,
-    },
-    body: buffer,
-  });
-
-  if (!response.ok) {
-    throw new Error(`S3 upload failed: ${response.statusText}`);
-  }
-
+  const resp = await aws.fetch(url, { method: "PUT", headers: { "Content-Type": contentType }, body: buffer });
+  const body = await resp.text();
+  if (!resp.ok) throw new Error(`S3 upload failed: ${resp.status} ${resp.statusText} – ${body.slice(0, 1000)}`);
   return `s3://${s3Bucket}/${key}`;
 }
 
-// Create embeddings using OpenAI
-async function createEmbedding(text: string): Promise<number[]> {
+async function createEmbedding(text: string) {
   const input = text.length > 8000 ? text.slice(0, 8000) : text;
-  
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'text-embedding-3-small',
-      input: input
-    }),
+  const r = await fetch("https://api.openai.com/v1/embeddings", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "text-embedding-3-small", input }),
   });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI embedding failed: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  return data.data[0].embedding;
+  const t = await r.text();
+  if (!r.ok) throw new Error(`OpenAI embedding failed: ${r.status} ${r.statusText} – ${t.slice(0, 1000)}`);
+  const data = JSON.parse(t);
+  return data.data[0].embedding as number[];
 }
 
-// Chunk text into manageable pieces
-function chunkText(text: string, chunkSize = 600, overlap = 100): Array<{content: string, page_start?: number, page_end?: number, menu_path?: string}> {
-  const chunks = [];
-  const lines = text.split('\n');
-  let currentChunk = '';
-  let currentPageStart: number | undefined;
-  let currentPageEnd: number | undefined;
-  let currentMenuPath: string | undefined;
+function chunkText(text: string, chunkSize = 600, overlap = 100) {
+  const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
+  const lines = text.split("\n");
+  let current = "";
+  let pageStart: number | undefined;
+  let pageEnd: number | undefined;
+  let menuPath: string | undefined;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    
-    // Detect page markers
-    const pageMatch = line.match(/Page (\d+)/i);
-    if (pageMatch) {
-      const pageNum = parseInt(pageMatch[1]);
-      if (!currentPageStart) currentPageStart = pageNum;
-      currentPageEnd = pageNum;
+
+    const m = line.match(/Page\s+(\d+)/i);
+    if (m) {
+      const p = parseInt(m[1]);
+      if (!pageStart) pageStart = p;
+      pageEnd = p;
+    }
+    if (line.includes(" > ") && line.length < 100) {
+      menuPath = line.trim();
     }
 
-    // Detect menu paths
-    if (line.includes(' > ') && line.length < 100) {
-      currentMenuPath = line.trim();
-    }
-
-    currentChunk += line + '\n';
-
-    // Check if we should create a chunk
-    if (currentChunk.length >= chunkSize || i === lines.length - 1) {
-      if (currentChunk.trim().length > 50) { // Only create chunks with meaningful content
-        chunks.push({
-          content: currentChunk.trim(),
-          page_start: currentPageStart,
-          page_end: currentPageEnd,
-          menu_path: currentMenuPath
-        });
+    current += line + "\n";
+    const atEnd = i === lines.length - 1;
+    if (current.length >= chunkSize || atEnd) {
+      const trimmed = current.trim();
+      if (trimmed.length > 50) {
+        chunks.push({ content: trimmed, page_start: pageStart, page_end: pageEnd, menu_path: menuPath });
       }
-
-      // Prepare next chunk with overlap
-      if (i < lines.length - 1) {
+      if (!atEnd) {
         const overlapLines = lines.slice(Math.max(0, i - Math.floor(overlap / 20)), i + 1);
-        currentChunk = overlapLines.join('\n') + '\n';
+        current = overlapLines.join("\n") + "\n";
       } else {
-        currentChunk = '';
+        current = "";
       }
     }
   }
-
   return chunks;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+async function fetchWithRetry(url: string, tries = 3) {
+  let last: Response | null = null;
+  for (let i = 0; i < tries; i++) {
+    const r = await fetch(url);
+    if (r.ok) return r;
+    last = r;
+    await new Promise(res => setTimeout(res, 300 * (i + 1)));
   }
+  if (last) throw new Error(`Failed to fetch ${url}: ${last.status} ${last.statusText}`);
+  throw new Error(`Failed to fetch ${url}`);
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    console.log('LlamaCloud webhook received');
-    
+    console.log("LlamaCloud webhook received");
     const payload = await req.json();
-    console.log('Webhook payload status:', payload.status);
+    console.log("Webhook status:", payload.status);
 
-    if (payload.status !== 'SUCCESS') {
-      console.error('LlamaCloud job failed:', payload);
-      return new Response(JSON.stringify({ error: 'Job failed' }), {
+    if (payload.status && payload.status !== "SUCCESS") {
+      console.error("Job not successful:", payload);
+      return new Response(JSON.stringify({ error: "Job failed" }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { text_markdown, figures } = payload;
-    const manual_id = payload.metadata?.manual_id;
+    const urlObj = new URL(req.url);
+    const manual_id = payload?.metadata?.manual_id || urlObj.searchParams.get("manual_id");
+    if (!manual_id) throw new Error("No manual_id found in metadata or query string");
 
-    if (!manual_id) {
-      throw new Error('No manual_id in payload metadata');
+    // Inline vs. result_url
+    let { text_markdown, figures } = payload;
+    if ((!text_markdown || !figures) && payload.result_url) {
+      const r = await fetch(payload.result_url);
+      if (r.ok) {
+        const j = await r.json().catch(() => null);
+        text_markdown = text_markdown || j?.text_markdown || j?.markdown || j?.md || "";
+        figures = figures || j?.figures || j?.images || [];
+      } else {
+        console.warn("result_url fetch failed:", r.status, await r.text());
+      }
     }
 
-    console.log(`Processing results for manual: ${manual_id}`);
-    console.log(`Text length: ${text_markdown?.length || 0}, Figures: ${figures?.length || 0}`);
+    console.log(`Processing manual: ${manual_id}`);
+    console.log(`Text len: ${text_markdown?.length || 0}, figures: ${figures?.length || 0}`);
 
-    // Process figures first - download images and upload to S3
-    const processedFigures = [];
-    if (figures && figures.length > 0) {
-      for (const figure of figures) {
+    // Figures → download → S3 → DB
+    let processedFigures = 0;
+    if (Array.isArray(figures) && figures.length) {
+      for (const fig of figures) {
         try {
-          console.log(`Processing figure: ${figure.figure_id}`);
-          
-          // Download image from LlamaCloud temp URL
-          const imageResponse = await fetch(figure.image_url);
-          if (!imageResponse.ok) {
-            console.warn(`Failed to download figure ${figure.figure_id}: ${imageResponse.statusText}`);
-            continue;
-          }
+          if (!fig?.image_url) continue;
+          const imgResp = await fetchWithRetry(fig.image_url);
+          const contentType = imgResp.headers.get("content-type") || "image/png";
+          const ext = contentType.includes("jpeg") ? "jpg" :
+                      contentType.includes("png") ? "png" :
+                      contentType.includes("webp") ? "webp" : "bin";
+          const buf = new Uint8Array(await imgResp.arrayBuffer());
 
-          const imageBuffer = new Uint8Array(await imageResponse.arrayBuffer());
-          
-          // Upload to S3
-          const s3Key = `manuals/${manual_id}/${figure.figure_id}.png`;
-          const s3Uri = await uploadToS3(imageBuffer, s3Key, 'image/png');
-          
-          // Create embedding for figure content
+          const key = `manuals/${manual_id}/${fig.figure_id || crypto.randomUUID()}.${ext}`;
+          const s3Uri = await uploadToS3(buf, key, contentType);
+
           const figureContent = [
-            figure.caption_text || '',
-            figure.ocr_text || '',
-            JSON.stringify(figure.callouts || [])
-          ].filter(Boolean).join('\n');
+            fig.caption_text || "",
+            fig.ocr_text || "",
+            Array.isArray(fig.callouts) ? JSON.stringify(fig.callouts) : "",
+          ].filter(Boolean).join("\n");
 
           const embedding = figureContent.length > 10 ? await createEmbedding(figureContent) : null;
 
-          // Store figure in database
-          const { error: figureError } = await supabase
-            .from('figures')
-            .insert({
-              manual_id,
-              page_number: figure.page_number,
-              figure_id: figure.figure_id,
-              image_url: s3Uri,
-              caption_text: figure.caption_text,
-              ocr_text: figure.ocr_text,
-              callouts_json: figure.callouts,
-              bbox_pdf_coords: figure.bbox_pdf_coords,
-              embedding_text: embedding,
-              fec_tenant_id: '00000000-0000-0000-0000-000000000001'
-            });
-
-          if (figureError) {
-            console.error(`Error storing figure ${figure.figure_id}:`, figureError);
-          } else {
-            processedFigures.push(figure.figure_id);
-          }
-
-        } catch (error) {
-          console.error(`Error processing figure ${figure.figure_id}:`, error);
+          const { error: figErr } = await supabase.from("figures").insert({
+            manual_id,
+            page_number: fig.page_number ?? null,
+            figure_id: fig.figure_id ?? key.split("/").pop(),
+            image_url: s3Uri,
+            caption_text: fig.caption_text ?? null,
+            ocr_text: fig.ocr_text ?? null,
+            callouts_json: fig.callouts ?? null,
+            bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
+            embedding_text: embedding,
+            fec_tenant_id: "00000000-0000-0000-0000-000000000001",
+          });
+          if (figErr) console.error("figures insert error:", figErr);
+          else processedFigures++;
+        } catch (e) {
+          console.error("Figure process error:", e);
         }
       }
     }
 
-    // Process text content - chunk and create embeddings
+    // Text → chunks → embeddings → DB
     let processedChunks = 0;
     if (text_markdown && text_markdown.length > 0) {
       const chunks = chunkText(text_markdown);
-      console.log(`Created ${chunks.length} text chunks`);
-
-      for (const chunk of chunks) {
+      console.log(`Chunks: ${chunks.length}`);
+      for (const ch of chunks) {
         try {
-          const embedding = await createEmbedding(chunk.content);
-
-          const { error: chunkError } = await supabase
-            .from('chunks_text')
-            .insert({
-              manual_id,
-              page_start: chunk.page_start,
-              page_end: chunk.page_end,
-              menu_path: chunk.menu_path,
-              content: chunk.content,
-              embedding,
-              fec_tenant_id: '00000000-0000-0000-0000-000000000001'
-            });
-
-          if (chunkError) {
-            console.error('Error storing chunk:', chunkError);
-          } else {
-            processedChunks++;
-          }
-
-        } catch (error) {
-          console.error('Error processing chunk:', error);
+          const embedding = await createEmbedding(ch.content);
+          const { error: insErr } = await supabase.from("chunks_text").insert({
+            manual_id,
+            page_start: ch.page_start ?? null,
+            page_end: ch.page_end ?? null,
+            menu_path: ch.menu_path ?? null,
+            content: ch.content,
+            embedding,
+            fec_tenant_id: "00000000-0000-0000-0000-000000000001",
+          });
+          if (insErr) console.error("chunks_text insert error:", insErr);
+          else processedChunks++;
+        } catch (e) {
+          console.error("Chunk embed/insert error:", e);
         }
       }
     }
 
-    // Update document status
-    const { error: updateError } = await supabase
-      .from('documents')
-      .update({
-        updated_at: new Date().toISOString()
-      })
-      .eq('manual_id', manual_id);
+    // Update doc timestamp
+    await supabase.from("documents").update({ updated_at: new Date().toISOString() }).eq("manual_id", manual_id);
 
-    if (updateError) {
-      console.error('Error updating document:', updateError);
-    }
-
-    console.log(`Processing complete for ${manual_id}: ${processedChunks} chunks, ${processedFigures.length} figures`);
-
+    console.log(`Complete: ${processedChunks} chunks, ${processedFigures} figures`);
     return new Response(JSON.stringify({
       success: true,
       manual_id,
       processed_chunks: processedChunks,
-      processed_figures: processedFigures.length
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
+      processed_figures: processedFigures,
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
-    console.error('Error in llama-webhook function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      details: error.toString()
-    }), {
+    console.error("llama-webhook error:", error);
+    return new Response(JSON.stringify({ error: error.message, details: String(error) }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

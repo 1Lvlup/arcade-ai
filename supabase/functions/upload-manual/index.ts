@@ -1,57 +1,34 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const llamaCloudApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
-
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const llamaCloudApiKey = Deno.env.get("LLAMACLOUD_API_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    console.log('Starting manual upload process with URL ingestion');
-    
+    console.log("Starting manual upload (multipart path)");
     const { title, storagePath } = await req.json();
-    
-    if (!title || !storagePath) {
-      throw new Error('Title and storagePath are required');
-    }
+    if (!title || !storagePath) throw new Error("Title and storagePath are required");
 
-    // Generate manual_id as slug
-    const manual_id = title.toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    const manual_id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    console.log(`manual_id: ${manual_id}`);
 
-    console.log(`Processing manual: ${title} with ID: ${manual_id}`);
-    console.log(`Storage path: ${storagePath}`);
+    // 1) Download the PDF bytes from Supabase Storage
+    const { data: fileBlob, error: dlErr } = await supabase.storage.from("manuals").download(storagePath);
+    if (dlErr || !fileBlob) throw new Error(`Download failed for ${storagePath}: ${dlErr?.message}`);
 
-    // Create a signed URL for the PDF file (10 minutes expiry)
-    console.log('Creating signed URL for storage path:', storagePath);
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from('manuals')
-      .createSignedUrl(storagePath, 10 * 60); // 10 minutes
-
-    if (signedUrlError) {
-      console.error('Failed to create signed URL:', signedUrlError);
-      throw new Error(`Failed to create signed URL: ${signedUrlError.message}`);
-    }
-
-    console.log('Signed URL created successfully');
-
-    // LlamaCloud parse configuration with URL ingestion
-    const parseConfig = {
-      input_url: signedUrlData.signedUrl,
+    // 2) Build your config (keep your choices)
+    const config = {
       parsing_instruction: "",
       disable_ocr: false,
       annotate_links: false,
@@ -82,50 +59,17 @@ serve(async (req) => {
       html_remove_navigation_elements: false,
       html_remove_fixed_elements: true,
       guess_xlsx_sheet_name: false,
-      page_separator: null,
-      bounding_box: null,
-      bbox_top: null,
-      bbox_right: null,
-      bbox_bottom: null,
-      bbox_left: null,
-      target_pages: null,
-      use_vendor_multimodal_model: false,
-      vendor_multimodal_model_name: null,
-      model: null,
-      vendor_multimodal_api_key: null,
-      page_prefix: null,
-      page_suffix: null,
-      webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
-      preset: null,
       take_screenshot: false,
       is_formatting_instruction: true,
       premium_mode: false,
       continuous_mode: false,
-      input_s3_path: null,
-      input_s3_region: null,
-      output_s3_path_prefix: null,
-      output_s3_region: null,
-      project_id: null,
-      azure_openai_deployment_name: null,
-      azure_openai_endpoint: null,
-      azure_openai_api_version: null,
-      azure_openai_key: null,
-      http_proxy: null,
       auto_mode: false,
-      auto_mode_trigger_on_regexp_in_page: null,
-      auto_mode_trigger_on_text_in_page: null,
       auto_mode_trigger_on_table_in_page: false,
       auto_mode_trigger_on_image_in_page: false,
-      auto_mode_configuration_json: null,
       structured_output: false,
-      structured_output_json_schema: null,
-      structured_output_json_schema_name: null,
       max_pages: null,
       max_pages_enforced: null,
       extract_charts: true,
-      formatting_instruction: null,
-      complemental_formatting_instruction: null,
-      content_guideline_instruction: null,
       spreadsheet_extract_sub_tables: false,
       spreadsheet_force_formula_computation: false,
       inline_images_in_markdown: false,
@@ -138,11 +82,6 @@ serve(async (req) => {
       save_images: true,
       hide_headers: true,
       hide_footers: true,
-      page_header_prefix: null,
-      page_header_suffix: null,
-      page_footer_prefix: null,
-      page_footer_suffix: null,
-      ignore_document_elements_for_layout_detection: false,
       output_tables_as_HTML: false,
       internal_is_screenshot_job: false,
       parse_mode: "parse_document_with_agent",
@@ -181,69 +120,55 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
       replace_failed_page_mode: "raw_text",
       replace_failed_page_with_error_message_prefix: null,
       replace_failed_page_with_error_message_suffix: null,
-      markdown_table_multiline_header_separator: null
+      markdown_table_multiline_header_separator: null,
     };
 
-    // Submit to LlamaCloud using JSON (no multipart)
-    console.log('Sending JSON request to LlamaCloud with input_url...');
-    
-    const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/v1/parsing/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${llamaCloudApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(parseConfig),
+    // 3) Build multipart form (file + config + webhook + metadata)
+    const form = new FormData();
+    form.append(
+      "file",
+      new Blob([await fileBlob.arrayBuffer()], { type: "application/pdf" }),
+      storagePath.split("/").pop() || "manual.pdf",
+    );
+    form.append("config", new Blob([JSON.stringify(config)], { type: "application/json" }), "config.json");
+    form.append("webhook_url", `${supabaseUrl}/functions/v1/llama-webhook?manual_id=${encodeURIComponent(manual_id)}`);
+    form.append("metadata", JSON.stringify({ manual_id, title, storage_path: storagePath }));
+
+    // 4) Post to LlamaCloud
+    const llamaRes = await fetch("https://api.cloud.llamaindex.ai/api/v1/parsing/upload", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${llamaCloudApiKey}` },
+      body: form, // don't set Content-Type manually
     });
 
-    console.log(`LlamaCloud response status: ${llamaResponse.status}`);
-    console.log(`LlamaCloud response headers:`, Object.fromEntries(llamaResponse.headers.entries()));
-    
-    if (!llamaResponse.ok) {
-      const errorText = await llamaResponse.text();
-      console.error('LlamaCloud error response:', errorText);
-      console.error('LlamaCloud response status:', llamaResponse.status);
-      console.error('LlamaCloud response statusText:', llamaResponse.statusText);
-      throw new Error(`LlamaCloud upload failed: ${errorText}`);
-    }
+    const llamaText = await llamaRes.text();
+    console.log(`LlamaCloud: ${llamaRes.status} ${llamaRes.statusText}`, llamaText.slice(0, 4000));
+    if (!llamaRes.ok) throw new Error(`LlamaCloud upload failed: ${llamaText}`);
 
-    const result = await llamaResponse.json();
-    console.log('LlamaCloud job submitted successfully:', result);
-    console.log('Job ID:', result.id);
+    const result = JSON.parse(llamaText);
 
-    // Create initial document record
-    const { error: docError } = await supabase
-      .from('documents')
-      .insert({
-        manual_id,
-        title,
-        source_filename: storagePath.split('/').pop() || 'unknown.pdf',
-        storage_path: storagePath,
-        fec_tenant_id: '00000000-0000-0000-0000-000000000001'
-      });
-
-    if (docError) {
-      console.error('Error creating document record:', docError);
-      throw docError;
-    }
+    // 5) Create initial document row
+    const { error: docError } = await supabase.from("documents").insert({
+      manual_id,
+      title,
+      source_filename: storagePath.split("/").pop() || "unknown.pdf",
+      storage_path: storagePath,
+      fec_tenant_id: "00000000-0000-0000-0000-000000000001",
+      job_id: result.id ?? null,
+    });
+    if (docError) throw docError;
 
     return new Response(JSON.stringify({
       success: true,
       job_id: result.id,
       manual_id,
-      message: 'Manual upload started. Processing will complete via webhook.'
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
+      message: "Upload started; processing will complete via webhook.",
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
-    console.error('Error in upload-manual function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      details: error.toString()
-    }), {
+    console.error("upload-manual error:", error);
+    return new Response(JSON.stringify({ error: error.message, details: String(error) }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

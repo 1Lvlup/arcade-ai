@@ -51,15 +51,35 @@ export function ManualUpload() {
       return;
     }
 
-    setUploadStatus({ status: 'uploading', message: 'Uploading manual...' });
+    setUploadStatus({ status: 'uploading', message: 'Uploading manual to storage...' });
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('title', title.trim());
+      // Generate unique filename
+      const timestamp = Date.now();
+      const sanitizedTitle = title.trim().replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = `${sanitizedTitle}_${timestamp}.pdf`;
+      const filePath = `uploads/${fileName}`;
 
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('manuals')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      setUploadStatus({ status: 'uploading', message: 'Sending to LlamaCloud for processing...' });
+
+      // Send storage path to edge function for LlamaCloud processing
       const { data, error } = await supabase.functions.invoke('upload-manual', {
-        body: formData,
+        body: {
+          title: title.trim(),
+          storagePath: filePath,
+        },
       });
 
       if (error) {

@@ -83,16 +83,16 @@ const Index = () => {
           <Card className="border-accent/20 hover:border-accent/40 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <span className="text-accent">📊</span>
-                <span>Reports</span>
+                <span className="text-accent">📚</span>
+                <span>Manual Management</span>
               </CardTitle>
               <CardDescription>
-                Downtime tracking and cost analysis
+                Upload and manage game manuals
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full border-accent/30 hover:border-accent">
-                View Reports
+              <Button variant="outline" className="w-full border-accent/30 hover:border-accent" asChild>
+                <a href="/manuals">Manage Manuals</a>
               </Button>
             </CardContent>
           </Card>

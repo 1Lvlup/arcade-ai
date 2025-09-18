@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface UploadStatus {
@@ -19,6 +20,7 @@ export function ManualUpload() {
   const [title, setTitle] = useState('');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ status: 'idle' });
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -51,14 +53,23 @@ export function ManualUpload() {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please sign in to upload manuals',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setUploadStatus({ status: 'uploading', message: 'Uploading manual to storage...' });
 
     try {
-      // Generate unique filename
+      // Generate unique filename with user ID prefix for RLS
       const timestamp = Date.now();
       const sanitizedTitle = title.trim().replace(/[^a-zA-Z0-9]/g, '_');
       const fileName = `${sanitizedTitle}_${timestamp}.pdf`;
-      const filePath = `uploads/${fileName}`;
+      const filePath = `${user.id}/${fileName}`;
 
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage

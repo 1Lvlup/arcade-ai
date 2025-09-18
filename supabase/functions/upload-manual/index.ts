@@ -10,6 +10,13 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const llamaCloudApiKey = Deno.env.get("LLAMACLOUD_API_KEY")!;
+
+// Environment variable logging
+console.log("🔑 Environment variables check:");
+console.log(`SUPABASE_URL: ${supabaseUrl ? "✅ Present" : "❌ Missing"}`);
+console.log(`SUPABASE_SERVICE_ROLE_KEY: ${supabaseServiceKey ? "✅ Present" : "❌ Missing"}`);
+console.log(`LLAMACLOUD_API_KEY: ${llamaCloudApiKey ? "✅ Present" : "❌ Missing"}`);
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 serve(async (req) => {

@@ -15,6 +15,17 @@ const awsAccessKeyId = Deno.env.get("AWS_ACCESS_KEY_ID")!;
 const awsSecretAccessKey = Deno.env.get("AWS_SECRET_ACCESS_KEY")!;
 const awsRegion = Deno.env.get("AWS_REGION")!;
 const s3Bucket = Deno.env.get("S3_BUCKET")!;
+
+// Environment variable logging
+console.log("🔑 Environment variables check:");
+console.log(`SUPABASE_URL: ${supabaseUrl ? "✅ Present" : "❌ Missing"}`);
+console.log(`SUPABASE_SERVICE_ROLE_KEY: ${supabaseServiceKey ? "✅ Present" : "❌ Missing"}`);
+console.log(`OPENAI_API_KEY: ${openaiApiKey ? "✅ Present" : "❌ Missing"}`);
+console.log(`AWS_ACCESS_KEY_ID: ${awsAccessKeyId ? "✅ Present" : "❌ Missing"}`);
+console.log(`AWS_SECRET_ACCESS_KEY: ${awsSecretAccessKey ? "✅ Present" : "❌ Missing"}`);
+console.log(`AWS_REGION: ${awsRegion ? "✅ Present" : "❌ Missing"}`);
+console.log(`S3_BUCKET: ${s3Bucket ? "✅ Present" : "❌ Missing"}`);
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const aws = new AwsClient({

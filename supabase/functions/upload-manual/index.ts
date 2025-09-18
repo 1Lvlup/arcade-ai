@@ -188,7 +188,7 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
     };
 
     // Submit to LlamaCloud
-    const llamaResponse = await fetch('https://api.llamaindex.ai/api/v1/parsing/upload', {
+    const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/v1/parsing/upload', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${llamaCloudApiKey}`,

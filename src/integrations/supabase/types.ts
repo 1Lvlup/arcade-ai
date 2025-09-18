@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      chunks_text: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          fec_tenant_id: string
+          id: string
+          manual_id: string
+          menu_path: string | null
+          page_end: number | null
+          page_start: number | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          fec_tenant_id?: string
+          id?: string
+          manual_id: string
+          menu_path?: string | null
+          page_end?: number | null
+          page_start?: number | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          fec_tenant_id?: string
+          id?: string
+          manual_id?: string
+          menu_path?: string | null
+          page_end?: number | null
+          page_start?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chunks_text_manual_fkey"
+            columns: ["manual_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["manual_id"]
+          },
+        ]
+      }
       docs: {
         Row: {
           content: string
@@ -64,6 +108,36 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          created_at: string | null
+          fec_tenant_id: string
+          id: string
+          manual_id: string
+          source_filename: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fec_tenant_id?: string
+          id?: string
+          manual_id: string
+          source_filename?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fec_tenant_id?: string
+          id?: string
+          manual_id?: string
+          source_filename?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       fec_tenants: {
         Row: {
           created_at: string
@@ -87,6 +161,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      figures: {
+        Row: {
+          bbox_pdf_coords: string | null
+          callouts_json: Json | null
+          caption_text: string | null
+          created_at: string | null
+          embedding_text: string | null
+          fec_tenant_id: string
+          figure_id: string | null
+          id: string
+          image_url: string
+          keywords: string[] | null
+          manual_id: string
+          ocr_text: string | null
+          page_number: number | null
+        }
+        Insert: {
+          bbox_pdf_coords?: string | null
+          callouts_json?: Json | null
+          caption_text?: string | null
+          created_at?: string | null
+          embedding_text?: string | null
+          fec_tenant_id?: string
+          figure_id?: string | null
+          id?: string
+          image_url: string
+          keywords?: string[] | null
+          manual_id: string
+          ocr_text?: string | null
+          page_number?: number | null
+        }
+        Update: {
+          bbox_pdf_coords?: string | null
+          callouts_json?: Json | null
+          caption_text?: string | null
+          created_at?: string | null
+          embedding_text?: string | null
+          fec_tenant_id?: string
+          figure_id?: string | null
+          id?: string
+          image_url?: string
+          keywords?: string[] | null
+          manual_id?: string
+          ocr_text?: string | null
+          page_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "figures_manual_fkey"
+            columns: ["manual_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["manual_id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -186,6 +316,24 @@ export type Database = {
           similarity: number
           source_file: string
           subsection: string
+        }[]
+      }
+      search_manual_content: {
+        Args: {
+          match_count?: number
+          query_embedding: string
+          search_manual_id?: string
+          similarity_threshold?: number
+        }
+        Returns: {
+          content: string
+          content_type: string
+          id: string
+          manual_id: string
+          menu_path: string
+          page_end: number
+          page_start: number
+          similarity: number
         }[]
       }
     }

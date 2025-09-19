@@ -2,15 +2,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GamepadIcon, Zap, LogOut, MessageCircle, ArrowLeft } from 'lucide-react';
-import { ManualUpload } from '@/components/ManualUpload';
-import { ManualsList } from '@/components/ManualsList';
+import { GamepadIcon, MessageCircle, BookOpen, Eye } from 'lucide-react';
 import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
+import { SharedHeader } from '@/components/SharedHeader';
 import { Link } from 'react-router-dom';
 
 const Index = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [selectedManualId, setSelectedManualId] = useState<string>();
   const [selectedManualTitle, setSelectedManualTitle] = useState<string>();
@@ -31,9 +30,6 @@ const Index = () => {
     }
   }, []);
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   const handleStartGeneralChat = () => {
     setSelectedManualId(undefined);
@@ -60,43 +56,11 @@ const Index = () => {
   if (showChat) {
     return (
       <div className="min-h-screen arcade-bg">
-        <header className="border-b border-primary/20 bg-card/50 backdrop-blur-sm">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToHome}
-                className="hover:bg-primary/10"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
-              </Button>
-              <div className="flex items-center space-x-2">
-                <GamepadIcon className="h-6 w-6 text-primary neon-glow" />
-                <Zap className="h-4 w-4 text-secondary" />
-                <h1 className="text-xl font-bold neon-text">
-                  {selectedManualId ? `Chat: ${selectedManualTitle}` : 'General Chat'}
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">
-                {user?.email}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="border-primary/30 hover:border-primary"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </header>
-
+        <SharedHeader 
+          title={selectedManualId ? `Chat: ${selectedManualTitle}` : 'General Chat'}
+          showBackButton={true}
+          backTo="/"
+        />
         <main className="container mx-auto px-4 py-8">
           <ChatBot 
             selectedManualId={selectedManualId}
@@ -109,29 +73,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen arcade-bg">
-      <header className="border-b border-primary/20 bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <GamepadIcon className="h-6 w-6 text-primary neon-glow" />
-            <Zap className="h-4 w-4 text-secondary" />
-            <h1 className="text-xl font-bold neon-text">Arcade Fix Guru</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">
-              {user?.email}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              className="border-primary/30 hover:border-primary"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SharedHeader title="Arcade Fix Guru" />
 
       <main className="container mx-auto px-4 py-8">
         <div className="text-center space-y-6 mb-12">
@@ -142,73 +84,63 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Quick Actions */}
-          <div className="space-y-6">
-            <Card className="border-primary/20 neon-glow hover:border-primary/40 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MessageCircle className="h-5 w-5 text-primary" />
-                  <span>AI Assistant</span>
-                </CardTitle>
-                <CardDescription>
-                  Chat with AI for instant troubleshooting across all your manuals
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  className="w-full neon-glow"
-                  onClick={handleStartGeneralChat}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Start General Chat
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MessageCircle className="h-5 w-5 text-primary" />
+                <span>AI Assistant</span>
+              </CardTitle>
+              <CardDescription>
+                Get instant help with troubleshooting questions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={handleStartGeneralChat} className="w-full">
+                Start General Chat
+              </Button>
+            </CardContent>
+          </Card>
 
-            <Card className="border-accent/20 hover:border-accent/40 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <span className="text-accent">📚</span>
-                  <span>Manual Management</span>
-                </CardTitle>
-                <CardDescription>
-                  Upload and manage game manuals
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full border-accent/30 hover:border-accent" asChild>
-                  <Link to="/manuals">Manage Manuals</Link>
+          <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                <span>Manual Management</span>
+              </CardTitle>
+              <CardDescription>
+                Upload and manage your arcade game manuals
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/manuals">
+                <Button variant="outline" className="w-full">
+                  Manage Manuals
                 </Button>
-              </CardContent>
-            </Card>
+              </Link>
+            </CardContent>
+          </Card>
 
-            <Card className="border-secondary/20 hover:border-secondary/40 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <GamepadIcon className="h-5 w-5 text-secondary" />
-                  <span>Vision Board</span>
-                </CardTitle>
-                <CardDescription>
-                  Product roadmap and feature ideas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="secondary" className="w-full" asChild>
-                  <Link to="/vision">View Vision Board</Link>
+          <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Eye className="h-5 w-5 text-primary" />
+                <span>Vision Board</span>
+              </CardTitle>
+              <CardDescription>
+                Strategic planning and insights dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/vision-board">
+                <Button variant="outline" className="w-full">
+                  View Board
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Manuals & Upload */}
-          <div className="space-y-6">
-            <ManualUpload />
-            <ManualsList />
-          </div>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Processing Monitor */}
         <ProcessingMonitor />
       </main>
     </div>

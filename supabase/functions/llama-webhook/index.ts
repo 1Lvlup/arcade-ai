@@ -95,111 +95,114 @@ function chunkText(text: string, chunkSize = 600, overlap = 100) {
   return chunks;
 }
 
-async function fetchWithRetry(url: string, tries = 3) {
-  let last: Response | null = null;
-  for (let i = 0; i < tries; i++) {
-    const r = await fetch(url);
-    if (r.ok) return r;
-    last = r;
-    await new Promise(res => setTimeout(res, 300 * (i + 1)));
-  }
-  if (last) throw new Error(`Failed to fetch ${url}: ${last.status} ${last.statusText}`);
-  throw new Error(`Failed to fetch ${url}`);
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     console.log("LlamaCloud webhook received");
-    // existing:
-const payload = await req.json();
-// ADD these lines:
-const url = new URL(req.url);
-const manualIdFromQS = url.searchParams.get('manual_id');
+    const payload = await req.json();
+    
+    console.log("Webhook payload keys:", Object.keys(payload || {}));
+    console.log("Webhook sample (trimmed):", JSON.stringify(payload).slice(0, 2000));
 
-// Be robust about where metadata shows up:
-const manual_id =
-  payload?.metadata?.manual_id ??
-  payload?.config?.metadata?.manual_id ??
-  payload?.job?.metadata?.manual_id ??
-  manualIdFromQS;
-
-if (!manual_id) {
-  // Temporary debugging to see the actual shape you’re getting back:
-  console.error('Webhook payload keys:', Object.keys(payload || {}));
-  console.error('Webhook sample (trimmed):', JSON.stringify(payload).slice(0, 2000));
-  throw new Error('No manual_id found in metadata or query string');
-}
-
-    console.log("Webhook status:", payload.status);
-
-    if (payload.status && payload.status !== "SUCCESS") {
-      console.error("Job not successful:", payload);
-      return new Response(JSON.stringify({ error: "Job failed" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // LlamaCloud sends jobId - look up manual_id from documents table
+    const jobId = payload.jobId;
+    if (!jobId) {
+      throw new Error("No jobId found in payload");
     }
 
+    // Look up manual_id from documents table using job_id
+    const { data: docData, error: docError } = await supabase
+      .from("documents")
+      .select("manual_id")
+      .eq("job_id", jobId)
+      .single();
 
-    // Inline vs. result_url
-    let { text_markdown, figures } = payload;
-    if ((!text_markdown || !figures) && payload.result_url) {
-      const r = await fetch(payload.result_url);
-      if (r.ok) {
-        const j = await r.json().catch(() => null);
-        text_markdown = text_markdown || j?.text_markdown || j?.markdown || j?.md || "";
-        figures = figures || j?.figures || j?.images || [];
-      } else {
-        console.warn("result_url fetch failed:", r.status, await r.text());
+    if (docError || !docData) {
+      console.error("Failed to find document with job_id:", jobId, docError);
+      throw new Error(`No document found for job_id: ${jobId}`);
+    }
+
+    const manual_id = docData.manual_id;
+    console.log(`Processing manual: ${manual_id} (job: ${jobId})`);
+
+    // Map LlamaCloud format to our expected format
+    const text_markdown = payload.md || "";
+    console.log(`Text markdown length: ${text_markdown.length}`);
+
+    // Process images from LlamaCloud json structure for better metadata
+    const figures: any[] = [];
+    if (payload.json && Array.isArray(payload.json)) {
+      for (const page of payload.json) {
+        if (page.images && Array.isArray(page.images)) {
+          for (const img of page.images) {
+            // Create a data URL for the image (LlamaCloud provides base64 in images array)
+            const imageName = img.name;
+            const imageData = payload.images ? payload.images.find((imgData: string) => imgData.includes(imageName)) : null;
+            
+            figures.push({
+              figure_id: imageName?.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
+              image_data: imageData, // Store base64 data temporarily
+              caption_text: null,
+              ocr_text: null,
+              page_number: page.page,
+              callouts: null,
+              bbox_pdf_coords: JSON.stringify({
+                x: img.x || 0,
+                y: img.y || 0,
+                width: img.width || 0,
+                height: img.height || 0
+              })
+            });
+          }
+        }
       }
     }
 
-    console.log(`Processing manual: ${manual_id}`);
-    console.log(`Text len: ${text_markdown?.length || 0}, figures: ${figures?.length || 0}`);
+    console.log(`Found ${figures.length} figures to process`);
 
-    // Figures → download → S3 → DB
+    // Process figures - convert base64 to actual files and upload to S3
     let processedFigures = 0;
-    if (Array.isArray(figures) && figures.length) {
-      for (const fig of figures) {
-        try {
-          if (!fig?.image_url) continue;
-          const imgResp = await fetchWithRetry(fig.image_url);
-          const contentType = imgResp.headers.get("content-type") || "image/png";
-          const ext = contentType.includes("jpeg") ? "jpg" :
-                      contentType.includes("png") ? "png" :
-                      contentType.includes("webp") ? "webp" : "bin";
-          const buf = new Uint8Array(await imgResp.arrayBuffer());
-
-          const key = `manuals/${manual_id}/${fig.figure_id || crypto.randomUUID()}.${ext}`;
-          const s3Uri = await uploadToS3(buf, key, contentType);
-
-          const figureContent = [
-            fig.caption_text || "",
-            fig.ocr_text || "",
-            Array.isArray(fig.callouts) ? JSON.stringify(fig.callouts) : "",
-          ].filter(Boolean).join("\n");
-
-          const embedding = figureContent.length > 10 ? await createEmbedding(figureContent) : null;
-
-          const { error: figErr } = await supabase.from("figures").insert({
-            manual_id,
-            page_number: fig.page_number ?? null,
-            figure_id: fig.figure_id ?? key.split("/").pop(),
-            image_url: s3Uri,
-            caption_text: fig.caption_text ?? null,
-            ocr_text: fig.ocr_text ?? null,
-            callouts_json: fig.callouts ?? null,
-            bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
-            embedding_text: embedding,
-            fec_tenant_id: "00000000-0000-0000-0000-000000000001",
-          });
-          if (figErr) console.error("figures insert error:", figErr);
-          else processedFigures++;
-        } catch (e) {
-          console.error("Figure process error:", e);
+    for (const fig of figures) {
+      try {
+        if (!fig.image_data) continue;
+        
+        // Extract base64 data (assuming it's in format "data:image/png;base64,...")
+        let base64Data = fig.image_data;
+        if (base64Data.includes(',')) {
+          base64Data = base64Data.split(',')[1];
         }
+        
+        // Convert base64 to buffer
+        const buffer = new Uint8Array(atob(base64Data).split('').map(c => c.charCodeAt(0)));
+        
+        const ext = "png"; // Default to PNG for LlamaCloud images
+        const key = `manuals/${manual_id}/${fig.figure_id}.${ext}`;
+        const s3Uri = await uploadToS3(buffer, key, "image/png");
+
+        const figureContent = [
+          fig.caption_text || "",
+          fig.ocr_text || "",
+        ].filter(Boolean).join("\n");
+
+        const embedding = figureContent.length > 10 ? await createEmbedding(figureContent) : null;
+
+        const { error: figErr } = await supabase.from("figures").insert({
+          manual_id,
+          page_number: fig.page_number ?? null,
+          figure_id: fig.figure_id,
+          image_url: s3Uri,
+          caption_text: fig.caption_text ?? null,
+          ocr_text: fig.ocr_text ?? null,
+          callouts_json: fig.callouts ?? null,
+          bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
+          embedding_text: embedding,
+          fec_tenant_id: "00000000-0000-0000-0000-000000000001",
+        });
+        if (figErr) console.error("figures insert error:", figErr);
+        else processedFigures++;
+      } catch (e) {
+        console.error("Figure process error:", e);
       }
     }
 
@@ -207,7 +210,7 @@ if (!manual_id) {
     let processedChunks = 0;
     if (text_markdown && text_markdown.length > 0) {
       const chunks = chunkText(text_markdown);
-      console.log(`Chunks: ${chunks.length}`);
+      console.log(`Generated ${chunks.length} chunks from text`);
       for (const ch of chunks) {
         try {
           const embedding = await createEmbedding(ch.content);
@@ -228,10 +231,10 @@ if (!manual_id) {
       }
     }
 
-    // Update doc timestamp
+    // Update document timestamp
     await supabase.from("documents").update({ updated_at: new Date().toISOString() }).eq("manual_id", manual_id);
 
-    console.log(`Complete: ${processedChunks} chunks, ${processedFigures} figures`);
+    console.log(`✅ Processing complete: ${processedChunks} chunks, ${processedFigures} figures for manual ${manual_id}`);
     return new Response(JSON.stringify({
       success: true,
       manual_id,

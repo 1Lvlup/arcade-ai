@@ -30,9 +30,22 @@ serve(async (req) => {
     const manual_id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     console.log(`manual_id: ${manual_id}`);
 
-    // 1) Download the PDF bytes from Supabase Storage
-    const { data: fileBlob, error: dlErr } = await supabase.storage.from("manuals").download(storagePath);
-    if (dlErr || !fileBlob) throw new Error(`Download failed for ${storagePath}: ${dlErr?.message}`);
+    // 1) Create signed URL with 24 hour expiry (instead of downloading file)
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from("manuals")
+      .createSignedUrl(storagePath, 24 * 60 * 60); // 24 hours
+    
+    if (signedUrlError || !signedUrlData) {
+      throw new Error(`Failed to create signed URL: ${signedUrlError?.message}`);
+    }
+
+    // Optional: Verify the signed URL is accessible
+    const headCheck = await fetch(signedUrlData.signedUrl, { method: 'HEAD' });
+    if (!headCheck.ok) {
+      throw new Error(`Signed URL not accessible: ${headCheck.status} ${headCheck.statusText}`);
+    }
+
+    console.log(`Created signed URL for ${storagePath}, expires in 24h`);
 
     // 2) Build your config (keep your choices)
     const config = {
@@ -130,18 +143,23 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
       markdown_table_multiline_header_separator: null,
     };
 
-    // 3) Build multipart form (file + config + webhook + metadata)
-    const form = new FormData();
-    form.append(
-      "file",
-      new Blob([await fileBlob.arrayBuffer()], { type: "application/pdf" }),
-      storagePath.split("/").pop() || "manual.pdf",
-    );
-    form.append("config", new Blob([JSON.stringify(config)], { type: "application/json" }), "config.json");
-    form.append("webhook_url", `${supabaseUrl}/functions/v1/llama-webhook?manual_id=${encodeURIComponent(manual_id)}`);
-    form.append("metadata", JSON.stringify({ manual_id, title, storage_path: storagePath }));
+    // 3) Build parse configuration with signed URL and metadata
+    const parseConfig = {
+      ...config,
+      input_url: signedUrlData.signedUrl,
+      webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
+      metadata: {
+        manual_id,
+        title,
+        storage_path: storagePath,
+      },
+    };
 
-    // 4) Post to LlamaCloud
+    // 4) Build form data with config only (no file upload since we're using input_url)
+    const form = new FormData();
+    form.append("config", new Blob([JSON.stringify(parseConfig)], { type: "application/json" }), "config.json");
+
+    // 5) Post to LlamaCloud
     const llamaRes = await fetch("https://api.cloud.llamaindex.ai/api/v1/parsing/upload", {
       method: "POST",
       headers: { Authorization: `Bearer ${llamaCloudApiKey}` },
@@ -154,7 +172,7 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
 
     const result = JSON.parse(llamaText);
 
-    // 5) Create initial document row
+    // 6) Create initial document row
     const { error: docError } = await supabase.from("documents").insert({
       manual_id,
       title,

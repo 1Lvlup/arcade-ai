@@ -8,7 +8,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ManualManagement from "./pages/ManualManagement";
+import VisionBoard from "./pages/VisionBoard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,13 @@ const App = () => (
             <Route path="/manuals" element={
               <ProtectedRoute>
                 <ManualManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/vision-board" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <VisionBoard />
+                </AdminRoute>
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

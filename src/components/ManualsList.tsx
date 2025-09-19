@@ -212,6 +212,15 @@ export function ManualsList() {
                       size="sm"
                       disabled={status.status !== 'processed'}
                       title={status.status !== 'processed' ? 'Manual still processing' : 'Search this manual'}
+                      onClick={() => {
+                        if (status.status === 'processed') {
+                          const searchParams = new URLSearchParams({
+                            manual_id: manual.manual_id,
+                            title: manual.title || manual.source_filename
+                          });
+                          window.open(`/?chat=true&${searchParams.toString()}`, '_blank');
+                        }
+                      }}
                     >
                       <Search className="h-4 w-4 mr-1" />
                       Search

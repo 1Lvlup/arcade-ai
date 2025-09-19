@@ -172,7 +172,6 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
       manual_id,
       title,
       source_filename: storagePath.split("/").pop() || "unknown.pdf",
-      storage_path: storagePath,
       fec_tenant_id: "00000000-0000-0000-0000-000000000001",
       job_id: result.id ?? null,
     });

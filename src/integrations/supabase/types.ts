@@ -261,6 +261,7 @@ export type Database = {
           chunk_id: string
           content: string
           embedding: string
+          fec_tenant_id: string
           id: string
           metadata: Json
         }
@@ -268,6 +269,7 @@ export type Database = {
           chunk_id: string
           content: string
           embedding: string
+          fec_tenant_id?: string
           id?: string
           metadata: Json
         }
@@ -275,6 +277,7 @@ export type Database = {
           chunk_id?: string
           content?: string
           embedding?: string
+          fec_tenant_id?: string
           id?: string
           metadata?: Json
         }

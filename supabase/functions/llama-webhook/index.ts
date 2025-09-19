@@ -142,9 +142,6 @@ if (!manual_id) {
       });
     }
 
-    const urlObj = new URL(req.url);
-    const manual_id = payload?.metadata?.manual_id || urlObj.searchParams.get("manual_id");
-    if (!manual_id) throw new Error("No manual_id found in metadata or query string");
 
     // Inline vs. result_url
     let { text_markdown, figures } = payload;

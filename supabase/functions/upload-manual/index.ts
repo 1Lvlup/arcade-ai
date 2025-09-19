@@ -143,21 +143,16 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
       markdown_table_multiline_header_separator: null,
     };
 
-    // 3) Build parse configuration with signed URL and metadata
-    const parseConfig = {
-      ...config,
-      input_url: signedUrlData.signedUrl,
-      webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
-      metadata: {
-        manual_id,
-        title,
-        storage_path: storagePath,
-      },
-    };
-
-    // 4) Build form data with config only (no file upload since we're using input_url)
+    // 3) Build form data with separate fields as LlamaCloud expects
     const form = new FormData();
-    form.append("config", new Blob([JSON.stringify(parseConfig)], { type: "application/json" }), "config.json");
+    form.append("input_url", signedUrlData.signedUrl);
+    form.append("config", JSON.stringify(config));
+    form.append("webhook_url", `${supabaseUrl}/functions/v1/llama-webhook`);
+    form.append("metadata", JSON.stringify({
+      manual_id,
+      title,
+      storage_path: storagePath,
+    }));
 
     // 5) Post to LlamaCloud
     const llamaRes = await fetch("https://api.cloud.llamaindex.ai/api/v1/parsing/upload", {

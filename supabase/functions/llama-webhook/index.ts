@@ -112,7 +112,26 @@ serve(async (req) => {
 
   try {
     console.log("LlamaCloud webhook received");
-    const payload = await req.json();
+    // existing:
+const payload = await req.json();
+// ADD these lines:
+const url = new URL(req.url);
+const manualIdFromQS = url.searchParams.get('manual_id');
+
+// Be robust about where metadata shows up:
+const manual_id =
+  payload?.metadata?.manual_id ??
+  payload?.config?.metadata?.manual_id ??
+  payload?.job?.metadata?.manual_id ??
+  manualIdFromQS;
+
+if (!manual_id) {
+  // Temporary debugging to see the actual shape you’re getting back:
+  console.error('Webhook payload keys:', Object.keys(payload || {}));
+  console.error('Webhook sample (trimmed):', JSON.stringify(payload).slice(0, 2000));
+  throw new Error('No manual_id found in metadata or query string');
+}
+
     console.log("Webhook status:", payload.status);
 
     if (payload.status && payload.status !== "SUCCESS") {

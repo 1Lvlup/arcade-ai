@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { ProcessingMonitor } from './ProcessingMonitor';
 
 interface UploadStatus {
   status: 'idle' | 'uploading' | 'processing' | 'completed' | 'error';
@@ -15,10 +16,17 @@ interface UploadStatus {
   manual_id?: string;
 }
 
+interface ProcessingJob {
+  job_id: string;
+  manual_id: string;
+  title: string;
+}
+
 export function ManualUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ status: 'idle' });
+  const [processingJobs, setProcessingJobs] = useState<ProcessingJob[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -97,16 +105,25 @@ export function ManualUpload() {
         throw error;
       }
 
+      // Add to processing jobs list
+      const newJob: ProcessingJob = {
+        job_id: data.job_id,
+        manual_id: data.manual_id,
+        title: title.trim()
+      };
+      
+      setProcessingJobs(prev => [newJob, ...prev]);
+
       setUploadStatus({
-        status: 'processing',
-        message: 'Manual uploaded successfully! Processing with LlamaCloud...',
+        status: 'completed',
+        message: 'Upload successful! Processing has started.',
         job_id: data.job_id,
         manual_id: data.manual_id,
       });
 
       toast({
         title: 'Upload successful',
-        description: 'Your manual is being processed. This may take several minutes.',
+        description: 'Your manual is being processed. You can monitor progress below.',
       });
 
       // Reset form
@@ -116,7 +133,7 @@ export function ManualUpload() {
       // Clear status after delay
       setTimeout(() => {
         setUploadStatus({ status: 'idle' });
-      }, 10000);
+      }, 5000);
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -149,6 +166,7 @@ export function ManualUpload() {
   };
 
   return (
+    <>
     <Card className="border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
@@ -221,8 +239,32 @@ export function ManualUpload() {
           <p>• Supported format: PDF files only</p>
           <p>• Processing includes OCR, image extraction, and intelligent chunking</p>
           <p>• Large manuals may take several minutes to process</p>
+          <p>• You can leave this page while processing continues</p>
         </div>
       </CardContent>
     </Card>
+
+    {/* Processing Jobs Monitor */}
+    {processingJobs.length > 0 && (
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Active Processing Jobs</h3>
+        {processingJobs.map((job) => (
+          <ProcessingMonitor
+            key={job.job_id}
+            job_id={job.job_id}
+            manual_id={job.manual_id}
+            onComplete={() => {
+              // Remove from processing jobs when complete
+              setProcessingJobs(prev => prev.filter(j => j.job_id !== job.job_id));
+              toast({
+                title: 'Processing complete',
+                description: `${job.title} is now ready for search!`,
+              });
+            }}
+          />
+        ))}
+      </div>
+    )}
+  </>
   );
 }

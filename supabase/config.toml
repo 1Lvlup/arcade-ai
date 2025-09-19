@@ -68,3 +68,6 @@ verify_jwt = true
 
 [functions.presign-image]
 verify_jwt = true
+
+[functions.check-job-status]
+verify_jwt = false

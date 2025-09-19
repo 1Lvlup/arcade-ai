@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Calendar, Search } from 'lucide-react';
+import { FileText, Calendar, Search, Activity, Database } from 'lucide-react';
 
 interface Manual {
   id: string;
@@ -13,15 +13,43 @@ interface Manual {
   source_filename: string;
   created_at: string;
   updated_at: string;
+  job_id?: string;
+}
+
+interface ChunkCount {
+  manual_id: string;
+  count: number;
 }
 
 export function ManualsList() {
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chunkCounts, setChunkCounts] = useState<ChunkCount[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchManuals();
+    
+    // Set up realtime subscription for document updates
+    const channel = supabase
+      .channel('documents-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'documents'
+        },
+        (payload) => {
+          console.log('Document update:', payload);
+          fetchManuals(); // Refresh list when documents change
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchManuals = async () => {
@@ -36,6 +64,22 @@ export function ManualsList() {
       }
 
       setManuals(data || []);
+
+      // Fetch chunk counts for all manuals
+      if (data && data.length > 0) {
+        const { data: chunkData, error: chunkError } = await supabase
+          .from('chunks_text')
+          .select('manual_id')
+          .in('manual_id', data.map(m => m.manual_id));
+
+        if (!chunkError && chunkData) {
+          const counts = data.map(manual => ({
+            manual_id: manual.manual_id,
+            count: chunkData.filter(chunk => chunk.manual_id === manual.manual_id).length
+          }));
+          setChunkCounts(counts);
+        }
+      }
     } catch (error) {
       console.error('Error fetching manuals:', error);
       toast({
@@ -59,15 +103,35 @@ export function ManualsList() {
   };
 
   const getProcessingStatus = (manual: Manual) => {
+    const chunkCount = chunkCounts.find(c => c.manual_id === manual.manual_id)?.count || 0;
     const createdAt = new Date(manual.created_at);
-    const updatedAt = new Date(manual.updated_at);
-    const timeDiff = updatedAt.getTime() - createdAt.getTime();
+    const now = new Date();
+    const timeSinceCreation = now.getTime() - createdAt.getTime();
     
-    // If updated significantly after creation, likely processed
-    if (timeDiff > 60000) { // More than 1 minute difference
-      return { status: 'processed', label: 'Processed', variant: 'default' as const };
+    if (chunkCount > 0) {
+      return { 
+        status: 'processed', 
+        label: `Ready (${chunkCount} chunks)`, 
+        variant: 'default' as const,
+        icon: Database,
+        color: 'text-green-500'
+      };
+    } else if (timeSinceCreation > 1800000) { // 30 minutes
+      return { 
+        status: 'stalled', 
+        label: 'Processing stalled', 
+        variant: 'destructive' as const,
+        icon: Activity,
+        color: 'text-red-500'
+      };
     } else {
-      return { status: 'processing', label: 'Processing', variant: 'secondary' as const };
+      return { 
+        status: 'processing', 
+        label: 'Processing...', 
+        variant: 'secondary' as const,
+        icon: Activity,
+        color: 'text-orange-500'
+      };
     }
   };
 
@@ -112,6 +176,7 @@ export function ManualsList() {
           <div className="space-y-3">
             {manuals.map((manual) => {
               const status = getProcessingStatus(manual);
+              const StatusIcon = status.icon;
               return (
                 <div
                   key={manual.id}
@@ -120,8 +185,9 @@ export function ManualsList() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
                       <h3 className="font-medium truncate">{manual.title}</h3>
-                      <Badge variant={status.variant} className="text-xs">
-                        {status.label}
+                      <Badge variant={status.variant} className="text-xs flex items-center space-x-1">
+                        <StatusIcon className={`h-3 w-3 ${status.color} ${status.status === 'processing' ? 'animate-pulse' : ''}`} />
+                        <span>{status.label}</span>
                       </Badge>
                     </div>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
@@ -132,14 +198,20 @@ export function ManualsList() {
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      ID: {manual.manual_id}
+                      Manual ID: {manual.manual_id}
+                      {manual.job_id && (
+                        <span className="ml-2">
+                          Job ID: {manual.job_id}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 ml-4">
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={status.status === 'processing'}
+                      disabled={status.status !== 'processed'}
+                      title={status.status !== 'processed' ? 'Manual still processing' : 'Search this manual'}
                     >
                       <Search className="h-4 w-4 mr-1" />
                       Search

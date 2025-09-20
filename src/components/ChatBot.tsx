@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { ManualSelector } from '@/components/ManualSelector';
 import { 
   MessageCircle, 
@@ -13,15 +12,17 @@ import {
   Bot, 
   User, 
   FileText,
-  Image as ImageIcon,
-  ExternalLink 
+  Image as ImageIcon
 } from 'lucide-react';
+
+type OpenAIMessage = { role: 'user' | 'assistant'; content: string };
 
 interface ChatMessage {
   id: string;
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
+  // keep this in case we later return sources from the edge function
   searchResults?: SearchResult[];
 }
 
@@ -41,6 +42,15 @@ interface SearchResult {
 interface ChatBotProps {
   selectedManualId?: string;
   manualTitle?: string;
+}
+
+function toOpenAIMessages(chat: ChatMessage[]): OpenAIMessage[] {
+  return chat
+    .filter(m => m.type === 'user' || m.type === 'bot')
+    .map(m => ({
+      role: m.type === 'user' ? 'user' : 'assistant',
+      content: m.content
+    }));
 }
 
 export function ChatBot({ selectedManualId: initialManualId, manualTitle: initialManualTitle }: ChatBotProps) {
@@ -79,185 +89,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const handleManualChange = (newManualId: string | null, newManualTitle: string | null) => {
     setSelectedManualId(newManualId);
     setManualTitle(newManualTitle);
-    // Clear chat history when switching manuals
-    setMessages([]);
-    // Update welcome message will be triggered by useEffect
-  };
-
-  const searchManuals = async (query: string, manualId?: string | null): Promise<SearchResult[]> => {
-    const searchParams = {
-      query,
-      manual_id: manualId !== undefined ? manualId : selectedManualId,
-      max_results: 5
-    };
-    
-    console.log('🔍 [CHAT] Starting manual search:', {
-      query: query.slice(0, 100) + (query.length > 100 ? '...' : ''),
-      manual_id: searchParams.manual_id,
-      max_results: searchParams.max_results,
-      timestamp: new Date().toISOString()
-    });
-
-    try {
-      const { data, error } = await supabase.functions.invoke('search-manuals', {
-        body: searchParams
-      });
-
-      if (error) {
-        console.error('❌ [CHAT] Search function returned error:', {
-          error,
-          searchParams,
-          timestamp: new Date().toISOString()
-        });
-        throw error;
-      }
-
-      const results = data?.results || [];
-      console.log('✅ [CHAT] Search completed successfully:', {
-        resultsCount: results.length,
-        hasResults: results.length > 0,
-        firstResultPreview: results[0] ? {
-          manual_title: results[0].manual_title,
-          similarity: results[0].similarity,
-          content_preview: results[0].content.slice(0, 50) + '...'
-        } : null,
-        timestamp: new Date().toISOString()
-      });
-
-      return results;
-    } catch (error) {
-      console.error('🚨 [CHAT] Search function failed completely:', {
-        error: error.message,
-        errorType: error.constructor.name,
-        searchParams,
-        timestamp: new Date().toISOString()
-      });
-      throw error;
-    }
-  };
-
-  const searchWithFallback = async (query: string): Promise<{ results: SearchResult[], fallbackUsed: boolean, suggestedManuals?: string[] }> => {
-    // First search in selected manual
-    const primaryResults = await searchManuals(query, selectedManualId);
-    
-    if (primaryResults.length > 0) {
-      return { results: primaryResults, fallbackUsed: false };
-    }
-
-    // If no results and we have a selected manual, search all manuals
-    if (selectedManualId) {
-      const fallbackResults = await searchManuals(query, null);
-      if (fallbackResults.length > 0) {
-        // Extract unique manual titles from fallback results
-        const suggestedManuals = [...new Set(fallbackResults.map(r => r.manual_title))];
-        return { 
-          results: fallbackResults, 
-          fallbackUsed: true, 
-          suggestedManuals 
-        };
-      }
-    }
-
-    return { results: [], fallbackUsed: false };
-  };
-
-  const generateResponse = async (
-    query: string, 
-    searchResults: SearchResult[], 
-    fallbackUsed: boolean = false, 
-    suggestedManuals?: string[]
-  ): Promise<string> => {
-    console.log('🤖 [CHAT] Starting AI response generation:', {
-      query: query.slice(0, 100) + (query.length > 100 ? '...' : ''),
-      searchResultsCount: searchResults.length,
-      fallbackUsed,
-      suggestedManuals,
-      selectedManual: manualTitle,
-      timestamp: new Date().toISOString()
-    });
-
-    try {
-      // Create context from search results
-      const context = searchResults.map(result => 
-        `[${result.manual_title}${result.page_start ? ` - Page ${result.page_start}` : ''}${result.menu_path ? ` - ${result.menu_path}` : ''}]\n${result.content}`
-      ).join('\n\n');
-
-      const currentManualContext = selectedManualId 
-        ? `The user has selected "${manualTitle}" as their current manual but ${fallbackUsed ? 'no relevant information was found in it' : 'information was found'}.`
-        : 'The user is searching across all manuals.';
-
-      const fallbackContext = fallbackUsed && suggestedManuals 
-        ? `\n\nIMPORTANT: The information below was found in other manuals (${suggestedManuals.join(', ')}), not in the user's selected manual "${manualTitle}". You should mention this and suggest they might want to select the correct manual.`
-        : '';
-
-      const systemPrompt = `You are an expert arcade machine technician assistant. Use the provided manual content to answer troubleshooting questions. Be specific, practical, and reference the manual sections when relevant.
-
-${currentManualContext}${fallbackContext}
-
-${fallbackUsed ? `Since no information was found in "${manualTitle}", you should:
-1. Clearly state that the information isn't in their selected manual
-2. Mention that you found relevant information in other manuals
-3. Suggest they might have selected the wrong manual
-4. Provide the helpful information found in other manuals
-5. Recommend which manual they should select instead` : ''}
-
-Always format your response clearly with:
-1. A direct answer to the question
-2. Step-by-step instructions when applicable  
-3. Safety warnings if relevant
-4. References to the manual sections used
-${fallbackUsed ? '5. Clear indication of which manual contains the information' : ''}
-
-Context from manuals:
-${context}`;
-
-      const generateParams = {
-        system_prompt: systemPrompt,
-        user_message: query
-      };
-
-      console.log('📤 [CHAT] Calling generate-response function:', {
-        systemPromptLength: systemPrompt.length,
-        userMessageLength: query.length,
-        contextLength: context.length,
-        timestamp: new Date().toISOString()
-      });
-
-      const { data, error } = await supabase.functions.invoke('generate-response', {
-        body: generateParams
-      });
-
-      if (error) {
-        console.error('❌ [CHAT] Generate-response function returned error:', {
-          error,
-          generateParams: {
-            ...generateParams,
-            system_prompt: systemPrompt.slice(0, 100) + '...',
-            user_message: query.slice(0, 100) + '...'
-          },
-          timestamp: new Date().toISOString()
-        });
-        throw error;
-      }
-
-      const response = data?.response || 'I apologize, but I encountered an issue generating a response. Please try rephrasing your question.';
-      
-      console.log('✅ [CHAT] AI response generated successfully:', {
-        responseLength: response.length,
-        responsePreview: response.slice(0, 100) + (response.length > 100 ? '...' : ''),
-        timestamp: new Date().toISOString()
-      });
-
-      return response;
-    } catch (error) {
-      console.error('🚨 [CHAT] Generate-response function failed completely:', {
-        error: error.message,
-        errorType: error.constructor.name,
-        stack: error.stack,
-        timestamp: new Date().toISOString()
-      });
-      return 'I apologize, but I encountered an issue accessing the AI service. Please try again later.';
-    }
+    setMessages([]); // clear chat when switching manuals
   };
 
   const handleSendMessage = async () => {
@@ -270,93 +102,54 @@ ${context}`;
       timestamp: new Date()
     };
 
-    console.log('💬 [CHAT] User message submitted:', {
-      messageId: userMessage.id,
-      content: userMessage.content.slice(0, 100) + (userMessage.content.length > 100 ? '...' : ''),
-      contentLength: userMessage.content.length,
-      selectedManual: manualTitle,
-      selectedManualId,
-      timestamp: new Date().toISOString()
-    });
-
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
 
     try {
-      console.log('🔄 [CHAT] Starting search with fallback strategy...');
-      
-      // Search with fallback strategy
-      const { results: searchResults, fallbackUsed, suggestedManuals } = await searchWithFallback(userMessage.content);
+      const convo = toOpenAIMessages([...messages, userMessage]);
 
-      console.log('📊 [CHAT] Search strategy completed:', {
-        searchResultsCount: searchResults.length,
-        fallbackUsed,
-        suggestedManuals,
-        timestamp: new Date().toISOString()
+      // IMPORTANT: NEXT_PUBLIC_SUPABASE_URL must be set (see note below)
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-assistant`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: convo,
+          manual_id: selectedManualId ?? null
+        })
       });
 
-      let botResponse: string;
-      if (searchResults.length === 0) {
-        console.log('⚠️ [CHAT] No search results found, providing fallback guidance');
-        
-        // No results found anywhere - provide helpful guidance
-        botResponse = selectedManualId 
-          ? `I couldn't find information about "${userMessage.content}" in "${manualTitle}" or any other uploaded manuals. This could mean:
-
-• The information might not be covered in your manuals
-• Try rephrasing your question with different terms
-• Make sure your manuals are fully processed (showing "Ready" status)
-• Consider if this is a general arcade issue that might need different troubleshooting approaches
-
-For common arcade issues, I can still try to provide general guidance. Would you like me to suggest some typical troubleshooting steps for this type of problem?`
-          : `I couldn't find information about "${userMessage.content}" in your uploaded manuals. Make sure your manuals are fully processed (showing "Ready" status) and try rephrasing your question with different terms.
-
-I can also provide general arcade troubleshooting guidance if you'd like. What specific symptoms are you experiencing?`;
-      } else {
-        console.log('🎯 [CHAT] Found search results, generating AI response...');
-        botResponse = await generateResponse(userMessage.content, searchResults, fallbackUsed, suggestedManuals);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`chat-assistant failed: ${res.status} ${text}`);
       }
 
+      const data = await res.json();
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: botResponse,
+        content: data.answer ?? 'Sorry—I couldn’t generate a response.',
         timestamp: new Date(),
-        searchResults: searchResults.length > 0 ? searchResults : undefined
+        // if you later return sources, attach them here:
+        // searchResults: data.sources ?? undefined
       };
 
-      console.log('✅ [CHAT] Chat cycle completed successfully:', {
-        botMessageId: botMessage.id,
-        responseLength: botResponse.length,
-        hasSearchResults: !!botMessage.searchResults,
-        timestamp: new Date().toISOString()
-      });
-
       setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
-      console.error('🚨 [CHAT] Complete chat cycle failed:', {
-        error: error.message,
-        errorType: error.constructor.name,
-        stack: error.stack,
-        userMessage: userMessage.content.slice(0, 100),
-        timestamp: new Date().toISOString()
-      });
-
+    } catch (err: any) {
+      console.error('chat error:', err);
       toast({
         title: 'Error',
         description: 'Failed to process your question. Please try again.',
         variant: 'destructive',
       });
-
-      const errorMessage: ChatMessage = {
+      setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: 'I apologize, but I encountered an error while processing your question. Please try again.',
+        content: 'I hit an error talking to the assistant. Please try again.',
         timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
+      }]);
     } finally {
       setIsLoading(false);
     }
@@ -419,13 +212,13 @@ I can also provide general arcade troubleshooting guidance if you'd like. What s
                 
                 <div className="text-sm whitespace-pre-wrap">{message.content}</div>
                 
-                {/* Search Results */}
+                {/* Sources block — will populate later if the edge function returns sources */}
                 {message.searchResults && message.searchResults.length > 0 && (
                   <div className="mt-3 space-y-2">
                     <div className="text-xs font-medium opacity-70">
                       Sources ({message.searchResults.length})
                     </div>
-                    {message.searchResults.map((result, index) => (
+                    {message.searchResults.map((result) => (
                       <div
                         key={result.id}
                         className="text-xs p-2 bg-background/50 rounded border border-border"
@@ -485,7 +278,7 @@ I can also provide general arcade troubleshooting guidance if you'd like. What s
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Ask me about arcade machine troubleshooting..."
               disabled={isLoading}
               className="flex-1"

@@ -20,12 +20,12 @@ serve(async (req) => {
     }
 
     const { system_prompt, user_message } = await req.json();
-
+    
     if (!user_message) {
       throw new Error('User message is required');
     }
 
-    console.log('Generating response for:', user_message);
+    console.log('Generating response for:', user_message.slice(0, 100));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -36,23 +36,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: system_prompt || `You are an expert arcade machine technician assistant. 
-
-When you don't have specific manual information:
-- Provide general troubleshooting principles that apply to arcade machines
-- Suggest common solutions for similar problems
-- Recommend safety precautions
-- Ask clarifying questions to better understand the issue
-- Mention that specific manual information would be more accurate
-
-Always be helpful and practical, even with limited information.`
-          },
-          {
-            role: 'user',
-            content: user_message
-          }
+          ...(system_prompt ? [{ role: 'system', content: system_prompt }] : []),
+          { role: 'user', content: user_message }
         ],
         max_tokens: 1000,
         temperature: 0.7,
@@ -60,25 +45,23 @@ Always be helpful and practical, even with limited information.`
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      const errorData = await response.text();
+      console.error('OpenAI API error:', response.status, errorData);
+      throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
     const data = await response.json();
     const generatedResponse = data.choices[0].message.content;
 
-    console.log('Generated response length:', generatedResponse.length);
+    console.log('Response generated successfully');
 
-    return new Response(JSON.stringify({
-      response: generatedResponse
-    }), {
+    return new Response(JSON.stringify({ response: generatedResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in generate-response function:', error);
-    return new Response(JSON.stringify({
+    return new Response(JSON.stringify({ 
       error: error.message,
       details: error.toString()
     }), {

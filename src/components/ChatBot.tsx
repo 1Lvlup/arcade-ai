@@ -85,23 +85,53 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   };
 
   const searchManuals = async (query: string, manualId?: string | null): Promise<SearchResult[]> => {
+    const searchParams = {
+      query,
+      manual_id: manualId !== undefined ? manualId : selectedManualId,
+      max_results: 5
+    };
+    
+    console.log('🔍 [CHAT] Starting manual search:', {
+      query: query.slice(0, 100) + (query.length > 100 ? '...' : ''),
+      manual_id: searchParams.manual_id,
+      max_results: searchParams.max_results,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       const { data, error } = await supabase.functions.invoke('search-manuals', {
-        body: {
-          query,
-          manual_id: manualId !== undefined ? manualId : selectedManualId,
-          max_results: 5
-        }
+        body: searchParams
       });
 
       if (error) {
-        console.error('Search error:', error);
+        console.error('❌ [CHAT] Search function returned error:', {
+          error,
+          searchParams,
+          timestamp: new Date().toISOString()
+        });
         throw error;
       }
 
-      return data?.results || [];
+      const results = data?.results || [];
+      console.log('✅ [CHAT] Search completed successfully:', {
+        resultsCount: results.length,
+        hasResults: results.length > 0,
+        firstResultPreview: results[0] ? {
+          manual_title: results[0].manual_title,
+          similarity: results[0].similarity,
+          content_preview: results[0].content.slice(0, 50) + '...'
+        } : null,
+        timestamp: new Date().toISOString()
+      });
+
+      return results;
     } catch (error) {
-      console.error('Failed to search manuals:', error);
+      console.error('🚨 [CHAT] Search function failed completely:', {
+        error: error.message,
+        errorType: error.constructor.name,
+        searchParams,
+        timestamp: new Date().toISOString()
+      });
       throw error;
     }
   };
@@ -137,6 +167,15 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     fallbackUsed: boolean = false, 
     suggestedManuals?: string[]
   ): Promise<string> => {
+    console.log('🤖 [CHAT] Starting AI response generation:', {
+      query: query.slice(0, 100) + (query.length > 100 ? '...' : ''),
+      searchResultsCount: searchResults.length,
+      fallbackUsed,
+      suggestedManuals,
+      selectedManual: manualTitle,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       // Create context from search results
       const context = searchResults.map(result => 
@@ -172,21 +211,51 @@ ${fallbackUsed ? '5. Clear indication of which manual contains the information' 
 Context from manuals:
 ${context}`;
 
+      const generateParams = {
+        system_prompt: systemPrompt,
+        user_message: query
+      };
+
+      console.log('📤 [CHAT] Calling generate-response function:', {
+        systemPromptLength: systemPrompt.length,
+        userMessageLength: query.length,
+        contextLength: context.length,
+        timestamp: new Date().toISOString()
+      });
+
       const { data, error } = await supabase.functions.invoke('generate-response', {
-        body: {
-          system_prompt: systemPrompt,
-          user_message: query
-        }
+        body: generateParams
       });
 
       if (error) {
-        console.error('Response generation error:', error);
+        console.error('❌ [CHAT] Generate-response function returned error:', {
+          error,
+          generateParams: {
+            ...generateParams,
+            system_prompt: systemPrompt.slice(0, 100) + '...',
+            user_message: query.slice(0, 100) + '...'
+          },
+          timestamp: new Date().toISOString()
+        });
         throw error;
       }
 
-      return data?.response || 'I apologize, but I encountered an issue generating a response. Please try rephrasing your question.';
+      const response = data?.response || 'I apologize, but I encountered an issue generating a response. Please try rephrasing your question.';
+      
+      console.log('✅ [CHAT] AI response generated successfully:', {
+        responseLength: response.length,
+        responsePreview: response.slice(0, 100) + (response.length > 100 ? '...' : ''),
+        timestamp: new Date().toISOString()
+      });
+
+      return response;
     } catch (error) {
-      console.error('Failed to generate response:', error);
+      console.error('🚨 [CHAT] Generate-response function failed completely:', {
+        error: error.message,
+        errorType: error.constructor.name,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      });
       return 'I apologize, but I encountered an issue accessing the AI service. Please try again later.';
     }
   };
@@ -201,16 +270,36 @@ ${context}`;
       timestamp: new Date()
     };
 
+    console.log('💬 [CHAT] User message submitted:', {
+      messageId: userMessage.id,
+      content: userMessage.content.slice(0, 100) + (userMessage.content.length > 100 ? '...' : ''),
+      contentLength: userMessage.content.length,
+      selectedManual: manualTitle,
+      selectedManualId,
+      timestamp: new Date().toISOString()
+    });
+
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
 
     try {
+      console.log('🔄 [CHAT] Starting search with fallback strategy...');
+      
       // Search with fallback strategy
       const { results: searchResults, fallbackUsed, suggestedManuals } = await searchWithFallback(userMessage.content);
 
+      console.log('📊 [CHAT] Search strategy completed:', {
+        searchResultsCount: searchResults.length,
+        fallbackUsed,
+        suggestedManuals,
+        timestamp: new Date().toISOString()
+      });
+
       let botResponse: string;
       if (searchResults.length === 0) {
+        console.log('⚠️ [CHAT] No search results found, providing fallback guidance');
+        
         // No results found anywhere - provide helpful guidance
         botResponse = selectedManualId 
           ? `I couldn't find information about "${userMessage.content}" in "${manualTitle}" or any other uploaded manuals. This could mean:
@@ -225,6 +314,7 @@ For common arcade issues, I can still try to provide general guidance. Would you
 
 I can also provide general arcade troubleshooting guidance if you'd like. What specific symptoms are you experiencing?`;
       } else {
+        console.log('🎯 [CHAT] Found search results, generating AI response...');
         botResponse = await generateResponse(userMessage.content, searchResults, fallbackUsed, suggestedManuals);
       }
 
@@ -236,8 +326,23 @@ I can also provide general arcade troubleshooting guidance if you'd like. What s
         searchResults: searchResults.length > 0 ? searchResults : undefined
       };
 
+      console.log('✅ [CHAT] Chat cycle completed successfully:', {
+        botMessageId: botMessage.id,
+        responseLength: botResponse.length,
+        hasSearchResults: !!botMessage.searchResults,
+        timestamp: new Date().toISOString()
+      });
+
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
+      console.error('🚨 [CHAT] Complete chat cycle failed:', {
+        error: error.message,
+        errorType: error.constructor.name,
+        stack: error.stack,
+        userMessage: userMessage.content.slice(0, 100),
+        timestamp: new Date().toISOString()
+      });
+
       toast({
         title: 'Error',
         description: 'Failed to process your question. Please try again.',

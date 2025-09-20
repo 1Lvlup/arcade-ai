@@ -50,71 +50,108 @@ serve(async (req) => {
   }
 
   try {
-    const { query, manual_id, max_results = 10 } = await req.json();
+    const requestBody = await req.json();
+    const { query, manual_id, max_results = 10 } = requestBody;
+    
+    console.log('🔍 [SEARCH] Function invoked:', {
+      query: query?.slice(0, 100) + (query?.length > 100 ? '...' : ''),
+      manual_id,
+      max_results,
+      timestamp: new Date().toISOString()
+    });
     
     if (!query) {
+      console.error('❌ [SEARCH] Query is required');
       throw new Error('Query is required');
     }
 
-    console.log(`Searching for: "${query}" in manual: ${manual_id || 'all'}`);
+    console.log(`🔍 [SEARCH] Searching for: "${query}" in manual: ${manual_id || 'all'}`);
 
     // Extract tenant context from authorization header for tenant isolation
     const authHeader = req.headers.get('authorization');
+    console.log('🔐 [SEARCH] Checking authorization header:', !!authHeader);
+    
     if (authHeader) {
       try {
+        console.log('🔐 [SEARCH] Extracting user from token...');
         const token = authHeader.replace('Bearer ', '');
         const { data: { user } } = await supabase.auth.getUser(token);
         
         if (user) {
+          console.log('✅ [SEARCH] User authenticated:', { userId: user.id });
+          
           // Get user's tenant ID from profiles
+          console.log('🏢 [SEARCH] Fetching user profile for tenant context...');
           const { data: profile } = await supabase
             .from('profiles')
             .select('fec_tenant_id')
             .eq('user_id', user.id)
             .single();
             
+          console.log('👤 [SEARCH] Profile data:', { profile: !!profile, tenant_id: profile?.fec_tenant_id });
+            
           if (profile?.fec_tenant_id) {
             // Set tenant context for this session
+            console.log('🏢 [SEARCH] Setting tenant context...');
             await supabase.rpc('set_tenant_context', {
               tenant_id: profile.fec_tenant_id
             });
-            console.log(`Set tenant context: ${profile.fec_tenant_id}`);
+            console.log(`✅ [SEARCH] Set tenant context: ${profile.fec_tenant_id}`);
+          } else {
+            console.log('⚠️ [SEARCH] No tenant ID found in profile');
           }
+        } else {
+          console.log('❌ [SEARCH] No user found from token');
         }
       } catch (authError) {
-        console.error('Error setting tenant context:', authError);
+        console.error('❌ [SEARCH] Error setting tenant context:', authError);
       }
+    } else {
+      console.log('⚠️ [SEARCH] No authorization header provided');
     }
 
     // Create embedding for the search query
+    console.log('🧠 [SEARCH] Creating embedding for query...');
     const queryEmbedding = await createEmbedding(query);
+    console.log('✅ [SEARCH] Embedding created, length:', queryEmbedding.length);
 
     // Search using the database function
+    const searchParams = {
+      query_embedding: queryEmbedding,
+      search_manual_id: manual_id || null,
+      match_count: max_results,
+      similarity_threshold: 0.7
+    };
+
+    console.log('🗄️ [SEARCH] Executing database search with params:', {
+      ...searchParams,
+      query_embedding: `[${queryEmbedding.length} dimensions]`
+    });
+
     const { data: searchResults, error: searchError } = await supabase
-      .rpc('search_manual_content', {
-        query_embedding: queryEmbedding,
-        search_manual_id: manual_id || null,
-        match_count: max_results,
-        similarity_threshold: 0.7
-      });
+      .rpc('search_manual_content', searchParams);
 
     if (searchError) {
-      console.error('Search error:', searchError);
+      console.error('❌ [SEARCH] Database search error:', searchError);
       throw searchError;
     }
 
-    console.log(`Found ${searchResults?.length || 0} results`);
+    console.log(`📊 [SEARCH] Database search completed - Found ${searchResults?.length || 0} results`);
 
     // Enhance results with manual titles
+    console.log('📚 [SEARCH] Enhancing results with manual titles...');
     const enhancedResults = [];
     if (searchResults && searchResults.length > 0) {
       // Get manual titles for context
       const manualIds = [...new Set(searchResults.map(r => r.manual_id))];
+      console.log('📚 [SEARCH] Fetching manual titles for IDs:', manualIds);
+      
       const { data: manuals } = await supabase
         .from('documents')
         .select('manual_id, title')
         .in('manual_id', manualIds);
 
+      console.log('📚 [SEARCH] Manual titles fetched:', manuals?.length || 0);
       const manualTitleMap = new Map(manuals?.map(m => [m.manual_id, m.title]) || []);
 
       for (const result of searchResults) {
@@ -136,6 +173,15 @@ serve(async (req) => {
       }
     }
 
+    console.log('✅ [SEARCH] Search completed successfully:', {
+      resultsCount: enhancedResults.length,
+      manualTitles: [...new Set(enhancedResults.map(r => r.manual_title))],
+      avgSimilarity: enhancedResults.length > 0 
+        ? enhancedResults.reduce((sum, r) => sum + r.similarity, 0) / enhancedResults.length 
+        : 0,
+      timestamp: new Date().toISOString()
+    });
+
     return new Response(JSON.stringify({
       query,
       results: enhancedResults,
@@ -145,7 +191,12 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in search-manuals function:', error);
+    console.error('🚨 [SEARCH] Function failed completely:', {
+      error: error.message,
+      errorType: error.constructor.name,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     return new Response(JSON.stringify({ 
       error: error.message,
       details: error.toString()

@@ -48,7 +48,7 @@ async function createEmbedding(text: string) {
   const r = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "text-embedding-3-large", input }),
+    body: JSON.stringify({ model: "text-embedding-3-small", input }),
   });
   const t = await r.text();
   if (!r.ok) throw new Error(`OpenAI embedding failed: ${r.status} ${r.statusText} – ${t.slice(0, 1000)}`);

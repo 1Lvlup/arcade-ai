@@ -58,6 +58,34 @@ serve(async (req) => {
 
     console.log(`Searching for: "${query}" in manual: ${manual_id || 'all'}`);
 
+    // Extract tenant context from authorization header for tenant isolation
+    const authHeader = req.headers.get('authorization');
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        
+        if (user) {
+          // Get user's tenant ID from profiles
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('fec_tenant_id')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (profile?.fec_tenant_id) {
+            // Set tenant context for this session
+            await supabase.rpc('set_tenant_context', {
+              tenant_id: profile.fec_tenant_id
+            });
+            console.log(`Set tenant context: ${profile.fec_tenant_id}`);
+          }
+        }
+      } catch (authError) {
+        console.error('Error setting tenant context:', authError);
+      }
+    }
+
     // Create embedding for the search query
     const queryEmbedding = await createEmbedding(query);
 

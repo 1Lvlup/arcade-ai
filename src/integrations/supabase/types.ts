@@ -288,6 +288,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_current_tenant_context: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_current_user_fec_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -341,6 +345,10 @@ export type Database = {
           page_start: number
           similarity: number
         }[]
+      }
+      set_tenant_context: {
+        Args: { tenant_id: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -27,6 +27,37 @@ serve(async (req) => {
     const { title, storagePath } = await req.json();
     if (!title || !storagePath) throw new Error("Title and storagePath are required");
 
+    // Extract tenant context from authorization header for tenant isolation
+    const authHeader = req.headers.get('authorization');
+    let userTenantId = '00000000-0000-0000-0000-000000000001'; // default tenant
+    
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        
+        if (user) {
+          // Get user's tenant ID from profiles
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('fec_tenant_id')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (profile?.fec_tenant_id) {
+            userTenantId = profile.fec_tenant_id;
+            // Set tenant context for this session
+            await supabase.rpc('set_tenant_context', {
+              tenant_id: userTenantId
+            });
+            console.log(`Set tenant context: ${userTenantId}`);
+          }
+        }
+      } catch (authError) {
+        console.error('Error setting tenant context:', authError);
+      }
+    }
+
     const manual_id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     console.log(`manual_id: ${manual_id}`);
 
@@ -172,7 +203,7 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
       manual_id,
       title,
       source_filename: storagePath.split("/").pop() || "unknown.pdf",
-      fec_tenant_id: "00000000-0000-0000-0000-000000000001",
+      fec_tenant_id: userTenantId,
       job_id: result.id ?? null,
     });
     if (docError) throw docError;

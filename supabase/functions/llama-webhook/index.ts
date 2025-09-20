@@ -111,10 +111,10 @@ serve(async (req) => {
       throw new Error("No jobId found in payload");
     }
 
-    // Look up manual_id from documents table using job_id
+    // Look up manual_id and fec_tenant_id from documents table using job_id
     const { data: docData, error: docError } = await supabase
       .from("documents")
-      .select("manual_id")
+      .select("manual_id, fec_tenant_id")
       .eq("job_id", jobId)
       .single();
 
@@ -122,6 +122,12 @@ serve(async (req) => {
       console.error("Failed to find document with job_id:", jobId, docError);
       throw new Error(`No document found for job_id: ${jobId}`);
     }
+
+    // Set tenant context for this session to ensure data isolation
+    await supabase.rpc('set_tenant_context', {
+      tenant_id: docData.fec_tenant_id
+    });
+    console.log(`Set tenant context: ${docData.fec_tenant_id}`);
 
     const manual_id = docData.manual_id;
     console.log(`Processing manual: ${manual_id} (job: ${jobId})`);
@@ -197,7 +203,7 @@ serve(async (req) => {
           callouts_json: fig.callouts ?? null,
           bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
           embedding_text: embedding,
-          fec_tenant_id: "00000000-0000-0000-0000-000000000001",
+          fec_tenant_id: docData.fec_tenant_id,
         });
         if (figErr) console.error("figures insert error:", figErr);
         else processedFigures++;
@@ -221,7 +227,7 @@ serve(async (req) => {
             menu_path: ch.menu_path ?? null,
             content: ch.content,
             embedding,
-            fec_tenant_id: "00000000-0000-0000-0000-000000000001",
+            fec_tenant_id: docData.fec_tenant_id,
           });
           if (insErr) console.error("chunks_text insert error:", insErr);
           else processedChunks++;

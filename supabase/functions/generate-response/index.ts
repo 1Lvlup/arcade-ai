@@ -38,14 +38,23 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: system_prompt || 'You are a helpful arcade machine technician assistant.'
+            content: system_prompt || `You are an expert arcade machine technician assistant. 
+
+When you don't have specific manual information:
+- Provide general troubleshooting principles that apply to arcade machines
+- Suggest common solutions for similar problems
+- Recommend safety precautions
+- Ask clarifying questions to better understand the issue
+- Mention that specific manual information would be more accurate
+
+Always be helpful and practical, even with limited information.`
           },
           {
             role: 'user',
             content: user_message
           }
         ],
-        max_tokens: 800,
+        max_tokens: 1000,
         temperature: 0.7,
       }),
     });

@@ -84,12 +84,12 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     // Update welcome message will be triggered by useEffect
   };
 
-  const searchManuals = async (query: string): Promise<SearchResult[]> => {
+  const searchManuals = async (query: string, manualId?: string | null): Promise<SearchResult[]> => {
     try {
       const { data, error } = await supabase.functions.invoke('search-manuals', {
         body: {
           query,
-          manual_id: selectedManualId || null,
+          manual_id: manualId !== undefined ? manualId : selectedManualId,
           max_results: 5
         }
       });
@@ -106,22 +106,68 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     }
   };
 
-  const generateResponse = async (query: string, searchResults: SearchResult[]): Promise<string> => {
+  const searchWithFallback = async (query: string): Promise<{ results: SearchResult[], fallbackUsed: boolean, suggestedManuals?: string[] }> => {
+    // First search in selected manual
+    const primaryResults = await searchManuals(query, selectedManualId);
+    
+    if (primaryResults.length > 0) {
+      return { results: primaryResults, fallbackUsed: false };
+    }
+
+    // If no results and we have a selected manual, search all manuals
+    if (selectedManualId) {
+      const fallbackResults = await searchManuals(query, null);
+      if (fallbackResults.length > 0) {
+        // Extract unique manual titles from fallback results
+        const suggestedManuals = [...new Set(fallbackResults.map(r => r.manual_title))];
+        return { 
+          results: fallbackResults, 
+          fallbackUsed: true, 
+          suggestedManuals 
+        };
+      }
+    }
+
+    return { results: [], fallbackUsed: false };
+  };
+
+  const generateResponse = async (
+    query: string, 
+    searchResults: SearchResult[], 
+    fallbackUsed: boolean = false, 
+    suggestedManuals?: string[]
+  ): Promise<string> => {
     try {
       // Create context from search results
       const context = searchResults.map(result => 
         `[${result.manual_title}${result.page_start ? ` - Page ${result.page_start}` : ''}${result.menu_path ? ` - ${result.menu_path}` : ''}]\n${result.content}`
       ).join('\n\n');
 
+      const currentManualContext = selectedManualId 
+        ? `The user has selected "${manualTitle}" as their current manual but ${fallbackUsed ? 'no relevant information was found in it' : 'information was found'}.`
+        : 'The user is searching across all manuals.';
+
+      const fallbackContext = fallbackUsed && suggestedManuals 
+        ? `\n\nIMPORTANT: The information below was found in other manuals (${suggestedManuals.join(', ')}), not in the user's selected manual "${manualTitle}". You should mention this and suggest they might want to select the correct manual.`
+        : '';
+
       const systemPrompt = `You are an expert arcade machine technician assistant. Use the provided manual content to answer troubleshooting questions. Be specific, practical, and reference the manual sections when relevant.
 
-If the provided context doesn't contain relevant information, say so honestly and suggest what additional information might be needed.
+${currentManualContext}${fallbackContext}
+
+${fallbackUsed ? `Since no information was found in "${manualTitle}", you should:
+1. Clearly state that the information isn't in their selected manual
+2. Mention that you found relevant information in other manuals
+3. Suggest they might have selected the wrong manual
+4. Provide the helpful information found in other manuals
+5. Recommend which manual they should select instead` : ''}
 
 Always format your response clearly with:
 1. A direct answer to the question
-2. Step-by-step instructions when applicable
+2. Step-by-step instructions when applicable  
 3. Safety warnings if relevant
 4. References to the manual sections used
+${fallbackUsed ? '5. Clear indication of which manual contains the information' : ''}
 
 Context from manuals:
 ${context}`;
@@ -160,16 +206,26 @@ ${context}`;
     setIsLoading(true);
 
     try {
-      // Search for relevant content
-      const searchResults = await searchManuals(userMessage.content);
+      // Search with fallback strategy
+      const { results: searchResults, fallbackUsed, suggestedManuals } = await searchWithFallback(userMessage.content);
 
       let botResponse: string;
       if (searchResults.length === 0) {
+        // No results found anywhere - provide helpful guidance
         botResponse = selectedManualId 
-          ? `I couldn't find specific information about "${userMessage.content}" in the "${manualTitle}" manual. Could you provide more details or try rephrasing your question?`
-          : `I couldn't find information about "${userMessage.content}" in your uploaded manuals. Make sure your manuals are fully processed (showing "Ready" status) and try rephrasing your question.`;
+          ? `I couldn't find information about "${userMessage.content}" in "${manualTitle}" or any other uploaded manuals. This could mean:
+
+• The information might not be covered in your manuals
+• Try rephrasing your question with different terms
+• Make sure your manuals are fully processed (showing "Ready" status)
+• Consider if this is a general arcade issue that might need different troubleshooting approaches
+
+For common arcade issues, I can still try to provide general guidance. Would you like me to suggest some typical troubleshooting steps for this type of problem?`
+          : `I couldn't find information about "${userMessage.content}" in your uploaded manuals. Make sure your manuals are fully processed (showing "Ready" status) and try rephrasing your question with different terms.
+
+I can also provide general arcade troubleshooting guidance if you'd like. What specific symptoms are you experiencing?`;
       } else {
-        botResponse = await generateResponse(userMessage.content, searchResults);
+        botResponse = await generateResponse(userMessage.content, searchResults, fallbackUsed, suggestedManuals);
       }
 
       const botMessage: ChatMessage = {

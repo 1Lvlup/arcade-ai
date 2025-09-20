@@ -23,24 +23,44 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const SEARCH_THRESHOLDS = [0.5, 0.35, 0.25];
 const DEFAULT_TOP_K = 12;
 
-// Query expansion for better matching
+// Enhanced query expansion for arcade terminology
 function expandQuery(query: string) {
   const q = query.toLowerCase();
   const synonyms: string[] = [];
   
   // Ice ball / skeeball synonyms
   if (q.includes("ice ball") || q.includes("iceball") || q.includes("skeeball") || q.includes("ski ball")) {
-    synonyms.push('iceball', 'skeeball', 'ski-ball', 'ball game');
+    synonyms.push('iceball', 'skeeball', 'ski-ball', 'ball game', 'skee ball', 'skee-ball');
   }
   
   // Ball feeding/dispensing issues
   if (q.includes("ball") && (q.includes("stuck") || q.includes("not coming") || q.includes("feed") || q.includes("return") || q.includes("dispense"))) {
-    synonyms.push('ball return', 'ball feed', 'ball release', 'ball eject', 'feeder', 'dispenser', 'ball mechanism');
+    synonyms.push('ball return', 'ball feed', 'ball release', 'ball eject', 'feeder', 'dispenser', 'ball mechanism', 'ball track', 'ball chute');
   }
   
   // Game starting issues
   if (q.includes("game") && (q.includes("start") || q.includes("begin") || q.includes("launch"))) {
-    synonyms.push('game start', 'game begin', 'initialization', 'startup');
+    synonyms.push('game start', 'game begin', 'initialization', 'startup', 'power on', 'boot up');
+  }
+  
+  // Ticket dispensing issues
+  if (q.includes("ticket") && (q.includes("not") || q.includes("stuck") || q.includes("jam") || q.includes("dispense"))) {
+    synonyms.push('ticket dispenser', 'ticket jam', 'ticket stuck', 'ticket mechanism', 'ticket roll', 'ticket paper');
+  }
+  
+  // Score/display issues
+  if (q.includes("score") || q.includes("display") || q.includes("screen")) {
+    synonyms.push('scoring', 'display', 'monitor', 'screen', 'LED', 'digital display', 'score counter');
+  }
+  
+  // Power/electrical issues
+  if (q.includes("power") || q.includes("electric") || q.includes("won't turn on")) {
+    synonyms.push('power supply', 'electrical', 'fuse', 'circuit', 'voltage', 'AC', 'DC', 'transformer');
+  }
+  
+  // Mechanical issues
+  if (q.includes("motor") || q.includes("belt") || q.includes("gear") || q.includes("mechanism")) {
+    synonyms.push('motor', 'belt', 'gear', 'pulley', 'drive', 'mechanical', 'conveyor', 'bearing');
   }
   
   return { original: query, synonyms, expanded: [query, ...synonyms].join(' ') };
@@ -143,62 +163,66 @@ serve(async (req) => {
     const queryEmbedding = await createEmbedding(query);
     console.log('✅ [SEARCH] Embedding created, length:', queryEmbedding.length);
 
-    // Progressive vector search with fallback thresholds
+    // PRIMARY SEARCH: Text search first (reliable fallback)
+    console.log('📝 [SEARCH] Starting with text search (primary method)...');
+    let textResults: any[] = [];
+    
+    const { data: textData, error: textError } = await supabase
+      .rpc('match_chunks_text', {
+        query_text: expanded,
+        top_k: max_results,
+        manual: manual_id || null,
+        tenant_id: tenantId
+      });
+
+    if (textError) {
+      console.error('❌ [SEARCH] Text search error:', textError);
+    } else if (textData && textData.length > 0) {
+      textResults = textData;
+      console.log('✅ [SEARCH] Text search hits:', 
+        textResults.slice(0, 3).map(d => ({ id: d.id, score: d.score })));
+    }
+
+    // SECONDARY SEARCH: Vector search for enhanced results (if text search worked)
     let vectorResults: any[] = [];
     let usedThreshold = null;
-
-    for (const threshold of SEARCH_THRESHOLDS) {
-      console.log(`🗄️ [SEARCH] Trying vector search with threshold: ${threshold}`);
+    
+    if (textResults.length > 0) {
+      console.log('🗄️ [SEARCH] Text search successful, attempting vector search for enhanced results...');
       
-      const { data, error } = await supabase
-        .rpc('match_chunks_improved', {
-          query_embedding: queryEmbedding,
-          top_k: max_results * 2, // Get more results to filter
-          min_score: threshold,
-          manual: manual_id || null,
-          tenant_id: tenantId
-        });
+      for (const threshold of SEARCH_THRESHOLDS) {
+        console.log(`🗄️ [SEARCH] Trying vector search with threshold: ${threshold}`);
+        
+        const { data, error } = await supabase
+          .rpc('match_chunks_improved', {
+            query_embedding: queryEmbedding,
+            top_k: max_results * 2,
+            min_score: threshold,
+            manual: manual_id || null,
+            tenant_id: tenantId
+          });
 
-      if (error) {
-        console.error('❌ [SEARCH] Vector search error:', error);
-        break;
-      }
+        if (error) {
+          console.error('❌ [SEARCH] Vector search error:', error);
+          break;
+        }
 
-      if (data && data.length > 0) {
-        vectorResults = data.slice(0, max_results); // Trim to requested count
-        usedThreshold = threshold;
-        console.log(`✅ [SEARCH] Vector hits at threshold ${threshold}:`, 
-          vectorResults.slice(0, 3).map(d => ({ id: d.id, score: d.score })));
-        break;
-      } else {
-        console.log(`…no hits at threshold ${threshold}`);
+        if (data && data.length > 0) {
+          vectorResults = data.slice(0, max_results);
+          usedThreshold = threshold;
+          console.log(`✅ [SEARCH] Vector hits at threshold ${threshold}:`, 
+            vectorResults.slice(0, 3).map(d => ({ id: d.id, score: d.score })));
+          break;
+        } else {
+          console.log(`…no vector hits at threshold ${threshold}`);
+        }
       }
+    } else {
+      console.log('⚠️ [SEARCH] Text search returned no results, skipping vector search');
     }
 
-    // Hybrid fallback: text search if vector returned nothing
-    let hybridResults: any[] = [];
-    if (vectorResults.length === 0) {
-      console.log('📝 [SEARCH] Vector search failed, trying text search fallback...');
-      
-      const { data: textData, error: textError } = await supabase
-        .rpc('match_chunks_text', {
-          query_text: expanded,
-          top_k: max_results,
-          manual: manual_id || null,
-          tenant_id: tenantId
-        });
-
-      if (textError) {
-        console.error('❌ [SEARCH] Text search error:', textError);
-      } else if (textData && textData.length > 0) {
-        hybridResults = textData;
-        console.log('📝 [SEARCH] Text search hits:', 
-          hybridResults.slice(0, 3).map(d => ({ id: d.id, score: d.score })));
-      }
-    }
-
-    // Use vector results if available, otherwise use text results
-    const searchResults = vectorResults.length > 0 ? vectorResults : hybridResults;
+    // Use vector results if available and better, otherwise use text results
+    const searchResults = vectorResults.length > 0 ? vectorResults : textResults;
     const searchStrategy = vectorResults.length > 0 ? 'vector' : 'text';
 
     console.log(`📊 [SEARCH] Search completed - Found ${searchResults?.length || 0} results using ${searchStrategy} strategy`);

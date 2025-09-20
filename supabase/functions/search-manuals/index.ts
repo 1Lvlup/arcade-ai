@@ -115,12 +115,16 @@ serve(async (req) => {
     const queryEmbedding = await createEmbedding(query);
     console.log('✅ [SEARCH] Embedding created, length:', queryEmbedding.length);
 
-    // Search using the database function
-    const searchParams = {
+    // Search using the database function with fallback logic
+    let searchResults = null;
+    let searchError = null;
+    
+    // Try with standard threshold first (0.3)
+    let searchParams = {
       query_embedding: queryEmbedding,
       search_manual_id: manual_id || null,
       match_count: max_results,
-      similarity_threshold: 0.7
+      similarity_threshold: 0.3
     };
 
     console.log('🗄️ [SEARCH] Executing database search with params:', {
@@ -128,13 +132,33 @@ serve(async (req) => {
       query_embedding: `[${queryEmbedding.length} dimensions]`
     });
 
-    const { data: searchResults, error: searchError } = await supabase
+    let { data: results, error } = await supabase
       .rpc('search_manual_content', searchParams);
 
-    if (searchError) {
-      console.error('❌ [SEARCH] Database search error:', searchError);
-      throw searchError;
+    if (error) {
+      console.error('❌ [SEARCH] Database search error:', error);
+      throw error;
     }
+
+    // If no results found with 0.3 threshold, try with lower threshold (0.1)
+    if (!results || results.length === 0) {
+      console.log('⚠️ [SEARCH] No results with 0.3 threshold, trying 0.1...');
+      searchParams.similarity_threshold = 0.1;
+      
+      const { data: fallbackResults, error: fallbackError } = await supabase
+        .rpc('search_manual_content', searchParams);
+        
+      if (fallbackError) {
+        console.error('❌ [SEARCH] Fallback search error:', fallbackError);
+        throw fallbackError;
+      }
+      
+      results = fallbackResults;
+      console.log(`📊 [SEARCH] Fallback search completed - Found ${results?.length || 0} results`);
+    }
+
+    searchResults = results;
+    searchError = error;
 
     console.log(`📊 [SEARCH] Database search completed - Found ${searchResults?.length || 0} results`);
 

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ManualSelector } from '@/components/ManualSelector';
 import { 
   MessageCircle, 
   Send, 
@@ -42,10 +43,12 @@ interface ChatBotProps {
   manualTitle?: string;
 }
 
-export function ChatBot({ selectedManualId, manualTitle }: ChatBotProps) {
+export function ChatBot({ selectedManualId: initialManualId, manualTitle: initialManualTitle }: ChatBotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedManualId, setSelectedManualId] = useState<string | null>(initialManualId || null);
+  const [manualTitle, setManualTitle] = useState<string | null>(initialManualTitle || null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -57,8 +60,7 @@ export function ChatBot({ selectedManualId, manualTitle }: ChatBotProps) {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    // Welcome message
+  const updateWelcomeMessage = () => {
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'bot',
@@ -68,7 +70,19 @@ export function ChatBot({ selectedManualId, manualTitle }: ChatBotProps) {
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
+  };
+
+  useEffect(() => {
+    updateWelcomeMessage();
   }, [selectedManualId, manualTitle]);
+
+  const handleManualChange = (newManualId: string | null, newManualTitle: string | null) => {
+    setSelectedManualId(newManualId);
+    setManualTitle(newManualTitle);
+    // Clear chat history when switching manuals
+    setMessages([]);
+    // Update welcome message will be triggered by useEffect
+  };
 
   const searchManuals = async (query: string): Promise<SearchResult[]> => {
     try {
@@ -197,15 +211,23 @@ ${context}`;
   return (
     <Card className="border-primary/20 h-[600px] flex flex-col">
       <CardHeader className="border-b border-border">
-        <CardTitle className="flex items-center space-x-2">
-          <MessageCircle className="h-5 w-5 text-primary" />
-          <span>Arcade Fix Guru Assistant</span>
-          {selectedManualId && (
-            <Badge variant="outline" className="text-xs">
-              {manualTitle}
-            </Badge>
-          )}
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <MessageCircle className="h-5 w-5 text-primary" />
+            <span>Arcade Fix Guru Assistant</span>
+          </div>
+          <ManualSelector 
+            selectedManualId={selectedManualId} 
+            onManualChange={handleManualChange}
+          />
         </CardTitle>
+        {selectedManualId && (
+          <div className="mt-2">
+            <Badge variant="outline" className="text-xs">
+              Searching: {manualTitle}
+            </Badge>
+          </div>
+        )}
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col p-0">

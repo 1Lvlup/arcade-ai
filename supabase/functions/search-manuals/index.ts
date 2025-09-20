@@ -19,6 +19,33 @@ console.log(`OPENAI_API_KEY: ${openaiApiKey ? "✅ Present" : "❌ Missing"}`);
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Progressive search thresholds for fallback
+const SEARCH_THRESHOLDS = [0.5, 0.35, 0.25];
+const DEFAULT_TOP_K = 12;
+
+// Query expansion for better matching
+function expandQuery(query: string) {
+  const q = query.toLowerCase();
+  const synonyms: string[] = [];
+  
+  // Ice ball / skeeball synonyms
+  if (q.includes("ice ball") || q.includes("iceball") || q.includes("skeeball") || q.includes("ski ball")) {
+    synonyms.push('iceball', 'skeeball', 'ski-ball', 'ball game');
+  }
+  
+  // Ball feeding/dispensing issues
+  if (q.includes("ball") && (q.includes("stuck") || q.includes("not coming") || q.includes("feed") || q.includes("return") || q.includes("dispense"))) {
+    synonyms.push('ball return', 'ball feed', 'ball release', 'ball eject', 'feeder', 'dispenser', 'ball mechanism');
+  }
+  
+  // Game starting issues
+  if (q.includes("game") && (q.includes("start") || q.includes("begin") || q.includes("launch"))) {
+    synonyms.push('game start', 'game begin', 'initialization', 'startup');
+  }
+  
+  return { original: query, synonyms, expanded: [query, ...synonyms].join(' ') };
+}
+
 // Create embeddings using OpenAI
 async function createEmbedding(text: string): Promise<number[]> {
   const input = text.length > 8000 ? text.slice(0, 8000) : text;
@@ -51,7 +78,7 @@ serve(async (req) => {
 
   try {
     const requestBody = await req.json();
-    const { query, manual_id, max_results = 10 } = requestBody;
+    const { query, manual_id, max_results = 5 } = requestBody;
     
     console.log('🔍 [SEARCH] Function invoked:', {
       query: query?.slice(0, 100) + (query?.length > 100 ? '...' : ''),
@@ -71,6 +98,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('authorization');
     console.log('🔐 [SEARCH] Checking authorization header:', !!authHeader);
     
+    let tenantId = null;
     if (authHeader) {
       try {
         console.log('🔐 [SEARCH] Extracting user from token...');
@@ -91,12 +119,8 @@ serve(async (req) => {
           console.log('👤 [SEARCH] Profile data:', { profile: !!profile, tenant_id: profile?.fec_tenant_id });
             
           if (profile?.fec_tenant_id) {
-            // Set tenant context for this session
-            console.log('🏢 [SEARCH] Setting tenant context...');
-            await supabase.rpc('set_tenant_context', {
-              tenant_id: profile.fec_tenant_id
-            });
-            console.log(`✅ [SEARCH] Set tenant context: ${profile.fec_tenant_id}`);
+            tenantId = profile.fec_tenant_id;
+            console.log(`✅ [SEARCH] Set tenant context: ${tenantId}`);
           } else {
             console.log('⚠️ [SEARCH] No tenant ID found in profile');
           }
@@ -110,57 +134,74 @@ serve(async (req) => {
       console.log('⚠️ [SEARCH] No authorization header provided');
     }
 
+    // Expand query for better matching
+    const { original, synonyms, expanded } = expandQuery(query);
+    console.log('🧠 [SEARCH] Query expansion:', { original, synonyms });
+
     // Create embedding for the search query
     console.log('🧠 [SEARCH] Creating embedding for query...');
     const queryEmbedding = await createEmbedding(query);
     console.log('✅ [SEARCH] Embedding created, length:', queryEmbedding.length);
 
-    // Search using the database function with fallback logic
-    let searchResults = null;
-    let searchError = null;
-    
-    // Try with standard threshold first (0.3)
-    let searchParams = {
-      query_embedding: queryEmbedding,
-      search_manual_id: manual_id || null,
-      match_count: max_results,
-      similarity_threshold: 0.3
-    };
+    // Progressive vector search with fallback thresholds
+    let vectorResults: any[] = [];
+    let usedThreshold = null;
 
-    console.log('🗄️ [SEARCH] Executing database search with params:', {
-      ...searchParams,
-      query_embedding: `[${queryEmbedding.length} dimensions]`
-    });
-
-    let { data: results, error } = await supabase
-      .rpc('search_manual_content', searchParams);
-
-    if (error) {
-      console.error('❌ [SEARCH] Database search error:', error);
-      throw error;
-    }
-
-    // If no results found with 0.3 threshold, try with lower threshold (0.1)
-    if (!results || results.length === 0) {
-      console.log('⚠️ [SEARCH] No results with 0.3 threshold, trying 0.1...');
-      searchParams.similarity_threshold = 0.1;
+    for (const threshold of SEARCH_THRESHOLDS) {
+      console.log(`🗄️ [SEARCH] Trying vector search with threshold: ${threshold}`);
       
-      const { data: fallbackResults, error: fallbackError } = await supabase
-        .rpc('search_manual_content', searchParams);
-        
-      if (fallbackError) {
-        console.error('❌ [SEARCH] Fallback search error:', fallbackError);
-        throw fallbackError;
+      const { data, error } = await supabase
+        .rpc('match_chunks_improved', {
+          query_embedding: queryEmbedding,
+          top_k: max_results * 2, // Get more results to filter
+          min_score: threshold,
+          manual: manual_id || null,
+          tenant_id: tenantId
+        });
+
+      if (error) {
+        console.error('❌ [SEARCH] Vector search error:', error);
+        break;
       }
-      
-      results = fallbackResults;
-      console.log(`📊 [SEARCH] Fallback search completed - Found ${results?.length || 0} results`);
+
+      if (data && data.length > 0) {
+        vectorResults = data.slice(0, max_results); // Trim to requested count
+        usedThreshold = threshold;
+        console.log(`✅ [SEARCH] Vector hits at threshold ${threshold}:`, 
+          vectorResults.slice(0, 3).map(d => ({ id: d.id, score: d.score })));
+        break;
+      } else {
+        console.log(`…no hits at threshold ${threshold}`);
+      }
     }
 
-    searchResults = results;
-    searchError = error;
+    // Hybrid fallback: text search if vector returned nothing
+    let hybridResults: any[] = [];
+    if (vectorResults.length === 0) {
+      console.log('📝 [SEARCH] Vector search failed, trying text search fallback...');
+      
+      const { data: textData, error: textError } = await supabase
+        .rpc('match_chunks_text', {
+          query_text: expanded,
+          top_k: max_results,
+          manual: manual_id || null,
+          tenant_id: tenantId
+        });
 
-    console.log(`📊 [SEARCH] Database search completed - Found ${searchResults?.length || 0} results`);
+      if (textError) {
+        console.error('❌ [SEARCH] Text search error:', textError);
+      } else if (textData && textData.length > 0) {
+        hybridResults = textData;
+        console.log('📝 [SEARCH] Text search hits:', 
+          hybridResults.slice(0, 3).map(d => ({ id: d.id, score: d.score })));
+      }
+    }
+
+    // Use vector results if available, otherwise use text results
+    const searchResults = vectorResults.length > 0 ? vectorResults : hybridResults;
+    const searchStrategy = vectorResults.length > 0 ? 'vector' : 'text';
+
+    console.log(`📊 [SEARCH] Search completed - Found ${searchResults?.length || 0} results using ${searchStrategy} strategy`);
 
     // Enhance results with manual titles
     console.log('📚 [SEARCH] Enhancing results with manual titles...');
@@ -187,18 +228,16 @@ serve(async (req) => {
           page_start: result.page_start,
           page_end: result.page_end,
           menu_path: result.menu_path,
-          similarity: result.similarity,
-          content_type: result.content_type,
-          // Add image URL for figure results
-          ...(result.content_type === 'figure' && {
-            image_available: true
-          })
+          similarity: result.score, // Note: using 'score' from new functions
+          content_type: result.content_type
         });
       }
     }
 
     console.log('✅ [SEARCH] Search completed successfully:', {
       resultsCount: enhancedResults.length,
+      searchStrategy,
+      usedThreshold,
       manualTitles: [...new Set(enhancedResults.map(r => r.manual_title))],
       avgSimilarity: enhancedResults.length > 0 
         ? enhancedResults.reduce((sum, r) => sum + r.similarity, 0) / enhancedResults.length 

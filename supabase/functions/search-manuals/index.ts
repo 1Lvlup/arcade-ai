@@ -77,7 +77,7 @@ async function createEmbedding(text: string): Promise<number[]> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'text-embedding-3-small', // Keep consistent with existing data
+      model: 'text-embedding-3-large', // BEST embedding model
       input: input
     }),
   });

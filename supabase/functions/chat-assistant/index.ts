@@ -83,8 +83,8 @@ async function secondPassPolish(draft: string, userQuestion: string) {
       "Content-Type": "application/json",
     },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Revert to stable model
-        temperature: 0.1,
+        model: "gpt-5-2025-08-07", // BEST reasoning model
+        max_completion_tokens: 800,
         messages
       }),
   });
@@ -184,8 +184,8 @@ async function chatWithTools(messages: any[], manual_id: string | null, authHead
     console.log(`Loop iteration ${i + 1}/4`);
 
     const requestPayload = {
-      model: "gpt-4o-mini", // Revert to stable model
-      temperature: 0.2,
+      model: "gpt-5-2025-08-07", // BEST reasoning model
+      max_completion_tokens: 1200,
       messages: currentMessages,
       tools
     };

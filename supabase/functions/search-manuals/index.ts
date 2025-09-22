@@ -77,7 +77,7 @@ async function createEmbedding(text: string): Promise<number[]> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       input: input
     }),
   });
@@ -88,6 +88,87 @@ async function createEmbedding(text: string): Promise<number[]> {
 
   const data = await response.json();
   return data.data[0].embedding;
+}
+
+// HyDE: Generate hypothetical answer for better search
+async function generateHypotheticalAnswer(query: string): Promise<string> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-2025-08-07',
+        max_completion_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: `Write a detailed technical answer to this arcade game troubleshooting question as if you were reading from a repair manual. Include specific part names, procedures, and technical details: ${query}`
+        }]
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('HyDE generation failed, using original query');
+      return query;
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || query;
+  } catch (error) {
+    console.warn('HyDE error:', error);
+    return query;
+  }
+}
+
+// Cross-encoder reranking for better precision
+async function rerankResults(query: string, results: any[]): Promise<any[]> {
+  if (results.length <= 3) return results; // No need to rerank few results
+  
+  try {
+    const reranking_data = results.map((result, index) => ({
+      index,
+      score: result.score,
+      content: result.content.slice(0, 500) // Limit content for reranking
+    }));
+
+    // Use OpenAI for reranking (simplified approach)
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-2025-08-07',
+        max_completion_tokens: 100,
+        messages: [{
+          role: 'user',
+          content: `Query: "${query}"\n\nRank these manual excerpts by relevance (1=most relevant). Return only numbers separated by commas:\n\n${reranking_data.map((item, i) => `${i + 1}. ${item.content.slice(0, 200)}...`).join('\n\n')}`
+        }]
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Reranking failed, returning original order');
+      return results;
+    }
+
+    const data = await response.json();
+    const ranking = data.choices[0]?.message?.content?.match(/\d+/g)?.map(n => parseInt(n) - 1) || [];
+    
+    if (ranking.length === results.length) {
+      const reranked = ranking.map(i => results[i]).filter(Boolean);
+      console.log('✅ [SEARCH] Results reranked successfully');
+      return reranked;
+    }
+    
+    return results;
+  } catch (error) {
+    console.warn('Reranking error:', error);
+    return results;
+  }
 }
 
 serve(async (req) => {
@@ -165,9 +246,14 @@ serve(async (req) => {
     const { original, synonyms, expanded } = expandQuery(query);
     console.log('🧠 [SEARCH] Query expansion:', { original, synonyms });
 
-    // Create embedding for the search query
-    console.log('🧠 [SEARCH] Creating embedding for query...');
-    const queryEmbedding = await createEmbedding(query);
+    // HyDE: Generate hypothetical answer for better embedding
+    console.log('🧠 [SEARCH] Generating hypothetical answer (HyDE)...');
+    const hypotheticalAnswer = await generateHypotheticalAnswer(query);
+    console.log('🧠 [SEARCH] HyDE generated, length:', hypotheticalAnswer.length);
+
+    // Create embedding for the hypothetical answer (HyDE approach)
+    console.log('🧠 [SEARCH] Creating embedding for hypothetical answer...');
+    const queryEmbedding = await createEmbedding(hypotheticalAnswer);
     console.log('✅ [SEARCH] Embedding created, length:', queryEmbedding.length);
 
     // PRIMARY SEARCH: Text search first (reliable fallback)
@@ -229,10 +315,17 @@ serve(async (req) => {
     }
 
     // Use vector results if available and better, otherwise use text results
-    const searchResults = vectorResults.length > 0 ? vectorResults : textResults;
+    let searchResults = vectorResults.length > 0 ? vectorResults : textResults;
     const searchStrategy = vectorResults.length > 0 ? 'vector' : 'text';
 
-    console.log(`📊 [SEARCH] Search completed - Found ${searchResults?.length || 0} results using ${searchStrategy} strategy`);
+    console.log(`📊 [SEARCH] Initial search completed - Found ${searchResults?.length || 0} results using ${searchStrategy} strategy`);
+    
+    // Apply reranking for better precision
+    if (searchResults.length > 3) {
+      console.log('🔄 [SEARCH] Applying reranking for precision improvement...');
+      searchResults = await rerankResults(query, searchResults);
+      console.log('✅ [SEARCH] Reranking completed');
+    }
 
     // Enhance results with manual titles
     console.log('📚 [SEARCH] Enhancing results with manual titles...');

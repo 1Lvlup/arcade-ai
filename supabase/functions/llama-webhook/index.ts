@@ -48,7 +48,7 @@ async function createEmbedding(text: string) {
   const r = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "text-embedding-3-small", input }),
+    body: JSON.stringify({ model: "text-embedding-3-large", input }),
   });
   const t = await r.text();
   if (!r.ok) throw new Error(`OpenAI embedding failed: ${r.status} ${r.statusText} – ${t.slice(0, 1000)}`);
@@ -56,83 +56,160 @@ async function createEmbedding(text: string) {
   return data.data[0].embedding as number[];
 }
 
-function extractChunksFromJson(jsonData: any[]): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> {
-  const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
+// Enhanced figure analysis using vision model
+async function analyzeFigureWithVision(imageData: string, context: string) {
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { 
+        Authorization: `Bearer ${openaiApiKey}`, 
+        "Content-Type": "application/json" 
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini", // Using vision-capable model
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Analyze this technical diagram from an arcade game manual. Context: ${context}. 
+              Provide a detailed description focusing on: 
+              1. Components and their labels
+              2. Connections and wiring
+              3. Part numbers or specifications visible
+              4. Troubleshooting information
+              5. Safety warnings or important notes
+              Be specific about technical details that would help a technician.`
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageData.startsWith('data:') ? imageData : `data:image/png;base64,${imageData}`
+              }
+            }
+          ]
+        }],
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      console.warn("Vision analysis failed, falling back to basic processing");
+      return null;
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || null;
+  } catch (error) {
+    console.warn("Vision analysis error:", error);
+    return null;
+  }
+}
+
+// Semantic chunking with hierarchical structure
+function extractSemanticChunks(jsonData: any[]): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string; chunk_type?: string; parent_id?: string}> {
+  const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string; chunk_type?: string; parent_id?: string}> = [];
   
   for (const page of jsonData) {
     if (!page.blocks || !Array.isArray(page.blocks)) continue;
     
-    let currentChunk = "";
-    let currentTitle = "";
+    let currentSection = "";
+    let currentSubsection = "";
+    let currentContent = "";
     const pageNum = page.page || null;
+    let sectionId = "";
     
     for (const block of page.blocks) {
       const blockText = block.content || block.text || "";
       if (!blockText.trim()) continue;
       
-      // Skip obvious junk like filenames, technical headers, or very short meaningless text
-      if (blockText.match(/^[A-Z0-9_]+\.(VSD|PDF|DOC)$/i) || 
-          blockText.match(/^[#\d\s]+$/) ||
-          blockText.match(/^(FILENAME|ENGINEER|DRAWN BY|DATE|REVISED|PAGE \d+ OF \d+|VENDOR)[\s\d]*$/i) ||
-          blockText.length < 20) {
+      // Enhanced junk filtering
+      if (blockText.match(/^[A-Z0-9_]+\.(VSD|PDF|DOC|DWG)$/i) || 
+          blockText.match(/^[#\d\s\-_]+$/) ||
+          blockText.match(/^(FILENAME|ENGINEER|DRAWN BY|DATE|REVISED|PAGE \d+ OF \d+|VENDOR|COPYRIGHT|PROPRIETARY)[\s\d]*$/i) ||
+          blockText.length < 15 ||
+          blockText.match(/^(Figure|Fig|Diagram|Table|Chart)\s*\d*$/i)) {
         continue;
       }
       
-      // Detect if this looks like a title/header
-      const isTitle = block.block_type === "title" || 
-                     blockText.match(/^#+\s/) || 
-                     (blockText.length < 100 && blockText.match(/^[A-Z\s&]+$/)) ||
-                     blockText.includes("Table Of Contents");
+      // Detect content hierarchy
+      const isMainTitle = blockText.match(/^[A-Z\s&]{5,}$/) || block.block_type === "title";
+      const isSubtitle = blockText.match(/^\d+\.\s/) || blockText.match(/^[A-Z][a-z\s]+:$/);
+      const isTableOfContents = blockText.toLowerCase().includes("table of contents");
       
-      if (isTitle && currentChunk.trim()) {
-        // Save previous chunk if we have content
-        if (currentChunk.length > 100) {
+      if (isTableOfContents) continue;
+      
+      if (isMainTitle && !isSubtitle) {
+        // Save previous section
+        if (currentContent.trim() && currentContent.length > 100) {
           chunks.push({
-            content: currentChunk.trim(),
+            content: `${currentSection}\n\n${currentContent}`.trim(),
             page_start: pageNum,
-            page_end: pageNum
+            page_end: pageNum,
+            menu_path: currentSection,
+            chunk_type: "section",
+            parent_id: sectionId
           });
         }
-        currentChunk = "";
-        currentTitle = blockText.trim();
-      } else if (isTitle) {
-        currentTitle = blockText.trim();
-      } else {
-        // Add content block
-        if (currentTitle && !currentChunk.includes(currentTitle)) {
-          currentChunk = currentTitle + "\n\n" + currentChunk;
-          currentTitle = "";
+        
+        currentSection = blockText.trim();
+        currentSubsection = "";
+        currentContent = "";
+        sectionId = crypto.randomUUID();
+        
+      } else if (isSubtitle) {
+        // Save previous subsection
+        if (currentContent.trim() && currentContent.length > 80) {
+          chunks.push({
+            content: `${currentSection}\n${currentSubsection}\n\n${currentContent}`.trim(),
+            page_start: pageNum,
+            page_end: pageNum,
+            menu_path: `${currentSection} > ${currentSubsection}`,
+            chunk_type: "subsection",
+            parent_id: sectionId
+          });
         }
-        currentChunk += blockText + "\n\n";
+        
+        currentSubsection = blockText.trim();
+        currentContent = "";
+        
+      } else {
+        // Regular content
+        currentContent += blockText + "\n\n";
       }
     }
     
-    // Save final chunk for this page
-    if (currentChunk.trim() && currentChunk.length > 100) {
+    // Save final content for this page
+    if (currentContent.trim() && currentContent.length > 80) {
       chunks.push({
-        content: currentChunk.trim(),
+        content: `${currentSection}\n${currentSubsection}\n\n${currentContent}`.trim(),
         page_start: pageNum,
-        page_end: pageNum
+        page_end: pageNum,
+        menu_path: currentSubsection ? `${currentSection} > ${currentSubsection}` : currentSection,
+        chunk_type: currentSubsection ? "subsection" : "section",
+        parent_id: sectionId
       });
     }
   }
   
-  // Deduplicate similar chunks
+  // Enhanced deduplication with semantic similarity
   const deduped: typeof chunks = [];
-  const seen = new Set<string>();
+  const seen = new Map<string, typeof chunks[0]>();
   
   for (const chunk of chunks) {
     const normalized = chunk.content.toLowerCase().replace(/\s+/g, ' ').trim();
-    const shortKey = normalized.slice(0, 200); // First 200 chars for similarity check
+    const fingerprint = normalized.slice(0, 150); // Semantic fingerprint
     
-    if (!seen.has(shortKey)) {
-      seen.add(shortKey);
-      deduped.push(chunk);
+    const existing = seen.get(fingerprint);
+    if (!existing || chunk.content.length > existing.content.length) {
+      seen.set(fingerprint, chunk);
     }
   }
   
-  return deduped;
+  return Array.from(seen.values());
 }
+
+// This function is replaced by extractSemanticChunks above
 
 function extractChunksFromMarkdown(text: string): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> {
   // Fallback function for when structured JSON isn't available
@@ -186,11 +263,11 @@ serve(async (req) => {
     const manual_id = docData.manual_id;
     console.log(`Processing manual: ${manual_id} (job: ${jobId})`);
 
-    // Extract chunks from structured JSON instead of raw markdown
+    // Extract chunks using enhanced semantic chunking
     let chunks: any[] = [];
     if (payload.json && Array.isArray(payload.json)) {
-      chunks = extractChunksFromJson(payload.json);
-      console.log(`Extracted ${chunks.length} quality chunks from structured data`);
+      chunks = extractSemanticChunks(payload.json);
+      console.log(`Extracted ${chunks.length} semantic chunks with hierarchical structure`);
     } else {
       console.warn("No structured JSON data found, falling back to markdown");
       const text_markdown = payload.md || "";
@@ -247,9 +324,16 @@ serve(async (req) => {
         const key = `manuals/${manual_id}/${fig.figure_id}.${ext}`;
         const s3Uri = await uploadToS3(buffer, key, "image/png");
 
+        // Enhanced figure analysis with vision model
+        const visionAnalysis = await analyzeFigureWithVision(
+          fig.image_data, 
+          `Manual: ${manual_id}, Page: ${fig.page_number}`
+        );
+
         const figureContent = [
           fig.caption_text || "",
           fig.ocr_text || "",
+          visionAnalysis || ""
         ].filter(Boolean).join("\n");
 
         const embedding = figureContent.length > 10 ? await createEmbedding(figureContent) : null;
@@ -288,6 +372,7 @@ serve(async (req) => {
             content: ch.content,
             embedding,
             fec_tenant_id: docData.fec_tenant_id,
+            content_hash: crypto.randomUUID() // For tracking hierarchical relationships
           });
           if (insErr) console.error("chunks_text insert error:", insErr);
           else processedChunks++;

@@ -82,11 +82,11 @@ async function secondPassPolish(draft: string, userQuestion: string) {
       "Authorization": `Bearer ${OPENAI_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.1,
-      messages
-    }),
+      body: JSON.stringify({
+        model: "gpt-5-2025-08-07",
+        max_completion_tokens: 800,
+        messages
+      }),
   });
 
   if (!resp.ok) {
@@ -184,8 +184,8 @@ async function chatWithTools(messages: any[], manual_id: string | null, authHead
     console.log(`Loop iteration ${i + 1}/4`);
 
     const requestPayload = {
-      model: "gpt-4o-mini",
-      temperature: 0.2,
+      model: "gpt-5-2025-08-07",
+      max_completion_tokens: 1200,
       messages: currentMessages,
       tools
     };

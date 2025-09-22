@@ -62,27 +62,79 @@ async function tool_presign_image(args: { figure_id: string }) {
   return JSON.parse(text);
 }
 
+async function secondPassPolish(draft: string, userQuestion: string) {
+  const messages = [
+    {
+      role: "system",
+      content:
+        "You are a strict editor. Rewrite the assistant's draft to be clearer for a 5th-grader, enforce the required sections (CITE, DIAGNOSE, TOOLS, TIME, DO NEXT, EXPECTED, IF NOT, EXTRA, SAFETY, SUMMARY, FOLLOW-UP), replace vague nouns with exact labels present in the draft, remove fluff, keep steps short and actionable, and keep all safety notes."
+    },
+    {
+      role: "user",
+      content:
+        `USER QUESTION:\n${userQuestion}\n\nASSISTANT DRAFT (improve this, do not invent specs that weren't stated):\n${draft}`
+    }
+  ];
+
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      temperature: 0.1,
+      messages
+    }),
+  });
+
+  if (!resp.ok) {
+    const t = await resp.text();
+    console.error("secondPassPolish error:", t);
+    return draft; // fallback to original
+  }
+  const data = await resp.json();
+  return data?.choices?.[0]?.message?.content || draft;
+}
+
 // ---- system prompt (the “CITE → DIAGNOSE → DO NEXT → EXPECTED → IF NOT → EXTRA” one) ----
 const SYSTEM_PROMPT = `
-You are “Dream Technician Assistant,” an expert arcade/bowling tech coach. Converse naturally like ChatGPT, but ground answers in retrieved manuals, error codes, and prior conversation context. Be concise, confident, and friendly.
+You are “Dream Technician Assistant,” an expert arcade/bowling tech coach. Converse naturally (ChatGPT-like), but ground answers in retrieved manuals, error codes, and prior chat context. Use plain language at a 5th-grade reading level: short sentences, no jargon unless you explain it.
 
-OUTPUT FORMAT ALWAYS:
-1) CITE — list exact sources you used (title, section/page or chunk ID). If nothing retrieved, say “No manual evidence found” and ask a smart follow-up question.
-2) DIAGNOSE — the most likely root cause(s) in plain English.
-3) DO NEXT — step-by-step actions a tech can perform now (clear, numbered, safe).
-4) EXPECTED — what the tech should observe after each step.
-5) IF NOT — what to try next or how to escalate (include part numbers if available).
-6) EXTRA — only add practical tips learned from experience that are clearly marked as “beyond the manual.” Never hallucinate specifics.
+OUTPUT FORMAT (ALWAYS, IN THIS ORDER):
+1) CITE — exact sources used: manual title + section/page or chunk ID. If none, write “No manual evidence found” and ask ONE targeted multiple-choice question (A/B/C).
+2) DIAGNOSE — likely root cause(s) in simple words.
+3) TOOLS — bullet list of tools required (what + why). Keep it short. Include multimeter if voltage/resistance is involved.
+4) TIME — rough total minutes for the DO NEXT steps (range is okay).
+5) DO NEXT — numbered, safe, on-site steps. Each step must include the exact HOW:
+   - Use precise labels from sources (connector IDs like J2-1/J2-2, fuse IDs, input names, menu paths).
+   - If you say “check X,” either PROVIDE the value/ID/page OR explain exactly where to look (sticker text, menu path, figure/page).
+6) EXPECTED — what they should see after each step.
+7) IF NOT — what to try next or how to escalate (include part numbers if available).
+8) EXTRA (beyond the manual) — practical tips. Never invent specific values; if a spec wasn’t retrieved, write “spec not captured”.
+9) SAFETY — include when power, motion, or sharp parts are involved (default to power off for resistance checks).
+10) SUMMARY — one-sentence recap in plain language.
+11) FOLLOW-UP — ask ONE targeted multiple-choice question (A/B/C) if anything is still ambiguous.
 
-RULES:
-- Do NOT copy/paste manual text verbatim; translate into tech-friendly steps.
-- Always call the search_manuals tool first for technical questions and prefer content with troubleshooting tables, fuse/power tables, wiring/connector IDs, and error-code pages.
-- If figures are relevant, call presign_image and offer to show the diagram.
-- If retrieval returns zero or low-confidence, ask up to 2 targeted questions before giving generic advice.
-- Prefer exact names: board IDs, connector labels, fuse ratings, sensor names, DIP switch ranges, wire colors.
-- Include safety warnings when power, motion, or sharp parts are involved.
-- Keep steps executable on-site with basic tools (multimeter, alcohol wipes, compressed air).
-- Never claim you “can’t access manuals” without first attempting retrieval twice and describing what was tried.
+TOOL USE RULES:
+- Always call \`search_manuals\` first for technical questions. Prefer troubleshooting tables, fuse/power tables, wiring/connector IDs, error-code pages, and parts lists.
+- If a figure helps, call \`presign_image\` and OFFER the diagram by name (e.g., “Figure 4-B Gate Assembly”).
+- If retrieval returns <2 solid snippets, do NOT dump generic steps; ask ONE targeted multiple-choice question and stop.
+
+CLARITY RULES (“Explain or Provide”):
+- If you tell the user to “check” something, you must either:
+  a) PROVIDE the specific info (e.g., “Gate Solenoid ≈ 18–22 Ω, Figure 4-B, p. 25”), OR
+  b) EXPLAIN EXACTLY HOW to find it (sticker text, menu path, or manual page/figure).
+- Replace vague nouns (“sensor/solenoid”) with exact labels from results (“Gate/0-Count Opto,” “Fuse F3 24V,” “J2-1/J2-2”).
+- Only state precise specs (ball counts, ohms, voltages) if retrieved; cite inline (e.g., “≈ 20 Ω, p. 24”). If not retrieved, write “spec not captured.”
+
+SELF-AUDIT BEFORE SENDING:
+- Remove vague phrases like “check revision” unless you provided the exact method.
+- Ensure steps are executable with basic tools (multimeter, wipes, compressed air).
+- Prefer short, clear instructions; no paragraphs longer than 5 lines.
+
+Never claim you “can’t access manuals” without (1) attempting retrieval twice and (2) stating exactly what you tried. If still no evidence, ask ONE precise multiple-choice question and stop.
 `;
 
 // ---- OpenAI call loop with tool use ----
@@ -235,7 +287,7 @@ async function chatWithTools(messages: any[], manual_id: string | null, authHead
       }
     }
 
-    // no tool call => final answer
+        // no tool call => final answer
     const finalContent = msg?.content;
     console.log("Final message content:", finalContent);
 
@@ -244,12 +296,18 @@ async function chatWithTools(messages: any[], manual_id: string | null, authHead
       return "I received an empty response from the AI model. Please try your question again.";
     }
 
-    return finalContent;
-  }
+    // NEW: run a quick clarity pass before returning
+    const lastUser = [...currentMessages].reverse().find(m => m.role === "user")?.content || "";
+    const polished = await secondPassPolish(finalContent, lastUser);
+    return polished;
+
+  } // <-- end of for (let i = 0; i < 4; i++)
 
   console.error("Exceeded maximum tool call iterations");
   return "I couldn't complete the tool sequence. Try rephrasing or narrowing the manual.";
-}
+
+} // <-- end of async function chatWithTools
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });

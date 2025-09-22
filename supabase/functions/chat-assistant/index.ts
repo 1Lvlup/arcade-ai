@@ -16,14 +16,14 @@ const SERVICE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const SEARCH_MANUALS_URL = `${SUPABASE_URL}/functions/v1/search-manuals`;
 const PRESIGN_IMAGE_URL  = `${SUPABASE_URL}/functions/v1/presign-image`;
 
-// ---- tool calls (now send a VALID JWT: ANON/PUBLISHABLE) ----
+// ---- tool calls (using service key for function-to-function communication) ----
 async function tool_search_manuals(args: { query: string; manual_id?: string | null; max_results?: number }) {
   const res = await fetch(SEARCH_MANUALS_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${ANON_KEY}`,
-      "apikey": ANON_KEY
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "apikey": SERVICE_KEY
     },
     body: JSON.stringify({
       query: args.query,
@@ -44,8 +44,8 @@ async function tool_presign_image(args: { figure_id: string }) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${ANON_KEY}`,
-      "apikey": ANON_KEY
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "apikey": SERVICE_KEY
     },
     body: JSON.stringify({ figure_id: args.figure_id })
   });

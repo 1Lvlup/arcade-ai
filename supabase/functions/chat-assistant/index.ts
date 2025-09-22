@@ -64,6 +64,8 @@ OUTPUT
 `;
 // ---- OpenAI call loop with tool use ----
 async function chatWithTools(messages, manual_id) {
+  console.log("Starting chatWithTools with manual_id:", manual_id);
+  
   // OpenAI tool schema
   const tools = [
     {
@@ -111,86 +113,138 @@ async function chatWithTools(messages, manual_id) {
       }
     }
   ];
+  
   let toolMsgs = [];
   for(let i = 0; i < 4; i++){
+    console.log(`Loop iteration ${i + 1}/4`);
+    
+    const requestPayload = {
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content: SYSTEM_PROMPT
+        },
+        ...messages,
+        ...toolMsgs
+      ],
+      tools
+    };
+    
+    console.log("Making OpenAI API call with payload:", JSON.stringify(requestPayload, null, 2));
+    
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.2,
-        messages: [
-          {
-            role: "system",
-            content: SYSTEM_PROMPT
-          },
-          ...messages,
-          ...toolMsgs
-        ],
-        tools
-      })
+      body: JSON.stringify(requestPayload)
     });
+    
+    console.log("OpenAI API response status:", resp.status);
+    
+    if (!resp.ok) {
+      const errorText = await resp.text();
+      console.error("OpenAI API error:", resp.status, errorText);
+      return `OpenAI API error: ${resp.status} ${errorText}`;
+    }
+    
     const data = await resp.json();
+    console.log("OpenAI API response data:", JSON.stringify(data, null, 2));
+    
     const msg = data?.choices?.[0]?.message;
+    console.log("Extracted message:", JSON.stringify(msg, null, 2));
+    
     const toolCall = msg?.tool_calls?.[0];
+    
     if (toolCall) {
+      console.log("Processing tool call:", JSON.stringify(toolCall, null, 2));
+      
       const name = toolCall.function.name;
       const args = JSON.parse(toolCall.function.arguments || "{}");
+      
+      console.log(`Executing tool: ${name} with args:`, args);
+      
       try {
         let result;
         if (name === "search_manuals") {
+          console.log("Calling search_manuals tool");
           // Force manual scope if your UI passes it
           result = await tool_search_manuals({
             query: args.query,
             manual_id: manual_id ?? args.manual_id ?? null,
             max_results: args.max_results ?? 20
           });
+          console.log("Search manuals result:", JSON.stringify(result, null, 2));
+          
           // simple fallback: expand keywords if too few hits
           if (!result?.results || result.results.length < 3) {
+            console.log("Performing fallback search with expanded keywords");
             const fallback = await tool_search_manuals({
               query: `${args.query} release|eject|lift|kicker|gate|hopper|jam|opto|microswitch|sensor|coil|solenoid|motor|fuse`,
               manual_id: manual_id ?? args.manual_id ?? null,
               max_results: 20
             });
+            console.log("Fallback search result:", JSON.stringify(fallback, null, 2));
             result.results = [
               ...result.results || [],
               ...fallback.results || []
             ];
           }
         } else if (name === "presign_image") {
+          console.log("Calling presign_image tool");
           result = await tool_presign_image({
             figure_id: args.figure_id
           });
+          console.log("Presign image result:", JSON.stringify(result, null, 2));
         } else {
+          console.error("Unknown tool name:", name);
           result = {
             error: `Unknown tool ${name}`
           };
         }
-        toolMsgs.push({
+        
+        const toolMessage = {
           role: "tool",
           tool_call_id: toolCall.id,
           name,
           content: JSON.stringify(result)
-        });
+        };
+        
+        console.log("Adding tool message:", JSON.stringify(toolMessage, null, 2));
+        toolMsgs.push(toolMessage);
         continue; // loop again so the model can use the tool output
       } catch (e) {
-        toolMsgs.push({
+        console.error("Tool execution error:", e);
+        const errorMessage = {
           role: "tool",
           tool_call_id: toolCall.id,
           name,
           content: JSON.stringify({
             error: String(e)
           })
-        });
+        };
+        console.log("Adding error tool message:", JSON.stringify(errorMessage, null, 2));
+        toolMsgs.push(errorMessage);
         continue;
       }
     }
+    
     // no tool call => final answer
-    return msg?.content ?? "No response.";
+    const finalContent = msg?.content;
+    console.log("Final message content:", finalContent);
+    
+    if (!finalContent) {
+      console.error("No content in final message, full message:", JSON.stringify(msg, null, 2));
+      return "I received an empty response from the AI model. Please try your question again.";
+    }
+    
+    return finalContent;
   }
+  
+  console.error("Exceeded maximum tool call iterations");
   return "I couldn't complete the tool sequence. Try rephrasing or narrowing the manual.";
 }
 serve(async (req)=>{
@@ -198,10 +252,38 @@ serve(async (req)=>{
     headers: corsHeaders
   });
   try {
+    console.log("Chat assistant function called");
+    
+    // Validate environment variables
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is missing");
+      throw new Error("OpenAI API key is not configured");
+    }
+    if (!SUPABASE_URL) {
+      console.error("SUPABASE_URL is missing");
+      throw new Error("Supabase URL is not configured");
+    }
+    if (!SERVICE_KEY) {
+      console.error("SERVICE_KEY is missing");
+      throw new Error("Supabase service key is not configured");
+    }
+    
+    console.log("Environment variables validated");
+    
     const body = await req.json();
+    console.log("Request body:", JSON.stringify(body, null, 2));
+    
     const { messages, manual_id } = body; // messages = [{ role: "user", content: "..." }, ...]
-    if (!Array.isArray(messages)) throw new Error("messages[] required");
+    if (!Array.isArray(messages)) {
+      console.error("Invalid messages format:", typeof messages);
+      throw new Error("messages[] required");
+    }
+    
+    console.log(`Processing ${messages.length} messages with manual_id: ${manual_id}`);
+    
     const answer = await chatWithTools(messages, manual_id);
+    console.log("Chat response generated:", answer);
+    
     return new Response(JSON.stringify({
       answer
     }), {
@@ -212,8 +294,9 @@ serve(async (req)=>{
     });
   } catch (err) {
     console.error("chat-assistant error:", err);
+    console.error("Error stack:", err.stack);
     return new Response(JSON.stringify({
-      error: String(err)
+      error: `Chat assistant error: ${String(err)}`
     }), {
       status: 500,
       headers: {

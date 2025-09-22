@@ -68,12 +68,14 @@ const ManualDetails = () => {
       if (manualError) throw manualError;
       setManual(manualData);
 
-      // Generate PDF URL from storage
-      const { data: urlData } = supabase.storage
+      // Generate signed URL for private storage
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('manuals')
-        .getPublicUrl(`${manualId}/${manualData.source_filename}`);
+        .createSignedUrl(`${manualId}/${manualData.source_filename}`, 3600); // 1 hour expiry
       
-      setPdfUrl(urlData.publicUrl);
+      if (!urlError && urlData) {
+        setPdfUrl(urlData.signedUrl);
+      }
 
       // Fetch chunks
       const { data: chunksData, error: chunksError } = await supabase

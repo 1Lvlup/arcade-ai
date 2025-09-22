@@ -17,7 +17,8 @@ async function tool_search_manuals(args) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${SERVICE_KEY}`
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "apikey": SERVICE_KEY
     },
     body: JSON.stringify({
       query: args.query,
@@ -26,7 +27,10 @@ async function tool_search_manuals(args) {
     })
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`search-manuals failed: ${res.status} ${text}`);
+  if (!res.ok) {
+    console.error(`search-manuals failed: ${res.status} ${text}`);
+    throw new Error(`search-manuals failed: ${res.status} ${text}`);
+  }
   return JSON.parse(text);
 }
 async function tool_presign_image(args) {
@@ -34,14 +38,18 @@ async function tool_presign_image(args) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${SERVICE_KEY}`
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "apikey": SERVICE_KEY
     },
     body: JSON.stringify({
       figure_id: args.figure_id
     })
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`presign-image failed: ${res.status} ${text}`);
+  if (!res.ok) {
+    console.error(`presign-image failed: ${res.status} ${text}`);
+    throw new Error(`presign-image failed: ${res.status} ${text}`);
+  }
   return JSON.parse(text);
 }
 // ---- system prompt ----

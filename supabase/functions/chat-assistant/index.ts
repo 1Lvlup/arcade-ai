@@ -114,21 +114,25 @@ async function chatWithTools(messages, manual_id) {
     }
   ];
   
-  let toolMsgs = [];
+  // Filter out any existing tool messages from the conversation history
+  // Only keep user and assistant messages
+  const cleanMessages = messages.filter(msg => msg.role === 'user' || msg.role === 'assistant');
+  
+  let currentMessages = [
+    {
+      role: "system",
+      content: SYSTEM_PROMPT
+    },
+    ...cleanMessages
+  ];
+  
   for(let i = 0; i < 4; i++){
     console.log(`Loop iteration ${i + 1}/4`);
     
     const requestPayload = {
       model: "gpt-4o-mini",
       temperature: 0.2,
-      messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT
-        },
-        ...messages,
-        ...toolMsgs
-      ],
+      messages: currentMessages,
       tools
     };
     
@@ -161,6 +165,9 @@ async function chatWithTools(messages, manual_id) {
     
     if (toolCall) {
       console.log("Processing tool call:", JSON.stringify(toolCall, null, 2));
+      
+      // Add the assistant message with tool calls to our conversation
+      currentMessages.push(msg);
       
       const name = toolCall.function.name;
       const args = JSON.parse(toolCall.function.arguments || "{}");
@@ -206,6 +213,7 @@ async function chatWithTools(messages, manual_id) {
           };
         }
         
+        // Add the tool response message to our conversation
         const toolMessage = {
           role: "tool",
           tool_call_id: toolCall.id,
@@ -214,7 +222,7 @@ async function chatWithTools(messages, manual_id) {
         };
         
         console.log("Adding tool message:", JSON.stringify(toolMessage, null, 2));
-        toolMsgs.push(toolMessage);
+        currentMessages.push(toolMessage);
         continue; // loop again so the model can use the tool output
       } catch (e) {
         console.error("Tool execution error:", e);
@@ -227,7 +235,7 @@ async function chatWithTools(messages, manual_id) {
           })
         };
         console.log("Adding error tool message:", JSON.stringify(errorMessage, null, 2));
-        toolMsgs.push(errorMessage);
+        currentMessages.push(errorMessage);
         continue;
       }
     }

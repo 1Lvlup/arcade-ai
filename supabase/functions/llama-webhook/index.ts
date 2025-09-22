@@ -56,42 +56,96 @@ async function createEmbedding(text: string) {
   return data.data[0].embedding as number[];
 }
 
-function chunkText(text: string, chunkSize = 600, overlap = 100) {
+function extractChunksFromJson(jsonData: any[]): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> {
   const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
-  const lines = text.split("\n");
-  let current = "";
-  let pageStart: number | undefined;
-  let pageEnd: number | undefined;
-  let menuPath: string | undefined;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    const m = line.match(/Page\s+(\d+)/i);
-    if (m) {
-      const p = parseInt(m[1]);
-      if (!pageStart) pageStart = p;
-      pageEnd = p;
-    }
-    if (line.includes(" > ") && line.length < 100) {
-      menuPath = line.trim();
-    }
-
-    current += line + "\n";
-    const atEnd = i === lines.length - 1;
-    if (current.length >= chunkSize || atEnd) {
-      const trimmed = current.trim();
-      if (trimmed.length > 50) {
-        chunks.push({ content: trimmed, page_start: pageStart, page_end: pageEnd, menu_path: menuPath });
+  
+  for (const page of jsonData) {
+    if (!page.blocks || !Array.isArray(page.blocks)) continue;
+    
+    let currentChunk = "";
+    let currentTitle = "";
+    const pageNum = page.page || null;
+    
+    for (const block of page.blocks) {
+      const blockText = block.content || block.text || "";
+      if (!blockText.trim()) continue;
+      
+      // Skip obvious junk like filenames, technical headers, or very short meaningless text
+      if (blockText.match(/^[A-Z0-9_]+\.(VSD|PDF|DOC)$/i) || 
+          blockText.match(/^[#\d\s]+$/) ||
+          blockText.match(/^(FILENAME|ENGINEER|DRAWN BY|DATE|REVISED|PAGE \d+ OF \d+|VENDOR)[\s\d]*$/i) ||
+          blockText.length < 20) {
+        continue;
       }
-      if (!atEnd) {
-        const overlapLines = lines.slice(Math.max(0, i - Math.floor(overlap / 20)), i + 1);
-        current = overlapLines.join("\n") + "\n";
+      
+      // Detect if this looks like a title/header
+      const isTitle = block.block_type === "title" || 
+                     blockText.match(/^#+\s/) || 
+                     (blockText.length < 100 && blockText.match(/^[A-Z\s&]+$/)) ||
+                     blockText.includes("Table Of Contents");
+      
+      if (isTitle && currentChunk.trim()) {
+        // Save previous chunk if we have content
+        if (currentChunk.length > 100) {
+          chunks.push({
+            content: currentChunk.trim(),
+            page_start: pageNum,
+            page_end: pageNum
+          });
+        }
+        currentChunk = "";
+        currentTitle = blockText.trim();
+      } else if (isTitle) {
+        currentTitle = blockText.trim();
       } else {
-        current = "";
+        // Add content block
+        if (currentTitle && !currentChunk.includes(currentTitle)) {
+          currentChunk = currentTitle + "\n\n" + currentChunk;
+          currentTitle = "";
+        }
+        currentChunk += blockText + "\n\n";
       }
+    }
+    
+    // Save final chunk for this page
+    if (currentChunk.trim() && currentChunk.length > 100) {
+      chunks.push({
+        content: currentChunk.trim(),
+        page_start: pageNum,
+        page_end: pageNum
+      });
     }
   }
+  
+  // Deduplicate similar chunks
+  const deduped: typeof chunks = [];
+  const seen = new Set<string>();
+  
+  for (const chunk of chunks) {
+    const normalized = chunk.content.toLowerCase().replace(/\s+/g, ' ').trim();
+    const shortKey = normalized.slice(0, 200); // First 200 chars for similarity check
+    
+    if (!seen.has(shortKey)) {
+      seen.add(shortKey);
+      deduped.push(chunk);
+    }
+  }
+  
+  return deduped;
+}
+
+function extractChunksFromMarkdown(text: string): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> {
+  // Fallback function for when structured JSON isn't available
+  const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
+  const sections = text.split(/^#{1,3}\s+/m).filter(s => s.trim());
+  
+  for (const section of sections) {
+    const trimmed = section.trim();
+    if (trimmed.length > 100 && !trimmed.match(/^(FILENAME|ENGINEER|DRAWN BY)/i)) {
+      chunks.push({ content: trimmed });
+    }
+  }
+  
   return chunks;
 }
 
@@ -132,9 +186,16 @@ serve(async (req) => {
     const manual_id = docData.manual_id;
     console.log(`Processing manual: ${manual_id} (job: ${jobId})`);
 
-    // Map LlamaCloud format to our expected format
-    const text_markdown = payload.md || "";
-    console.log(`Text markdown length: ${text_markdown.length}`);
+    // Extract chunks from structured JSON instead of raw markdown
+    let chunks: any[] = [];
+    if (payload.json && Array.isArray(payload.json)) {
+      chunks = extractChunksFromJson(payload.json);
+      console.log(`Extracted ${chunks.length} quality chunks from structured data`);
+    } else {
+      console.warn("No structured JSON data found, falling back to markdown");
+      const text_markdown = payload.md || "";
+      chunks = extractChunksFromMarkdown(text_markdown);
+    }
 
     // Process images from LlamaCloud json structure for better metadata
     const figures: any[] = [];
@@ -212,11 +273,10 @@ serve(async (req) => {
       }
     }
 
-    // Text → chunks → embeddings → DB
+    // Process chunks → embeddings → DB
     let processedChunks = 0;
-    if (text_markdown && text_markdown.length > 0) {
-      const chunks = chunkText(text_markdown);
-      console.log(`Generated ${chunks.length} chunks from text`);
+    if (chunks && chunks.length > 0) {
+      console.log(`Processing ${chunks.length} quality chunks`);
       for (const ch of chunks) {
         try {
           const embedding = await createEmbedding(ch.content);

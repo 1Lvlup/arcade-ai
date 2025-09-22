@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { QualityDashboard } from '@/components/QualityDashboard';
 import { SharedHeader } from '@/components/SharedHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -196,7 +197,11 @@ const ManualDetails = () => {
 
         {/* Tabs for different views */}
         <Tabs defaultValue="original" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="quality" className="flex items-center space-x-2">
+              <Database className="h-4 w-4" />
+              <span>Quality Check</span>
+            </TabsTrigger>
             <TabsTrigger value="original" className="flex items-center space-x-2">
               <Eye className="h-4 w-4" />
               <span>Original PDF</span>
@@ -210,6 +215,13 @@ const ManualDetails = () => {
               <span>Figures ({figures.length})</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="quality" className="mt-6">
+            <QualityDashboard 
+              manual_id={manual.manual_id} 
+              manual_title={manual.title || manual.source_filename} 
+            />
+          </TabsContent>
 
           <TabsContent value="original" className="mt-6">
             <Card>

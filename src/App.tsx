@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ManualManagement from "./pages/ManualManagement";
+import ManualDetails from "./pages/ManualDetails";
 import VisionBoard from "./pages/VisionBoard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
@@ -31,6 +32,11 @@ const App = () => (
             <Route path="/manuals" element={
               <ProtectedRoute>
                 <ManualManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/manuals/:manualId" element={
+              <ProtectedRoute>
+                <ManualDetails />
               </ProtectedRoute>
             } />
             <Route path="/vision-board" element={

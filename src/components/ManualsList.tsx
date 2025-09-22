@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Calendar, Search, Activity, Database } from 'lucide-react';
+import { FileText, Calendar, Search, Activity, Database, Eye } from 'lucide-react';
 
 interface Manual {
   id: string;
@@ -26,6 +27,7 @@ export function ManualsList() {
   const [loading, setLoading] = useState(true);
   const [chunkCounts, setChunkCounts] = useState<ChunkCount[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchManuals();
@@ -207,6 +209,14 @@ export function ManualsList() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/manuals/${manual.manual_id}`)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

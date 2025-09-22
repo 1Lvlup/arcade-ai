@@ -17,6 +17,7 @@ export type Database = {
       chunks_text: {
         Row: {
           content: string
+          content_hash: string | null
           created_at: string | null
           embedding: string | null
           fec_tenant_id: string
@@ -28,6 +29,7 @@ export type Database = {
         }
         Insert: {
           content: string
+          content_hash?: string | null
           created_at?: string | null
           embedding?: string | null
           fec_tenant_id?: string
@@ -39,6 +41,7 @@ export type Database = {
         }
         Update: {
           content?: string
+          content_hash?: string | null
           created_at?: string | null
           embedding?: string | null
           fec_tenant_id?: string
@@ -359,10 +362,7 @@ export type Database = {
           content: string
           game_title: string
           id: number
-          manual_section: string
           similarity: number
-          source_file: string
-          subsection: string
         }[]
       }
       search_manual_content: {

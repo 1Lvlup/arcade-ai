@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-
 type OpenAIMessage = { role: 'user' | 'assistant'; content: string };
 
 interface ChatMessage {
@@ -24,8 +23,7 @@ interface ChatMessage {
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
-  // keep this in case we later return sources from the edge function
-  searchResults?: SearchResult[];
+  searchResults?: SearchResult[]; // reserved for future: showing sources/figures
 }
 
 interface SearchResult {
@@ -109,32 +107,37 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     setIsLoading(true);
 
     try {
+      // OPTIONAL: ensure the user is logged in if your function requires auth
+      // const { data: { session } } = await supabase.auth.getSession();
+      // if (!session) { /* prompt login */ }
+
+      // Prepare OpenAI-style messages for the edge function
       const convo = toOpenAIMessages([...messages, userMessage]);
 
-      // IMPORTANT: NEXT_PUBLIC_SUPABASE_URL must be set (see note below)
-const { data, error } = await supabase.functions.invoke('chat-assistant', {
-  body: {
-    messages: convo,                       // [{ role: 'user'|'assistant', content: '...' }, ...]
-    manual_id: selectedManualId ?? null,   // pass selected manual if set
-  },
-});
+      // —— THIS IS “CALLING THE EDGE FUNCTION” ——
+      const { data, error } = await supabase.functions.invoke('chat-assistant', {
+        body: {
+          messages: convo,                         // [{ role: 'user'|'assistant', content: '...' }]
+          manual_id: selectedManualId ?? null      // scope to one manual if selected
+        },
+      });
 
-if (error) {
-  throw new Error(`chat-assistant failed: ${error.message || JSON.stringify(error)}`);
-}
+      if (error) {
+        throw new Error(error.message || JSON.stringify(error));
+      }
 
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: data.answer ?? 'Sorry—I couldn’t generate a response.',
+        content: data?.answer ?? 'Sorry—I couldn’t generate a response.',
         timestamp: new Date(),
-        // if you later return sources, attach them here:
+        // If your edge function later returns sources/figures, attach here:
         // searchResults: data.sources ?? undefined
       };
 
       setMessages(prev => [...prev, botMessage]);
     } catch (err: any) {
-      console.error('chat error:', err);
+      console.error('chat-assistant failed:', err);
       toast({
         title: 'Error',
         description: 'Failed to process your question. Please try again.',
@@ -151,7 +154,7 @@ if (error) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -207,8 +210,8 @@ if (error) {
                 </div>
                 
                 <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                
-                {/* Sources block — will populate later if the edge function returns sources */}
+
+                {/* (Optional) Sources block — wire up later when your function returns sources */}
                 {message.searchResults && message.searchResults.length > 0 && (
                   <div className="mt-3 space-y-2">
                     <div className="text-xs font-medium opacity-70">
@@ -274,7 +277,7 @@ if (error) {
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Ask me about arcade machine troubleshooting..."
               disabled={isLoading}
               className="flex-1"

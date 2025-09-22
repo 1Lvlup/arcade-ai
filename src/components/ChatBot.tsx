@@ -14,6 +14,8 @@ import {
   FileText,
   Image as ImageIcon
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
 
 type OpenAIMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -110,23 +112,17 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       const convo = toOpenAIMessages([...messages, userMessage]);
 
       // IMPORTANT: NEXT_PUBLIC_SUPABASE_URL must be set (see note below)
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-assistant`;
+const { data, error } = await supabase.functions.invoke('chat-assistant', {
+  body: {
+    messages: convo,                       // [{ role: 'user'|'assistant', content: '...' }, ...]
+    manual_id: selectedManualId ?? null,   // pass selected manual if set
+  },
+});
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: convo,
-          manual_id: selectedManualId ?? null
-        })
-      });
+if (error) {
+  throw new Error(`chat-assistant failed: ${error.message || JSON.stringify(error)}`);
+}
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`chat-assistant failed: ${res.status} ${text}`);
-      }
-
-      const data = await res.json();
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',

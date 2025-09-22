@@ -116,10 +116,17 @@ serve(async (req) => {
 
     // Extract tenant context from authorization header for tenant isolation
     const authHeader = req.headers.get('authorization');
+    const apiKey = req.headers.get('apikey');
     console.log('🔐 [SEARCH] Checking authorization header:', !!authHeader);
+    console.log('🔐 [SEARCH] Checking apikey header:', !!apiKey);
     
     let tenantId = null;
-    if (authHeader) {
+    
+    // Check if this is a service key request (from chat-assistant)
+    if (apiKey === supabaseServiceKey) {
+      console.log('🔐 [SEARCH] Service key authenticated - using default tenant');
+      tenantId = '00000000-0000-0000-0000-000000000001'; // Default FEC tenant
+    } else if (authHeader) {
       try {
         console.log('🔐 [SEARCH] Extracting user from token...');
         const token = authHeader.replace('Bearer ', '');

@@ -39,6 +39,43 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
   const [autoRefresh, setAutoRefresh] = useState(true);
   const { toast } = useToast();
 
+  const retryProcessing = async () => {
+    if (!job_id) return;
+    
+    setLoading(true);
+    try {
+      toast({
+        title: 'Retrying processing...',
+        description: 'Manually triggering webhook for stalled job',
+      });
+
+      // Call a retry function that re-fetches from LlamaCloud and processes
+      const { error } = await supabase.functions.invoke('retry-stalled-job', {
+        body: { job_id, manual_id }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Retry initiated',
+        description: 'Processing should resume shortly',
+      });
+
+      // Refresh status after retry
+      setTimeout(() => checkJobStatus(), 2000);
+
+    } catch (error: any) {
+      console.error('Error retrying job:', error);
+      toast({
+        title: 'Retry failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const checkJobStatus = async () => {
     if (!job_id) return;
     
@@ -57,6 +94,14 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
       if (data.status === 'SUCCESS' && data.chunks_created && onComplete) {
         onComplete();
         setAutoRefresh(false);
+      }
+
+      // Detect stalled jobs (SUCCESS but no chunks after 2+ hours)
+      if (data.status === 'SUCCESS' && !data.chunks_created && jobStatus) {
+        const jobAge = Date.now() - new Date(jobStatus.created_at).getTime();
+        if (jobAge > 2 * 60 * 60 * 1000) { // 2 hours
+          console.warn('Detected stalled job:', job_id);
+        }
       }
 
     } catch (error) {
@@ -154,6 +199,17 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
+            {jobStatus && jobStatus.status === 'SUCCESS' && !jobStatus.chunks_created && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={retryProcessing}
+                disabled={loading}
+                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+              >
+                Retry Processing
+              </Button>
+            )}
           </div>
         </CardTitle>
         <CardDescription>

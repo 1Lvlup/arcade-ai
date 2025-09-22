@@ -16,15 +16,20 @@ const SERVICE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const SEARCH_MANUALS_URL = `${SUPABASE_URL}/functions/v1/search-manuals`;
 const PRESIGN_IMAGE_URL  = `${SUPABASE_URL}/functions/v1/presign-image`;
 
-// ---- tool calls (using service key for function-to-function communication) ----
-async function tool_search_manuals(args: { query: string; manual_id?: string | null; max_results?: number }) {
+// ---- tool calls (forward user authentication) ----
+async function tool_search_manuals(args: { query: string; manual_id?: string | null; max_results?: number }, authHeader: string | null) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json"
+  };
+  
+  if (authHeader) {
+    headers["Authorization"] = authHeader;
+    headers["apikey"] = ANON_KEY;
+  }
+  
   const res = await fetch(SEARCH_MANUALS_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SERVICE_KEY}`,
-      "apikey": SERVICE_KEY
-    },
+    headers,
     body: JSON.stringify({
       query: args.query,
       manual_id: args.manual_id ?? null,
@@ -81,7 +86,7 @@ RULES:
 `;
 
 // ---- OpenAI call loop with tool use ----
-async function chatWithTools(messages: any[], manual_id: string | null) {
+async function chatWithTools(messages: any[], manual_id: string | null, authHeader: string | null) {
   console.log("Starting chatWithTools with manual_id:", manual_id);
 
   const tools = [
@@ -179,7 +184,7 @@ async function chatWithTools(messages: any[], manual_id: string | null) {
             query: args.query,
             manual_id: manual_id ?? args.manual_id ?? null,
             max_results: args.max_results ?? 20
-          });
+          }, authHeader);
           console.log("Search manuals result:", JSON.stringify(result, null, 2));
 
           // simple fallback: expand keywords if too few hits
@@ -267,7 +272,10 @@ serve(async (req) => {
 
     console.log(`Processing ${messages.length} messages with manual_id: ${manual_id}`);
 
-    const answer = await chatWithTools(messages, manual_id ?? null);
+    // Get the authorization header to forward to other functions
+    const authHeader = req.headers.get('authorization');
+    
+    const answer = await chatWithTools(messages, manual_id ?? null, authHeader);
     console.log("Chat response generated:", answer);
 
     return new Response(JSON.stringify({ answer }), {

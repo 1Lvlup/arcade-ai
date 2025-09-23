@@ -457,6 +457,81 @@ serve(async (req) => {
       }
     }
 
+    // If JSON didn't yield figures but payload.images exists, fall back to images-only ingestion
+    if (figures.length === 0 && payload.images) {
+      console.log("🖼️ No figures found via JSON. Falling back to images-only ingestion…");
+
+      // Object form: { "<name>": "<dataURL|base64|obj>", ... }
+      if (typeof payload.images === "object" && !Array.isArray(payload.images)) {
+        const entries = Object.entries(payload.images as Record<string, any>);
+        console.log(`🗂 images{} fallback: ${entries.length} entries`);
+        for (const [key, val] of entries) {
+          let data: string | null = null;
+          let mime: string | null = null;
+
+          if (typeof val === "string") {
+            data = val; // could be data URL or raw base64
+          } else if (val && typeof val === "object") {
+            data = val.data || val.base64 || val.b64_json || val.image_data || val.url || val.src || val.content || null;
+            mime = val.mime || val.contentType || val.type || null;
+            if (data && mime && !String(data).startsWith("data:")) {
+              data = `data:${mime};base64,${data}`;
+            }
+          }
+
+          if (!data) {
+            console.warn(`⚠️ images{} fallback: no usable data for key ${key}`);
+            continue;
+          }
+
+          figures.push({
+            figure_id: key.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
+            image_sources: [data], // Wrap in array since that's what the processing expects
+            caption_text: null,
+            ocr_text: null,
+            page_number: null, // unknown without JSON
+            callouts: null,
+            bbox_pdf_coords: null,
+          });
+        }
+      }
+
+      // Array form: [ "<dataURL|base64>", { data/base64/url, mime? }, ... ]
+      if (Array.isArray(payload.images)) {
+        console.log(`🗂 images[] fallback: ${payload.images.length} entries`);
+        for (let i = 0; i < payload.images.length; i++) {
+          const val = payload.images[i];
+          let data: string | null = null;
+          let mime: string | null = null;
+
+          if (typeof val === "string") {
+            data = val;
+          } else if (val && typeof val === "object") {
+            data = val.data || val.base64 || val.b64_json || val.image_data || val.url || val.src || val.content || null;
+            mime = val.mime || val.contentType || val.type || null;
+            if (data && mime && !String(data).startsWith("data:")) {
+              data = `data:${mime};base64,${data}`;
+            }
+          }
+
+          if (!data) {
+            console.warn(`⚠️ images[] fallback: no usable data at index ${i}`);
+            continue;
+          }
+
+          figures.push({
+            figure_id: `image_${i}`,
+            image_sources: [data], // Wrap in array since that's what the processing expects
+            caption_text: null,
+            ocr_text: null,
+            page_number: null, // unknown without JSON
+            callouts: null,
+            bbox_pdf_coords: null,
+          });
+        }
+      }
+    }
+
     console.log(`Found ${figures.length} figures to process`);
 
     let processedFigures = 0;

@@ -89,7 +89,7 @@ async function analyzeFigureWithVision(imageData: string, context: string) {
             }
           ]
         }],
-        max_tokens: 500
+        max_completion_tokens: 500
       })
     });
 

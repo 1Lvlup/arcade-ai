@@ -192,6 +192,39 @@ function findAllImageSources(payload: any, imageName: string): any[] {
    PATCH END: Image helpers
    ============================ */
 
+// Fetch an image file (bytes) from LlamaCloud assets by jobId + filename
+async function fetchImageFromLlama(jobId: string, filename: string): Promise<{buffer: Uint8Array, contentType: string, ext: string}> {
+  // LlamaCloud assets endpoint (standard format)
+  const url = `https://api.cloud.llamaindex.ai/api/v1/parsing/jobs/${encodeURIComponent(jobId)}/assets/${encodeURIComponent(filename)}`;
+
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${Deno.env.get("LLAMACLOUD_API_KEY")!}`
+    }
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`Llama assets fetch failed (${resp.status} ${resp.statusText}) for ${filename}: ${txt.slice(0, 500)}`);
+  }
+
+  // Get content-type and bytes
+  const contentType = resp.headers.get("content-type") || "image/png";
+  const arr = new Uint8Array(await resp.arrayBuffer());
+
+  let ext = "png";
+  if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = "jpg";
+  else if (contentType.includes("gif")) ext = "gif";
+  else if (contentType.includes("webp")) ext = "webp";
+
+  if (arr.length < 100) {
+    throw new Error(`Downloaded asset too small (${arr.length} bytes) for ${filename}`);
+  }
+
+  return { buffer: arr, contentType, ext };
+}
+
 // Vision analysis (single, correct version)
 async function analyzeFigureWithVision(imageData: string, context: string) {
   try {
@@ -298,40 +331,7 @@ function extractSemanticChunks(jsonData: any[]): Array<{content: string; page_st
         chunk_type: currentSubsection ? "subsection" : "section",
         parent_id: sectionId,
       });
-}
-
-// Fetch an image file (bytes) from LlamaCloud assets by jobId + filename
-async function fetchImageFromLlama(jobId: string, filename: string): Promise<{buffer: Uint8Array, contentType: string, ext: string}> {
-  // LlamaCloud assets endpoint (standard format)
-  const url = `https://api.cloud.llamaindex.ai/api/v1/parsing/jobs/${encodeURIComponent(jobId)}/assets/${encodeURIComponent(filename)}`;
-
-  const resp = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${Deno.env.get("LLAMACLOUD_API_KEY")!}`
     }
-  });
-
-  if (!resp.ok) {
-    const txt = await resp.text();
-    throw new Error(`Llama assets fetch failed (${resp.status} ${resp.statusText}) for ${filename}: ${txt.slice(0, 500)}`);
-  }
-
-  // Get content-type and bytes
-  const contentType = resp.headers.get("content-type") || "image/png";
-  const arr = new Uint8Array(await resp.arrayBuffer());
-
-  let ext = "png";
-  if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = "jpg";
-  else if (contentType.includes("gif")) ext = "gif";
-  else if (contentType.includes("webp")) ext = "webp";
-
-  if (arr.length < 100) {
-    throw new Error(`Downloaded asset too small (${arr.length} bytes) for ${filename}`);
-  }
-
-  return { buffer: arr, contentType, ext };
-}
   }
 
   // dedupe by semantic fingerprint

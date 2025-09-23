@@ -198,13 +198,16 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
 
     const result = JSON.parse(llamaText);
 
-    // 6) Create initial document row
-    const { error: docError } = await supabase.from("documents").insert({
+    // 6) Upsert document row (safe re-ingestion)
+    const { error: docError } = await supabase.from("documents").upsert({
       manual_id,
       title,
       source_filename: storagePath.split("/").pop() || "unknown.pdf",
       fec_tenant_id: userTenantId,
       job_id: result.id ?? null,
+      updated_at: new Date().toISOString()
+    }, { 
+      onConflict: "manual_id" 
     });
     if (docError) throw docError;
 

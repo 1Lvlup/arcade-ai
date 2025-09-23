@@ -76,10 +76,10 @@ async function createEmbedding(text: string): Promise<number[]> {
       'Authorization': `Bearer ${openaiApiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model: 'text-embedding-3-large', // BEST embedding model
-      input: input
-    }),
+      body: JSON.stringify({
+        model: 'text-embedding-3-small', // Match DB embedding dimensions
+        input: input
+      }),
   });
 
   if (!response.ok) {

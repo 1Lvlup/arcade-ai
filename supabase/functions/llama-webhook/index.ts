@@ -48,7 +48,7 @@ async function createEmbedding(text: string) {
   const r = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "text-embedding-3-large", input }),
+    body: JSON.stringify({ model: "text-embedding-3-small", input }),
   });
   const t = await r.text();
   if (!r.ok) throw new Error(`OpenAI embedding failed: ${r.status} ${r.statusText} – ${t.slice(0, 1000)}`);
@@ -212,14 +212,51 @@ function extractSemanticChunks(jsonData: any[]): Array<{content: string; page_st
 // This function is replaced by extractSemanticChunks above
 
 function extractChunksFromMarkdown(text: string): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> {
-  // Fallback function for when structured JSON isn't available
   const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
-  const sections = text.split(/^#{1,3}\s+/m).filter(s => s.trim());
   
-  for (const section of sections) {
-    const trimmed = section.trim();
-    if (trimmed.length > 100 && !trimmed.match(/^(FILENAME|ENGINEER|DRAWN BY)/i)) {
-      chunks.push({ content: trimmed });
+  // Split on headings (## or ###)
+  const sections = text.split(/^#{2,3}\s+(.+)$/m);
+  
+  for (let i = 1; i < sections.length; i += 2) {
+    const heading = sections[i]?.trim();
+    const content = sections[i + 1]?.trim();
+    
+    if (content && content.length > 120) {
+      // Filter out junk
+      if (!content.match(/^(FILENAME|ENGINEER|DRAWN BY|COPYRIGHT|PROPRIETARY)/i)) {
+        chunks.push({
+          content: heading ? `${heading}\n\n${content}` : content,
+          menu_path: heading || undefined
+        });
+      }
+    }
+  }
+  
+  // If no headings, split on double newlines and take larger chunks
+  if (chunks.length === 0) {
+    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 150);
+    for (const para of paragraphs) {
+      if (!para.match(/^(FILENAME|ENGINEER|DRAWN BY|COPYRIGHT)/i)) {
+        chunks.push({ content: para.trim() });
+      }
+    }
+  }
+  
+  return chunks;
+}
+
+// Plain text chunking as final fallback
+function chunkPlainText(text: string): Array<{content: string}> {
+  const chunks: Array<{content: string}> = [];
+  
+  // Simple sentence-based chunking
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 50);
+  const chunkSize = 5; // 5 sentences per chunk
+  
+  for (let i = 0; i < sentences.length; i += chunkSize) {
+    const chunk = sentences.slice(i, i + chunkSize).join('. ').trim();
+    if (chunk.length > 120 && !chunk.match(/^(FILENAME|ENGINEER|DRAWN BY)/i)) {
+      chunks.push({ content: chunk });
     }
   }
   
@@ -263,15 +300,37 @@ serve(async (req) => {
     const manual_id = docData.manual_id;
     console.log(`Processing manual: ${manual_id} (job: ${jobId})`);
 
-    // Extract chunks using enhanced semantic chunking
+    // Clear old data for safe re-ingestion
+    console.log("🧹 Clearing old data for safe re-ingestion...");
+    await supabase.from('chunks_text').delete().eq('manual_id', manual_id);
+    await supabase.from('figures').delete().eq('manual_id', manual_id);
+    console.log("✅ Old data cleared successfully");
+
+    // Extract chunks using fallback approach (JSON → MD → TXT)
     let chunks: any[] = [];
     if (payload.json && Array.isArray(payload.json)) {
       chunks = extractSemanticChunks(payload.json);
       console.log(`Extracted ${chunks.length} semantic chunks with hierarchical structure`);
-    } else {
-      console.warn("No structured JSON data found, falling back to markdown");
+    }
+    
+    // FALLBACK 1: If no chunks from JSON, try markdown
+    if (chunks.length === 0) {
+      console.warn("No chunks from JSON, falling back to markdown");
       const text_markdown = payload.md || "";
-      chunks = extractChunksFromMarkdown(text_markdown);
+      if (text_markdown) {
+        chunks = extractChunksFromMarkdown(text_markdown);
+        console.log(`Fallback: Extracted ${chunks.length} chunks from markdown`);
+      }
+    }
+    
+    // FALLBACK 2: If still no chunks, try plain text
+    if (chunks.length === 0) {
+      console.warn("No chunks from markdown, falling back to plain text");
+      const text_plain = payload.txt || "";
+      if (text_plain) {
+        chunks = chunkPlainText(text_plain);
+        console.log(`Fallback: Extracted ${chunks.length} chunks from plain text`);
+      }
     }
 
     // Process images from LlamaCloud json structure for better metadata

@@ -16,6 +16,22 @@ import {
   Database
 } from 'lucide-react';
 
+interface ProcessingStatus {
+  job_id: string;
+  manual_id: string;
+  status: string;
+  stage?: string;
+  progress_percent: number;
+  chunks_processed: number;
+  total_chunks: number;
+  figures_processed: number;
+  total_figures: number;
+  current_task?: string;
+  error_message?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface JobStatus {
   job_id: string;
   status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'ERROR';
@@ -34,6 +50,7 @@ interface ProcessingMonitorProps {
 
 export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingMonitorProps) {
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
+  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -81,6 +98,18 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
     
     setLoading(true);
     try {
+      // Check processing status first for real-time updates
+      const { data: statusData, error: statusError } = await supabase
+        .from('processing_status')
+        .select('*')
+        .eq('job_id', job_id)
+        .single();
+
+      if (!statusError && statusData) {
+        setProcessingStatus(statusData);
+      }
+
+      // Also check job status for fallback
       const { data, error } = await supabase.functions.invoke('check-job-status', {
         body: { job_id }
       });
@@ -91,7 +120,8 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
       setLastChecked(new Date());
 
       // If job is complete and chunks are created, notify parent
-      if (data.status === 'SUCCESS' && data.chunks_created && onComplete) {
+      if ((data.status === 'SUCCESS' || statusData?.status === 'completed') && 
+          (data.chunks_created || statusData?.chunks_processed > 0) && onComplete) {
         onComplete();
         setAutoRefresh(false);
       }
@@ -116,20 +146,50 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
     }
   };
 
-  // Auto-refresh every 30 seconds while processing
+  // Auto-refresh every 5 seconds while processing for real-time feel
   useEffect(() => {
     if (!job_id || !autoRefresh) return;
 
     const interval = setInterval(() => {
-      if (jobStatus?.status === 'PENDING' || jobStatus?.status === 'PROCESSING') {
+      if (jobStatus?.status === 'PENDING' || jobStatus?.status === 'PROCESSING' || 
+          processingStatus?.status === 'starting' || processingStatus?.status === 'processing') {
         checkJobStatus();
-      } else if (jobStatus?.status === 'SUCCESS' && jobStatus?.chunks_created) {
+      } else if ((jobStatus?.status === 'SUCCESS' && jobStatus?.chunks_created) ||
+                 (processingStatus?.status === 'completed')) {
         setAutoRefresh(false);
       }
-    }, 30000);
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [job_id, autoRefresh, jobStatus?.status]);
+  }, [job_id, autoRefresh, jobStatus?.status, processingStatus?.status]);
+
+  // Set up real-time subscription for processing status
+  useEffect(() => {
+    if (!job_id) return;
+
+    const channel = supabase
+      .channel('processing-status-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'processing_status',
+          filter: `job_id=eq.${job_id}`
+        },
+        (payload) => {
+          console.log('Real-time processing update:', payload);
+          if (payload.new) {
+            setProcessingStatus(payload.new as ProcessingStatus);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [job_id]);
 
   // Initial check
   useEffect(() => {
@@ -163,6 +223,18 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
   const StatusIcon = status.icon;
 
   const getEstimatedTime = () => {
+    if (processingStatus) {
+      if (processingStatus.status === 'completed') {
+        return `Completed! ${processingStatus.chunks_processed} chunks and ${processingStatus.figures_processed} figures processed.`;
+      }
+      if (processingStatus.status === 'failed') {
+        return processingStatus.error_message || 'Processing failed - please try again';
+      }
+      if (processingStatus.current_task) {
+        return processingStatus.current_task;
+      }
+    }
+    
     if (!jobStatus) return 'Checking status...';
     
     switch (jobStatus.status) {
@@ -222,10 +294,36 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Progress</span>
-                <span>{jobStatus.progress}%</span>
+                <span>{processingStatus?.progress_percent || jobStatus.progress}%</span>
               </div>
-              <Progress value={jobStatus.progress} className="h-2" />
+              <Progress value={processingStatus?.progress_percent || jobStatus.progress} className="h-2" />
             </div>
+
+            {/* Real-time processing details */}
+            {processingStatus && (
+              <div className="space-y-2 text-sm">
+                {processingStatus.stage && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Stage:</span>
+                    <span className="capitalize">{processingStatus.stage.replace('_', ' ')}</span>
+                  </div>
+                )}
+                
+                {processingStatus.total_chunks > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Text Chunks:</span>
+                    <span>{processingStatus.chunks_processed}/{processingStatus.total_chunks}</span>
+                  </div>
+                )}
+
+                {processingStatus.total_figures > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Figures:</span>
+                    <span>{processingStatus.figures_processed}/{processingStatus.total_figures}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>

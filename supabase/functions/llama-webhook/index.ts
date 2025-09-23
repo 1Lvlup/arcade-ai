@@ -431,7 +431,7 @@ serve(async (req) => {
             content: ch.content,
             embedding,
             fec_tenant_id: docData.fec_tenant_id,
-            content_hash: crypto.randomUUID() // For tracking hierarchical relationships
+            // content_hash is auto-generated as md5(content) - don't set it manually
           });
           if (insErr) console.error("chunks_text insert error:", insErr);
           else processedChunks++;

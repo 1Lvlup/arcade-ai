@@ -224,6 +224,60 @@ export type Database = {
           },
         ]
       }
+      processing_status: {
+        Row: {
+          chunks_processed: number | null
+          created_at: string
+          current_task: string | null
+          error_message: string | null
+          fec_tenant_id: string
+          figures_processed: number | null
+          id: string
+          job_id: string
+          manual_id: string
+          progress_percent: number | null
+          stage: string | null
+          status: string
+          total_chunks: number | null
+          total_figures: number | null
+          updated_at: string
+        }
+        Insert: {
+          chunks_processed?: number | null
+          created_at?: string
+          current_task?: string | null
+          error_message?: string | null
+          fec_tenant_id?: string
+          figures_processed?: number | null
+          id?: string
+          job_id: string
+          manual_id: string
+          progress_percent?: number | null
+          stage?: string | null
+          status?: string
+          total_chunks?: number | null
+          total_figures?: number | null
+          updated_at?: string
+        }
+        Update: {
+          chunks_processed?: number | null
+          created_at?: string
+          current_task?: string | null
+          error_message?: string | null
+          fec_tenant_id?: string
+          figures_processed?: number | null
+          id?: string
+          job_id?: string
+          manual_id?: string
+          progress_percent?: number | null
+          stage?: string | null
+          status?: string
+          total_chunks?: number | null
+          total_figures?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

@@ -479,42 +479,6 @@ serve(async (req) => {
       imagesLength: Array.isArray(payload.images) ? payload.images.length : (payload.images ? Object.keys(payload.images).length : 0),
     });
 
-            headers: {
-              'Authorization': `Bearer ${llamaCloudApiKey}`,
-              'accept': 'application/json'
-            }
-          });
-
-          if (!imageResponse.ok) {
-            console.log(`❌ Failed to fetch image ${filename}: ${imageResponse.status} ${imageResponse.statusText}`);
-            continue;
-          }
-
-          const imageBlob = await imageResponse.blob();
-          const imageBuffer = await imageBlob.arrayBuffer();
-          
-          console.log(`✅ Successfully fetched image ${filename}, size: ${imageBuffer.byteLength} bytes`);
-          
-          // Save image to Supabase storage
-          const { error: uploadError } = await supabaseAdmin.storage
-            .from('manuals')
-            .upload(`${manualId}/images/${filename}`, imageBuffer, {
-              contentType: imageBlob.type || 'image/png',
-              cacheControl: '3600',
-              upsert: true
-            });
-
-          if (uploadError) {
-            console.error(`❌ Failed to upload image ${filename}:`, uploadError);
-          } else {
-            console.log(`✅ Successfully uploaded image ${filename} to storage`);
-          }
-        } catch (error) {
-          console.error(`❌ Error processing image ${filename}:`, error);
-        }
-      }
-    }
-
     if (payload.json && Array.isArray(payload.json)) {
       for (const page of payload.json) {
         if (page.images && Array.isArray(page.images)) {
@@ -578,39 +542,7 @@ serve(async (req) => {
       }
       console.log(`🧩 Staged ${figures.length} figures from images-only list`);
     }
-            headers: {
-              'Authorization': `Bearer ${llamaCloudApiKey}`,
-              'accept': 'application/json'
-            }
-          });
 
-          if (!imageResponse.ok) {
-            console.log(`❌ Failed to fetch fallback image ${filename}: ${imageResponse.status} ${imageResponse.statusText}`);
-            continue;
-          }
-
-          const imageBlob = await imageResponse.blob();
-          
-          // Extract page number from filename (e.g., img_p0_1.png -> page 0)
-          const pageMatch = filename.match(/p(\d+)/);
-          const pageNumber = pageMatch ? parseInt(pageMatch[1]) : null;
-          
-          figures.push({
-            figure_id: filename.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
-            image_sources: [filename], // Store filename as reference
-            caption_text: null,
-            ocr_text: null,
-            page_number: pageNumber,
-            callouts: null,
-            bbox_pdf_coords: JSON.stringify({ x: 0, y: 0, width: 0, height: 0 }),
-          });
-          
-          console.log(`✅ Added fallback figure for ${filename}, page ${pageNumber}`);
-        } catch (error) {
-          console.error(`❌ Error processing fallback image ${filename}:`, error);
-        }
-      }
-    }
 
     console.log(`Found ${figures.length} figures to process`);
 

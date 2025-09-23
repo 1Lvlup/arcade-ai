@@ -145,7 +145,7 @@ async function generateGoldenQuestions(manual_id: string) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4o',
         max_completion_tokens: 800,
         messages: [{
           role: 'user',

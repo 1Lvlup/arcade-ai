@@ -100,7 +100,7 @@ async function generateHypotheticalAnswer(query: string): Promise<string> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4o',
         max_completion_tokens: 200,
         messages: [{
           role: 'user',
@@ -141,7 +141,7 @@ async function rerankResults(query: string, results: any[]): Promise<any[]> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4o',
         max_completion_tokens: 100,
         messages: [{
           role: 'user',

@@ -433,6 +433,94 @@ function chunkPlainText(text: string): Array<{content: string}> {
   return chunks;
 }
 
+function pick<T>(obj: any, keys: string[]): T | null {
+  for (const k of keys) {
+    if (obj && typeof obj === "object" && k in obj) return obj[k];
+  }
+  return null;
+}
+
+// Try to resolve base64 (or data URL) for an image by name.
+function resolveImageData(payload: any, imageName: string, pageImages?: any[], idxOnPage?: number) {
+  if (!payload || !payload.images) return null;
+
+  // 1) If it's an OBJECT: keys are names
+  if (typeof payload.images === "object" && !Array.isArray(payload.images)) {
+    const keys = Object.keys(payload.images);
+    const base = imageName?.replace(/\.[^/.]+$/, "") || "";
+    // try exact, basename, case-insensitive matches
+    const tryKeys = [
+      imageName,
+      base,
+      imageName?.toLowerCase(),
+      base?.toLowerCase(),
+      keys.find(k => k.endsWith(imageName)),
+      keys.find(k => k.toLowerCase().endsWith(imageName?.toLowerCase() || "")),
+    ].filter(Boolean) as string[];
+
+    for (const k of tryKeys) {
+      const v = (payload.images as Record<string, any>)[k];
+      if (!v) continue;
+
+      // value might be:
+      // - string dataURL
+      // - raw base64 string
+      // - object { data: '...', mime: 'image/png' } or { base64: '...' } or { url: 'data:...' }
+      if (typeof v === "string") return v; // could be data URL or raw base64
+      const data = pick<string>(v, ["data", "base64", "image_data", "url"]);
+      const mime = pick<string>(v, ["mime", "contentType", "type"]);
+      if (data) return mime && !data.startsWith("data:") ? `data:${mime};base64,${data}` : data;
+    }
+  }
+
+  // 2) If it's an ARRAY: try align by index or match object entries
+  if (Array.isArray(payload.images)) {
+    // A) objects with {name, data/mime/url}
+    const byName = payload.images.find((it: any) => it && (it.name === imageName || it?.name?.replace(/\.[^/.]+$/, "") === imageName?.replace(/\.[^/.]+$/, "")));
+    if (byName) {
+      const data = pick<string>(byName, ["data", "base64", "image_data", "url"]);
+      const mime = pick<string>(byName, ["mime", "contentType", "type"]);
+      if (data) return mime && !data.startsWith("data:") ? `data:${mime};base64,${data}` : data;
+    }
+
+    // B) arrays of data URLs: try positional fallback
+    if (pageImages && typeof idxOnPage === "number" && payload.images.length >= pageImages.length) {
+      const candidate = payload.images[idxOnPage];
+      if (typeof candidate === "string") return candidate;
+      if (candidate) {
+        const data = pick<string>(candidate, ["data", "base64", "image_data", "url"]);
+        const mime = pick<string>(candidate, ["mime", "contentType", "type"]);
+        if (data) return mime && !data.startsWith("data:") ? `data:${mime};base64,${data}` : data;
+      }
+    }
+  }
+
+  return null;
+}
+
+function dataUrlToBytes(dataUrlOrBase64: string) {
+  let base64 = dataUrlOrBase64;
+  let contentType = "image/png";
+  if (base64.startsWith("data:")) {
+    const [hdr, data] = base64.split(",");
+    const m = hdr.match(/data:([^;]+)/);
+    if (m) contentType = m[1];
+    base64 = data || "";
+  }
+  // quick sanity
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) return { ok: false as const, err: "invalid-base64", contentType };
+  try {
+    const bin = atob(base64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    if (buf.length < 100) return { ok: false as const, err: "too-small", contentType };
+    return { ok: true as const, buf, contentType };
+  } catch (e) {
+    return { ok: false as const, err: "decode-failed", contentType };
+  }
+}
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 

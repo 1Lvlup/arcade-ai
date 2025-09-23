@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Calendar, Search, Activity, Database, Eye } from 'lucide-react';
+import { FileText, Calendar, Search, Activity, Database, Eye, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Manual {
   id: string;
@@ -26,6 +27,7 @@ export function ManualsList() {
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
   const [chunkCounts, setChunkCounts] = useState<ChunkCount[]>([]);
+  const [deletingManualId, setDeletingManualId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -91,6 +93,38 @@ export function ManualsList() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteManual = async (manualId: string) => {
+    setDeletingManualId(manualId);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-manual', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Remove from local state
+      setManuals(prev => prev.filter(m => m.manual_id !== manualId));
+      setChunkCounts(prev => prev.filter(c => c.manual_id !== manualId));
+      
+      toast({
+        title: 'Manual deleted',
+        description: 'Manual and all associated data have been removed',
+      });
+    } catch (error) {
+      console.error('Error deleting manual:', error);
+      toast({
+        title: 'Error deleting manual',
+        description: 'Failed to delete manual. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingManualId(null);
     }
   };
 
@@ -235,6 +269,42 @@ export function ManualsList() {
                       <Search className="h-4 w-4 mr-1" />
                       Search
                     </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={deletingManualId === manual.manual_id}
+                          title="Delete manual"
+                        >
+                          {deletingManualId === manual.manual_id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-destructive" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Manual</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{manual.title || manual.source_filename}"? 
+                            This will permanently remove the manual and all associated data including chunks and figures. 
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteManual(manual.manual_id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete Manual
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               );

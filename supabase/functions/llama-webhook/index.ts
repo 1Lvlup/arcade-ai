@@ -192,10 +192,10 @@ function findAllImageSources(payload: any, imageName: string): any[] {
    PATCH END: Image helpers
    ============================ */
 
-// Fetch an image file (bytes) from LlamaCloud assets by jobId + filename
+// Fetch an image file (bytes) from LlamaCloud result images by jobId + filename
 async function fetchImageFromLlama(jobId: string, filename: string): Promise<{buffer: Uint8Array, contentType: string, ext: string}> {
-  // LlamaCloud assets endpoint (standard format)
-  const url = `https://api.cloud.llamaindex.ai/api/v1/parsing/jobs/${encodeURIComponent(jobId)}/assets/${encodeURIComponent(filename)}`;
+  // LlamaCloud correct image result endpoint
+  const url = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${encodeURIComponent(jobId)}/result/image/${encodeURIComponent(filename)}`;
 
   const resp = await fetch(url, {
     method: "GET",

@@ -445,29 +445,50 @@ serve(async (req) => {
       imagesLength: Array.isArray(payload.images) ? payload.images.length : (payload.images ? Object.keys(payload.images).length : 0),
     });
 
-    // Add detailed payload debugging
+    // Handle image filenames from LlamaCloud
     if (payload.images) {
-      console.log(`🔍 Payload images structure detailed analysis:`);
-      if (typeof payload.images === 'object' && !Array.isArray(payload.images)) {
-        const keys = Object.keys(payload.images).slice(0, 5); // Show first 5 keys
-        for (const key of keys) {
-          const value = payload.images[key];
-          console.log(`  Key: ${key}`);
-          console.log(`    Type: ${typeof value}`);
-          console.log(`    Length: ${typeof value === 'string' ? value.length : 'N/A'}`);
-          if (typeof value === 'string') {
-            console.log(`    Starts with: ${value.substring(0, 30)}`);
-            console.log(`    Is data URL: ${value.startsWith('data:')}`);
-            console.log(`    Contains base64: ${value.includes('base64')}`);
-          } else if (value && typeof value === 'object') {
-            console.log(`    Object keys: ${Object.keys(value)}`);
+      console.log(`📁 Processing ${Array.isArray(payload.images) ? payload.images.length : Object.keys(payload.images).length} image filenames from LlamaCloud`);
+      
+      const imageFilenames = Array.isArray(payload.images) ? payload.images : Object.keys(payload.images);
+      
+      // Fetch actual images from LlamaCloud using their API
+      for (const filename of imageFilenames) {
+        try {
+          console.log(`🔗 Fetching image: ${filename} from LlamaCloud API`);
+          
+          const imageResponse = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${filename}`, {
+            headers: {
+              'Authorization': `Bearer ${llamaCloudApiKey}`,
+              'accept': 'application/json'
+            }
+          });
+
+          if (!imageResponse.ok) {
+            console.log(`❌ Failed to fetch image ${filename}: ${imageResponse.status} ${imageResponse.statusText}`);
+            continue;
           }
-        }
-      } else if (Array.isArray(payload.images)) {
-        console.log(`  Array with ${payload.images.length} items`);
-        for (let i = 0; i < Math.min(3, payload.images.length); i++) {
-          const item = payload.images[i];
-          console.log(`    [${i}] Type: ${typeof item}, Length: ${typeof item === 'string' ? item.length : 'N/A'}`);
+
+          const imageBlob = await imageResponse.blob();
+          const imageBuffer = await imageBlob.arrayBuffer();
+          
+          console.log(`✅ Successfully fetched image ${filename}, size: ${imageBuffer.byteLength} bytes`);
+          
+          // Save image to Supabase storage
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from('manuals')
+            .upload(`${manualId}/images/${filename}`, imageBuffer, {
+              contentType: imageBlob.type || 'image/png',
+              cacheControl: '3600',
+              upsert: true
+            });
+
+          if (uploadError) {
+            console.error(`❌ Failed to upload image ${filename}:`, uploadError);
+          } else {
+            console.log(`✅ Successfully uploaded image ${filename} to storage`);
+          }
+        } catch (error) {
+          console.error(`❌ Error processing image ${filename}:`, error);
         }
       }
     }
@@ -511,73 +532,44 @@ serve(async (req) => {
     if (figures.length === 0 && payload.images) {
       console.log("🖼️ No figures found via JSON. Falling back to images-only ingestion…");
 
-      // Object form: { "<name>": "<dataURL|base64|obj>", ... }
-      if (typeof payload.images === "object" && !Array.isArray(payload.images)) {
-        const entries = Object.entries(payload.images as Record<string, any>);
-        console.log(`🗂 images{} fallback: ${entries.length} entries`);
-        for (const [key, val] of entries) {
-          let data: string | null = null;
-          let mime: string | null = null;
-
-          if (typeof val === "string") {
-            data = val; // could be data URL or raw base64
-          } else if (val && typeof val === "object") {
-            data = val.data || val.base64 || val.b64_json || val.image_data || val.url || val.src || val.content || null;
-            mime = val.mime || val.contentType || val.type || null;
-            if (data && mime && !String(data).startsWith("data:")) {
-              data = `data:${mime};base64,${data}`;
+      // For LlamaCloud, payload.images contains filenames that need to be fetched
+      const imageFilenames = Array.isArray(payload.images) ? payload.images : Object.keys(payload.images);
+      
+      for (const filename of imageFilenames) {
+        try {
+          console.log(`🔗 Fetching fallback image: ${filename} from LlamaCloud API`);
+          
+          const imageResponse = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${filename}`, {
+            headers: {
+              'Authorization': `Bearer ${llamaCloudApiKey}`,
+              'accept': 'application/json'
             }
-          }
+          });
 
-          if (!data) {
-            console.warn(`⚠️ images{} fallback: no usable data for key ${key}`);
+          if (!imageResponse.ok) {
+            console.log(`❌ Failed to fetch fallback image ${filename}: ${imageResponse.status} ${imageResponse.statusText}`);
             continue;
           }
 
+          const imageBlob = await imageResponse.blob();
+          
+          // Extract page number from filename (e.g., img_p0_1.png -> page 0)
+          const pageMatch = filename.match(/p(\d+)/);
+          const pageNumber = pageMatch ? parseInt(pageMatch[1]) : null;
+          
           figures.push({
-            figure_id: key.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
-            image_sources: [data], // Wrap in array since that's what the processing expects
+            figure_id: filename.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
+            image_sources: [filename], // Store filename as reference
             caption_text: null,
             ocr_text: null,
-            page_number: inferPageNumber(key, null), // try to infer from filename
+            page_number: pageNumber,
             callouts: null,
-            bbox_pdf_coords: null,
+            bbox_pdf_coords: JSON.stringify({ x: 0, y: 0, width: 0, height: 0 }),
           });
-        }
-      }
-
-      // Array form: [ "<dataURL|base64>", { data/base64/url, mime? }, ... ]
-      if (Array.isArray(payload.images)) {
-        console.log(`🗂 images[] fallback: ${payload.images.length} entries`);
-        for (let i = 0; i < payload.images.length; i++) {
-          const val = payload.images[i];
-          let data: string | null = null;
-          let mime: string | null = null;
-
-          if (typeof val === "string") {
-            data = val;
-          } else if (val && typeof val === "object") {
-            data = val.data || val.base64 || val.b64_json || val.image_data || val.url || val.src || val.content || null;
-            mime = val.mime || val.contentType || val.type || null;
-            if (data && mime && !String(data).startsWith("data:")) {
-              data = `data:${mime};base64,${data}`;
-            }
-          }
-
-          if (!data) {
-            console.warn(`⚠️ images[] fallback: no usable data at index ${i}`);
-            continue;
-          }
-
-          figures.push({
-            figure_id: `image_${i}`,
-            image_sources: [data], // Wrap in array since that's what the processing expects
-            caption_text: null,
-            ocr_text: null,
-            page_number: inferPageNumber(typeof val === "object" ? (val.name || val.filename) : undefined, i), // try to infer
-            callouts: null,
-            bbox_pdf_coords: null,
-          });
+          
+          console.log(`✅ Added fallback figure for ${filename}, page ${pageNumber}`);
+        } catch (error) {
+          console.error(`❌ Error processing fallback image ${filename}:`, error);
         }
       }
     }

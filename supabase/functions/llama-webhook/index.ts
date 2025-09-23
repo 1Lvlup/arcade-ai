@@ -298,7 +298,40 @@ function extractSemanticChunks(jsonData: any[]): Array<{content: string; page_st
         chunk_type: currentSubsection ? "subsection" : "section",
         parent_id: sectionId,
       });
+}
+
+// Fetch an image file (bytes) from LlamaCloud assets by jobId + filename
+async function fetchImageFromLlama(jobId: string, filename: string): Promise<{buffer: Uint8Array, contentType: string, ext: string}> {
+  // LlamaCloud assets endpoint (standard format)
+  const url = `https://api.cloud.llamaindex.ai/api/v1/parsing/jobs/${encodeURIComponent(jobId)}/assets/${encodeURIComponent(filename)}`;
+
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${Deno.env.get("LLAMACLOUD_API_KEY")!}`
     }
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`Llama assets fetch failed (${resp.status} ${resp.statusText}) for ${filename}: ${txt.slice(0, 500)}`);
+  }
+
+  // Get content-type and bytes
+  const contentType = resp.headers.get("content-type") || "image/png";
+  const arr = new Uint8Array(await resp.arrayBuffer());
+
+  let ext = "png";
+  if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = "jpg";
+  else if (contentType.includes("gif")) ext = "gif";
+  else if (contentType.includes("webp")) ext = "webp";
+
+  if (arr.length < 100) {
+    throw new Error(`Downloaded asset too small (${arr.length} bytes) for ${filename}`);
+  }
+
+  return { buffer: arr, contentType, ext };
+}
   }
 
   // dedupe by semantic fingerprint
@@ -430,6 +463,7 @@ serve(async (req) => {
     const figures: Array<{
       figure_id: string;
       image_sources: any[];
+      llama_asset_name: string | null;
       caption_text: string | null;
       ocr_text: string | null;
       page_number: number | null;
@@ -445,18 +479,6 @@ serve(async (req) => {
       imagesLength: Array.isArray(payload.images) ? payload.images.length : (payload.images ? Object.keys(payload.images).length : 0),
     });
 
-    // Handle image filenames from LlamaCloud
-    if (payload.images) {
-      console.log(`📁 Processing ${Array.isArray(payload.images) ? payload.images.length : Object.keys(payload.images).length} image filenames from LlamaCloud`);
-      
-      const imageFilenames = Array.isArray(payload.images) ? payload.images : Object.keys(payload.images);
-      
-      // Fetch actual images from LlamaCloud using their API
-      for (const filename of imageFilenames) {
-        try {
-          console.log(`🔗 Fetching image: ${filename} from LlamaCloud API`);
-          
-          const imageResponse = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${filename}`, {
             headers: {
               'Authorization': `Bearer ${llamaCloudApiKey}`,
               'accept': 'application/json'
@@ -512,6 +534,7 @@ serve(async (req) => {
             figures.push({
               figure_id: imageName.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
               image_sources: imageSources,
+              llama_asset_name: imageName || null, // Add asset name for fallback
               caption_text: img.caption || img.alt || null,
               ocr_text: img.text || null,
               page_number: page.page ?? null,
@@ -530,16 +553,31 @@ serve(async (req) => {
 
     // If JSON didn't yield figures but payload.images exists, fall back to images-only ingestion
     if (figures.length === 0 && payload.images) {
-      console.log("🖼️ No figures found via JSON. Falling back to images-only ingestion…");
+      console.log("🧯 No page JSON, but payload.images present — using assets-only path…");
+      const imgs = Array.isArray(payload.images)
+        ? payload.images
+        : Object.keys(payload.images || {});
+      for (const name of imgs.slice(0, 3)) {
+        console.log("  sample image entry:", typeof name === "string" ? name : JSON.stringify(name).slice(0, 120));
+      }
 
-      // For LlamaCloud, payload.images contains filenames that need to be fetched
-      const imageFilenames = Array.isArray(payload.images) ? payload.images : Object.keys(payload.images);
-      
-      for (const filename of imageFilenames) {
-        try {
-          console.log(`🔗 Fetching fallback image: ${filename} from LlamaCloud API`);
-          
-          const imageResponse = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${filename}`, {
+      // Minimal figures from image list
+      const list = Array.isArray(payload.images) ? payload.images : Object.keys(payload.images);
+      for (const raw of list) {
+        const name = typeof raw === "string" ? raw : raw?.name || String(raw);
+        figures.push({
+          figure_id: name.replace(/\.[^/.]+$/, ""),
+          image_sources: [],                // none inline
+          llama_asset_name: name,           // use assets fallback
+          caption_text: null,
+          ocr_text: null,
+          page_number: null,                // no page info available
+          callouts: null,
+          bbox_pdf_coords: null
+        });
+      }
+      console.log(`🧩 Staged ${figures.length} figures from images-only list`);
+    }
             headers: {
               'Authorization': `Bearer ${llamaCloudApiKey}`,
               'accept': 'application/json'
@@ -587,10 +625,10 @@ serve(async (req) => {
       console.log(`📷 Processing figure ${i + 1}/${figures.length}: ${fig.figure_id}`);
 
       try {
-        if (!fig.image_sources || fig.image_sources.length === 0) {
-          console.warn(`⚠️ Skipping ${fig.figure_id}: no image sources`);
+        if ((!fig.image_sources || fig.image_sources.length === 0) && !fig.llama_asset_name) {
+          console.warn(`⚠️ Skipping ${fig.figure_id}: no image sources and no asset name`);
           skippedFigures++;
-          processingErrors.push({ figure_id: fig.figure_id, error: "No image sources found", sources_tried: 0 });
+          processingErrors.push({ figure_id: fig.figure_id, error: "No image sources or asset name found", sources_tried: 0 });
           continue;
         }
 
@@ -608,6 +646,18 @@ serve(async (req) => {
           } catch (e: any) {
             lastErr = e?.message || String(e);
             console.warn(`⚠️ Source ${tried} failed for ${fig.figure_id}: ${lastErr}`);
+          }
+        }
+
+        // If we still don't have a resolved image, try LlamaCloud assets by filename
+        if (!resolved && fig.llama_asset_name) {
+          try {
+            console.log(`🪄 Falling back to Llama assets for ${fig.llama_asset_name}`);
+            const fetched = await fetchImageFromLlama(jobId, fig.llama_asset_name);
+            resolved = fetched;
+            console.log(`✅ Asset fetch succeeded for ${fig.llama_asset_name} (${fetched.buffer.length} bytes)`);
+          } catch (assetErr) {
+            console.warn(`⚠️ Asset fetch failed for ${fig.llama_asset_name}:`, assetErr);
           }
         }
 

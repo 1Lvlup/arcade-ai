@@ -333,23 +333,68 @@ serve(async (req) => {
       }
     }
 
-    // Process images from LlamaCloud json structure for better metadata
+    // Enhanced figure processing with better error handling and logging
     const figures: any[] = [];
+    console.log("🖼️ Starting figure extraction...");
+    console.log("Payload structure:", {
+      hasJson: !!payload.json,
+      hasImages: !!payload.images,
+      jsonLength: Array.isArray(payload.json) ? payload.json.length : 0,
+      imagesType: typeof payload.images,
+      imagesLength: Array.isArray(payload.images) ? payload.images.length : (payload.images ? Object.keys(payload.images).length : 0)
+    });
+
     if (payload.json && Array.isArray(payload.json)) {
       for (const page of payload.json) {
         if (page.images && Array.isArray(page.images)) {
+          console.log(`📄 Page ${page.page} has ${page.images.length} images`);
           for (const img of page.images) {
-            // Create a data URL for the image (LlamaCloud provides base64 in images array)
+            console.log("Image metadata:", {
+              name: img.name,
+              hasName: !!img.name,
+              x: img.x,
+              y: img.y,
+              width: img.width,
+              height: img.height
+            });
+
+            // Enhanced image data matching with multiple strategies
+            let imageData = null;
             const imageName = img.name;
-            const imageData = payload.images ? payload.images.find((imgData: string) => imgData.includes(imageName)) : null;
+            
+            if (payload.images) {
+              if (Array.isArray(payload.images)) {
+                // Strategy 1: Find by image name in array
+                imageData = payload.images.find((imgData: string) => 
+                  typeof imgData === 'string' && imgData.includes(imageName)
+                );
+                
+                // Strategy 2: Use index if array matches page images
+                if (!imageData && payload.images.length === page.images.length) {
+                  const imgIndex = page.images.indexOf(img);
+                  imageData = payload.images[imgIndex];
+                }
+              } else if (typeof payload.images === 'object') {
+                // Strategy 3: Object lookup by image name
+                imageData = payload.images[imageName] || payload.images[imageName?.replace(/\.[^/.]+$/, "")];
+              }
+            }
+
+            console.log("Image data found:", {
+              hasImageData: !!imageData,
+              dataType: typeof imageData,
+              dataLength: imageData ? imageData.length : 0,
+              startsWithData: imageData ? imageData.startsWith('data:') : false,
+              hasComma: imageData ? imageData.includes(',') : false
+            });
             
             figures.push({
               figure_id: imageName?.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
-              image_data: imageData, // Store base64 data temporarily
-              caption_text: null,
-              ocr_text: null,
+              image_data: imageData,
+              caption_text: img.caption || img.alt || null,
+              ocr_text: img.text || null,
               page_number: page.page,
-              callouts: null,
+              callouts: img.callouts || null,
               bbox_pdf_coords: JSON.stringify({
                 x: img.x || 0,
                 y: img.y || 0,
@@ -364,44 +409,145 @@ serve(async (req) => {
 
     console.log(`Found ${figures.length} figures to process`);
 
-    // Process figures - convert base64 to actual files and upload to S3
+    // Enhanced figure processing with robust error handling
     let processedFigures = 0;
-    for (const fig of figures) {
+    let skippedFigures = 0;
+    
+    console.log(`🔄 Processing ${figures.length} figures...`);
+    
+    for (let i = 0; i < figures.length; i++) {
+      const fig = figures[i];
+      console.log(`📷 Processing figure ${i + 1}/${figures.length}: ${fig.figure_id}`);
+      
       try {
-        if (!fig.image_data) continue;
-        
-        // Extract base64 data (assuming it's in format "data:image/png;base64,...")
-        let base64Data = fig.image_data;
-        if (base64Data.includes(',')) {
-          base64Data = base64Data.split(',')[1];
+        if (!fig.image_data) {
+          console.warn(`⚠️ Skipping figure ${fig.figure_id}: no image data`);
+          skippedFigures++;
+          continue;
         }
         
-        // Convert base64 to buffer
-        const buffer = new Uint8Array(atob(base64Data).split('').map(c => c.charCodeAt(0)));
+        // Enhanced base64 processing with validation
+        let base64Data = fig.image_data;
+        let contentType = "image/png"; // Default
         
-        const ext = "png"; // Default to PNG for LlamaCloud images
+        // Handle different base64 formats
+        if (base64Data.startsWith('data:')) {
+          // Extract content type and base64 data from data URL
+          const [header, data] = base64Data.split(',');
+          if (header && data) {
+            const mimeMatch = header.match(/data:([^;]+)/);
+            if (mimeMatch) contentType = mimeMatch[1];
+            base64Data = data;
+          } else {
+            console.warn(`⚠️ Invalid data URL format for ${fig.figure_id}`);
+            skippedFigures++;
+            continue;
+          }
+        }
+        
+        // Validate base64 data
+        if (!base64Data || base64Data.length < 100) {
+          console.warn(`⚠️ Base64 data too short for ${fig.figure_id}: ${base64Data?.length || 0} chars`);
+          skippedFigures++;
+          continue;
+        }
+        
+        // Validate base64 format
+        const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (!base64Regex.test(base64Data)) {
+          console.warn(`⚠️ Invalid base64 format for ${fig.figure_id}`);
+          skippedFigures++;
+          continue;
+        }
+        
+        // Convert base64 to buffer with error handling
+        let buffer: Uint8Array;
+        try {
+          const binaryString = atob(base64Data);
+          buffer = new Uint8Array(binaryString.length);
+          for (let j = 0; j < binaryString.length; j++) {
+            buffer[j] = binaryString.charCodeAt(j);
+          }
+        } catch (decodeError) {
+          console.error(`❌ Base64 decode failed for ${fig.figure_id}:`, decodeError);
+          skippedFigures++;
+          continue;
+        }
+        
+        // Validate buffer size
+        if (buffer.length < 100) {
+          console.warn(`⚠️ Decoded buffer too small for ${fig.figure_id}: ${buffer.length} bytes`);
+          skippedFigures++;
+          continue;
+        }
+        
+        console.log(`✅ Successfully decoded ${fig.figure_id}: ${buffer.length} bytes`);
+        
+        // Upload to S3 with retry
+        const ext = contentType.includes('jpeg') ? 'jpg' : 'png';
         const key = `manuals/${manual_id}/${fig.figure_id}.${ext}`;
-        const s3Uri = await uploadToS3(buffer, key, "image/png");
+        
+        let s3Uri: string;
+        let uploadAttempts = 0;
+        const maxRetries = 2;
+        
+        while (uploadAttempts <= maxRetries) {
+          try {
+            s3Uri = await uploadToS3(buffer, key, contentType);
+            console.log(`📤 Uploaded ${fig.figure_id} to S3: ${s3Uri}`);
+            break;
+          } catch (uploadError) {
+            uploadAttempts++;
+            console.warn(`⚠️ S3 upload attempt ${uploadAttempts} failed for ${fig.figure_id}:`, uploadError);
+            if (uploadAttempts > maxRetries) {
+              throw uploadError;
+            }
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
 
-        // Enhanced figure analysis with vision model
-        const visionAnalysis = await analyzeFigureWithVision(
-          fig.image_data, 
-          `Manual: ${manual_id}, Page: ${fig.page_number}`
-        );
+        // Enhanced figure analysis with graceful fallback
+        let visionAnalysis: string | null = null;
+        try {
+          visionAnalysis = await analyzeFigureWithVision(
+            fig.image_data, 
+            `Manual: ${manual_id}, Page: ${fig.page_number}`
+          );
+          if (visionAnalysis) {
+            console.log(`🔍 Vision analysis completed for ${fig.figure_id}`);
+          } else {
+            console.log(`🔍 Vision analysis returned null for ${fig.figure_id}`);
+          }
+        } catch (visionError) {
+          console.warn(`⚠️ Vision analysis failed for ${fig.figure_id}:`, visionError);
+          // Continue without vision analysis
+        }
 
+        // Create figure content for embedding
         const figureContent = [
           fig.caption_text || "",
           fig.ocr_text || "",
           visionAnalysis || ""
         ].filter(Boolean).join("\n");
 
-        const embedding = figureContent.length > 10 ? await createEmbedding(figureContent) : null;
+        // Generate embedding if we have content
+        let embedding: number[] | null = null;
+        if (figureContent.length > 10) {
+          try {
+            embedding = await createEmbedding(figureContent);
+            console.log(`🔗 Generated embedding for ${fig.figure_id}`);
+          } catch (embeddingError) {
+            console.warn(`⚠️ Embedding generation failed for ${fig.figure_id}:`, embeddingError);
+          }
+        }
 
+        // Insert figure record with all available data
         const { error: figErr } = await supabase.from("figures").insert({
           manual_id,
           page_number: fig.page_number ?? null,
           figure_id: fig.figure_id,
-          image_url: s3Uri,
+          image_url: s3Uri!,
           caption_text: fig.caption_text ?? null,
           ocr_text: fig.ocr_text ?? null,
           callouts_json: fig.callouts ?? null,
@@ -409,12 +555,21 @@ serve(async (req) => {
           embedding_text: embedding,
           fec_tenant_id: docData.fec_tenant_id,
         });
-        if (figErr) console.error("figures insert error:", figErr);
-        else processedFigures++;
+        
+        if (figErr) {
+          console.error(`❌ Database insert failed for ${fig.figure_id}:`, figErr);
+        } else {
+          processedFigures++;
+          console.log(`✅ Successfully processed figure ${fig.figure_id}`);
+        }
+        
       } catch (e) {
-        console.error("Figure process error:", e);
+        console.error(`❌ Critical error processing figure ${fig.figure_id}:`, e);
+        skippedFigures++;
       }
     }
+    
+    console.log(`📊 Figure processing summary: ${processedFigures} processed, ${skippedFigures} skipped`)
 
     // Process chunks → embeddings → DB
     let processedChunks = 0;
@@ -444,12 +599,33 @@ serve(async (req) => {
     // Update document timestamp
     await supabase.from("documents").update({ updated_at: new Date().toISOString() }).eq("manual_id", manual_id);
 
-    console.log(`✅ Processing complete: ${processedChunks} chunks, ${processedFigures} figures for manual ${manual_id}`);
+    // Update processing status with final results
+    await supabase.from("processing_status").upsert({
+      job_id: jobId,
+      manual_id,
+      status: 'completed',
+      stage: 'finished',
+      current_task: 'Processing complete',
+      progress_percent: 100,
+      total_chunks: chunks.length,
+      chunks_processed: processedChunks,
+      total_figures: figures.length,
+      figures_processed: processedFigures,
+      fec_tenant_id: docData.fec_tenant_id,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'job_id'
+    });
+
+    console.log(`✅ Processing complete: ${processedChunks}/${chunks.length} chunks, ${processedFigures}/${figures.length} figures for manual ${manual_id}`);
     return new Response(JSON.stringify({
       success: true,
       manual_id,
       processed_chunks: processedChunks,
+      total_chunks: chunks.length,
       processed_figures: processedFigures,
+      total_figures: figures.length,
+      skipped_figures: figures.length - processedFigures,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("llama-webhook error:", error);

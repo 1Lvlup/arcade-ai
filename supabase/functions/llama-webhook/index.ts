@@ -56,6 +56,176 @@ async function createEmbedding(text: string) {
   return data.data[0].embedding as number[];
 }
 
+// Universal image resolver - handles all possible input formats
+async function resolveImageData(imageInput: any): Promise<{buffer: Uint8Array, contentType: string, ext: string}> {
+  let base64Data: string = '';
+  let contentType: string = 'image/png';
+  
+  try {
+    // Handle different input formats
+    if (typeof imageInput === 'string') {
+      if (imageInput.startsWith('data:')) {
+        // Data URL format: data:image/png;base64,iVBORw0...
+        const [header, data] = imageInput.split(',');
+        if (!header || !data) throw new Error('Invalid data URL format');
+        
+        const mimeMatch = header.match(/data:([^;]+)/);
+        if (mimeMatch) contentType = mimeMatch[1];
+        base64Data = data;
+      } else if (imageInput.startsWith('http')) {
+        // Remote URL - fetch and convert
+        const response = await fetch(imageInput);
+        if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+        
+        contentType = response.headers.get('content-type') || 'image/png';
+        const arrayBuffer = await response.arrayBuffer();
+        base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      } else {
+        // Raw base64 string
+        base64Data = imageInput;
+      }
+    } else if (typeof imageInput === 'object' && imageInput !== null) {
+      // Object format: {data, base64, url, image_data, b64_json, etc.}
+      const possibleKeys = ['data', 'base64', 'b64_json', 'image_data', 'url', 'content'];
+      let found = false;
+      
+      for (const key of possibleKeys) {
+        if (imageInput[key]) {
+          const result = await resolveImageData(imageInput[key]);
+          return result;
+        }
+      }
+      
+      if (!found) throw new Error('No recognized image data key found in object');
+    } else {
+      throw new Error(`Unsupported image input type: ${typeof imageInput}`);
+    }
+
+    // Validate base64
+    if (!base64Data || base64Data.length < 100) {
+      throw new Error(`Base64 data too short: ${base64Data?.length || 0} chars`);
+    }
+
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(base64Data)) {
+      throw new Error('Invalid base64 format');
+    }
+
+    // Convert to buffer
+    const binaryString = atob(base64Data);
+    const buffer = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      buffer[i] = binaryString.charCodeAt(i);
+    }
+
+    if (buffer.length < 100) {
+      throw new Error(`Decoded buffer too small: ${buffer.length} bytes`);
+    }
+
+    // Detect MIME type from magic bytes if not set
+    if (contentType === 'image/png' && buffer.length >= 8) {
+      if (buffer[0] === 0xFF && buffer[1] === 0xD8) contentType = 'image/jpeg';
+      else if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) contentType = 'image/gif';
+      else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) contentType = 'image/webp';
+    }
+
+    const ext = contentType.includes('jpeg') ? 'jpg' : 
+                contentType.includes('gif') ? 'gif' :
+                contentType.includes('webp') ? 'webp' : 'png';
+
+    return { buffer, contentType, ext };
+  } catch (error) {
+    throw new Error(`Image resolution failed: ${error.message}`);
+  }
+}
+
+// Comprehensive image source detection
+function findAllImageSources(payload: any, imageName: string): any[] {
+  const sources: any[] = [];
+  
+  if (!payload.images) return sources;
+
+  try {
+    // Strategy A: Array of strings with name matching
+    if (Array.isArray(payload.images)) {
+      const nameMatch = payload.images.find((item: any) => 
+        typeof item === 'string' && item.includes(imageName)
+      );
+      if (nameMatch) sources.push(nameMatch);
+
+      // Strategy B: Array of objects with various formats
+      const objectMatches = payload.images.filter((item: any) => 
+        typeof item === 'object' && item !== null && (
+          item.name === imageName || 
+          item.filename === imageName ||
+          item.id === imageName
+        )
+      );
+      sources.push(...objectMatches);
+
+      // Strategy C: Index-based matching (if arrays align)
+      if (payload.json && Array.isArray(payload.json)) {
+        for (const page of payload.json) {
+          if (page.images && Array.isArray(page.images)) {
+            const imgIndex = page.images.findIndex((img: any) => img.name === imageName);
+            if (imgIndex >= 0 && imgIndex < payload.images.length) {
+              sources.push(payload.images[imgIndex]);
+            }
+          }
+        }
+      }
+    }
+
+    // Strategy D: Object keyed by filename
+    if (typeof payload.images === 'object' && !Array.isArray(payload.images)) {
+      const directMatch = payload.images[imageName];
+      if (directMatch) sources.push(directMatch);
+
+      // Try without extension
+      const nameWithoutExt = imageName?.replace(/\.[^/.]+$/, "");
+      const matchWithoutExt = payload.images[nameWithoutExt];
+      if (matchWithoutExt) sources.push(matchWithoutExt);
+
+      // Try common variations
+      const variations = [
+        imageName?.toLowerCase(),
+        imageName?.toUpperCase(),
+        `img_${imageName}`,
+        `figure_${imageName}`
+      ].filter(Boolean);
+      
+      for (const variation of variations) {
+        if (payload.images[variation]) {
+          sources.push(payload.images[variation]);
+        }
+      }
+    }
+
+    // Strategy E: Deep search in JSON structure
+    if (payload.json && Array.isArray(payload.json)) {
+      for (const page of payload.json) {
+        if (page.images && Array.isArray(page.images)) {
+          for (const img of page.images) {
+            if (img.name === imageName) {
+              // Look for embedded data
+              const embeddedKeys = ['data', 'base64', 'image_data', 'url', 'src'];
+              for (const key of embeddedKeys) {
+                if (img[key]) sources.push(img[key]);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log(`🔍 Found ${sources.length} potential sources for image ${imageName}`);
+    return sources;
+  } catch (error) {
+    console.warn(`⚠️ Error in image source detection for ${imageName}:`, error);
+    return sources;
+  }
+}
+
 // Enhanced figure analysis using vision model
 async function analyzeFigureWithVision(imageData: string, context: string) {
   try {
@@ -358,39 +528,22 @@ serve(async (req) => {
               height: img.height
             });
 
-            // Enhanced image data matching with multiple strategies
-            let imageData = null;
+            // Bulletproof image source detection with fallback chain
             const imageName = img.name;
+            const imageSources = findAllImageSources(payload, imageName);
             
-            if (payload.images) {
-              if (Array.isArray(payload.images)) {
-                // Strategy 1: Find by image name in array
-                imageData = payload.images.find((imgData: string) => 
-                  typeof imgData === 'string' && imgData.includes(imageName)
-                );
-                
-                // Strategy 2: Use index if array matches page images
-                if (!imageData && payload.images.length === page.images.length) {
-                  const imgIndex = page.images.indexOf(img);
-                  imageData = payload.images[imgIndex];
-                }
-              } else if (typeof payload.images === 'object') {
-                // Strategy 3: Object lookup by image name
-                imageData = payload.images[imageName] || payload.images[imageName?.replace(/\.[^/.]+$/, "")];
-              }
-            }
-
-            console.log("Image data found:", {
-              hasImageData: !!imageData,
-              dataType: typeof imageData,
-              dataLength: imageData ? imageData.length : 0,
-              startsWithData: imageData ? imageData.startsWith('data:') : false,
-              hasComma: imageData ? imageData.includes(',') : false
+            console.log(`🔍 Image source detection for ${imageName}:`, {
+              sourcesFound: imageSources.length,
+              sourceTypes: imageSources.map(s => typeof s),
+              sourcePreview: imageSources.map(s => 
+                typeof s === 'string' ? s.slice(0, 50) + '...' : 
+                typeof s === 'object' ? Object.keys(s) : String(s)
+              )
             });
             
             figures.push({
               figure_id: imageName?.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
-              image_data: imageData,
+              image_sources: imageSources, // Store all potential sources
               caption_text: img.caption || img.alt || null,
               ocr_text: img.text || null,
               page_number: page.page,
@@ -409,9 +562,10 @@ serve(async (req) => {
 
     console.log(`Found ${figures.length} figures to process`);
 
-    // Enhanced figure processing with robust error handling
+    // Bulletproof figure processing with comprehensive error handling
     let processedFigures = 0;
     let skippedFigures = 0;
+    const processingErrors: Array<{figure_id: string, error: string, sources_tried: number}> = [];
     
     console.log(`🔄 Processing ${figures.length} figures...`);
     
@@ -420,72 +574,50 @@ serve(async (req) => {
       console.log(`📷 Processing figure ${i + 1}/${figures.length}: ${fig.figure_id}`);
       
       try {
-        if (!fig.image_data) {
-          console.warn(`⚠️ Skipping figure ${fig.figure_id}: no image data`);
+        if (!fig.image_sources || fig.image_sources.length === 0) {
+          console.warn(`⚠️ Skipping figure ${fig.figure_id}: no image sources found`);
           skippedFigures++;
+          processingErrors.push({
+            figure_id: fig.figure_id,
+            error: 'No image sources found',
+            sources_tried: 0
+          });
           continue;
         }
         
-        // Enhanced base64 processing with validation
-        let base64Data = fig.image_data;
-        let contentType = "image/png"; // Default
+        // Try each image source until one works (fallback chain)
+        let resolvedImage: {buffer: Uint8Array, contentType: string, ext: string} | null = null;
+        let sourcesTried = 0;
+        let lastError = '';
         
-        // Handle different base64 formats
-        if (base64Data.startsWith('data:')) {
-          // Extract content type and base64 data from data URL
-          const [header, data] = base64Data.split(',');
-          if (header && data) {
-            const mimeMatch = header.match(/data:([^;]+)/);
-            if (mimeMatch) contentType = mimeMatch[1];
-            base64Data = data;
-          } else {
-            console.warn(`⚠️ Invalid data URL format for ${fig.figure_id}`);
-            skippedFigures++;
+        for (const source of fig.image_sources) {
+          sourcesTried++;
+          console.log(`🔄 Trying source ${sourcesTried}/${fig.image_sources.length} for ${fig.figure_id}`);
+          
+          try {
+            resolvedImage = await resolveImageData(source);
+            console.log(`✅ Successfully resolved ${fig.figure_id} from source ${sourcesTried}: ${resolvedImage.buffer.length} bytes (${resolvedImage.contentType})`);
+            break;
+          } catch (sourceError) {
+            lastError = sourceError.message;
+            console.warn(`⚠️ Source ${sourcesTried} failed for ${fig.figure_id}: ${lastError}`);
             continue;
           }
         }
         
-        // Validate base64 data
-        if (!base64Data || base64Data.length < 100) {
-          console.warn(`⚠️ Base64 data too short for ${fig.figure_id}: ${base64Data?.length || 0} chars`);
+        if (!resolvedImage) {
+          console.error(`❌ All ${sourcesTried} sources failed for ${fig.figure_id}. Last error: ${lastError}`);
           skippedFigures++;
+          processingErrors.push({
+            figure_id: fig.figure_id,
+            error: `All sources failed. Last: ${lastError}`,
+            sources_tried: sourcesTried
+          });
           continue;
         }
-        
-        // Validate base64 format
-        const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-        if (!base64Regex.test(base64Data)) {
-          console.warn(`⚠️ Invalid base64 format for ${fig.figure_id}`);
-          skippedFigures++;
-          continue;
-        }
-        
-        // Convert base64 to buffer with error handling
-        let buffer: Uint8Array;
-        try {
-          const binaryString = atob(base64Data);
-          buffer = new Uint8Array(binaryString.length);
-          for (let j = 0; j < binaryString.length; j++) {
-            buffer[j] = binaryString.charCodeAt(j);
-          }
-        } catch (decodeError) {
-          console.error(`❌ Base64 decode failed for ${fig.figure_id}:`, decodeError);
-          skippedFigures++;
-          continue;
-        }
-        
-        // Validate buffer size
-        if (buffer.length < 100) {
-          console.warn(`⚠️ Decoded buffer too small for ${fig.figure_id}: ${buffer.length} bytes`);
-          skippedFigures++;
-          continue;
-        }
-        
-        console.log(`✅ Successfully decoded ${fig.figure_id}: ${buffer.length} bytes`);
         
         // Upload to S3 with retry
-        const ext = contentType.includes('jpeg') ? 'jpg' : 'png';
-        const key = `manuals/${manual_id}/${fig.figure_id}.${ext}`;
+        const key = `manuals/${manual_id}/${fig.figure_id}.${resolvedImage.ext}`;
         
         let s3Uri: string;
         let uploadAttempts = 0;
@@ -493,7 +625,7 @@ serve(async (req) => {
         
         while (uploadAttempts <= maxRetries) {
           try {
-            s3Uri = await uploadToS3(buffer, key, contentType);
+            s3Uri = await uploadToS3(resolvedImage.buffer, key, resolvedImage.contentType);
             console.log(`📤 Uploaded ${fig.figure_id} to S3: ${s3Uri}`);
             break;
           } catch (uploadError) {
@@ -510,14 +642,21 @@ serve(async (req) => {
         // Enhanced figure analysis with graceful fallback
         let visionAnalysis: string | null = null;
         try {
-          visionAnalysis = await analyzeFigureWithVision(
-            fig.image_data, 
-            `Manual: ${manual_id}, Page: ${fig.page_number}`
-          );
-          if (visionAnalysis) {
-            console.log(`🔍 Vision analysis completed for ${fig.figure_id}`);
-          } else {
-            console.log(`🔍 Vision analysis returned null for ${fig.figure_id}`);
+          // Use the first valid source for vision analysis
+          const firstValidSource = fig.image_sources[0];
+          const analysisData = typeof firstValidSource === 'string' ? firstValidSource :
+                               firstValidSource?.data || firstValidSource?.base64 || firstValidSource?.url;
+          
+          if (analysisData) {
+            visionAnalysis = await analyzeFigureWithVision(
+              analysisData, 
+              `Manual: ${manual_id}, Page: ${fig.page_number}`
+            );
+            if (visionAnalysis) {
+              console.log(`🔍 Vision analysis completed for ${fig.figure_id}`);
+            } else {
+              console.log(`🔍 Vision analysis returned null for ${fig.figure_id}`);
+            }
           }
         } catch (visionError) {
           console.warn(`⚠️ Vision analysis failed for ${fig.figure_id}:`, visionError);
@@ -569,7 +708,23 @@ serve(async (req) => {
       }
     }
     
-    console.log(`📊 Figure processing summary: ${processedFigures} processed, ${skippedFigures} skipped`)
+    console.log(`📊 Figure processing summary: ${processedFigures} processed, ${skippedFigures} skipped`);
+    
+    // Log detailed error analysis
+    if (processingErrors.length > 0) {
+      console.log(`🔍 Figure processing errors analysis:`);
+      const errorsByType = processingErrors.reduce((acc, err) => {
+        acc[err.error] = (acc[err.error] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      for (const [errorType, count] of Object.entries(errorsByType)) {
+        console.log(`  - ${errorType}: ${count} figures`);
+      }
+      
+      const avgSourcesTried = processingErrors.reduce((sum, err) => sum + err.sources_tried, 0) / processingErrors.length;
+      console.log(`  - Average sources tried per failed figure: ${avgSourcesTried.toFixed(1)}`);
+    }
 
     // Process chunks → embeddings → DB
     let processedChunks = 0;
@@ -599,18 +754,28 @@ serve(async (req) => {
     // Update document timestamp
     await supabase.from("documents").update({ updated_at: new Date().toISOString() }).eq("manual_id", manual_id);
 
-    // Update processing status with final results
+    // Update processing status with final results and error details
+    const errorSummary = processingErrors.length > 0 ? {
+      total_errors: processingErrors.length,
+      error_types: processingErrors.reduce((acc, err) => {
+        acc[err.error] = (acc[err.error] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      avg_sources_tried: processingErrors.reduce((sum, err) => sum + err.sources_tried, 0) / processingErrors.length
+    } : null;
+
     await supabase.from("processing_status").upsert({
       job_id: jobId,
       manual_id,
       status: 'completed',
       stage: 'finished',
-      current_task: 'Processing complete',
+      current_task: `Processing complete - ${processedFigures}/${figures.length} figures successful`,
       progress_percent: 100,
       total_chunks: chunks.length,
       chunks_processed: processedChunks,
       total_figures: figures.length,
       figures_processed: processedFigures,
+      error_message: errorSummary ? `Figure errors: ${JSON.stringify(errorSummary)}` : null,
       fec_tenant_id: docData.fec_tenant_id,
       updated_at: new Date().toISOString()
     }, {

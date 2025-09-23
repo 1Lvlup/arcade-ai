@@ -342,6 +342,29 @@ function chunkPlainText(text: string): Array<{content: string}> {
   return chunks;
 }
 
+// Helper to infer page numbers from filenames or indices
+function inferPageNumber(nameOrKey?: string, idx?: number | null) {
+  const s = String(nameOrKey || "");
+
+  // Common patterns: "page_12", "page-012", "p12", "p_12", "Page 7", "img_p21_1.png"
+  const m =
+    s.match(/page[_\-\s]?(\d{1,4})/i) ||
+    s.match(/\bp(?:age)?[_\-\s]?(\d{1,4})\b/i) ||
+    s.match(/img_p(\d{1,4})/i) || // LlamaCloud format like "img_p21_1.png"
+    // trailing number before extension: "..._003.png"
+    s.match(/[_\-](\d{1,4})\.(?:png|jpe?g|gif|webp|bmp|tiff?)$/i);
+
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (!Number.isNaN(n)) return n;
+  }
+
+  // As a last resort, if you believe images[] order ≈ page order
+  if (typeof idx === "number") return idx + 1; // 1-based page guess
+
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -489,7 +512,7 @@ serve(async (req) => {
             image_sources: [data], // Wrap in array since that's what the processing expects
             caption_text: null,
             ocr_text: null,
-            page_number: null, // unknown without JSON
+            page_number: inferPageNumber(key, null), // try to infer from filename
             callouts: null,
             bbox_pdf_coords: null,
           });
@@ -524,7 +547,7 @@ serve(async (req) => {
             image_sources: [data], // Wrap in array since that's what the processing expects
             caption_text: null,
             ocr_text: null,
-            page_number: null, // unknown without JSON
+            page_number: inferPageNumber(typeof val === "object" ? (val.name || val.filename) : undefined, i), // try to infer
             callouts: null,
             bbox_pdf_coords: null,
           });

@@ -258,6 +258,69 @@ async function analyzeFigureWithVision(imageData: string, context: string) {
   }
 }
 
+// AI-powered OCR and caption generation for figures
+async function enhanceFigureWithAI(imageData: string, context: string): Promise<{caption: string | null, ocrText: string | null}> {
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: `You are an expert at analyzing technical diagrams and images from arcade game manuals. Your job is to:
+1. Generate a descriptive caption for the image (focus on what it shows functionally)
+2. Extract any visible text from the image (OCR)
+
+Respond in JSON format:
+{
+  "caption": "Brief descriptive caption of what the image shows",
+  "ocr_text": "All visible text extracted from the image, or null if no text"
+}`
+        }, {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Analyze this image from an arcade game manual. Context: ${context}. Provide a caption and extract any text.`
+            },
+            {
+              type: "image_url",
+              image_url: { url: imageData.startsWith("data:") ? imageData : `data:image/png;base64,${imageData}` }
+            }
+          ]
+        }],
+        max_tokens: 300,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ OpenAI API failed: ${response.status} ${response.statusText}`);
+      return {caption: null, ocrText: null};
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    
+    if (!content) return {caption: null, ocrText: null};
+
+    try {
+      const parsed = JSON.parse(content);
+      return {
+        caption: parsed.caption || null,
+        ocrText: parsed.ocr_text || null
+      };
+    } catch {
+      // Fallback: treat the response as a caption
+      return {caption: content.slice(0, 200), ocrText: null};
+    }
+  } catch (error) {
+    console.warn(`⚠️ Figure enhancement failed:`, error);
+    return {caption: null, ocrText: null};
+  }
+}
+
+
 // Semantic chunking with hierarchical structure
 function extractSemanticChunks(jsonData: any[]): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string; chunk_type?: string; parent_id?: string}> {
   const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string; chunk_type?: string; parent_id?: string}> = [];
@@ -619,8 +682,11 @@ serve(async (req) => {
           }
         }
 
-        // Vision (best-effort)
+        // Enhanced figure processing with AI caption and OCR
+        let enhancedCaption = fig.caption_text;
+        let enhancedOcr = fig.ocr_text;
         let visionAnalysis: string | null = null;
+        
         try {
           const firstSrc = fig.image_sources[0];
           const dataForVision =
@@ -629,16 +695,32 @@ serve(async (req) => {
               : firstSrc?.data || firstSrc?.base64 || firstSrc?.b64_json || firstSrc?.url || firstSrc?.content || null;
 
           if (dataForVision) {
-            visionAnalysis = await analyzeFigureWithVision(
-              typeof dataForVision === "string" ? dataForVision : String(dataForVision),
-              `Manual: ${manual_id}, Page: ${fig.page_number}`,
-            );
+            const imageDataUri = typeof dataForVision === "string" ? dataForVision : String(dataForVision);
+            const context = `Manual: ${manual_id}, Page: ${fig.page_number}`;
+            
+            // Get AI enhancement if we don't have good caption/OCR
+            const needsEnhancement = !enhancedCaption || enhancedCaption.length < 20 || !enhancedOcr;
+            if (needsEnhancement) {
+              console.log(`🔍 Enhancing figure ${fig.figure_id} with AI...`);
+              const enhancement = await enhanceFigureWithAI(imageDataUri, context);
+              if (enhancement.caption && (!enhancedCaption || enhancedCaption.length < 20)) {
+                enhancedCaption = enhancement.caption;
+                console.log(`✨ Generated caption for ${fig.figure_id}: ${enhancedCaption.slice(0, 50)}...`);
+              }
+              if (enhancement.ocrText && !enhancedOcr) {
+                enhancedOcr = enhancement.ocrText;
+                console.log(`📝 Extracted OCR for ${fig.figure_id}: ${enhancedOcr.slice(0, 50)}...`);
+              }
+            }
+
+            // Get vision analysis for additional context
+            visionAnalysis = await analyzeFigureWithVision(imageDataUri, context);
           }
         } catch (vErr) {
-          console.warn(`⚠️ Vision failed for ${fig.figure_id}:`, vErr);
+          console.warn(`⚠️ Vision/Enhancement failed for ${fig.figure_id}:`, vErr);
         }
 
-        const figureContent = [fig.caption_text || "", fig.ocr_text || "", visionAnalysis || ""].filter(Boolean).join("\n");
+        const figureContent = [enhancedCaption || "", enhancedOcr || "", visionAnalysis || ""].filter(Boolean).join("\n");
         let embedding: number[] | null = null;
         if (figureContent.length > 10) {
           try {
@@ -654,8 +736,8 @@ serve(async (req) => {
           page_number: fig.page_number ?? null,
           figure_id: fig.figure_id,
           image_url: s3Uri,
-          caption_text: fig.caption_text ?? null,
-          ocr_text: fig.ocr_text ?? null,
+          caption_text: enhancedCaption ?? null,
+          ocr_text: enhancedOcr ?? null,
           callouts_json: fig.callouts ?? null,
           bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
           embedding_text: embedding,

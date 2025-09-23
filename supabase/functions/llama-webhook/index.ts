@@ -445,6 +445,33 @@ serve(async (req) => {
       imagesLength: Array.isArray(payload.images) ? payload.images.length : (payload.images ? Object.keys(payload.images).length : 0),
     });
 
+    // Add detailed payload debugging
+    if (payload.images) {
+      console.log(`🔍 Payload images structure detailed analysis:`);
+      if (typeof payload.images === 'object' && !Array.isArray(payload.images)) {
+        const keys = Object.keys(payload.images).slice(0, 5); // Show first 5 keys
+        for (const key of keys) {
+          const value = payload.images[key];
+          console.log(`  Key: ${key}`);
+          console.log(`    Type: ${typeof value}`);
+          console.log(`    Length: ${typeof value === 'string' ? value.length : 'N/A'}`);
+          if (typeof value === 'string') {
+            console.log(`    Starts with: ${value.substring(0, 30)}`);
+            console.log(`    Is data URL: ${value.startsWith('data:')}`);
+            console.log(`    Contains base64: ${value.includes('base64')}`);
+          } else if (value && typeof value === 'object') {
+            console.log(`    Object keys: ${Object.keys(value)}`);
+          }
+        }
+      } else if (Array.isArray(payload.images)) {
+        console.log(`  Array with ${payload.images.length} items`);
+        for (let i = 0; i < Math.min(3, payload.images.length); i++) {
+          const item = payload.images[i];
+          console.log(`    [${i}] Type: ${typeof item}, Length: ${typeof item === 'string' ? item.length : 'N/A'}`);
+        }
+      }
+    }
+
     if (payload.json && Array.isArray(payload.json)) {
       for (const page of payload.json) {
         if (page.images && Array.isArray(page.images)) {

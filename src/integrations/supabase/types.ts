@@ -387,6 +387,22 @@ export type Database = {
         Args: { tenant_id: string }
         Returns: undefined
       }
+      simple_search: {
+        Args: {
+          search_limit?: number
+          search_manual?: string
+          search_query: string
+          search_tenant?: string
+        }
+        Returns: {
+          content: string
+          id: string
+          manual_id: string
+          menu_path: string
+          page_end: number
+          page_start: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

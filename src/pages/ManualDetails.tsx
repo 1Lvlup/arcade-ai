@@ -31,6 +31,7 @@ interface Chunk {
 
 interface Figure {
   id: string;
+  figure_id?: string;
   image_url: string;
   caption_text?: string;
   ocr_text?: string;
@@ -48,6 +49,7 @@ const ManualDetails = () => {
   const [figures, setFigures] = useState<Figure[]>([]);
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string>('');
+  const [figureUrls, setFigureUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (manualId) {
@@ -97,6 +99,35 @@ const ManualDetails = () => {
 
       if (figuresError) throw figuresError;
       setFigures(figuresData || []);
+
+      // Generate presigned URLs for all figures
+      if (figuresData && figuresData.length > 0) {
+        const urlPromises = figuresData.map(async (figure) => {
+          try {
+            const response = await supabase.functions.invoke('presign-image', {
+              body: { figure_id: figure.figure_id }
+            });
+            
+            if (response.data?.presigned_url) {
+              return { id: figure.id, url: response.data.presigned_url };
+            }
+          } catch (error) {
+            console.error(`Failed to get presigned URL for figure ${figure.figure_id}:`, error);
+          }
+          return null;
+        });
+
+        const urlResults = await Promise.all(urlPromises);
+        const urlMap: Record<string, string> = {};
+        
+        urlResults.forEach((result) => {
+          if (result) {
+            urlMap[result.id] = result.url;
+          }
+        });
+        
+        setFigureUrls(urlMap);
+      }
 
     } catch (error) {
       console.error('Error fetching manual details:', error);
@@ -329,17 +360,26 @@ const ManualDetails = () => {
                             </Badge>
                           )}
                         </CardHeader>
-                        <CardContent className="space-y-2">
-                          <div className="aspect-video bg-muted rounded overflow-hidden">
-                            <img
-                              src={figure.image_url}
-                              alt={figure.caption_text || `Figure ${index + 1}`}
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                e.currentTarget.src = '/placeholder.svg';
-                              }}
-                            />
-                          </div>
+                         <CardContent className="space-y-2">
+                           <div className="aspect-video bg-muted rounded overflow-hidden">
+                             {figureUrls[figure.id] ? (
+                               <img
+                                 src={figureUrls[figure.id]}
+                                 alt={figure.caption_text || `Figure ${index + 1}`}
+                                 className="w-full h-full object-contain"
+                                 onError={(e) => {
+                                   e.currentTarget.src = '/placeholder.svg';
+                                 }}
+                               />
+                             ) : (
+                               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                 <div className="text-center">
+                                   <Image className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                   <p className="text-sm">Loading image...</p>
+                                 </div>
+                               </div>
+                             )}
+                           </div>
                           {figure.caption_text && (
                             <div className="text-xs text-muted-foreground">
                               <strong>Caption:</strong> {figure.caption_text}

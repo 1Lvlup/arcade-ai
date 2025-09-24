@@ -717,14 +717,32 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
         let visionAnalysis: string | null = null;
         
         try {
+          // Build imageDataUri from resolved image data, not from original image_sources
+          // This ensures vision enhancement works for both original and fallback images
+          let imageDataUri: string | null = null;
+          
+          // First try to get from original image_sources
           const firstSrc = fig.image_sources[0];
-          const dataForVision =
-            typeof firstSrc === "string"
-              ? firstSrc
-              : firstSrc?.data || firstSrc?.base64 || firstSrc?.b64_json || firstSrc?.url || firstSrc?.content || null;
+          if (firstSrc) {
+            const dataForVision =
+              typeof firstSrc === "string"
+                ? firstSrc
+                : firstSrc?.data || firstSrc?.base64 || firstSrc?.b64_json || firstSrc?.url || firstSrc?.content || null;
+            
+            if (dataForVision) {
+              imageDataUri = typeof dataForVision === "string" ? dataForVision : String(dataForVision);
+            }
+          }
+          
+          // If no imageDataUri from original sources, create from resolved buffer
+          // This is crucial for fallback images fetched via fetchImageFromLlama
+          if (!imageDataUri && resolved?.buffer) {
+            const base64Data = btoa(String.fromCharCode(...resolved.buffer));
+            imageDataUri = `data:${resolved.contentType};base64,${base64Data}`;
+            console.log(`🔧 Created base64 data URI for vision analysis from resolved buffer: ${fig.figure_id}`);
+          }
 
-          if (dataForVision) {
-            const imageDataUri = typeof dataForVision === "string" ? dataForVision : String(dataForVision);
+          if (imageDataUri) {
             const context = `Manual: ${manual_id}, Page: ${fig.page_number}`;
             
             // Get AI enhancement if we don't have good caption/OCR

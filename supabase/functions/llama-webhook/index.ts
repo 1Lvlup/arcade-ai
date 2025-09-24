@@ -38,21 +38,21 @@ const aws = new AwsClient({
 
 async function uploadToS3(buffer: Uint8Array, key: string, contentType = "application/octet-stream") {
   const url = `https://${s3Bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
-  const resp = await aws.fetch(url, { method: "PUT", headers: { "Content-Type": contentType }, body: buffer });
+  const resp = await aws.fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body: buffer
+  });
   const body = await resp.text();
   if (!resp.ok) throw new Error(`S3 upload failed: ${resp.status} ${resp.statusText} – ${body.slice(0, 1000)}`);
-  
-  // Log magic bytes for verification
+
+  // (optional) keep your debug logs
   const magicBytes = Array.from(buffer.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
   console.log(`🔎 Magic bytes for ${key}: ${magicBytes}`);
   console.log(`🪣 S3 verify -> key=${key} size=${buffer.length}B type=${contentType}`);
-  
-  return {
-    httpUrl: url,
-    s3Uri: `s3://${s3Bucket}/${key}`,
-    size: buffer.length,
-    contentType
-  };
+
+  // ⬅️ return the HTTPS url directly
+  return url;
 }
 
 async function createEmbedding(text: string) {

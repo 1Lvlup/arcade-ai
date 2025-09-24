@@ -683,7 +683,7 @@ serve(async (req) => {
         }
 
        // Upload to S3 (with retry)
-const key = `manuals/${manual_id}/${fig.figure_id}.${resolvedImage.ext}`;
+const key = `manuals/${manual_id}/${fig.figure_id}.${resolved.ext}`;
 
 let uploadInfo: { httpUrl: string; s3Uri: string; size: number; contentType: string } | null = null;
 let uploadAttempts = 0;
@@ -691,7 +691,7 @@ const maxRetries = 2;
 
 while (uploadAttempts <= maxRetries) {
   try {
-    uploadInfo = await uploadToS3(resolvedImage.buffer, key, resolvedImage.contentType);
+    uploadInfo = await uploadToS3(resolved.buffer, key, resolved.contentType);
     console.log(`📤 Uploaded ${fig.figure_id} to S3: ${uploadInfo.httpUrl}`);
     break;
   } catch (uploadError) {
@@ -753,13 +753,13 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
       }
         }
 
-        console.log(`💾 Inserting figure: ${fig.figure_id}, URL: ${uploadMeta!.httpUrl}, Size: ${uploadMeta!.size} bytes`);
+        console.log(`💾 Inserting figure: ${fig.figure_id}, URL: ${uploadInfo!.httpUrl}, Size: ${uploadInfo!.size} bytes`);
         
         const { error: figureInsertError } = await supabase.from("figures").insert({
           manual_id,
           page_number: fig.page_number ?? null,
           figure_id: fig.figure_id,
-          image_url: uploadMeta!.httpUrl,
+          image_url: uploadInfo!.httpUrl,
           caption_text: enhancedCaption ?? null,
           ocr_text: enhancedOcr ?? null,
           callouts_json: fig.callouts ?? null,

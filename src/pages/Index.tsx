@@ -60,19 +60,19 @@ const Index = () => {
   const coreFeatures = [{
     icon: <Brain className="h-8 w-8" />,
     title: "Neural AI Assistant",
-    description: "Multi-modal transformer architecture with 175B+ parameters, featuring advanced reasoning chains, contextual memory persistence, and real-time cognitive adaptation protocols",
+    description: "Advanced conversational AI powered by cutting-edge language models",
     status: "Active",
     onClick: handleStartGeneralChat
   }, {
     icon: <BookOpen className="h-8 w-8" />,
     title: "Intelligent Document Processing",
-    description: "Quantum-enhanced OCR with semantic vectorization, automated knowledge graph construction, and neural embedding clusters for instant multi-dimensional insight extraction",
+    description: "Upload, analyze, and extract insights from technical manuals instantly",
     status: "Active",
     link: "/manuals"
   }, {
     icon: <Eye className="h-8 w-8" />,
     title: "Strategic Vision Board",
-    description: "Predictive analytics engine with Monte Carlo simulations, deep reinforcement learning, and adaptive neural forecasting for strategic optimization",
+    description: "AI-driven analytics and strategic planning dashboard",
     status: "Active",
     link: "/vision-board"
   }];

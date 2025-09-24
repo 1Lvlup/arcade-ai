@@ -108,6 +108,7 @@ serve(async (req) => {
     console.log(`🧪 Testing enhancement for figure: ${figure_id || 'all'}, manual: ${manual_id || 'all'}`);
 
     // Set tenant context for service access to figures
+    console.log(`🔑 Setting tenant context...`);
     const { error: contextError } = await supabase.rpc('set_tenant_context', { 
       tenant_id: '00000000-0000-0000-0000-000000000001' 
     });
@@ -119,19 +120,30 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    console.log(`✅ Tenant context set successfully`);
 
     // Get figures to enhance
+    console.log(`🔍 Building query for figures...`);
     let query = supabase.from("figures").select("*");
     
     if (figure_id) {
+      console.log(`🎯 Filtering by figure_id: ${figure_id}`);
       query = query.eq("id", figure_id);
     } else if (manual_id) {
+      console.log(`📖 Filtering by manual_id: ${manual_id}`);
       query = query.eq("manual_id", manual_id);
+    } else {
+      console.log(`📚 No filters applied, getting any figures`);
     }
 
     query = query.limit(5); // Limit for testing
+    console.log(`🚀 Executing query...`);
 
     const { data: figures, error } = await query;
+    
+    console.log(`🔍 Query result - Error: ${error ? JSON.stringify(error) : 'None'}`);
+    console.log(`🔍 Query result - Figures count: ${figures ? figures.length : 0}`);
+    console.log(`🔍 Query result - Sample figure: ${figures?.[0] ? JSON.stringify({id: figures[0].id, manual_id: figures[0].manual_id}) : 'None'}`);
     
     if (error) {
       console.error("❌ Database error:", error);

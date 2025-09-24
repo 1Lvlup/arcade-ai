@@ -107,6 +107,19 @@ serve(async (req) => {
 
     console.log(`🧪 Testing enhancement for figure: ${figure_id || 'all'}, manual: ${manual_id || 'all'}`);
 
+    // Set tenant context for service access to figures
+    const { error: contextError } = await supabase.rpc('set_tenant_context', { 
+      tenant_id: '00000000-0000-0000-0000-000000000001' 
+    });
+    
+    if (contextError) {
+      console.error("❌ Failed to set tenant context:", contextError);
+      return new Response(JSON.stringify({ error: "Failed to set tenant context" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Get figures to enhance
     let query = supabase.from("figures").select("*");
     

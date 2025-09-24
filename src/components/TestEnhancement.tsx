@@ -168,6 +168,9 @@ export function TestEnhancement() {
                     {result.new_ocr && (
                       <p><strong>New OCR:</strong> {result.new_ocr}</p>
                     )}
+                    {result.new_vision && (
+                      <p><strong>New Vision:</strong> {result.new_vision}</p>
+                    )}
                     {result.error && (
                       <p className="text-destructive"><strong>Error:</strong> {result.error}</p>
                     )}

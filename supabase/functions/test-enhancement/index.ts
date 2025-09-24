@@ -220,6 +220,7 @@ serve(async (req) => {
             .update({
               caption_text: enhancement.caption,
               ocr_text: enhancement.ocrText,
+              vision_text: enhancement.caption, // Store vision analysis result
               updated_at: new Date().toISOString()
             })
             .eq("id", figure.id);
@@ -235,8 +236,10 @@ serve(async (req) => {
           figure_id: figure.id,
           original_caption: figure.caption_text,
           original_ocr: figure.ocr_text,
+          original_vision: figure.vision_text,
           new_caption: enhancement.caption,
           new_ocr: enhancement.ocrText,
+          new_vision: enhancement.caption,
           status: "enhanced"
         });
 

@@ -36,9 +36,11 @@ const aws = new AwsClient({
   service: "s3",
 });
 
-async function uploadToS3(buffer: Uint8Array, key: string, contentType = "application/octet-stream") {
-  const url = `https://${s3Bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
-  const resp = await aws.fetch(url, {
+async function uploadToS3(buffer: Uint8Array, key: string, contentType = "application/octet-stream"): Promise<{httpUrl: string; s3Uri: string; size: number; contentType: string}> {
+  const httpUrl = `https://${s3Bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
+  const s3Uri = `s3://${s3Bucket}/${key}`;
+  
+  const resp = await aws.fetch(httpUrl, {
     method: "PUT",
     headers: { "Content-Type": contentType },
     body: buffer
@@ -51,8 +53,13 @@ async function uploadToS3(buffer: Uint8Array, key: string, contentType = "applic
   console.log(`🔎 Magic bytes for ${key}: ${magicBytes}`);
   console.log(`🪣 S3 verify -> key=${key} size=${buffer.length}B type=${contentType}`);
 
-  // ⬅️ return the HTTPS url directly
-  return url;
+  // Return complete upload metadata
+  return {
+    httpUrl,
+    s3Uri,
+    size: buffer.length,
+    contentType
+  };
 }
 
 async function createEmbedding(text: string) {
@@ -755,7 +762,7 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
 
         console.log(`💾 Inserting figure: ${fig.figure_id}, URL: ${uploadInfo!.httpUrl}, Size: ${uploadInfo!.size} bytes`);
         
-        const { error: figureInsertError } = await supabase.from("figures").insert({
+        const { error: figureInsertError } = await supabase.from("figures").upsert({
           manual_id,
           page_number: fig.page_number ?? null,
           figure_id: fig.figure_id,
@@ -766,6 +773,8 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
           bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
           embedding_text: embedding,
           fec_tenant_id: docData.fec_tenant_id,
+        }, {
+          onConflict: 'manual_id,figure_id'
         });
         if (figureInsertError) {
           console.error(`❌ DB insert failed for ${fig.figure_id}:`, figureInsertError);

@@ -704,19 +704,6 @@ while (uploadAttempts <= maxRetries) {
 
 if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
 
-const { error: figErr } = await supabase.from("figures").insert({
-  manual_id,
-  page_number: fig.page_number ?? null,
-  figure_id: fig.figure_id,
-  image_url: uploadInfo.httpUrl,   // ✅ store the HTTPS URL
-  caption_text: fig.caption_text ?? null,
-  ocr_text: fig.ocr_text ?? null,
-  callouts_json: fig.callouts ?? null,
-  bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
-  embedding_text: embedding,
-  fec_tenant_id: docData.fec_tenant_id,
-});
-
         // Enhanced figure processing with AI caption and OCR
         let enhancedCaption = fig.caption_text;
         let enhancedOcr = fig.ocr_text;

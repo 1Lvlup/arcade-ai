@@ -64,16 +64,7 @@ serve(async (req) => {
 
     console.log("Database query result:", { fig, error });
 
-    if (error) {
-      console.error("Database error:", error);
-      throw new Error(`Database error: ${error.message}`);
-    }
-    
-    if (!fig) {
-      console.error("No figure found for:", { figure_id, manual_id });
-      throw new Error("Figure not found");
-    }
-    
+    if (error || !fig) throw new Error("Figure not found");
     if (!fig.image_url || (!fig.image_url.startsWith("s3://") && !fig.image_url.startsWith("https://"))) {
       console.log("Invalid image URL:", fig.image_url);
       throw new Error("Invalid image URL format");
@@ -81,7 +72,6 @@ serve(async (req) => {
 
     console.log("Generating presigned URL for:", fig.image_url);
     const url = await generatePresignedUrl(fig.image_url, 600);
-    console.log("Successfully generated presigned URL");
 
     return new Response(JSON.stringify({
       presigned_url: url,

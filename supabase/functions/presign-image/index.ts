@@ -76,6 +76,18 @@ serve(async (req) => {
     }
 
     console.log("🔍 PRESIGN DB QUERY - About to query figures table...");
+    
+    // First, check if figure exists without RLS restrictions (using service key)
+    const { data: figureCheck, error: checkError } = await supabase
+      .from("figures")
+      .select("figure_id, manual_id, fec_tenant_id")
+      .eq("figure_id", figure_id)
+      .eq("manual_id", manual_id);
+      
+    console.log("🔍 PRESIGN DB CHECK - Check error:", checkError ? JSON.stringify(checkError) : "None");
+    console.log("🔍 PRESIGN DB CHECK - Figures found:", figureCheck?.length || 0);
+    console.log("🔍 PRESIGN DB CHECK - First figure:", figureCheck?.[0] ? JSON.stringify(figureCheck[0]) : "None");
+    
     const { data: fig, error } = await supabase
       .from("figures")
       .select("image_url, caption_text, ocr_text, manual_id, fec_tenant_id")

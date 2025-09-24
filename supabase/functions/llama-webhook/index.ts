@@ -757,15 +757,15 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
             
             console.log(`🔍 Vision processing enabled for ${fig.figure_id} - imageDataUri available`);
             
-            // Get AI enhancement if we don't have good caption/OCR
-            const needsEnhancement = !enhancedCaption || enhancedCaption.length < 20 || !enhancedOcr;
+            // Get AI enhancement if we don't have good caption/OCR (aligned with quality-check threshold)
+            const needsEnhancement = !enhancedCaption || enhancedCaption.length < 50 || !enhancedOcr;
             if (needsEnhancement) {
               if (!openaiApiKey) {
                 console.log(`⚠️ AI enhancement SKIPPED for ${fig.figure_id} - OPENAI_API_KEY not available`);
               } else {
                 console.log(`🔍 Enhancing figure ${fig.figure_id} with AI...`);
                 const enhancement = await enhanceFigureWithAI(imageDataUri, context);
-                if (enhancement.caption && (!enhancedCaption || enhancedCaption.length < 20)) {
+                if (enhancement.caption && (!enhancedCaption || enhancedCaption.length < 50)) {
                   enhancedCaption = enhancement.caption;
                   console.log(`✨ Generated caption for ${fig.figure_id}: ${enhancedCaption.slice(0, 50)}...`);
                 }
@@ -808,6 +808,7 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
           image_url: uploadInfo!.httpUrl,
           caption_text: enhancedCaption ?? null,
           ocr_text: enhancedOcr ?? null,
+          vision_text: visionAnalysis ?? null,
           callouts_json: fig.callouts ?? null,
           bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
           embedding_text: embedding,

@@ -183,6 +183,7 @@ export type Database = {
           manual_id: string
           ocr_text: string | null
           page_number: number | null
+          vision_text: string | null
         }
         Insert: {
           bbox_pdf_coords?: string | null
@@ -198,6 +199,7 @@ export type Database = {
           manual_id: string
           ocr_text?: string | null
           page_number?: number | null
+          vision_text?: string | null
         }
         Update: {
           bbox_pdf_coords?: string | null
@@ -213,6 +215,7 @@ export type Database = {
           manual_id?: string
           ocr_text?: string | null
           page_number?: number | null
+          vision_text?: string | null
         }
         Relationships: [
           {

@@ -755,7 +755,7 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
 
         console.log(`💾 Inserting figure: ${fig.figure_id}, URL: ${uploadMeta!.httpUrl}, Size: ${uploadMeta!.size} bytes`);
         
-        const { error: figErr } = await supabase.from("figures").insert({
+        const { error: figureInsertError } = await supabase.from("figures").insert({
           manual_id,
           page_number: fig.page_number ?? null,
           figure_id: fig.figure_id,
@@ -767,8 +767,8 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
           embedding_text: embedding,
           fec_tenant_id: docData.fec_tenant_id,
         });
-        if (figErr) {
-          console.error(`❌ DB insert failed for ${fig.figure_id}:`, figErr);
+        if (figureInsertError) {
+          console.error(`❌ DB insert failed for ${fig.figure_id}:`, figureInsertError);
         } else {
           processedFigures++;
           console.log(`✅ Stored figure ${fig.figure_id}`);

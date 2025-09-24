@@ -245,6 +245,11 @@ async function fetchImageFromLlama(jobId: string, filename: string): Promise<{bu
 
 // Vision analysis (single, correct version)
 async function analyzeFigureWithVision(imageData: string, context: string) {
+  if (!openaiApiKey) {
+    console.error("❌ OPENAI_API_KEY not available - skipping vision analysis");
+    return null;
+  }
+  
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -284,6 +289,11 @@ async function analyzeFigureWithVision(imageData: string, context: string) {
 
 // AI-powered OCR and caption generation for figures
 async function enhanceFigureWithAI(imageData: string, context: string): Promise<{caption: string | null, ocrText: string | null}> {
+  if (!openaiApiKey) {
+    console.error("❌ OPENAI_API_KEY not available - skipping AI enhancement");
+    return {caption: null, ocrText: null};
+  }
+  
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -745,9 +755,14 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
           if (imageDataUri) {
             const context = `Manual: ${manual_id}, Page: ${fig.page_number}`;
             
+            console.log(`🔍 Vision processing enabled for ${fig.figure_id} - imageDataUri available`);
+            
             // Get AI enhancement if we don't have good caption/OCR
             const needsEnhancement = !enhancedCaption || enhancedCaption.length < 20 || !enhancedOcr;
             if (needsEnhancement) {
+              if (!openaiApiKey) {
+                console.log(`⚠️ AI enhancement SKIPPED for ${fig.figure_id} - OPENAI_API_KEY not available`);
+              } else {
               console.log(`🔍 Enhancing figure ${fig.figure_id} with AI...`);
               const enhancement = await enhanceFigureWithAI(imageDataUri, context);
               if (enhancement.caption && (!enhancedCaption || enhancedCaption.length < 20)) {
@@ -758,10 +773,15 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
                 enhancedOcr = enhancement.ocrText;
                 console.log(`📝 Extracted OCR for ${fig.figure_id}: ${enhancedOcr.slice(0, 50)}...`);
               }
+            } else {
+              console.log(`✅ Enhancement skipped for ${fig.figure_id} - already has good caption/OCR`);
             }
 
             // Get vision analysis for additional context
             visionAnalysis = await analyzeFigureWithVision(imageDataUri, context);
+            console.log(`🔮 Vision analysis ${visionAnalysis ? 'completed' : 'failed'} for ${fig.figure_id}`);
+          } else {
+            console.log(`⚠️ Vision enhancement SKIPPED for ${fig.figure_id} - no valid imageDataUri available`);
           }
         } catch (vErr) {
           console.warn(`⚠️ Vision/Enhancement failed for ${fig.figure_id}:`, vErr);

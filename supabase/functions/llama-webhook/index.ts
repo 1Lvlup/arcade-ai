@@ -735,14 +735,16 @@ serve(async (req) => {
         const figureContent = [enhancedCaption || "", enhancedOcr || "", visionAnalysis || ""].filter(Boolean).join("\n");
         let embedding: number[] | null = null;
         if (figureContent.length > 10) {
-          try {
-            embedding = await createEmbedding(figureContent);
-            console.log(`🔗 Generated figure embedding: ${fig.figure_id}`);
-          } catch (embErr) {
-            console.warn(`⚠️ Figure embedding failed for ${fig.figure_id}:`, embErr);
-          }
+      try {
+        embedding = await createEmbedding(figureContent);
+        console.log(`🔗 Generated figure embedding (${embedding.length} dimensions): ${fig.figure_id}`);
+      } catch (embErr) {
+        console.error(`❌ Figure embedding failed for ${fig.figure_id}:`, embErr.message || embErr);
+      }
         }
 
+        console.log(`💾 Inserting figure: ${fig.figure_id}, URL: ${uploadMeta!.httpUrl}, Size: ${uploadMeta!.size} bytes`);
+        
         const { error: figErr } = await supabase.from("figures").insert({
           manual_id,
           page_number: fig.page_number ?? null,

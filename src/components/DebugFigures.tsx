@@ -190,7 +190,7 @@ export function DebugFigures({ manual_id }: DebugFiguresProps) {
                         <div className="mt-1 text-green-800">
                           {typeof debug.openai_test.response === 'string' 
                             ? debug.openai_test.response.slice(0, 200)
-                            : JSON.stringify(debug.openai_test.response).slice(0, 200)}
+                            : JSON.stringify(debug.openai_test.response).slice(0, 200)}...
                         </div>
                       </div>
                     )}
@@ -200,12 +200,16 @@ export function DebugFigures({ manual_id }: DebugFiguresProps) {
                         <strong>Errors:</strong>
                         {debug.presign_test?.error && (
                           <div className="mt-1 text-red-800">
-                            Presign: {debug.presign_test.error}
+                            Presign: {typeof debug.presign_test.error === 'string' 
+                              ? debug.presign_test.error 
+                              : JSON.stringify(debug.presign_test.error)}
                           </div>
                         )}
                         {debug.openai_test?.error && (
                           <div className="mt-1 text-red-800">
-                            OpenAI: {debug.openai_test.error}
+                            OpenAI: {typeof debug.openai_test.error === 'string' 
+                              ? debug.openai_test.error 
+                              : JSON.stringify(debug.openai_test.error)}
                           </div>
                         )}
                       </div>

@@ -78,7 +78,7 @@ serve(async (req) => {
         const { data: presignData, error: presignError } = await supabase.functions.invoke('presign-image', {
           body: { 
             figure_id: figure.figure_id,
-            manual_id: manual_id 
+            manual_id: figure.manual_id 
           }
         });
         

@@ -683,23 +683,23 @@ serve(async (req) => {
         }
 
         // Upload to S3 (with retry)
-       const key = `manuals/${manual_id}/${fig.figure_id}.${resolvedImage.ext}`;
-let imageUrl: string;
-let uploadAttempts = 0;
-const maxRetries = 2;
+        const key = `manuals/${manual_id}/${fig.figure_id}.${resolved.ext}`;
+        let imageUrl: string;
+        let uploadAttempts = 0;
+        const maxRetries = 2;
 
-while (uploadAttempts <= maxRetries) {
-  try {
-    imageUrl = await uploadToS3(resolvedImage.buffer, key, resolvedImage.contentType);
-    console.log(`📤 Uploaded ${fig.figure_id} to S3: ${imageUrl}`);
-    break;
-  } catch (uploadError) {
-    uploadAttempts++;
-    console.warn(`⚠️ S3 upload attempt ${uploadAttempts} failed for ${fig.figure_id}:`, uploadError);
-    if (uploadAttempts > maxRetries) throw uploadError;
-    await new Promise(r => setTimeout(r, 1000));
-  }
-}
+        while (uploadAttempts <= maxRetries) {
+          try {
+            imageUrl = await uploadToS3(resolved.buffer, key, resolved.contentType);
+            console.log(`📤 Uploaded ${fig.figure_id} to S3: ${imageUrl}`);
+            break;
+          } catch (uploadError) {
+            uploadAttempts++;
+            console.warn(`⚠️ S3 upload attempt ${uploadAttempts} failed for ${fig.figure_id}:`, uploadError);
+            if (uploadAttempts > maxRetries) throw uploadError;
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        }
 
 const { error: figErr } = await supabase.from("figures").insert({
   manual_id,

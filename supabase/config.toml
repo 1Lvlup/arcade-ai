@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.chat-assistant]
 verify_jwt = true
+
+[functions.test-enhancement]
+verify_jwt = true

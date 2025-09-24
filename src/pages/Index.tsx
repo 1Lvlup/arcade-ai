@@ -7,6 +7,7 @@ import { Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, Cpu, Networ
 import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
+import { TestEnhancement } from "@/components/TestEnhancement";
 import { Link } from 'react-router-dom';
 const Index = () => {
   const {
@@ -252,6 +253,10 @@ const Index = () => {
               </Button>
             </Link>
           </div>
+        </div>
+
+        <div className="mt-20 flex justify-center">
+          <TestEnhancement />
         </div>
 
         <div className="mt-20">

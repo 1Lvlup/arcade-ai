@@ -199,7 +199,7 @@ async function testSearchQuality(manual_id: string, questions: any[]) {
   for (const q of questions.slice(0, 5)) { // Test first 5 questions
     try {
       // Test search function
-      const searchResponse = await fetch(`${supabaseUrl}/functions/v1/search-manuals`, {
+      const searchResponse = await fetch(`${supabaseUrl}/functions/v1/search-manuals-robust`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseServiceKey}`,

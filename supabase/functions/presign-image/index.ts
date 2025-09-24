@@ -49,20 +49,29 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Get user context from the request headers
+    const authHeader = req.headers.get('authorization');
+    console.log("Auth header present:", !!authHeader);
     const { figure_id } = await req.json();
+    console.log("Requesting figure:", figure_id);
+    
     if (!figure_id) throw new Error("Figure ID is required");
 
     const { data: fig, error } = await supabase
       .from("figures")
-      .select("image_url, caption_text, ocr_text")
+      .select("image_url, caption_text, ocr_text, manual_id, fec_tenant_id")
       .eq("figure_id", figure_id)
       .single();
 
+    console.log("Database query result:", { fig, error });
+
     if (error || !fig) throw new Error("Figure not found");
     if (!fig.image_url || (!fig.image_url.startsWith("s3://") && !fig.image_url.startsWith("https://"))) {
+      console.log("Invalid image URL:", fig.image_url);
       throw new Error("Invalid image URL format");
     }
 
+    console.log("Generating presigned URL for:", fig.image_url);
     const url = await generatePresignedUrl(fig.image_url, 600);
 
     return new Response(JSON.stringify({

@@ -3,29 +3,24 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, 
-  Cpu, Network, ShieldCheck, Workflow, BarChart3, Sparkles,
-  Layers, Bot, Lightbulb, Rocket, Settings
-} from 'lucide-react';
+import { Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, Cpu, Network, ShieldCheck, Workflow, BarChart3, Sparkles, Layers, Bot, Lightbulb, Rocket, Settings } from 'lucide-react';
 import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
 import { Link } from 'react-router-dom';
-
 const Index = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [selectedManualId, setSelectedManualId] = useState<string>();
   const [selectedManualTitle, setSelectedManualTitle] = useState<string>();
-
   useEffect(() => {
     // Check URL parameters for chat mode
     const urlParams = new URLSearchParams(window.location.search);
     const chatMode = urlParams.get('chat');
     const manualId = urlParams.get('manual_id');
     const title = urlParams.get('title');
-    
     if (chatMode === 'true') {
       setShowChat(true);
       if (manualId) {
@@ -34,8 +29,6 @@ const Index = () => {
       }
     }
   }, []);
-
-
   const handleStartGeneralChat = () => {
     setSelectedManualId(undefined);
     setSelectedManualTitle(undefined);
@@ -47,7 +40,6 @@ const Index = () => {
     newUrl.searchParams.delete('title');
     window.history.pushState({}, '', newUrl.toString());
   };
-
   const handleBackToHome = () => {
     setShowChat(false);
     setSelectedManualId(undefined);
@@ -57,93 +49,68 @@ const Index = () => {
     newUrl.search = '';
     window.history.pushState({}, '', newUrl.toString());
   };
-
   if (showChat) {
-    return (
-      <div className="min-h-screen ai-bg">
-        <SharedHeader 
-          title={selectedManualId ? `Chat: ${selectedManualTitle}` : 'Neural Assistant'}
-          showBackButton={true}
-          backTo="/"
-        />
+    return <div className="min-h-screen ai-bg">
+        <SharedHeader title={selectedManualId ? `Chat: ${selectedManualTitle}` : 'Neural Assistant'} showBackButton={true} backTo="/" />
         <main className="container mx-auto px-4 py-8">
-          <ChatBot 
-            selectedManualId={selectedManualId}
-            manualTitle={selectedManualTitle}
-          />
+          <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />
         </main>
-      </div>
-    );
+      </div>;
   }
-
-  const coreFeatures = [
-    {
-      icon: <Brain className="h-8 w-8" />,
-      title: "Neural AI Assistant",
-      description: "Advanced conversational AI powered by cutting-edge language models",
-      status: "Active",
-      onClick: handleStartGeneralChat
-    },
-    {
-      icon: <BookOpen className="h-8 w-8" />,
-      title: "Intelligent Document Processing",
-      description: "Upload, analyze, and extract insights from technical manuals instantly",
-      status: "Active",
-      link: "/manuals"
-    },
-    {
-      icon: <Eye className="h-8 w-8" />,
-      title: "Strategic Vision Board",
-      description: "AI-driven analytics and strategic planning dashboard",
-      status: "Active",
-      link: "/vision-board"
-    }
-  ];
-
-  const advancedFeatures = [
-    {
-      icon: <Workflow className="h-6 w-6" />,
-      title: "Automated Workflows",
-      description: "Self-optimizing processes that learn from every interaction",
-      status: "Coming Soon"
-    },
-    {
-      icon: <Database className="h-6 w-6" />,
-      title: "Neural Knowledge Base",
-      description: "Dynamic knowledge graphs that evolve with your data",
-      status: "Beta"
-    },
-    {
-      icon: <BarChart3 className="h-6 w-6" />,
-      title: "Predictive Analytics",
-      description: "AI-powered forecasting and trend analysis",
-      status: "Development"
-    },
-    {
-      icon: <ShieldCheck className="h-6 w-6" />,
-      title: "Quantum Security",
-      description: "Next-generation encryption and data protection",
-      status: "Planned"
-    },
-    {
-      icon: <Network className="h-6 w-6" />,
-      title: "Multi-Agent Systems",
-      description: "Collaborative AI agents working in harmony",
-      status: "Research"
-    },
-    {
-      icon: <Sparkles className="h-6 w-6" />,
-      title: "Autonomous Optimization",
-      description: "Self-improving algorithms that enhance performance",
-      status: "Planned"
-    }
-  ];
-
-  return (
-    <div className="min-h-screen ai-bg">
+  const coreFeatures = [{
+    icon: <Brain className="h-8 w-8" />,
+    title: "Neural AI Assistant",
+    description: "Advanced conversational AI powered by cutting-edge language models",
+    status: "Active",
+    onClick: handleStartGeneralChat
+  }, {
+    icon: <BookOpen className="h-8 w-8" />,
+    title: "Intelligent Document Processing",
+    description: "Upload, analyze, and extract insights from technical manuals instantly",
+    status: "Active",
+    link: "/manuals"
+  }, {
+    icon: <Eye className="h-8 w-8" />,
+    title: "Strategic Vision Board",
+    description: "AI-driven analytics and strategic planning dashboard",
+    status: "Active",
+    link: "/vision-board"
+  }];
+  const advancedFeatures = [{
+    icon: <Workflow className="h-6 w-6" />,
+    title: "Automated Workflows",
+    description: "Self-optimizing processes that learn from every interaction",
+    status: "Coming Soon"
+  }, {
+    icon: <Database className="h-6 w-6" />,
+    title: "Neural Knowledge Base",
+    description: "Dynamic knowledge graphs that evolve with your data",
+    status: "Beta"
+  }, {
+    icon: <BarChart3 className="h-6 w-6" />,
+    title: "Predictive Analytics",
+    description: "AI-powered forecasting and trend analysis",
+    status: "Development"
+  }, {
+    icon: <ShieldCheck className="h-6 w-6" />,
+    title: "Quantum Security",
+    description: "Next-generation encryption and data protection",
+    status: "Planned"
+  }, {
+    icon: <Network className="h-6 w-6" />,
+    title: "Multi-Agent Systems",
+    description: "Collaborative AI agents working in harmony",
+    status: "Research"
+  }, {
+    icon: <Sparkles className="h-6 w-6" />,
+    title: "Autonomous Optimization",
+    description: "Self-improving algorithms that enhance performance",
+    status: "Planned"
+  }];
+  return <div className="min-h-screen ai-bg">
       <SharedHeader title="FEC Neural Portal" />
 
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 py-12 bg-gray-950">
         {/* Hero Section */}
         <div className="text-center space-y-8 mb-20">
           <div className="relative">
@@ -180,8 +147,7 @@ const Index = () => {
         <div className="mb-20">
           <h3 className="text-3xl font-bold text-center mb-12 neural-text">Core Intelligence Modules</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {coreFeatures.map((feature, index) => (
-              <Card key={index} className="glass-panel hover-lift border-primary/20 relative overflow-hidden group">
+            {coreFeatures.map((feature, index) => <Card key={index} className="glass-panel hover-lift border-primary/20 relative overflow-hidden group">
                 <div className="absolute inset-0 neural-bg opacity-5 group-hover:opacity-10 transition-opacity"></div>
                 <CardHeader className="relative">
                   <div className="flex items-center justify-between mb-4">
@@ -198,22 +164,17 @@ const Index = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="relative">
-                  {feature.onClick ? (
-                    <Button onClick={feature.onClick} className="w-full neural-bg border-0">
+                  {feature.onClick ? <Button onClick={feature.onClick} className="w-full neural-bg border-0">
                       <Bot className="h-4 w-4 mr-2" />
                       Activate Module
-                    </Button>
-                  ) : (
-                    <Link to={feature.link!}>
+                    </Button> : <Link to={feature.link!}>
                       <Button variant="outline" className="w-full border-primary/30 hover:bg-primary/10">
                         <Rocket className="h-4 w-4 mr-2" />
                         Access System
                       </Button>
-                    </Link>
-                  )}
+                    </Link>}
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
 
@@ -224,23 +185,13 @@ const Index = () => {
             Cutting-edge AI technologies that push the boundaries of what's possible
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {advancedFeatures.map((feature, index) => (
-              <Card key={index} className="glass-panel border-primary/10 hover-lift group">
+            {advancedFeatures.map((feature, index) => <Card key={index} className="glass-panel border-primary/10 hover-lift group">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-primary p-2 rounded-lg bg-primary/10 group-hover:ai-glow transition-all">
                       {feature.icon}
                     </div>
-                    <Badge 
-                      variant={feature.status === 'Active' ? 'default' : 'outline'}
-                      className={
-                        feature.status === 'Active' 
-                          ? "bg-primary text-primary-foreground" 
-                          : feature.status === 'Beta'
-                          ? "border-primary/50 text-primary"
-                          : "border-muted-foreground/30 text-muted-foreground"
-                      }
-                    >
+                    <Badge variant={feature.status === 'Active' ? 'default' : 'outline'} className={feature.status === 'Active' ? "bg-primary text-primary-foreground" : feature.status === 'Beta' ? "border-primary/50 text-primary" : "border-muted-foreground/30 text-muted-foreground"}>
                       {feature.status}
                     </Badge>
                   </div>
@@ -249,8 +200,7 @@ const Index = () => {
                 <CardContent>
                   <p className="text-muted-foreground text-sm">{feature.description}</p>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
 
@@ -258,20 +208,29 @@ const Index = () => {
         <div className="glass-panel rounded-2xl p-8 mb-20">
           <h3 className="text-2xl font-bold text-center mb-8 neural-text">Performance Metrics</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { label: "Processing Speed", value: "2.3ms", icon: <Zap className="h-5 w-5" /> },
-              { label: "Accuracy Rate", value: "99.9%", icon: <Target className="h-5 w-5" /> },
-              { label: "Neural Layers", value: "1.2B", icon: <Layers className="h-5 w-5" /> },
-              { label: "Active Sessions", value: "24/7", icon: <Settings className="h-5 w-5" /> }
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
+            {[{
+            label: "Processing Speed",
+            value: "2.3ms",
+            icon: <Zap className="h-5 w-5" />
+          }, {
+            label: "Accuracy Rate",
+            value: "99.9%",
+            icon: <Target className="h-5 w-5" />
+          }, {
+            label: "Neural Layers",
+            value: "1.2B",
+            icon: <Layers className="h-5 w-5" />
+          }, {
+            label: "Active Sessions",
+            value: "24/7",
+            icon: <Settings className="h-5 w-5" />
+          }].map((stat, index) => <div key={index} className="text-center">
                 <div className="text-primary ai-glow p-3 rounded-lg bg-primary/10 inline-flex mb-3">
                   {stat.icon}
                 </div>
                 <div className="text-3xl font-bold neural-text">{stat.value}</div>
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
 
@@ -299,8 +258,6 @@ const Index = () => {
           <ProcessingMonitor />
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;

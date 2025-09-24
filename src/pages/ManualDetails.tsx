@@ -105,7 +105,10 @@ const ManualDetails = () => {
         const urlPromises = figuresData.map(async (figure) => {
           try {
             const response = await supabase.functions.invoke('presign-image', {
-              body: { figure_id: figure.figure_id }
+              body: { 
+                figure_id: figure.figure_id,
+                manual_id: manualId 
+              }
             });
             
             if (response.data?.presigned_url) {

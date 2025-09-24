@@ -49,18 +49,17 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Get user context from the request headers
-    const authHeader = req.headers.get('authorization');
-    console.log("Auth header present:", !!authHeader);
-    const { figure_id } = await req.json();
-    console.log("Requesting figure:", figure_id);
+    const { figure_id, manual_id } = await req.json();
+    console.log("Requesting figure:", figure_id, "from manual:", manual_id);
     
     if (!figure_id) throw new Error("Figure ID is required");
+    if (!manual_id) throw new Error("Manual ID is required");
 
     const { data: fig, error } = await supabase
       .from("figures")
       .select("image_url, caption_text, ocr_text, manual_id, fec_tenant_id")
       .eq("figure_id", figure_id)
+      .eq("manual_id", manual_id)
       .single();
 
     console.log("Database query result:", { fig, error });

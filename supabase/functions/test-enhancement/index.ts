@@ -109,22 +109,32 @@ serve(async (req) => {
 
     // Set tenant context for service access to figures
     console.log(`🔑 Setting tenant context...`);
-    const { error: contextError } = await supabase.rpc('set_tenant_context', { 
+    const { data: contextData, error: contextError } = await supabase.rpc('set_tenant_context', { 
       tenant_id: '00000000-0000-0000-0000-000000000001' 
     });
     
     if (contextError) {
       console.error("❌ Failed to set tenant context:", contextError);
-      return new Response(JSON.stringify({ error: "Failed to set tenant context" }), {
+      return new Response(JSON.stringify({ error: "Failed to set tenant context", details: contextError }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    console.log(`✅ Tenant context set successfully`);
+    console.log(`✅ Tenant context set successfully: ${JSON.stringify(contextData)}`);
 
-    // Get figures to enhance
-    console.log(`🔍 Building query for figures...`);
-    let query = supabase.from("figures").select("*");
+    // Test tenant context
+    const { data: testContext, error: testContextError } = await supabase.rpc('get_current_tenant_context');
+    console.log(`🔍 Current tenant context: ${JSON.stringify(testContext)}, error: ${JSON.stringify(testContextError)}`);
+
+    // Get figures to enhance - use service role to bypass RLS
+    console.log(`🔍 Building query for figures with service role...`);
+    
+    // Create a new client with service role to bypass RLS
+    const serviceSupabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false }
+    });
+    
+    let query = serviceSupabase.from("figures").select("*");
     
     if (figure_id) {
       console.log(`🎯 Filtering by figure_id: ${figure_id}`);

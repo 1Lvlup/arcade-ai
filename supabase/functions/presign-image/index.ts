@@ -65,8 +65,25 @@ serve(async (req) => {
     console.log("Database query result:", { fig, error });
 
     if (error || !fig) throw new Error("Figure not found");
-    if (!fig.image_url || (!fig.image_url.startsWith("s3://") && !fig.image_url.startsWith("https://"))) {
-      console.log("Invalid image URL:", fig.image_url);
+    if (!fig.image_url) {
+      throw new Error("No image URL found for figure");
+    }
+
+    // If the image URL is already a public HTTPS URL, return it directly
+    // This is more efficient since our S3 bucket is configured for public access
+    if (fig.image_url.startsWith("https://")) {
+      console.log("Returning public HTTPS URL directly:", fig.image_url);
+      return new Response(JSON.stringify({
+        presigned_url: fig.image_url,
+        caption_text: fig.caption_text,
+        ocr_text: fig.ocr_text,
+        expires_in: null, // No expiration for public URLs
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // For s3:// URLs, generate a presigned URL
+    if (!fig.image_url.startsWith("s3://")) {
+      console.log("Invalid image URL format:", fig.image_url);
       throw new Error("Invalid image URL format");
     }
 

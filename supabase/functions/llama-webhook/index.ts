@@ -763,15 +763,16 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
               if (!openaiApiKey) {
                 console.log(`⚠️ AI enhancement SKIPPED for ${fig.figure_id} - OPENAI_API_KEY not available`);
               } else {
-              console.log(`🔍 Enhancing figure ${fig.figure_id} with AI...`);
-              const enhancement = await enhanceFigureWithAI(imageDataUri, context);
-              if (enhancement.caption && (!enhancedCaption || enhancedCaption.length < 20)) {
-                enhancedCaption = enhancement.caption;
-                console.log(`✨ Generated caption for ${fig.figure_id}: ${enhancedCaption.slice(0, 50)}...`);
-              }
-              if (enhancement.ocrText && !enhancedOcr) {
-                enhancedOcr = enhancement.ocrText;
-                console.log(`📝 Extracted OCR for ${fig.figure_id}: ${enhancedOcr.slice(0, 50)}...`);
+                console.log(`🔍 Enhancing figure ${fig.figure_id} with AI...`);
+                const enhancement = await enhanceFigureWithAI(imageDataUri, context);
+                if (enhancement.caption && (!enhancedCaption || enhancedCaption.length < 20)) {
+                  enhancedCaption = enhancement.caption;
+                  console.log(`✨ Generated caption for ${fig.figure_id}: ${enhancedCaption.slice(0, 50)}...`);
+                }
+                if (enhancement.ocrText && !enhancedOcr) {
+                  enhancedOcr = enhancement.ocrText;
+                  console.log(`📝 Extracted OCR for ${fig.figure_id}: ${enhancedOcr.slice(0, 50)}...`);
+                }
               }
             } else {
               console.log(`✅ Enhancement skipped for ${fig.figure_id} - already has good caption/OCR`);

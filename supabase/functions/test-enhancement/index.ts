@@ -190,7 +190,10 @@ serve(async (req) => {
         } else {
           console.log(`🔗 Getting presigned URL for figure ${figure.id}...`);
           const { data: presignData, error: presignError } = await supabase.functions.invoke('presign-image', {
-            body: { figure_id: figure.id }
+            body: { 
+              figure_id: figure.figure_id || figure.id, 
+              manual_id: figure.manual_id 
+            }
           });
           
           if (presignError || !presignData?.presigned_url) {

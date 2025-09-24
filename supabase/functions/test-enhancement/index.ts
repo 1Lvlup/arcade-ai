@@ -258,10 +258,11 @@ serve(async (req) => {
 
       } catch (error) {
         console.error(`❌ Error processing figure ${figure.id}:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         results.push({
           figure_id: figure.id,
           status: "error",
-          error: error.message
+          error: errorMessage
         });
       }
     }
@@ -276,8 +277,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("❌ Test enhancement error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: errorMessage,
       details: String(error)
     }), {
       status: 500,

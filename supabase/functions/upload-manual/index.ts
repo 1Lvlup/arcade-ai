@@ -219,7 +219,8 @@ For menu screenshots and wiring diagrams, transcribe every visible label/value. 
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("upload-manual error:", error);
-    return new Response(JSON.stringify({ error: error.message, details: String(error) }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return new Response(JSON.stringify({ error: errorMessage, details: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

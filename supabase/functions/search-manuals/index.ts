@@ -156,10 +156,10 @@ async function rerankResults(query: string, results: any[]): Promise<any[]> {
     }
 
     const data = await response.json();
-    const ranking = data.choices[0]?.message?.content?.match(/\d+/g)?.map(n => parseInt(n) - 1) || [];
+    const ranking = data.choices[0]?.message?.content?.match(/\d+/g)?.map((n: string) => parseInt(n) - 1) || [];
     
     if (ranking.length === results.length) {
-      const reranked = ranking.map(i => results[i]).filter(Boolean);
+      const reranked = ranking.map((i: number) => results[i]).filter(Boolean);
       console.log('✅ [SEARCH] Results reranked successfully');
       return reranked;
     }
@@ -378,15 +378,18 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorType = error instanceof Error ? error.constructor.name : 'Unknown';
+    const errorStack = error instanceof Error ? error.stack : String(error);
     console.error('🚨 [SEARCH] Function failed completely:', {
-      error: error.message,
-      errorType: error.constructor.name,
-      stack: error.stack,
+      error: errorMessage,
+      errorType: errorType,
+      stack: errorStack,
       timestamp: new Date().toISOString()
     });
     return new Response(JSON.stringify({ 
-      error: error.message,
-      details: error.toString()
+      error: errorMessage,
+      details: String(error)
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

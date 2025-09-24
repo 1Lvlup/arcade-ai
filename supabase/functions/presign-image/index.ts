@@ -41,7 +41,7 @@ async function generatePresignedUrl(imageUrl: string, expiresIn = 600) {
   }
   
   const base = `https://${bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
-  const signed = await aws.sign(base, { method: "GET" }, { aws: { signQuery: true, expires: expiresIn } });
+  const signed = await aws.sign(base, { method: "GET", aws: { signQuery: true } });
   return signed.url;
 }
 
@@ -120,7 +120,8 @@ serve(async (req) => {
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("presign-image error:", error);
-    return new Response(JSON.stringify({ error: error.message, details: String(error) }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return new Response(JSON.stringify({ error: errorMessage, details: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

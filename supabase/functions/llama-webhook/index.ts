@@ -43,7 +43,7 @@ async function uploadToS3(buffer: Uint8Array, key: string, contentType = "applic
   const resp = await aws.fetch(httpUrl, {
     method: "PUT",
     headers: { "Content-Type": contentType },
-    body: buffer
+    body: new Uint8Array(buffer)
   });
   const body = await resp.text();
   if (!resp.ok) throw new Error(`S3 upload failed: ${resp.status} ${resp.statusText} – ${body.slice(0, 1000)}`);
@@ -795,7 +795,8 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
         embedding = await createEmbedding(figureContent);
         console.log(`🔗 Generated figure embedding (${embedding.length} dimensions): ${fig.figure_id}`);
       } catch (embErr) {
-        console.error(`❌ Figure embedding failed for ${fig.figure_id}:`, embErr.message || embErr);
+        const errorMessage = embErr instanceof Error ? embErr.message : String(embErr);
+        console.error(`❌ Figure embedding failed for ${fig.figure_id}:`, errorMessage);
       }
         }
 
@@ -892,7 +893,8 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("llama-webhook error:", error);
-    return new Response(JSON.stringify({ error: error.message, details: String(error) }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return new Response(JSON.stringify({ error: errorMessage, details: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

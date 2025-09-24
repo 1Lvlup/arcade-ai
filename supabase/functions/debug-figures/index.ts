@@ -55,8 +55,8 @@ serve(async (req) => {
         current_caption: figure.caption_text,
         current_ocr: figure.ocr_text,
         image_accessible: false,
-        presign_test: null,
-        openai_test: null
+        presign_test: null as any,
+        openai_test: null as any
       };
       
       // Test 1: Check if image URL is accessible
@@ -67,7 +67,8 @@ serve(async (req) => {
           debug.image_accessible = imageResponse.ok;
           console.log(`${imageResponse.ok ? '✅' : '❌'} Direct image access: ${imageResponse.status}`);
         } catch (error) {
-          console.log(`❌ Direct image access failed: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.log(`❌ Direct image access failed: ${errorMessage}`);
           debug.image_accessible = false;
         }
       }
@@ -104,23 +105,28 @@ serve(async (req) => {
               debug.presign_test.url_accessible = presignedResponse.ok;
               console.log(`${presignedResponse.ok ? '✅' : '❌'} Presigned URL access: ${presignedResponse.status}`);
             } catch (error) {
-              debug.presign_test.url_accessible = false;
-              console.log(`❌ Presigned URL access failed: ${error.message}`);
+              if (debug.presign_test && typeof debug.presign_test === 'object') {
+                debug.presign_test.url_accessible = false;
+              }
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              console.log(`❌ Presigned URL access failed: ${errorMessage}`);
             }
           }
         }
       } catch (error) {
-        console.log(`❌ Presign function error: ${error.message}`);
-        debug.presign_test = { error: error.message };
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.log(`❌ Presign function error: ${errorMessage}`);
+        debug.presign_test = { error: errorMessage };
       }
       
       // Test 3: Test OpenAI enhancement (if we have OpenAI key and accessible image)
-      if (openaiApiKey && debug.presign_test?.url_accessible) {
+      if (openaiApiKey && debug.presign_test && typeof debug.presign_test === 'object' && 'url_accessible' in debug.presign_test && debug.presign_test.url_accessible) {
         try {
           console.log(`🤖 Testing OpenAI enhancement...`);
           
           // Get image data
-          const imageResponse = await fetch(debug.presign_test.url_preview.replace('...', ''));
+          const urlPreview = debug.presign_test && typeof debug.presign_test === 'object' && 'url_preview' in debug.presign_test ? debug.presign_test.url_preview : '';
+          const imageResponse = await fetch(urlPreview.replace('...', ''));
           const buffer = await imageResponse.arrayBuffer();
           const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
           const imageDataUri = `data:image/png;base64,${base64}`;
@@ -167,8 +173,9 @@ serve(async (req) => {
             console.log(`❌ OpenAI enhancement failed: ${openaiResponse.status}`);
           }
         } catch (error) {
-          debug.openai_test = { error: error.message };
-          console.log(`❌ OpenAI test error: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          debug.openai_test = { error: errorMessage };
+          console.log(`❌ OpenAI test error: ${errorMessage}`);
         }
       } else {
         const reason = !openaiApiKey ? 'No OpenAI API key' : 'Image not accessible';
@@ -190,8 +197,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("❌ Debug error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: errorMessage,
       details: String(error)
     }), {
       status: 500,

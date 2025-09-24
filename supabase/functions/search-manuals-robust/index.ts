@@ -189,8 +189,6 @@ serve(async (req) => {
       params.push(tenantId);
 
       const { data: sqlData, error: sqlError } = await supabase
-        .from('chunks_text')
-        .select('id, manual_id, content, page_start, page_end, menu_path')
         .rpc('simple_search', { 
           search_query: query,
           search_manual: manual_id,
@@ -256,8 +254,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('🚨 Robust search failed:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: errorMessage,
       results: [], // Always return empty array instead of failing
       total_results: 0
     }), {

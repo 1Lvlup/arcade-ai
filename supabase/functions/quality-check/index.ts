@@ -115,7 +115,8 @@ async function calculateQualityMetrics(manual_id: string) {
 
   } catch (error) {
     console.error("Quality check error:", error);
-    results.issues.push(`❌ Quality check failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    results.issues.push(`❌ Quality check failed: ${errorMessage}`);
     return results;
   }
 }
@@ -186,7 +187,8 @@ async function generateGoldenQuestions(manual_id: string) {
 
   } catch (error) {
     console.error("Golden question generation error:", error);
-    return { error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { error: errorMessage };
   }
 }
 
@@ -234,10 +236,11 @@ async function testSearchQuality(manual_id: string, questions: any[]) {
         });
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       testResults.push({
         question: q.question,
         status: 'error',
-        error: error.message
+        error: errorMessage
       });
     }
   }
@@ -299,9 +302,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Quality check function error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(JSON.stringify({ 
-      error: error.message,
-      details: error.toString()
+      error: errorMessage,
+      details: String(error)
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

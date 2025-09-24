@@ -189,7 +189,7 @@ serve(async (req) => {
           imageData = figure.image_url;
         } else {
           console.log(`🔗 Getting presigned URL for figure ${figure.id}...`);
-          const { data: presignData, error: presignError } = await supabase.functions.invoke('presign-image', {
+          const res = await supabase.functions.invoke('presign-image', {
             body: { 
               figure_id: figure.figure_id || figure.id, 
               manual_id: figure.manual_id 
@@ -200,13 +200,19 @@ serve(async (req) => {
             }
           });
           
-          if (presignError || !presignData?.presigned_url) {
-            console.error(`❌ Failed to get presigned URL for ${figure.id}:`, presignError);
-            continue;
+          if (res.error) {
+            console.warn('presign-image failed', { manual_id: figure.manual_id, figure_id: figure.figure_id || figure.id, error: res.error });
           }
           
-          console.log(`📥 Fetching image from presigned URL...`);
-          const imageResponse = await fetch(presignData.presigned_url);
+          // Use returned URL OR fall back to row.image_url if it's public
+          const usableUrl = res.data?.presigned_url || res.data?.url || figure.image_url;
+          if (!usableUrl) {
+            console.error('No usable image URL', { figure_id: figure.id });
+            continue; // skip enhancement for this figure
+          }
+          
+          console.log(`📥 Fetching image from URL: ${usableUrl}`);
+          const imageResponse = await fetch(usableUrl);
           if (!imageResponse.ok) {
             console.error(`❌ Failed to fetch image: ${imageResponse.status}`);
             continue;

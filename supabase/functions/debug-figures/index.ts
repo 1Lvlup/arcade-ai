@@ -81,7 +81,8 @@ serve(async (req) => {
             manual_id: figure.manual_id 
           },
           headers: {
-            Authorization: `Bearer ${supabaseServiceKey}`
+            Authorization: `Bearer ${supabaseServiceKey}`,
+            apikey: supabaseServiceKey
           }
         });
         

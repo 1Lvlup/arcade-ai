@@ -148,12 +148,23 @@ serve(async (req) => {
       }
 
       try {
-        // Try to fetch the image
+        // Use presign-image function to get image data
         let imageData;
         if (figure.image_url.startsWith('data:')) {
           imageData = figure.image_url;
-        } else if (figure.image_url.startsWith('http')) {
-          const imageResponse = await fetch(figure.image_url);
+        } else {
+          console.log(`🔗 Getting presigned URL for figure ${figure.id}...`);
+          const { data: presignData, error: presignError } = await supabase.functions.invoke('presign-image', {
+            body: { figure_id: figure.id }
+          });
+          
+          if (presignError || !presignData?.presigned_url) {
+            console.error(`❌ Failed to get presigned URL for ${figure.id}:`, presignError);
+            continue;
+          }
+          
+          console.log(`📥 Fetching image from presigned URL...`);
+          const imageResponse = await fetch(presignData.presigned_url);
           if (!imageResponse.ok) {
             console.error(`❌ Failed to fetch image: ${imageResponse.status}`);
             continue;
@@ -161,9 +172,6 @@ serve(async (req) => {
           const buffer = await imageResponse.arrayBuffer();
           const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
           imageData = `data:image/png;base64,${base64}`;
-        } else {
-          console.warn(`⚠️ Unsupported image URL format: ${figure.image_url.slice(0, 50)}...`);
-          continue;
         }
 
         // Enhance the figure

@@ -259,12 +259,18 @@ async function analyzeFigureWithVision(imageData: string, context: string) {
           ],
         }],
         max_tokens: 500,
+        temperature: 0.3,
       }),
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Vision analysis failed: ${response.status} ${response.statusText} - ${errorText.slice(0, 300)}`);
+      return null;
+    }
     const data = await response.json();
     return data.choices?.[0]?.message?.content || null;
-  } catch {
+  } catch (error) {
+    console.error(`❌ Vision analysis error:`, error);
     return null;
   }
 }
@@ -302,6 +308,7 @@ Respond in JSON format:
           ]
         }],
         max_tokens: 300,
+        temperature: 0.1,
       }),
     });
 

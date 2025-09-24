@@ -50,11 +50,32 @@ serve(async (req) => {
 
   try {
     const { figure_id, manual_id } = await req.json();
-    console.log("Requesting figure:", figure_id, "from manual:", manual_id);
+    console.log("🔍 PRESIGN REQUEST - Figure ID:", figure_id, "Manual ID:", manual_id);
+    console.log("🔑 PRESIGN REQUEST - Auth header present:", !!req.headers.get('authorization'));
+    console.log("🔑 PRESIGN REQUEST - API key present:", !!req.headers.get('apikey'));
     
-    if (!figure_id) throw new Error("Figure ID is required");
-    if (!manual_id) throw new Error("Manual ID is required");
+    if (!figure_id) {
+      console.error("❌ PRESIGN ERROR: Figure ID is required");
+      throw new Error("Figure ID is required");
+    }
+    if (!manual_id) {
+      console.error("❌ PRESIGN ERROR: Manual ID is required");
+      throw new Error("Manual ID is required");
+    }
 
+    // Set tenant context for service access to figures
+    console.log(`🔑 PRESIGN CONTEXT - Setting tenant context...`);
+    const { data: contextData, error: contextError } = await supabase.rpc('set_tenant_context', { 
+      tenant_id: '00000000-0000-0000-0000-000000000001' 
+    });
+    
+    if (contextError) {
+      console.error("❌ PRESIGN CONTEXT ERROR:", contextError);
+    } else {
+      console.log(`✅ PRESIGN CONTEXT - Tenant context set: ${JSON.stringify(contextData)}`);
+    }
+
+    console.log("🔍 PRESIGN DB QUERY - About to query figures table...");
     const { data: fig, error } = await supabase
       .from("figures")
       .select("image_url, caption_text, ocr_text, manual_id, fec_tenant_id")
@@ -62,7 +83,9 @@ serve(async (req) => {
       .eq("manual_id", manual_id)
       .single();
 
-    console.log("Database query result:", { fig, error });
+    console.log("🔍 PRESIGN DB RESULT - Error:", error ? JSON.stringify(error) : "None");
+    console.log("🔍 PRESIGN DB RESULT - Figure found:", !!fig);
+    console.log("🔍 PRESIGN DB RESULT - Image URL:", fig?.image_url || "None");
 
     if (error || !fig) throw new Error("Figure not found");
     if (!fig.image_url) {

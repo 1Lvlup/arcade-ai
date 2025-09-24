@@ -70,7 +70,6 @@ serve(async (req) => {
     }
 
     // If the image URL is already a public HTTPS URL, return it directly
-    // This is more efficient since our S3 bucket is configured for public access
     if (fig.image_url.startsWith("https://")) {
       console.log("Returning public HTTPS URL directly:", fig.image_url);
       return new Response(JSON.stringify({

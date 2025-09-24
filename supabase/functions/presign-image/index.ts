@@ -22,10 +22,24 @@ const aws = new AwsClient({
   service: "s3",
 });
 
-async function generatePresignedUrl(s3Uri: string, expiresIn = 600) {
-  // s3://bucket/key/… → https://bucket.s3.region.amazonaws.com/key/…
-  const [, , bucket, ...keyParts] = s3Uri.split("/");
-  const key = keyParts.join("/");
+async function generatePresignedUrl(imageUrl: string, expiresIn = 600) {
+  let bucket: string;
+  let key: string;
+  
+  if (imageUrl.startsWith("s3://")) {
+    // s3://bucket/key/… format
+    const [, , bucketName, ...keyParts] = imageUrl.split("/");
+    bucket = bucketName;
+    key = keyParts.join("/");
+  } else if (imageUrl.startsWith("https://")) {
+    // https://bucket.s3.region.amazonaws.com/key/… format
+    const url = new URL(imageUrl);
+    bucket = url.hostname.split('.')[0]; // Extract bucket from hostname
+    key = url.pathname.substring(1); // Remove leading slash
+  } else {
+    throw new Error("Invalid image URL format");
+  }
+  
   const base = `https://${bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
   const signed = await aws.sign(base, { method: "GET" }, { aws: { signQuery: true, expires: expiresIn } });
   return signed.url;
@@ -45,7 +59,9 @@ serve(async (req) => {
       .single();
 
     if (error || !fig) throw new Error("Figure not found");
-    if (!fig.image_url.startsWith("s3://")) throw new Error("Invalid S3 URI");
+    if (!fig.image_url || (!fig.image_url.startsWith("s3://") && !fig.image_url.startsWith("https://"))) {
+      throw new Error("Invalid image URL format");
+    }
 
     const url = await generatePresignedUrl(fig.image_url, 600);
 

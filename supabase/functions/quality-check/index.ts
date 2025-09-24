@@ -173,11 +173,14 @@ async function generateGoldenQuestions(manual_id: string) {
     const content = data.choices[0]?.message?.content;
     
     try {
-      const questions = JSON.parse(content);
+      // Clean up markdown formatting if present
+      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const questions = JSON.parse(cleanContent);
       console.log(`✅ Generated ${questions.length} golden questions for ${manual_id}`);
       return { questions };
     } catch (parseError) {
       console.error("Failed to parse generated questions:", parseError);
+      console.error("Raw content received:", content?.slice(0, 300));
       return { error: "Failed to parse generated questions" };
     }
 

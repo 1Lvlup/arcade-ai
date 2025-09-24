@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { QualityDashboard } from '@/components/QualityDashboard';
+import { DebugFigures } from '@/components/DebugFigures';
 import { SharedHeader } from '@/components/SharedHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -230,11 +231,15 @@ const ManualDetails = () => {
         </Card>
 
         {/* Tabs for different views */}
-        <Tabs defaultValue="original" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="quality" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="quality" className="flex items-center space-x-2">
               <Database className="h-4 w-4" />
               <span>Quality Check</span>
+            </TabsTrigger>
+            <TabsTrigger value="debug" className="flex items-center space-x-2">
+              <Database className="h-4 w-4" />
+              <span>Debug</span>
             </TabsTrigger>
             <TabsTrigger value="original" className="flex items-center space-x-2">
               <Eye className="h-4 w-4" />
@@ -255,6 +260,10 @@ const ManualDetails = () => {
               manual_id={manual.manual_id} 
               manual_title={manual.title || manual.source_filename} 
             />
+          </TabsContent>
+
+          <TabsContent value="debug" className="mt-6">
+            <DebugFigures manual_id={manual.manual_id} />
           </TabsContent>
 
           <TabsContent value="original" className="mt-6">

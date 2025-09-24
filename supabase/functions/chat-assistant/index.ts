@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL   = Deno.env.get("SUPABASE_URL");
-const ANON_KEY       = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("PUBLISHABLE_KEY");
+const PUBLISHABLE_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
 const SERVICE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 // 🔧 REQUIRED: set these to your existing function URLs (they're usually {SUPABASE_URL}/functions/v1/<name>)
@@ -22,9 +22,9 @@ async function tool_search_manuals(args: { query: string; manual_id?: string | n
     "Content-Type": "application/json"
   };
   
-  if (authHeader) {
+  if (authHeader && PUBLISHABLE_KEY) {
     headers["Authorization"] = authHeader;
-    headers["apikey"] = ANON_KEY;
+    headers["apikey"] = PUBLISHABLE_KEY;
   }
   
   const res = await fetch(SEARCH_MANUALS_URL, {
@@ -45,6 +45,9 @@ async function tool_search_manuals(args: { query: string; manual_id?: string | n
 }
 
 async function tool_presign_image(args: { figure_id: string }) {
+  if (!SERVICE_KEY) {
+    throw new Error("Service key not configured");
+  }
   const res = await fetch(PRESIGN_IMAGE_URL, {
     method: "POST",
     headers: {
@@ -246,7 +249,7 @@ async function chatWithTools(messages: any[], manual_id: string | null, authHead
               query: `${args.query} release|eject|lift|kicker|gate|hopper|jam|opto|microswitch|sensor|coil|solenoid|motor|fuse`,
               manual_id: manual_id ?? args.manual_id ?? null,
               max_results: 20
-            });
+            }, authHeader);
             console.log("Fallback search result:", JSON.stringify(fallback, null, 2));
             result.results = [
               ...(result.results || []),
@@ -318,7 +321,7 @@ serve(async (req) => {
     if (!OPENAI_API_KEY) throw new Error("OpenAI API key is not configured");
     if (!SUPABASE_URL)   throw new Error("Supabase URL is not configured");
     if (!SERVICE_KEY)    throw new Error("Supabase service key is not configured");
-    if (!ANON_KEY)       throw new Error("Anon/Publishable key is not configured");
+    if (!PUBLISHABLE_KEY) throw new Error("Supabase publishable key is not configured");
 
     console.log("Environment variables validated");
 

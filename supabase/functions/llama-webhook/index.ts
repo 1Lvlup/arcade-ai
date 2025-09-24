@@ -260,8 +260,8 @@ async function analyzeFigureWithVision(imageData: string, context: string) {
               Focus on: (1) components/labels, (2) wiring/connectors, (3) specs/part numbers, (4) troubleshooting hints, (5) safety notes. Be specific.`,
             },
             {
-              type: "image_url",
-              image_url: { url: imageData.startsWith("data:") ? imageData : `data:image/png;base64,${imageData}` },
+              type: "image_url", 
+              image_url: { url: imageData },
             },
           ],
         }],
@@ -310,7 +310,7 @@ Respond in JSON format:
             },
             {
               type: "image_url",
-              image_url: { url: imageData.startsWith("data:") ? imageData : `data:image/png;base64,${imageData}` }
+              image_url: { url: imageData }
             }
           ]
         }],

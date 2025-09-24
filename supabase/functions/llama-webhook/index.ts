@@ -683,23 +683,36 @@ serve(async (req) => {
         }
 
         // Upload to S3 (with retry)
-        const key = `manuals/${manual_id}/${fig.figure_id}.${resolved.ext}`;
-        let uploadMeta: { httpUrl: string; s3Uri: string; size: number; contentType: string } | null = null;
-        let attempts = 0;
-        const maxRetries = 2;
+       const key = `manuals/${manual_id}/${fig.figure_id}.${resolvedImage.ext}`;
+let imageUrl: string;
+let uploadAttempts = 0;
+const maxRetries = 2;
 
-        while (attempts <= maxRetries) {
-          try {
-            uploadMeta = await uploadToS3(resolved.buffer, key, resolved.contentType);
-            console.log(`📤 Uploaded ${fig.figure_id} to S3: ${uploadMeta.s3Uri}`);
-            break;
-          } catch (upErr) {
-            attempts++;
-            console.warn(`⚠️ S3 upload attempt ${attempts} failed for ${fig.figure_id}:`, upErr);
-            if (attempts > maxRetries) throw upErr;
-            await new Promise((r) => setTimeout(r, 1000));
-          }
-        }
+while (uploadAttempts <= maxRetries) {
+  try {
+    imageUrl = await uploadToS3(resolvedImage.buffer, key, resolvedImage.contentType);
+    console.log(`📤 Uploaded ${fig.figure_id} to S3: ${imageUrl}`);
+    break;
+  } catch (uploadError) {
+    uploadAttempts++;
+    console.warn(`⚠️ S3 upload attempt ${uploadAttempts} failed for ${fig.figure_id}:`, uploadError);
+    if (uploadAttempts > maxRetries) throw uploadError;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+}
+
+const { error: figErr } = await supabase.from("figures").insert({
+  manual_id,
+  page_number: fig.page_number ?? null,
+  figure_id: fig.figure_id,
+  image_url: imageUrl,          // ⬅️ use the HTTPS url here
+  caption_text: fig.caption_text ?? null,
+  ocr_text: fig.ocr_text ?? null,
+  callouts_json: fig.callouts ?? null,
+  bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
+  embedding_text: embedding,
+  fec_tenant_id: docData.fec_tenant_id,
+});
 
         // Enhanced figure processing with AI caption and OCR
         let enhancedCaption = fig.caption_text;

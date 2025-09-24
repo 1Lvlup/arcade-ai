@@ -41,7 +41,18 @@ async function uploadToS3(buffer: Uint8Array, key: string, contentType = "applic
   const resp = await aws.fetch(url, { method: "PUT", headers: { "Content-Type": contentType }, body: buffer });
   const body = await resp.text();
   if (!resp.ok) throw new Error(`S3 upload failed: ${resp.status} ${resp.statusText} – ${body.slice(0, 1000)}`);
-  return `s3://${s3Bucket}/${key}`;
+  
+  // Log magic bytes for verification
+  const magicBytes = Array.from(buffer.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+  console.log(`🔎 Magic bytes for ${key}: ${magicBytes}`);
+  console.log(`🪣 S3 verify -> key=${key} size=${buffer.length}B type=${contentType}`);
+  
+  return {
+    httpUrl: url,
+    s3Uri: `s3://${s3Bucket}/${key}`,
+    size: buffer.length,
+    contentType
+  };
 }
 
 async function createEmbedding(text: string) {
@@ -295,7 +306,8 @@ Respond in JSON format:
     });
 
     if (!response.ok) {
-      console.warn(`⚠️ OpenAI API failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.warn(`⚠️ OpenAI API failed: ${response.status} ${response.statusText} - ${errorText.slice(0, 200)}`);
       return {caption: null, ocrText: null};
     }
 
@@ -665,14 +677,14 @@ serve(async (req) => {
 
         // Upload to S3 (with retry)
         const key = `manuals/${manual_id}/${fig.figure_id}.${resolved.ext}`;
-        let s3Uri = "";
+        let uploadMeta: { httpUrl: string; s3Uri: string; size: number; contentType: string } | null = null;
         let attempts = 0;
         const maxRetries = 2;
 
         while (attempts <= maxRetries) {
           try {
-            s3Uri = await uploadToS3(resolved.buffer, key, resolved.contentType);
-            console.log(`📤 Uploaded ${fig.figure_id} to S3: ${s3Uri}`);
+            uploadMeta = await uploadToS3(resolved.buffer, key, resolved.contentType);
+            console.log(`📤 Uploaded ${fig.figure_id} to S3: ${uploadMeta.s3Uri}`);
             break;
           } catch (upErr) {
             attempts++;
@@ -735,7 +747,7 @@ serve(async (req) => {
           manual_id,
           page_number: fig.page_number ?? null,
           figure_id: fig.figure_id,
-          image_url: s3Uri,
+          image_url: uploadMeta!.httpUrl,
           caption_text: enhancedCaption ?? null,
           ocr_text: enhancedOcr ?? null,
           callouts_json: fig.callouts ?? null,

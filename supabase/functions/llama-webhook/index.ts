@@ -682,30 +682,33 @@ serve(async (req) => {
           continue;
         }
 
-        // Upload to S3 (with retry)
-        const key = `manuals/${manual_id}/${fig.figure_id}.${resolved.ext}`;
-        let imageUrl: string;
-        let uploadAttempts = 0;
-        const maxRetries = 2;
+       // Upload to S3 (with retry)
+const key = `manuals/${manual_id}/${fig.figure_id}.${resolvedImage.ext}`;
 
-        while (uploadAttempts <= maxRetries) {
-          try {
-            imageUrl = await uploadToS3(resolved.buffer, key, resolved.contentType);
-            console.log(`📤 Uploaded ${fig.figure_id} to S3: ${imageUrl}`);
-            break;
-          } catch (uploadError) {
-            uploadAttempts++;
-            console.warn(`⚠️ S3 upload attempt ${uploadAttempts} failed for ${fig.figure_id}:`, uploadError);
-            if (uploadAttempts > maxRetries) throw uploadError;
-            await new Promise(r => setTimeout(r, 1000));
-          }
-        }
+let uploadInfo: { httpUrl: string; s3Uri: string; size: number; contentType: string } | null = null;
+let uploadAttempts = 0;
+const maxRetries = 2;
+
+while (uploadAttempts <= maxRetries) {
+  try {
+    uploadInfo = await uploadToS3(resolvedImage.buffer, key, resolvedImage.contentType);
+    console.log(`📤 Uploaded ${fig.figure_id} to S3: ${uploadInfo.httpUrl}`);
+    break;
+  } catch (uploadError) {
+    uploadAttempts++;
+    console.warn(`⚠️ S3 upload attempt ${uploadAttempts} failed for ${fig.figure_id}:`, uploadError);
+    if (uploadAttempts > maxRetries) throw uploadError;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+}
+
+if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
 
 const { error: figErr } = await supabase.from("figures").insert({
   manual_id,
   page_number: fig.page_number ?? null,
   figure_id: fig.figure_id,
-  image_url: imageUrl,          // ⬅️ use the HTTPS url here
+  image_url: uploadInfo.httpUrl,   // ✅ store the HTTPS URL
   caption_text: fig.caption_text ?? null,
   ocr_text: fig.ocr_text ?? null,
   callouts_json: fig.callouts ?? null,

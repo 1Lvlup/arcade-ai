@@ -8,96 +8,102 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Arcade-inspired dark theme - light mode fallback */
-    --background: 220 15% 8%;
-    --foreground: 60 100% 85%;
+    /* Sophisticated AI Dark Theme */
+    --background: 210 20% 3%;
+    --foreground: 210 20% 95%;
 
-    --card: 220 15% 12%;
-    --card-foreground: 60 100% 85%;
+    --card: 210 20% 6%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 220 15% 12%;
-    --popover-foreground: 60 100% 85%;
+    --popover: 210 20% 6%;
+    --popover-foreground: 210 20% 95%;
 
-    --primary: 315 100% 65%;
-    --primary-foreground: 220 15% 8%;
+    --primary: 25 100% 60%;
+    --primary-foreground: 210 20% 3%;
 
-    --secondary: 195 100% 50%;
-    --secondary-foreground: 220 15% 8%;
+    --secondary: 210 20% 12%;
+    --secondary-foreground: 210 20% 95%;
 
-    --muted: 220 15% 15%;
-    --muted-foreground: 60 20% 65%;
+    --muted: 210 20% 8%;
+    --muted-foreground: 210 10% 60%;
 
-    --accent: 45 100% 60%;
-    --accent-foreground: 220 15% 8%;
+    --accent: 210 40% 15%;
+    --accent-foreground: 25 100% 60%;
 
     --destructive: 0 75% 55%;
-    --destructive-foreground: 60 100% 85%;
+    --destructive-foreground: 210 20% 95%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 315 100% 65%;
+    --border: 210 20% 12%;
+    --input: 210 20% 8%;
+    --ring: 25 100% 60%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Neon colors for arcade theme */
-    --neon-pink: 315 100% 65%;
-    --neon-cyan: 195 100% 50%;
-    --neon-yellow: 45 100% 60%;
-    --neon-green: 120 100% 55%;
-    --neon-purple: 270 100% 70%;
+    /* AI Theme Colors */
+    --neon-orange: 25 100% 60%;
+    --neon-orange-bright: 25 100% 70%;
+    --neon-blue: 200 100% 60%;
+    --neural-purple: 260 100% 70%;
+    --quantum-cyan: 180 100% 60%;
+    --ai-silver: 210 10% 80%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(315 100% 65%), hsl(270 100% 70%));
-    --gradient-secondary: linear-gradient(135deg, hsl(195 100% 50%), hsl(120 100% 55%));
+    /* Sophisticated Gradients */
+    --gradient-neural: linear-gradient(135deg, hsl(25 100% 60%) 0%, hsl(260 100% 70%) 100%);
+    --gradient-ai: linear-gradient(135deg, hsl(210 20% 6%) 0%, hsl(210 20% 12%) 50%, hsl(25 100% 60% / 0.1) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 50%, hsl(25 100% 60% / 0.3) 0%, transparent 70%);
+    
+    /* Glass Effects */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
 
-    --sidebar-background: 220 15% 10%;
-    --sidebar-foreground: 60 100% 85%;
-    --sidebar-primary: 315 100% 65%;
-    --sidebar-primary-foreground: 220 15% 8%;
-    --sidebar-accent: 220 15% 15%;
-    --sidebar-accent-foreground: 60 100% 85%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 315 100% 65%;
+    --sidebar-background: 210 20% 4%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 25 100% 60%;
+    --sidebar-primary-foreground: 210 20% 3%;
+    --sidebar-accent: 210 20% 8%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 210 20% 12%;
+    --sidebar-ring: 25 100% 60%;
   }
 
   .dark {
-    /* Full arcade dark theme */
-    --background: 220 15% 8%;
-    --foreground: 60 100% 85%;
+    /* Same sophisticated AI theme for dark mode */
+    --background: 210 20% 3%;
+    --foreground: 210 20% 95%;
 
-    --card: 220 15% 12%;
-    --card-foreground: 60 100% 85%;
+    --card: 210 20% 6%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 220 15% 12%;
-    --popover-foreground: 60 100% 85%;
+    --popover: 210 20% 6%;
+    --popover-foreground: 210 20% 95%;
 
-    --primary: 315 100% 65%;
-    --primary-foreground: 220 15% 8%;
+    --primary: 25 100% 60%;
+    --primary-foreground: 210 20% 3%;
 
-    --secondary: 195 100% 50%;
-    --secondary-foreground: 220 15% 8%;
+    --secondary: 210 20% 12%;
+    --secondary-foreground: 210 20% 95%;
 
-    --muted: 220 15% 15%;
-    --muted-foreground: 60 20% 65%;
+    --muted: 210 20% 8%;
+    --muted-foreground: 210 10% 60%;
 
-    --accent: 45 100% 60%;
-    --accent-foreground: 220 15% 8%;
+    --accent: 210 40% 15%;
+    --accent-foreground: 25 100% 60%;
 
     --destructive: 0 75% 55%;
-    --destructive-foreground: 60 100% 85%;
+    --destructive-foreground: 210 20% 95%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 315 100% 65%;
+    --border: 210 20% 12%;
+    --input: 210 20% 8%;
+    --ring: 25 100% 60%;
 
-    --sidebar-background: 220 15% 10%;
-    --sidebar-foreground: 60 100% 85%;
-    --sidebar-primary: 315 100% 65%;
-    --sidebar-primary-foreground: 220 15% 8%;
-    --sidebar-accent: 220 15% 15%;
-    --sidebar-accent-foreground: 60 100% 85%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 315 100% 65%;
+    --sidebar-background: 210 20% 4%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 25 100% 60%;
+    --sidebar-primary-foreground: 210 20% 3%;
+    --sidebar-accent: 210 20% 8%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 210 20% 12%;
+    --sidebar-ring: 25 100% 60%;
   }
 }
 
@@ -113,15 +119,50 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
-  .neon-glow {
-    box-shadow: 0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary));
+  .ai-glow {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3), 0 0 80px hsl(var(--primary) / 0.1);
   }
   
-  .neon-text {
-    text-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary)), 0 0 15px hsl(var(--primary));
+  .neural-text {
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.8), 0 0 20px hsl(var(--primary) / 0.6), 0 0 30px hsl(var(--primary) / 0.4);
   }
   
-  .arcade-bg {
-    background: radial-gradient(circle at 50% 50%, hsl(220 15% 12%) 0%, hsl(220 15% 8%) 100%);
+  .ai-bg {
+    background: var(--gradient-ai);
+  }
+  
+  .neural-bg {
+    background: var(--gradient-neural);
+  }
+  
+  .glass-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  .hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 40px hsl(var(--primary) / 0.3);
+  }
+  
+  .pulse-ai {
+    animation: pulse-ai 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse-ai {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: 0 0 40px hsl(var(--primary) / 0.8);
+    }
   }
 }

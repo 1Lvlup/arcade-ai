@@ -29,9 +29,9 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/" }: Sh
             </Link>
           )}
           <div className="flex items-center space-x-2">
-            <GamepadIcon className="h-6 w-6 text-primary neon-glow" />
+            <GamepadIcon className="h-6 w-6 text-primary ai-glow" />
             <Zap className="h-4 w-4 text-secondary" />
-            <h1 className="text-xl font-bold neon-text">{title}</h1>
+            <h1 className="text-xl font-bold neural-text">{title}</h1>
           </div>
         </div>
         <div className="flex items-center space-x-4">

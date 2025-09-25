@@ -73,7 +73,7 @@ serve(async (req) => {
 
     // Prepare FormData for LlamaCloud
     const formData = new FormData()
-    formData.append('file_url', signedUrlData.signedUrl)
+    formData.append('input_url', signedUrlData.signedUrl)
     formData.append('parsing_instruction', `
 This is a technical manual for arcade game troubleshooting. Please extract:
 1. All text content preserving structure and hierarchy

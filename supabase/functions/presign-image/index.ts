@@ -1,141 +1,162 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { AwsClient } from "https://esm.sh/aws4fetch@1.0.17";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { AwsSignatureV4 } from "https://deno.land/x/aws_sign_v4@1.0.2/mod.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const awsAccessKeyId = Deno.env.get("AWS_ACCESS_KEY_ID")!;
-const awsSecretAccessKey = Deno.env.get("AWS_SECRET_ACCESS_KEY")!;
-const awsRegion = Deno.env.get("AWS_REGION")!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const awsAccessKeyId = Deno.env.get('AWS_ACCESS_KEY_ID')!
+const awsSecretAccessKey = Deno.env.get('AWS_SECRET_ACCESS_KEY')!
+const awsRegion = Deno.env.get('AWS_REGION') || 'us-east-2'
 
-const aws = new AwsClient({
-  accessKeyId: awsAccessKeyId,
-  secretAccessKey: awsSecretAccessKey,
-  region: awsRegion,
-  service: "s3",
-});
-
-async function generatePresignedUrl(imageUrl: string, expiresIn = 600) {
-  let bucket: string;
-  let key: string;
+// Generate presigned URL for S3 object
+async function generatePresignedUrl(imageUrl: string, expiresIn = 600): Promise<string> {
+  // Parse S3 URL to extract bucket and key
+  let bucket: string
+  let key: string
   
-  if (imageUrl.startsWith("s3://")) {
-    // s3://bucket/key/… format
-    const [, , bucketName, ...keyParts] = imageUrl.split("/");
-    bucket = bucketName;
-    key = keyParts.join("/");
-  } else if (imageUrl.startsWith("https://")) {
-    // https://bucket.s3.region.amazonaws.com/key/… format
-    const url = new URL(imageUrl);
-    bucket = url.hostname.split('.')[0]; // Extract bucket from hostname
-    key = url.pathname.substring(1); // Remove leading slash
+  if (imageUrl.startsWith('s3://')) {
+    const s3Parts = imageUrl.substring(5).split('/')
+    bucket = s3Parts[0]
+    key = s3Parts.slice(1).join('/')
+  } else if (imageUrl.includes('.s3.') || imageUrl.includes('.amazonaws.com')) {
+    const urlParts = new URL(imageUrl)
+    if (urlParts.hostname.includes('.s3.')) {
+      bucket = urlParts.hostname.split('.')[0]
+      key = urlParts.pathname.substring(1)
+    } else {
+      const pathParts = urlParts.pathname.substring(1).split('/')
+      bucket = pathParts[0]
+      key = pathParts.slice(1).join('/')
+    }
   } else {
-    throw new Error("Invalid image URL format");
+    throw new Error('Invalid S3 URL format')
   }
-  
-  const base = `https://${bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
-  const signed = await aws.sign(base, { method: "GET", aws: { signQuery: true } });
-  return signed.url;
+
+  console.log('Generating presigned URL for:', { bucket, key })
+
+  const signer = new AwsSignatureV4({
+    service: 's3',
+    region: awsRegion,
+    credentials: {
+      accessKeyId: awsAccessKeyId,
+      secretAccessKey: awsSecretAccessKey,
+    },
+  })
+
+  const signedUrl = await signer.sign('GET', new URL(`https://${bucket}.s3.${awsRegion}.amazonaws.com/${key}`), {
+    headers: {},
+    expiresIn
+  })
+
+  return signedUrl
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    const { figure_id, manual_id } = await req.json();
-    console.log("🔍 PRESIGN REQUEST - Figure ID:", figure_id, "Manual ID:", manual_id);
-    console.log("🔑 PRESIGN REQUEST - Auth header present:", !!req.headers.get('authorization'));
-    console.log("🔑 PRESIGN REQUEST - API key present:", !!req.headers.get('apikey'));
-    
-    if (!figure_id) {
-      console.error("❌ PRESIGN ERROR: Figure ID is required");
-      throw new Error("Figure ID is required");
-    }
-    if (!manual_id) {
-      console.error("❌ PRESIGN ERROR: Manual ID is required");
-      throw new Error("Manual ID is required");
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false }
+    })
+
+    const { figure_id, manual_id } = await req.json()
+    console.log('Presign request:', { figure_id, manual_id })
+
+    if (!figure_id || !manual_id) {
+      return new Response(JSON.stringify({ 
+        error: 'figure_id and manual_id are required' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    // Set tenant context for service access to figures
-    console.log(`🔑 PRESIGN CONTEXT - Setting tenant context...`);
-    const { data: contextData, error: contextError } = await supabase.rpc('set_tenant_context', { 
-      tenant_id: '00000000-0000-0000-0000-000000000001' 
-    });
-    
-    if (contextError) {
-      console.error("❌ PRESIGN CONTEXT ERROR:", contextError);
-    } else {
-      console.log(`✅ PRESIGN CONTEXT - Tenant context set: ${JSON.stringify(contextData)}`);
-    }
-
-    console.log("🔍 PRESIGN DB QUERY - About to query figures table...");
-    
-    // First, check if figure exists without RLS restrictions (using service key)
-    const { data: figureCheck, error: checkError } = await supabase
-      .from("figures")
-      .select("figure_id, manual_id, fec_tenant_id")
-      .eq("figure_id", figure_id)
-      .eq("manual_id", manual_id);
+    // Extract tenant from auth header and set context
+    const authHeader = req.headers.get('authorization')
+    if (authHeader) {
+      const jwt = authHeader.replace('Bearer ', '')
+      const { data: { user } } = await supabase.auth.getUser(jwt)
       
-    console.log("🔍 PRESIGN DB CHECK - Check error:", checkError ? JSON.stringify(checkError) : "None");
-    console.log("🔍 PRESIGN DB CHECK - Figures found:", figureCheck?.length || 0);
-    console.log("🔍 PRESIGN DB CHECK - First figure:", figureCheck?.[0] ? JSON.stringify(figureCheck[0]) : "None");
-    
-    const { data: fig, error } = await supabase
-      .from("figures")
-      .select("image_url, caption_text, ocr_text, manual_id, fec_tenant_id")
-      .eq("figure_id", figure_id)
-      .eq("manual_id", manual_id)
-      .single();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('fec_tenant_id')
+          .eq('user_id', user.id)
+          .single()
 
-    console.log("🔍 PRESIGN DB RESULT - Error:", error ? JSON.stringify(error) : "None");
-    console.log("🔍 PRESIGN DB RESULT - Figure found:", !!fig);
-    console.log("🔍 PRESIGN DB RESULT - Image URL:", fig?.image_url || "None");
-
-    if (error || !fig) throw new Error("Figure not found");
-    if (!fig.image_url) {
-      throw new Error("No image URL found for figure");
+        if (profile) {
+          await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id })
+        }
+      }
     }
 
-    // If the image URL is already a public HTTPS URL, return it directly
-    if (fig.image_url.startsWith("https://")) {
-      console.log("Returning public HTTPS URL directly:", fig.image_url);
-      return new Response(JSON.stringify({
-        presigned_url: fig.image_url,
-        caption_text: fig.caption_text,
-        ocr_text: fig.ocr_text,
-        expires_in: null, // No expiration for public URLs
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Query the figures table
+    const { data: figure, error: figureError } = await supabase
+      .from('figures')
+      .select('image_url, caption_text, ocr_text')
+      .eq('figure_id', figure_id)
+      .eq('manual_id', manual_id)
+      .single()
+
+    if (figureError) {
+      console.error('Figure query error:', figureError)
+      return new Response(JSON.stringify({ 
+        error: 'Figure not found' 
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    // For s3:// URLs, generate a presigned URL
-    if (!fig.image_url.startsWith("s3://")) {
-      console.log("Invalid image URL format:", fig.image_url);
-      throw new Error("Invalid image URL format");
+    if (!figure) {
+      return new Response(JSON.stringify({ 
+        error: 'Figure not found' 
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    console.log("Generating presigned URL for:", fig.image_url);
-    const url = await generatePresignedUrl(fig.image_url, 600);
+    console.log('Found figure with image_url:', figure.image_url)
+
+    let finalUrl = figure.image_url
+    let expiresAt = null
+
+    // Check if it's a public HTTPS URL or needs presigning
+    if (figure.image_url.startsWith('https://') && !figure.image_url.includes('.s3.')) {
+      console.log('Returning public HTTPS URL directly:', figure.image_url)
+      finalUrl = figure.image_url
+    } else if (figure.image_url.startsWith('s3://') || figure.image_url.includes('.s3.')) {
+      console.log('Generating presigned URL for S3 object')
+      const expiresIn = 600 // 10 minutes
+      finalUrl = await generatePresignedUrl(figure.image_url, expiresIn)
+      expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
+      console.log('Generated presigned URL successfully')
+    }
 
     return new Response(JSON.stringify({
-      presigned_url: url,
-      caption_text: fig.caption_text,
-      ocr_text: fig.ocr_text,
-      expires_in: 600,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      url: finalUrl,
+      caption: figure.caption_text || null,
+      ocr_text: figure.ocr_text || null,
+      expires_at: expiresAt
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+
   } catch (error) {
-    console.error("presign-image error:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(JSON.stringify({ error: errorMessage, details: String(error) }), {
+    console.error('Error in presign-image:', error)
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
-});
+})

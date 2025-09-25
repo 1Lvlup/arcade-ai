@@ -66,6 +66,9 @@ verify_jwt = false
 [functions.search-manuals]
 verify_jwt = true
 
+[functions.search-manuals-robust]
+verify_jwt = true
+
 [functions.presign-image]
 verify_jwt = true
 
@@ -76,4 +79,22 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.test-enhancement]
+verify_jwt = true
+
+[functions.quality-check]
+verify_jwt = true
+
+[functions.debug-figures]
+verify_jwt = true
+
+[functions.diagnose-stalled-job]
+verify_jwt = true
+
+[functions.retry-stalled-job]
+verify_jwt = true
+
+[functions.delete-manual]
+verify_jwt = true
+
+[functions.generate-response]
 verify_jwt = true

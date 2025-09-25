@@ -727,26 +727,16 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
         let visionAnalysis: string | null = null;
         
         try {
-          // Build imageDataUri from resolved image data, not from original image_sources
-          // This ensures vision enhancement works for both original and fallback images
+          // Build imageDataUri using the S3 URL we just uploaded
+          // This ensures OpenAI vision API gets a valid, accessible URL
           let imageDataUri: string | null = null;
           
-          // First try to get from original image_sources
-          const firstSrc = fig.image_sources[0];
-          if (firstSrc) {
-            const dataForVision =
-              typeof firstSrc === "string"
-                ? firstSrc
-                : firstSrc?.data || firstSrc?.base64 || firstSrc?.b64_json || firstSrc?.url || firstSrc?.content || null;
-            
-            if (dataForVision) {
-              imageDataUri = typeof dataForVision === "string" ? dataForVision : String(dataForVision);
-            }
-          }
-          
-          // If no imageDataUri from original sources, create from resolved buffer
-          // This is crucial for fallback images fetched via fetchImageFromLlama
-          if (!imageDataUri && resolved?.buffer) {
+          if (uploadInfo?.httpUrl) {
+            // Use the S3 URL that was just uploaded - this is publicly accessible
+            imageDataUri = uploadInfo.httpUrl;
+            console.log(`🔗 Using S3 URL for vision analysis: ${fig.figure_id} -> ${imageDataUri}`);
+          } else if (resolved?.buffer) {
+            // Fallback: create base64 data URI from resolved buffer
             const base64Data = btoa(String.fromCharCode(...resolved.buffer));
             imageDataUri = `data:${resolved.contentType};base64,${base64Data}`;
             console.log(`🔧 Created base64 data URI for vision analysis from resolved buffer: ${fig.figure_id}`);

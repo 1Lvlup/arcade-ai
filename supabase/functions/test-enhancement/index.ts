@@ -203,7 +203,7 @@ serve(async (req) => {
           figure_id: figure.figure_id,
           manual_id: figure.manual_id,
           enhanced: false,
-          error: figureError.message
+          error: figureError instanceof Error ? figureError.message : 'Unknown error'
         })
       }
     }
@@ -218,7 +218,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in test-enhancement:', error)
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

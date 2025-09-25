@@ -239,18 +239,18 @@ serve(async (req) => {
     }
 
     // Enhance results with manual titles
-    const manualIds = [...new Set(finalResults.map(r => r.manual_id))]
+    const manualIds = [...new Set(finalResults.map((r: any) => r.manual_id))]
     const { data: manuals } = await supabase
       .from('documents')
       .select('manual_id, title')
       .in('manual_id', manualIds)
 
-    const manualTitles = manuals?.reduce((acc, m) => {
+    const manualTitles = manuals?.reduce((acc: any, m: any) => {
       acc[m.manual_id] = m.title
       return acc
     }, {}) || {}
 
-    const enhancedResults = finalResults.map(result => ({
+    const enhancedResults = finalResults.map((result: any) => ({
       ...result,
       manual_title: manualTitles[result.manual_id] || result.manual_id
     }))
@@ -269,7 +269,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in search-manuals:', error)
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       results: [],
       total: 0
     }), {

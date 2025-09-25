@@ -136,7 +136,7 @@ Focus on maintaining the technical accuracy and procedural structure.
   } catch (error) {
     console.error('Error in upload-manual:', error)
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

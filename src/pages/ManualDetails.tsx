@@ -107,7 +107,7 @@ const ManualDetails = () => {
           try {
             const response = await supabase.functions.invoke('presign-image', {
               body: { 
-                figure_id: figure.figure_id,
+                figure_id: figure.id,
                 manual_id: manualId 
               }
             });

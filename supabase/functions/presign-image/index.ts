@@ -50,11 +50,11 @@ serve(async (req) => {
       }
     }
 
-    // Query the figures table
+    // Query the figures table by database ID
     const { data: figure, error: figureError } = await supabase
       .from('figures')
       .select('image_url, caption_text, ocr_text')
-      .eq('figure_id', figure_id)
+      .eq('id', figure_id)
       .eq('manual_id', manual_id)
       .single()
 

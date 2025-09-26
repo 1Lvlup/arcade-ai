@@ -45,6 +45,7 @@ export function TestEnhancement() {
 
     try {
       console.log("🧪 Testing enhancement pipeline...");
+      console.log("📋 Request params:", { figureId, manualId });
       
       const { data, error } = await supabase.functions.invoke('test-enhancement', {
         body: { 
@@ -52,6 +53,8 @@ export function TestEnhancement() {
           manual_id: manualId || null 
         }
       });
+
+      console.log("📡 Function response:", { data, error });
 
       if (error) {
         console.error("❌ Test failed:", error);
@@ -68,7 +71,7 @@ export function TestEnhancement() {
       
       toast({
         title: "Test Completed",
-        description: `Processed ${data.processed} figures`,
+        description: `Processed ${data?.results?.length || 0} figures`,
       });
 
     } catch (error) {

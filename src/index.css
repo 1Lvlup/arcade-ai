@@ -155,14 +155,14 @@ All colors MUST be HSL.
   
   /* Typography Utilities */
   .display-heading {
-    font-family: 'N27', 'Inter', sans-serif;
+    font-family: 'Belrom', 'N27', 'Inter', sans-serif;
     font-weight: 400;
     letter-spacing: -0.03em;
     line-height: 0.9;
   }
   
   .premium-text {
-    font-family: 'N27', 'Inter', sans-serif;
+    font-family: 'Belrom', 'N27', 'Inter', sans-serif;
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1.2;

@@ -15,8 +15,8 @@ export default {
     extend: {
       fontFamily: {
         'sans': ['N27', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        'display': ['N27', 'Inter', 'sans-serif'],
-        'premium': ['N27', 'Inter', 'sans-serif'],
+        'display': ['Belrom', 'N27', 'Inter', 'sans-serif'],
+        'premium': ['Belrom', 'N27', 'Inter', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

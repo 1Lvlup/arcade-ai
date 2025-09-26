@@ -109,7 +109,7 @@ serve(async (req) => {
     const { figure_id, manual_id } = await req.json()
     console.log('Enhancement request:', { figure_id, manual_id })
 
-    // Build query
+    // Build query - prioritize figures that haven't been enhanced yet
     let query = supabase
       .from('figures')
       .select('id, figure_id, manual_id, image_url, caption_text, ocr_text')
@@ -120,6 +120,11 @@ serve(async (req) => {
     if (manual_id) {
       query = query.eq('manual_id', manual_id)
     }
+
+    // Order by: figures without captions first, then by creation date
+    // This ensures we process unenhanced figures before re-processing enhanced ones
+    query = query.order('caption_text', { ascending: true, nullsFirst: true })
+                 .order('created_at', { ascending: true })
 
     // Limit to 10 figures max for batch processing
     query = query.limit(10)

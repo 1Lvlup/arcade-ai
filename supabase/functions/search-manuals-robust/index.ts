@@ -10,6 +10,7 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
+const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID')
 
 // Maximal Marginal Relevance for result diversity
 function applyMMR(results: any[], lambda = 0.7, targetCount = 6): any[] {
@@ -63,12 +64,13 @@ function textSimilarity(text1: string, text2: string): number {
 
 // Create embedding using OpenAI
 async function createEmbedding(text: string): Promise<number[]> {
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
-    },
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+        ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
+      },
     body: JSON.stringify({
       model: 'text-embedding-3-small',
       input: text,

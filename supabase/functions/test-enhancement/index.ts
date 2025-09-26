@@ -10,6 +10,7 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
+const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID')
 
 // Enhance figure with AI
 async function enhanceFigureWithAI(imageData: string, context: string): Promise<{caption: string | null, ocrText: string | null}> {
@@ -24,6 +25,7 @@ async function enhanceFigureWithAI(imageData: string, context: string): Promise<
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
+        ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',

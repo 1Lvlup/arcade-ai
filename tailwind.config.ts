@@ -14,9 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        'display': ['Playfair Display', 'serif'],
-        'premium': ['Playfair Display', 'serif'],
+        'sans': ['N27', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        'display': ['N27', 'Inter', 'sans-serif'],
+        'premium': ['N27', 'Inter', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -154,8 +154,9 @@ export function TestEnhancement() {
           <div className="mt-6 space-y-4">
             <h3 className="text-lg font-semibold">Test Results</h3>
             <div className="bg-muted p-4 rounded-lg">
-              <p><strong>Status:</strong> {results.success ? "✅ Success" : "❌ Failed"}</p>
-              <p><strong>Processed:</strong> {results.processed} figures</p>
+              <p><strong>Status:</strong> {results.results && results.results.length > 0 ? "✅ Success" : "❌ Failed"}</p>
+              <p><strong>Message:</strong> {results.message || "No message"}</p>
+              <p><strong>Processed:</strong> {results.results?.length || 0} figures</p>
             </div>
 
             {results.results && results.results.length > 0 && (
@@ -164,15 +165,13 @@ export function TestEnhancement() {
                 {results.results.map((result: any, index: number) => (
                   <div key={index} className="bg-card border rounded p-3 text-sm">
                     <p><strong>Figure ID:</strong> {result.figure_id}</p>
-                    <p><strong>Status:</strong> {result.status}</p>
-                    {result.new_caption && (
-                      <p><strong>New Caption:</strong> {result.new_caption}</p>
+                    <p><strong>Manual ID:</strong> {result.manual_id}</p>
+                    <p><strong>Enhanced:</strong> {result.enhanced ? "✅ Yes" : "❌ No"}</p>
+                    {result.caption && (
+                      <p><strong>Caption:</strong> {result.caption.substring(0, 200)}...</p>
                     )}
-                    {result.new_ocr && (
-                      <p><strong>New OCR:</strong> {result.new_ocr}</p>
-                    )}
-                    {result.new_vision && (
-                      <p><strong>New Vision:</strong> {result.new_vision}</p>
+                    {result.ocr_text && (
+                      <p><strong>OCR Text:</strong> {result.ocr_text}</p>
                     )}
                     {result.error && (
                       <p className="text-destructive"><strong>Error:</strong> {result.error}</p>

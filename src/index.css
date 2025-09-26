@@ -8,107 +8,105 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Sophisticated Dark Authority Theme - Inspired by Premium Design */
-    --background: 0 0% 3%;
-    --foreground: 0 0% 96%;
+    /* Sarmat Analytix Color Palette */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 96%;
+    --card: 0 0% 22%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 0 0% 22%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 45 100% 70%;
-    --primary-foreground: 0 0% 10%;
+    --primary: 75 62% 49%;
+    --primary-foreground: 0 0% 4%;
 
-    --secondary: 0 0% 8%;
-    --secondary-foreground: 0 0% 96%;
+    --secondary: 0 0% 22%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 7%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 75 45% 15%;
+    --muted-foreground: 0 0% 70%;
 
-    --accent: 0 0% 8%;
-    --accent-foreground: 0 0% 96%;
+    --accent: 75 45% 15%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 10%;
-    --input: 0 0% 7%;
-    --ring: 45 100% 70%;
+    --border: 0 0% 22%;
+    --input: 75 45% 15%;
+    --ring: 75 62% 49%;
 
     --radius: 0.5rem;
 
-    /* Premium Color Palette */
-    --deep-black: 0 0% 3%;
-    --gold-accent: 45 100% 70%;
-    --neutral-900: 0 0% 5%;
-    --neutral-800: 0 0% 7%;
-    --neutral-700: 0 0% 10%;
-    --neutral-300: 0 0% 55%;
-    --neutral-100: 0 0% 96%;
+    /* Sarmat Brand Colors */
+    --deep-black: 0 0% 4%;        /* #0B0B0B */
+    --lime-green: 75 62% 49%;     /* #9FC82C */
+    --dark-gray: 0 0% 22%;        /* #393939 */
+    --olive-green: 75 45% 15%;    /* #263112 */
+    --pure-white: 0 0% 100%;      /* #FFFFFF */
 
     /* Sophisticated Gradients */
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 3%) 0%, hsl(0 0% 5%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(45 100% 70%) 0%, hsl(45 100% 75%) 100%);
-    --gradient-mesh: radial-gradient(circle at 20% 50%, hsl(45 100% 70% / 0.1) 0%, transparent 50%), 
-                     radial-gradient(circle at 80% 20%, hsl(45 100% 70% / 0.05) 0%, transparent 50%),
-                     linear-gradient(180deg, hsl(0 0% 3%) 0%, hsl(0 0% 5%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 4%) 0%, hsl(0 0% 22%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(75 62% 49%) 0%, hsl(75 62% 60%) 100%);
+    --gradient-mesh: radial-gradient(circle at 20% 50%, hsl(75 62% 49% / 0.1) 0%, transparent 50%), 
+                     radial-gradient(circle at 80% 20%, hsl(75 45% 15% / 0.3) 0%, transparent 50%),
+                     linear-gradient(180deg, hsl(0 0% 4%) 0%, hsl(0 0% 22%) 100%);
     
     /* Elegant Shadows */
-    --shadow-minimal: 0 1px 3px 0 hsl(0 0% 0% / 0.4);
-    --shadow-soft: 0 4px 12px -2px hsl(0 0% 0% / 0.5);
-    --shadow-dramatic: 0 20px 40px -12px hsl(0 0% 0% / 0.6);
-    --shadow-glow: 0 0 0 1px hsl(45 100% 70% / 0.2), 0 8px 32px hsl(45 100% 70% / 0.15);
+    --shadow-minimal: 0 1px 3px 0 hsl(0 0% 0% / 0.6);
+    --shadow-soft: 0 4px 12px -2px hsl(0 0% 0% / 0.7);
+    --shadow-dramatic: 0 20px 40px -12px hsl(0 0% 0% / 0.8);
+    --shadow-glow: 0 0 0 1px hsl(75 62% 49% / 0.3), 0 8px 32px hsl(75 62% 49% / 0.2);
 
-    --sidebar-background: 0 0% 3%;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 45 100% 70%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 0 0% 7%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 0% 10%;
-    --sidebar-ring: 45 100% 70%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 75 62% 49%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 75 45% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 22%;
+    --sidebar-ring: 75 62% 49%;
   }
 
   .dark {
     /* Light Mode Override (if needed) */
     --background: 0 0% 100%;
-    --foreground: 0 0% 5%;
+    --foreground: 0 0% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 5%;
+    --card-foreground: 0 0% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 5%;
+    --popover-foreground: 0 0% 4%;
 
-    --primary: 45 100% 70%;
-    --primary-foreground: 0 0% 10%;
+    --primary: 75 62% 49%;
+    --primary-foreground: 0 0% 4%;
 
     --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 5%;
+    --secondary-foreground: 0 0% 4%;
 
-    --muted: 0 0% 98%;
+    --muted: 0 0% 96%;
     --muted-foreground: 0 0% 40%;
 
     --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 5%;
+    --accent-foreground: 0 0% 4%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 0 0% 90%;
     --input: 0 0% 96%;
-    --ring: 45 100% 70%;
+    --ring: 75 62% 49%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 5%;
-    --sidebar-primary: 45 100% 70%;
-    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-foreground: 0 0% 4%;
+    --sidebar-primary: 75 62% 49%;
+    --sidebar-primary-foreground: 0 0% 4%;
     --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 5%;
+    --sidebar-accent-foreground: 0 0% 4%;
     --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 45 100% 70%;
+    --sidebar-ring: 75 62% 49%;
   }
 }
 

@@ -39,7 +39,7 @@ async function enhanceFigureWithAI(imageData: string, context: string): Promise<
             
             Context: ${context}
             
-            Respond in JSON format:
+            Respond in JSON format only, no markdown formatting:
             {
               "caption": "Technical description of the image",
               "ocr_text": "Any text found in the image"
@@ -71,7 +71,13 @@ async function enhanceFigureWithAI(imageData: string, context: string): Promise<
     const content = data.choices[0].message.content
 
     try {
-      const parsed = JSON.parse(content)
+      // Clean up response - remove markdown code blocks if present
+      let cleanContent = content.trim();
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      const parsed = JSON.parse(cleanContent);
       return {
         caption: parsed.caption || null,
         ocrText: parsed.ocr_text || null

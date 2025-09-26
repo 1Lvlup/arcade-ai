@@ -176,9 +176,9 @@ const Index = () => {
               <div className="caption-text text-primary/80 mb-6">
                 Next-Generation AI Platform
               </div>
-              <h1 className="display-heading text-8xl md:text-9xl lg:text-[12rem] text-foreground leading-none">
-                Future of<br />
-                <span className="text-primary brand-glow">Intelligence</span>
+              <h1 className="display-heading text-8xl md:text-9xl lg:text-[12rem] text-foreground leading-none relative">
+                <span className="relative z-10">CHECKMATE</span>
+                <span className="absolute inset-0 text-primary text-9xl md:text-[10rem] lg:text-[14rem] opacity-20 blur-lg scale-110 -z-10">CHECKMATE</span>
               </h1>
             </div>
             <p className="body-text text-xl md:text-2xl text-muted-foreground max-w-5xl mx-auto mt-16">

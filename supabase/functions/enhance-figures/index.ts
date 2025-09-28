@@ -27,6 +27,60 @@ interface Figure {
   figure_id: string;
 }
 
+// Helper function to fetch image from LlamaCloud and upload to S3
+async function processLlamaCloudImage(llamaUrl: string, manualId: string, figureId: string): Promise<string> {
+  // Parse llama://jobId/filename format
+  const match = llamaUrl.match(/^llama:\/\/([^\/]+)\/(.+)$/);
+  if (!match) throw new Error(`Invalid LlamaCloud URL format: ${llamaUrl}`);
+  
+  const [, jobId, filename] = match;
+  console.log(`📥 Fetching ${filename} from LlamaCloud job ${jobId}`);
+  
+  // Fetch from LlamaCloud
+  const response = await fetch(
+    `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${encodeURIComponent(jobId)}/result/image/${encodeURIComponent(filename)}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('LLAMACLOUD_API_KEY')}`,
+      },
+    }
+  );
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch from LlamaCloud: ${response.status} ${response.statusText}`);
+  }
+  
+  const imageBuffer = new Uint8Array(await response.arrayBuffer());
+  const contentType = response.headers.get('content-type') || 'image/png';
+  const ext = contentType.includes('jpeg') ? 'jpg' : contentType.includes('gif') ? 'gif' : 'png';
+  
+  // Upload to S3
+  const s3Key = `manuals/${manualId}/${figureId}.${ext}`;
+  const s3Url = `https://${Deno.env.get('S3_BUCKET')}.s3.${Deno.env.get('AWS_REGION')}.amazonaws.com/${s3Key}`;
+  
+  const { AwsClient } = await import("https://esm.sh/aws4fetch@1.0.17");
+  const aws = new AwsClient({
+    accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID')!,
+    secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY')!,
+    region: Deno.env.get('AWS_REGION')!,
+    service: "s3",
+  });
+  
+  const uploadResponse = await aws.fetch(s3Url, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body: imageBuffer,
+  });
+  
+  if (!uploadResponse.ok) {
+    const errorText = await uploadResponse.text();
+    throw new Error(`S3 upload failed: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`);
+  }
+  
+  console.log(`✅ Uploaded ${figureId} to S3: ${s3Url}`);
+  return s3Url;
+}
+
 async function enhanceFigureWithAI(figure: Figure): Promise<{caption: string | null, ocrText: string | null}> {
   try {
     console.log(`🔍 Enhancing figure ${figure.figure_id} from ${figure.manual_id}...`);
@@ -122,12 +176,23 @@ serve(async (req) => {
     const results = [];
     for (const figure of figures as Figure[]) {
       try {
-        const { caption, ocrText } = await enhanceFigureWithAI(figure);
+        let finalImageUrl = figure.image_url;
         
-        // Update the figure with enhancement results
+        // If it's a LlamaCloud reference, fetch and upload to S3 first
+        if (figure.image_url.startsWith('llama://')) {
+          console.log(`🔄 Converting LlamaCloud reference to S3 for ${figure.figure_id}`);
+          finalImageUrl = await processLlamaCloudImage(figure.image_url, figure.manual_id, figure.figure_id);
+        }
+        
+        // Create a temporary figure object with the proper image URL for AI enhancement
+        const enhancementFigure = { ...figure, image_url: finalImageUrl };
+        const { caption, ocrText } = await enhanceFigureWithAI(enhancementFigure);
+        
+        // Update the figure with enhancement results AND the new S3 URL
         const { error: updateError } = await supabase
           .from("figures")
           .update({
+            image_url: finalImageUrl, // Update with proper S3 URL
             caption_text: caption,
             ocr_text: ocrText,
             // Add a timestamp to track when enhancement was done

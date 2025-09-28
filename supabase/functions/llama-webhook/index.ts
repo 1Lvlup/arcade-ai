@@ -660,12 +660,12 @@ serve(async (req) => {
       console.log(`📝 Recording figure metadata ${i + 1}/${figures.length}: ${fig.figure_id}`);
       
       try {
-        // Just store the basic figure info for later processing
+        // Store basic figure info with asset name for later processing
         const { error: figureInsertError } = await supabase.from("figures").upsert({
           manual_id,
           page_number: fig.page_number ?? null,
           figure_id: fig.figure_id,
-          image_url: "", // Will be populated during enhancement
+          image_url: fig.llama_asset_name ? `llama://${jobId}/${fig.llama_asset_name}` : "", // Store LlamaCloud reference for later fetch
           caption_text: fig.caption_text ?? null,
           ocr_text: fig.ocr_text ?? null,
           callouts_json: fig.callouts ?? null,

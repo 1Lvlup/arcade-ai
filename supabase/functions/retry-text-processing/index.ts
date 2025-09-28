@@ -30,10 +30,12 @@ serve(async (req) => {
       .from('documents')
       .select('*')
       .eq('manual_id', manual_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (docError || !doc) {
-      throw new Error(`Document not found: ${manual_id}`);
+      throw new Error(`Document not found: ${manual_id}. Error: ${docError?.message}`);
     }
 
     console.log(`📄 Found document: ${doc.title}, Job ID: ${doc.job_id}`);
@@ -63,7 +65,7 @@ serve(async (req) => {
 
     console.log(`🦙 Fetching completed job from LlamaCloud: ${doc.job_id}`);
     
-    const jobResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${doc.job_id}`, {
+    const jobResponse = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${doc.job_id}`, {
       headers: {
         'Authorization': `Bearer ${llamaApiKey}`,
         'Content-Type': 'application/json',
@@ -71,7 +73,10 @@ serve(async (req) => {
     });
 
     if (!jobResponse.ok) {
-      throw new Error(`Failed to fetch job: ${jobResponse.status} ${jobResponse.statusText}`);
+      console.error(`❌ LlamaCloud job fetch failed: ${jobResponse.status} ${jobResponse.statusText}`);
+      const errorText = await jobResponse.text();
+      console.error('Error details:', errorText);
+      throw new Error(`Failed to fetch job: ${jobResponse.status} ${jobResponse.statusText} - ${errorText}`);
     }
 
     const jobData = await jobResponse.json();
@@ -82,18 +87,22 @@ serve(async (req) => {
     }
 
     // Fetch the result
-    const resultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${doc.job_id}/result/json`, {
+    const resultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${doc.job_id}/result/json`, {
       headers: {
         'Authorization': `Bearer ${llamaApiKey}`,
       },
     });
 
     if (!resultResponse.ok) {
-      throw new Error(`Failed to fetch result: ${resultResponse.status}`);
+      console.error(`❌ LlamaCloud result fetch failed: ${resultResponse.status} ${resultResponse.statusText}`);
+      const errorText = await resultResponse.text();
+      console.error('Result error details:', errorText);
+      throw new Error(`Failed to fetch result: ${resultResponse.status} - ${errorText}`);
     }
 
     const payload = await resultResponse.json();
-    console.log(`📦 Retrieved payload with JSON pages: ${payload.pages?.length || 0}`);
+    console.log(`📦 Retrieved payload with JSON pages: ${payload?.pages?.length || 0}`);
+    console.log(`📄 Payload keys:`, Object.keys(payload || {}));
 
     // Set tenant context
     let tenantId = '00000000-0000-0000-0000-000000000001'; // default

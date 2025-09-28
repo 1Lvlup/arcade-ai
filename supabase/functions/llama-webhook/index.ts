@@ -42,7 +42,13 @@ const aws = new AwsClient({
   service: "s3",
 });
 
+// S3 upload function (GUARDED - only runs if UPLOAD_FIGURES_IN_WEBHOOK=true)
 async function uploadToS3(buffer: Uint8Array, key: string, contentType = "application/octet-stream"): Promise<{httpUrl: string; s3Uri: string; size: number; contentType: string}> {
+  if (!UPLOAD_FIGURES_IN_WEBHOOK) {
+    console.log("🚫 uploadToS3 called but UPLOAD_FIGURES_IN_WEBHOOK=false");
+    throw new Error("S3 upload disabled in webhook");
+  }
+  
   const httpUrl = `https://${s3Bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
   const s3Uri = `s3://${s3Bucket}/${key}`;
   
@@ -263,8 +269,12 @@ async function fetchImageFromLlama(jobId: string, filename: string): Promise<{bu
   return { buffer: arr, contentType, ext };
 }
 
-// Vision analysis (single, correct version)
+// Vision analysis (GUARDED - only runs if ENHANCE_IN_WEBHOOK=true)
 async function analyzeFigureWithVision(imageData: string, context: string) {
+  if (!ENHANCE_IN_WEBHOOK) {
+    console.log("🚫 analyzeFigureWithVision called but ENHANCE_IN_WEBHOOK=false");
+    return null;
+  }
   if (!openaiApiKey) {
     console.error("❌ OPENAI_API_KEY not available - skipping vision analysis");
     return null;
@@ -307,8 +317,12 @@ async function analyzeFigureWithVision(imageData: string, context: string) {
   }
 }
 
-// AI-powered OCR and caption generation for figures
+// AI-powered OCR and caption generation (GUARDED - only runs if ENHANCE_IN_WEBHOOK=true)
 async function enhanceFigureWithAI(imageData: string, context: string): Promise<{caption: string | null, ocrText: string | null}> {
+  if (!ENHANCE_IN_WEBHOOK) {
+    console.log("🚫 enhanceFigureWithAI called but ENHANCE_IN_WEBHOOK=false");
+    return {caption: null, ocrText: null};
+  }
   if (!openaiApiKey) {
     console.error("❌ OPENAI_API_KEY not available - skipping AI enhancement");
     return {caption: null, ocrText: null};

@@ -210,6 +210,7 @@ export type Database = {
           id: string
           image_url: string
           keywords: string[] | null
+          llama_asset_name: string | null
           manual_id: string
           ocr_text: string | null
           page_number: number | null
@@ -226,6 +227,7 @@ export type Database = {
           id?: string
           image_url: string
           keywords?: string[] | null
+          llama_asset_name?: string | null
           manual_id: string
           ocr_text?: string | null
           page_number?: number | null
@@ -242,6 +244,7 @@ export type Database = {
           id?: string
           image_url?: string
           keywords?: string[] | null
+          llama_asset_name?: string | null
           manual_id?: string
           ocr_text?: string | null
           page_number?: number | null

@@ -251,25 +251,103 @@ serve(async (req) => {
       manual_id,
       job_id,
       fec_tenant_id: tenant_id,
-      status: 'accepted',
-      stage: 'webhook_received',
+      status: 'processing',
+      stage: 'text_extraction',
       chunks_processed: 0,
       total_chunks: 0,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'manual_id' });
 
-    console.log("✅ PHASE ACK: Document accepted, returning 202");
+    // --- PHASE A: TEXT PROCESSING (AUTO) ---
+    console.log("PHASE A: text -> start");
 
-    // ACK immediately so we never "stall" the caller
+    // Get parse payload (prefer JSON; fallback to markdown or refetch by job_id)
+    const payload = await getLlamaPayload(req, job_id);
+    console.log("PAYLOAD KEYS", Object.keys(payload || {}));
+    console.log("pages?", !!payload?.pages, "markdown?", !!payload?.markdown);
+
+    let chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
+    if (payload?.pages) {
+      chunks = extractSemanticChunks(payload.pages);
+      console.log("PHASE A: text -> extracted from JSON", { count: chunks.length });
+    }
+    if (chunks.length === 0 && payload?.markdown) {
+      chunks = extractChunksFromMarkdown(payload.markdown);
+      console.log("PHASE A: text -> extracted from MD", { count: chunks.length });
+    }
+
+    if (!chunks.length) {
+      console.log("PHASE A: text -> NO CHUNKS FOUND");
+    } else {
+      // Batch embeddings to reduce API calls (e.g., 64 at a time)
+      const BATCH = 64;
+      let inserted = 0;
+      for (let i = 0; i < chunks.length; i += BATCH) {
+        const batch = chunks.slice(i, i + BATCH);
+        const inputs = batch.map(c => c.content);
+        const emb = await createEmbeddingsBatch(inputs, "text-embedding-3-small");
+        const rows = batch.map((c, idx) => ({
+          manual_id,
+          page_start: c.page_start ?? null,
+          page_end: c.page_end ?? null,
+          menu_path: c.menu_path ?? null,
+          content: c.content,
+          embedding: emb[idx],
+          fec_tenant_id: tenant_id,
+        }));
+        const { error } = await supabase.from("chunks_text").insert(rows);
+        if (error) throw error;
+        inserted += rows.length;
+        console.log("PHASE A: text -> inserted", { inserted, total: chunks.length });
+      }
+    }
+
+    console.log("PHASE A: text -> done", { chunks: chunks.length });
+
+    // --- PHASE B: FIGURES (METADATA ONLY) ---
+    console.log("PHASE B: figures -> start");
+
+    const figures = payload?.figures ?? extractFiguresMeta(payload);
+    const figureRows = (figures || []).map((f: any) => ({
+      manual_id,
+      figure_id: f.figure_id,
+      page_number: f.page_number ?? null,
+      // store original llama asset ref so later jobs can fetch:
+      llama_asset_name: f.asset_name ?? null,
+      image_url: "",  // NOT filled here - empty string for NOT NULL constraint
+      caption_text: null,
+      ocr_text: null,
+      vision_text: null,
+      fec_tenant_id: tenant_id,
+    }));
+
+    if (figureRows.length) {
+      const { error } = await supabase.from("figures").upsert(figureRows, { onConflict: "manual_id,figure_id" });
+      if (error) throw error;
+    }
+
+    console.log("PHASE B: figures -> done", { figures: figureRows.length });
+
+    // --- PHASE C: EXPENSIVE WORK SKIPPED ---
+    if (!PROCESS_FIGURES_IN_WEBHOOK) {
+      console.log("PHASE C: expensive work skipped (PROCESS_FIGURES_IN_WEBHOOK=false)");
+    }
+
+    await markProcessingStatus(manual_id, tenant_id, {
+      status: chunks.length ? "completed" : "failed",
+      chunks_processed: chunks.length,
+      total_chunks: chunks.length,
+      figures_detected: figureRows.length,
+    });
+
+    console.log("PHASE Z: webhook -> done");
     return new Response(JSON.stringify({ 
-      ok: true, 
-      manual_id, 
-      job_id, 
-      status: 'accepted',
-      message: 'Document received and queued for processing'
+      success: true, 
+      chunks: chunks.length, 
+      figures: figureRows.length,
+      message: `Processed ${chunks.length} text chunks and ${figureRows.length} figures`
     }), {
-      status: 202,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {

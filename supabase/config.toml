@@ -62,6 +62,11 @@ verify_jwt = true
 
 [functions.llama-webhook]
 verify_jwt = false
+[functions.llama-webhook.env]
+ENHANCE_IN_WEBHOOK = "false"
+PROCESS_FIGURES_IN_WEBHOOK = "false"
+UPLOAD_FIGURES_IN_WEBHOOK = "false"
+EMBED_FIGURES_IN_WEBHOOK = "false"
 
 [functions.search-manuals]
 verify_jwt = true

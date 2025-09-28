@@ -15,11 +15,11 @@ export function RetryProcessing({ jobId, manualId }: RetryProcessingProps) {
   const handleRetry = async () => {
     setIsRetrying(true);
     try {
-      console.log('Retrying processing for job:', jobId);
+      console.log('Retrying processing for job:', jobId, 'manual:', manualId);
       
-      const { data, error } = await supabase.functions.invoke('retry-stalled-job', {
+      // Try the retry-text-processing function first since that's what works
+      const { data, error } = await supabase.functions.invoke('retry-text-processing', {
         body: {
-          job_id: jobId,
           manual_id: manualId
         }
       });

@@ -747,26 +747,8 @@ if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
             
             console.log(`🔍 Vision processing enabled for ${fig.figure_id} - imageDataUri available`);
             
-            // Get AI enhancement if we don't have good caption/OCR (aligned with quality-check threshold)
-            const needsEnhancement = !enhancedCaption || enhancedCaption.length < 50 || !enhancedOcr;
-            if (needsEnhancement) {
-              if (!openaiApiKey) {
-                console.log(`⚠️ AI enhancement SKIPPED for ${fig.figure_id} - OPENAI_API_KEY not available`);
-              } else {
-                console.log(`🔍 Enhancing figure ${fig.figure_id} with AI...`);
-                const enhancement = await enhanceFigureWithAI(imageDataUri, context);
-                if (enhancement.caption && (!enhancedCaption || enhancedCaption.length < 50)) {
-                  enhancedCaption = enhancement.caption;
-                  console.log(`✨ Generated caption for ${fig.figure_id}: ${enhancedCaption.slice(0, 50)}...`);
-                }
-                if (enhancement.ocrText && !enhancedOcr) {
-                  enhancedOcr = enhancement.ocrText;
-                  console.log(`📝 Extracted OCR for ${fig.figure_id}: ${enhancedOcr.slice(0, 50)}...`);
-                }
-              }
-            } else {
-              console.log(`✅ Enhancement skipped for ${fig.figure_id} - already has good caption/OCR`);
-            }
+            // Skip AI enhancement during upload - use separate batch function instead
+            console.log(`⏭️ AI enhancement SKIPPED for ${fig.figure_id} - will be processed separately via enhance-figures function`);
 
             // Get vision analysis for additional context
             visionAnalysis = await analyzeFigureWithVision(imageDataUri, context);

@@ -333,9 +333,9 @@ const VisionBoard = () => {
           </p>
         </div>
 
-        {/* Admin Tools Section */}
+        {/* Figure Enhancement Tools */}
         <div className="mb-12 space-y-6">
-          <h3 className="text-2xl font-bold text-center text-primary">Admin Tools</h3>
+          <h3 className="text-2xl font-bold text-center text-primary">Figure Enhancement</h3>
           <div className="flex justify-center">
             <FigureEnhancementManager />
           </div>

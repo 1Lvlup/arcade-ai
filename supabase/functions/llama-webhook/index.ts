@@ -9,6 +9,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// FEATURE FLAGS - DEFAULT OFF TO PREVENT EXPENSIVE OPERATIONS IN WEBHOOK
+const ENHANCE_IN_WEBHOOK = (Deno.env.get("ENHANCE_IN_WEBHOOK") ?? "false").toLowerCase() === "true";
+const PROCESS_FIGURES_IN_WEBHOOK = (Deno.env.get("PROCESS_FIGURES_IN_WEBHOOK") ?? "false").toLowerCase() === "true";
+const UPLOAD_FIGURES_IN_WEBHOOK = (Deno.env.get("UPLOAD_FIGURES_IN_WEBHOOK") ?? "false").toLowerCase() === "true";
+const EMBED_FIGURES_IN_WEBHOOK = (Deno.env.get("EMBED_FIGURES_IN_WEBHOOK") ?? "false").toLowerCase() === "true";
+
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
@@ -73,6 +79,20 @@ async function createEmbedding(text: string) {
   if (!r.ok) throw new Error(`OpenAI embedding failed: ${r.status} ${r.statusText} – ${t.slice(0, 1000)}`);
   const data = JSON.parse(t);
   return data.data[0].embedding as number[];
+}
+
+// Batch embeddings for efficiency
+async function createEmbeddingsBatch(texts: string[], model = "text-embedding-3-small") {
+  const inputs = texts.map(text => text.length > 8000 ? text.slice(0, 8000) : text);
+  const r = await fetch("https://api.openai.com/v1/embeddings", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model, input: inputs }),
+  });
+  const t = await r.text();
+  if (!r.ok) throw new Error(`OpenAI batch embedding failed: ${r.status} ${r.statusText} – ${t.slice(0, 1000)}`);
+  const data = JSON.parse(t);
+  return data.data.map((item: any) => item.embedding as number[]);
 }
 
 /* ============================
@@ -500,12 +520,13 @@ function inferPageNumber(nameOrKey?: string, idx?: number | null) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  try {
-    console.log("LlamaCloud webhook received");
-    const payload = await req.json();
+  console.log("PHASE 0: begin webhook");
 
+  try {
+    const payload = await req.json();
     console.log("Webhook payload keys:", Object.keys(payload || {}));
-    console.log("Webhook sample (trimmed):", JSON.stringify(payload).slice(0, 2000));
+    console.log("PAYLOAD KEYS", Object.keys(payload || {}));
+    console.log("pages?", !!payload?.pages, "markdown?", !!payload?.markdown);
 
     const jobId = payload.jobId;
     if (!jobId) throw new Error("No jobId found in payload");
@@ -525,6 +546,7 @@ serve(async (req) => {
     console.log(`Set tenant context: ${docData.fec_tenant_id}`);
 
     const manual_id = docData.manual_id;
+    const tenantId = docData.fec_tenant_id;
     console.log(`Processing manual: ${manual_id} (job: ${jobId})`);
 
     // Clear old data
@@ -533,11 +555,22 @@ serve(async (req) => {
     await supabase.from("figures").delete().eq("manual_id", manual_id);
     console.log("✅ Old data cleared successfully");
 
+    // --- PHASE A: TEXT FIRST ---
+    console.log("PHASE A: text -> start");
+
     // Extract chunks (JSON → MD → TXT)
     let chunks: any[] = [];
-    if (payload.json && Array.isArray(payload.json)) {
+    if (payload.pages) {
+      chunks = extractSemanticChunks(payload.pages);
+      console.log("PHASE A: text -> extracted from JSON", { count: chunks.length });
+    }
+    if (chunks.length === 0 && payload.markdown) {
+      chunks = extractChunksFromMarkdown(payload.markdown);
+      console.log("PHASE A: text -> extracted from MD", { count: chunks.length });
+    }
+    if (chunks.length === 0 && payload.json && Array.isArray(payload.json)) {
       chunks = extractSemanticChunks(payload.json);
-      console.log(`Extracted ${chunks.length} semantic chunks with hierarchical structure`);
+      console.log("PHASE A: text -> extracted from JSON fallback", { count: chunks.length });
     }
     if (chunks.length === 0) {
       console.warn("No chunks from JSON, falling back to markdown");
@@ -556,203 +589,132 @@ serve(async (req) => {
       }
     }
 
-    /* ============================
-       PATCH START: Figures section
-       ============================ */
-    const figures: Array<{
-      figure_id: string;
-      image_sources: any[];
-      llama_asset_name: string | null;
-      caption_text: string | null;
-      ocr_text: string | null;
-      page_number: number | null;
-      callouts: any;
-      bbox_pdf_coords: string | null;
-    }> = [];
+    if (!chunks.length) {
+      console.log("PHASE A: text -> NO CHUNKS FOUND");
+    } else {
+      // Batch embeddings to reduce API calls (64 at a time)
+      const BATCH = 64;
+      let inserted = 0;
+      for (let i = 0; i < chunks.length; i += BATCH) {
+        const batch = chunks.slice(i, i + BATCH);
+        const inputs = batch.map(c => c.content);
+        const emb = await createEmbeddingsBatch(inputs, "text-embedding-3-small");
+        const rows = batch.map((c, idx) => ({
+          manual_id,
+          page_start: c.page_start ?? null,
+          page_end: c.page_end ?? null,
+          menu_path: c.menu_path ?? null,
+          content: c.content,
+          embedding: emb[idx],
+          fec_tenant_id: tenantId,
+        }));
+        const { error } = await supabase.from("chunks_text").insert(rows);
+        if (error) throw error;
+        inserted += rows.length;
+        console.log("PHASE A: text -> inserted", { inserted, total: chunks.length });
+      }
+    }
 
-    console.log("🖼️ Starting figure extraction...", {
-      hasJson: !!payload.json,
-      hasImages: !!payload.images,
-      jsonLength: Array.isArray(payload.json) ? payload.json.length : 0,
-      imagesType: typeof payload.images,
-      imagesLength: Array.isArray(payload.images) ? payload.images.length : (payload.images ? Object.keys(payload.images).length : 0),
-    });
+    console.log("PHASE A: text -> done", { chunks: chunks.length });
 
+    // --- PHASE B: FIGURES (METADATA ONLY) ---
+    console.log("PHASE B: figures -> start");
+
+    const figureRows: any[] = [];
+
+    // Extract from JSON pages first
     if (payload.json && Array.isArray(payload.json)) {
       for (const page of payload.json) {
         if (page.images && Array.isArray(page.images)) {
-          console.log(`📄 Page ${page.page} has ${page.images.length} images`);
           for (const img of page.images) {
             const imageName = img.name || `page${page.page}_img`;
-            const imageSources = findAllImageSources(payload, imageName);
-
-            console.log(`🔍 Image source detection for ${imageName}:`, {
-              sourcesFound: imageSources.length,
-              sourceTypes: imageSources.map((s) => typeof s),
-              sourcePreview: imageSources.map((s) =>
-                typeof s === "string" ? s.slice(0, 50) + "..." : (s && typeof s === "object" ? Object.keys(s) : String(s)),
-              ),
-            });
-
-            figures.push({
+            figureRows.push({
+              manual_id,
               figure_id: imageName.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
-              image_sources: imageSources,
-              llama_asset_name: imageName || null, // Add asset name for fallback
-              caption_text: img.caption || img.alt || null,
-              ocr_text: img.text || null,
               page_number: page.page ?? null,
-              callouts: img.callouts ?? null,
-              bbox_pdf_coords: JSON.stringify({
-                x: img.x || 0,
-                y: img.y || 0,
-                width: img.width || 0,
-                height: img.height || 0,
-              }),
+              llama_asset_name: imageName || null, // IMPORTANT: store original asset ref
+              image_url: null,                     // NOT filled here
+              caption_text: null,
+              ocr_text: null,
+              vision_text: null,
+              fec_tenant_id: tenantId,
             });
           }
         }
       }
     }
 
-    // If JSON didn't yield figures but payload.images exists, fall back to images-only ingestion
-    if (figures.length === 0 && payload.images) {
-      console.log("🧯 No page JSON, but payload.images present — using assets-only path…");
-      const imgs = Array.isArray(payload.images)
-        ? payload.images
-        : Object.keys(payload.images || {});
-      for (const name of imgs.slice(0, 3)) {
-        console.log("  sample image entry:", typeof name === "string" ? name : JSON.stringify(name).slice(0, 120));
-      }
-
-      // Minimal figures from image list
+    // Fallback to payload.images if no JSON figures
+    if (figureRows.length === 0 && payload.images) {
       const list = Array.isArray(payload.images) ? payload.images : Object.keys(payload.images);
       for (const raw of list) {
         const name = typeof raw === "string" ? raw : raw?.name || String(raw);
-        figures.push({
+        figureRows.push({
+          manual_id,
           figure_id: name.replace(/\.[^/.]+$/, ""),
-          image_sources: [],                // none inline
-          llama_asset_name: name,           // use assets fallback
+          page_number: null,
+          llama_asset_name: name,
+          image_url: null,
           caption_text: null,
           ocr_text: null,
-          page_number: null,                // no page info available
-          callouts: null,
-          bbox_pdf_coords: null
+          vision_text: null,
+          fec_tenant_id: tenantId,
         });
       }
-      console.log(`🧩 Staged ${figures.length} figures from images-only list`);
     }
 
-
-    console.log(`Found ${figures.length} figures to process`);
-
-    let processedFigures = 0;
-    let skippedFigures = 0;
-    const processingErrors: Array<{ figure_id: string; error: string; sources_tried: number }> = [];
-
-    console.log(`🔄 SKIPPING figure processing during initial upload - will process via separate batch function`);
-    console.log(`📊 Found ${figures.length} figures to process later via Figure Enhancement Manager`);
-    
-    // Skip figure processing entirely during upload to avoid timeouts
-    // Figures will be processed separately via the enhance-figures function
-    // Store basic figure records without processing
-    for (let i = 0; i < figures.length; i++) {
-      const fig = figures[i];
-      console.log(`📝 Recording figure metadata ${i + 1}/${figures.length}: ${fig.figure_id}`);
-      
-      try {
-        // Store basic figure info with asset name for later processing
-        const { error: figureInsertError } = await supabase.from("figures").upsert({
-          manual_id,
-          page_number: fig.page_number ?? null,
-          figure_id: fig.figure_id,
-          image_url: fig.llama_asset_name ? `llama://${jobId}/${fig.llama_asset_name}` : "", // Store LlamaCloud reference for later fetch
-          caption_text: fig.caption_text ?? null,
-          ocr_text: fig.ocr_text ?? null,
-          callouts_json: fig.callouts ?? null,
-          bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
-          fec_tenant_id: docData.fec_tenant_id,
-        }, {
-          onConflict: 'manual_id,figure_id'
-        });
-        
-        if (figureInsertError) {
-          console.error(`❌ DB insert failed for ${fig.figure_id}:`, figureInsertError);
-        } else {
-          processedFigures++;
-          console.log(`✅ Recorded figure metadata ${fig.figure_id}`);
-        }
-      } catch (e) {
-        console.error(`❌ Error recording figure ${fig.figure_id}:`, e);
-        skippedFigures++;
-      }
+    if (figureRows.length) {
+      const { error } = await supabase.from("figures").upsert(figureRows, { onConflict: "manual_id,figure_id" });
+      if (error) throw error;
     }
 
-    console.log(`📊 Figure processing summary: ${processedFigures} processed, ${skippedFigures} skipped`);
+    console.log("PHASE B: figures -> done", { figures: figureRows.length });
 
-    if (skippedFigures) {
-      console.log("🔍 Figure failure summary recorded");
+    // --- PHASE C: ALL EXPENSIVE WORK SKIPPED IN WEBHOOK ---
+    if (!PROCESS_FIGURES_IN_WEBHOOK) {
+      console.log("PHASE C: expensive work skipped (PROCESS_FIGURES_IN_WEBHOOK=false)");
+    } else {
+      // If you ever flip it on, be explicit which sub-steps are allowed:
+      if (UPLOAD_FIGURES_IN_WEBHOOK) console.log("...would upload figures, but disabled");
+      if (ENHANCE_IN_WEBHOOK) console.log("...would enhance figures, but disabled");
+      if (EMBED_FIGURES_IN_WEBHOOK) console.log("...would embed figures, but disabled");
     }
-    /* ============================
-       PATCH END: Figures section
-       ============================ */
-
-    // Chunks → embeddings → DB
-    let processedChunks = 0;
-    if (chunks && chunks.length > 0) {
-      console.log(`Processing ${chunks.length} quality chunks`);
-      for (const ch of chunks) {
-        try {
-          const embedding = await createEmbedding(ch.content);
-          const { error: insErr } = await supabase.from("chunks_text").insert({
-            manual_id,
-            page_start: ch.page_start ?? null,
-            page_end: ch.page_end ?? null,
-            menu_path: ch.menu_path ?? null,
-            content: ch.content,
-            embedding,
-            fec_tenant_id: docData.fec_tenant_id,
-            // NOTE: content_hash is a generated column (md5(content)) — do not set manually
-          });
-          if (insErr) console.error("chunks_text insert error:", insErr);
-          else processedChunks++;
-        } catch (e) {
-          console.error("Chunk embed/insert error:", e);
-        }
-      }
-    }
-
-    // Update document & processing status
-    await supabase.from("documents").update({ updated_at: new Date().toISOString() }).eq("manual_id", manual_id);
 
     await supabase.from("processing_status").upsert({
       job_id: jobId,
       manual_id,
-      status: "completed",
+      status: chunks.length ? "completed" : "failed",
       stage: "finished",
-      current_task: `Processing complete - ${processedFigures} / ${figures.length} figures successful`,
+      current_task: `Processing complete - ${chunks.length} chunks processed`,
       progress_percent: 100,
       total_chunks: chunks.length,
-      chunks_processed: processedChunks,
-      total_figures: figures.length,
-      figures_processed: processedFigures,
-      fec_tenant_id: docData.fec_tenant_id,
+      chunks_processed: chunks.length,
+      total_figures: figureRows.length,
+      figures_processed: figureRows.length, // metadata only
+      fec_tenant_id: tenantId,
       updated_at: new Date().toISOString(),
     }, { onConflict: "job_id" });
 
-    console.log(`✅ Processing complete: ${processedChunks}/${chunks.length} chunks, ${processedFigures}/${figures.length} figures for manual ${manual_id}`);
+    console.log("PHASE Z: webhook -> done");
     return new Response(JSON.stringify({
       success: true,
       manual_id,
-      processed_chunks: processedChunks,
+      processed_chunks: chunks.length,
       total_chunks: chunks.length,
-      processed_figures: processedFigures,
-      total_figures: figures.length,
-      skipped_figures: figures.length - processedFigures,
+      figures_detected: figureRows.length,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  } catch (error) {
-    console.error("llama-webhook error:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(JSON.stringify({ error: errorMessage, details: String(error) }), {
+  } catch (e) {
+    console.error("PHASE ERR:", e);
+    const manual_id = "unknown"; // fallback
+    await supabase.from("processing_status").upsert({
+      job_id: "unknown",
+      manual_id,
+      status: "failed",
+      error_message: e instanceof Error ? e.message : String(e),
+      fec_tenant_id: "00000000-0000-0000-0000-000000000001", // fallback
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "job_id" });
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

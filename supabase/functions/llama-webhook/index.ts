@@ -649,154 +649,40 @@ serve(async (req) => {
     let skippedFigures = 0;
     const processingErrors: Array<{ figure_id: string; error: string; sources_tried: number }> = [];
 
-    console.log(`🔄 Processing ${figures.length} figures...`);
-
+    console.log(`🔄 SKIPPING figure processing during initial upload - will process via separate batch function`);
+    console.log(`📊 Found ${figures.length} figures to process later via Figure Enhancement Manager`);
+    
+    // Skip figure processing entirely during upload to avoid timeouts
+    // Figures will be processed separately via the enhance-figures function
+    // Store basic figure records without processing
     for (let i = 0; i < figures.length; i++) {
       const fig = figures[i];
-      console.log(`📷 Processing figure ${i + 1}/${figures.length}: ${fig.figure_id}`);
-
+      console.log(`📝 Recording figure metadata ${i + 1}/${figures.length}: ${fig.figure_id}`);
+      
       try {
-        if ((!fig.image_sources || fig.image_sources.length === 0) && !fig.llama_asset_name) {
-          console.warn(`⚠️ Skipping ${fig.figure_id}: no image sources and no asset name`);
-          skippedFigures++;
-          processingErrors.push({ figure_id: fig.figure_id, error: "No image sources or asset name found", sources_tried: 0 });
-          continue;
-        }
-
-        // Try multiple sources until one resolves
-        let resolved: { buffer: Uint8Array; contentType: string; ext: string } | null = null;
-        let tried = 0;
-        let lastErr = "";
-
-        for (const src of fig.image_sources) {
-          tried++;
-          try {
-            resolved = await resolveImageInput(src);
-            console.log(`✅ Resolved ${fig.figure_id} from source ${tried}: ${resolved.buffer.length} bytes (${resolved.contentType})`);
-            break;
-          } catch (e: any) {
-            lastErr = e?.message || String(e);
-            console.warn(`⚠️ Source ${tried} failed for ${fig.figure_id}: ${lastErr}`);
-          }
-        }
-
-        // If we still don't have a resolved image, try LlamaCloud assets by filename
-        if (!resolved && fig.llama_asset_name) {
-          try {
-            console.log(`🪄 Falling back to Llama assets for ${fig.llama_asset_name}`);
-            const fetched = await fetchImageFromLlama(jobId, fig.llama_asset_name);
-            resolved = fetched;
-            console.log(`✅ Asset fetch succeeded for ${fig.llama_asset_name} (${fetched.buffer.length} bytes)`);
-          } catch (assetErr) {
-            console.warn(`⚠️ Asset fetch failed for ${fig.llama_asset_name}:`, assetErr);
-          }
-        }
-
-        if (!resolved) {
-          console.error(`❌ All ${tried} sources failed for ${fig.figure_id}. Last: ${lastErr}`);
-          skippedFigures++;
-          processingErrors.push({ figure_id: fig.figure_id, error: `All sources failed. Last: ${lastErr}`, sources_tried: tried });
-          continue;
-        }
-
-       // Upload to S3 (with retry)
-const key = `manuals/${manual_id}/${fig.figure_id}.${resolved.ext}`;
-
-let uploadInfo: { httpUrl: string; s3Uri: string; size: number; contentType: string } | null = null;
-let uploadAttempts = 0;
-const maxRetries = 2;
-
-while (uploadAttempts <= maxRetries) {
-  try {
-    uploadInfo = await uploadToS3(resolved.buffer, key, resolved.contentType);
-    console.log(`📤 Uploaded ${fig.figure_id} to S3: ${uploadInfo.httpUrl}`);
-    break;
-  } catch (uploadError) {
-    uploadAttempts++;
-    console.warn(`⚠️ S3 upload attempt ${uploadAttempts} failed for ${fig.figure_id}:`, uploadError);
-    if (uploadAttempts > maxRetries) throw uploadError;
-    await new Promise(r => setTimeout(r, 1000));
-  }
-}
-
-if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
-
-        // Enhanced figure processing with AI caption and OCR
-        let enhancedCaption = fig.caption_text;
-        let enhancedOcr = fig.ocr_text;
-        let visionAnalysis: string | null = null;
-        
-        try {
-          // Build imageDataUri using the S3 URL we just uploaded
-          // This ensures OpenAI vision API gets a valid, accessible URL
-          let imageDataUri: string | null = null;
-          
-          if (uploadInfo?.httpUrl) {
-            // Use the S3 URL that was just uploaded - this is publicly accessible
-            imageDataUri = uploadInfo.httpUrl;
-            console.log(`🔗 Using S3 URL for vision analysis: ${fig.figure_id} -> ${imageDataUri}`);
-          } else if (resolved?.buffer) {
-            // Fallback: create base64 data URI from resolved buffer
-            const base64Data = btoa(String.fromCharCode(...resolved.buffer));
-            imageDataUri = `data:${resolved.contentType};base64,${base64Data}`;
-            console.log(`🔧 Created base64 data URI for vision analysis from resolved buffer: ${fig.figure_id}`);
-          }
-
-          if (imageDataUri) {
-            const context = `Manual: ${manual_id}, Page: ${fig.page_number}`;
-            
-            console.log(`🔍 Vision processing enabled for ${fig.figure_id} - imageDataUri available`);
-            
-            // Skip AI enhancement during upload - use separate batch function instead
-            console.log(`⏭️ AI enhancement SKIPPED for ${fig.figure_id} - will be processed separately via enhance-figures function`);
-
-            // Get vision analysis for additional context
-            visionAnalysis = await analyzeFigureWithVision(imageDataUri, context);
-            console.log(`🔮 Vision analysis ${visionAnalysis ? 'completed' : 'failed'} for ${fig.figure_id}`);
-          } else {
-            console.log(`⚠️ Vision enhancement SKIPPED for ${fig.figure_id} - no valid imageDataUri available`);
-          }
-        } catch (vErr) {
-          console.warn(`⚠️ Vision/Enhancement failed for ${fig.figure_id}:`, vErr);
-        }
-
-        const figureContent = [enhancedCaption || "", enhancedOcr || "", visionAnalysis || ""].filter(Boolean).join("\n");
-        let embedding: number[] | null = null;
-        if (figureContent.length > 10) {
-      try {
-        embedding = await createEmbedding(figureContent);
-        console.log(`🔗 Generated figure embedding (${embedding.length} dimensions): ${fig.figure_id}`);
-      } catch (embErr) {
-        const errorMessage = embErr instanceof Error ? embErr.message : String(embErr);
-        console.error(`❌ Figure embedding failed for ${fig.figure_id}:`, errorMessage);
-      }
-        }
-
-        console.log(`💾 Inserting figure: ${fig.figure_id}, URL: ${uploadInfo!.httpUrl}, Size: ${uploadInfo!.size} bytes`);
-        
+        // Just store the basic figure info for later processing
         const { error: figureInsertError } = await supabase.from("figures").upsert({
           manual_id,
           page_number: fig.page_number ?? null,
           figure_id: fig.figure_id,
-          image_url: uploadInfo!.httpUrl,
-          caption_text: enhancedCaption ?? null,
-          ocr_text: enhancedOcr ?? null,
-          vision_text: visionAnalysis ?? null,
+          image_url: "", // Will be populated during enhancement
+          caption_text: fig.caption_text ?? null,
+          ocr_text: fig.ocr_text ?? null,
           callouts_json: fig.callouts ?? null,
           bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
-          embedding_text: embedding,
           fec_tenant_id: docData.fec_tenant_id,
         }, {
           onConflict: 'manual_id,figure_id'
         });
+        
         if (figureInsertError) {
           console.error(`❌ DB insert failed for ${fig.figure_id}:`, figureInsertError);
         } else {
           processedFigures++;
-          console.log(`✅ Stored figure ${fig.figure_id}`);
+          console.log(`✅ Recorded figure metadata ${fig.figure_id}`);
         }
       } catch (e) {
-        console.error(`❌ Critical error processing figure ${fig.figure_id}:`, e);
+        console.error(`❌ Error recording figure ${fig.figure_id}:`, e);
         skippedFigures++;
       }
     }

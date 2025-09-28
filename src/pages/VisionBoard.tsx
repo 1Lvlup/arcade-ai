@@ -27,7 +27,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import FigureEnhancementManager from '@/components/FigureEnhancementManager';
+
 
 interface Idea {
   id: string;
@@ -333,13 +333,6 @@ const VisionBoard = () => {
           </p>
         </div>
 
-        {/* Figure Enhancement Tools */}
-        <div className="mb-12 space-y-6">
-          <h3 className="text-2xl font-bold text-center text-primary">Figure Enhancement</h3>
-          <div className="flex justify-center">
-            <FigureEnhancementManager />
-          </div>
-        </div>
 
         {/* Category Filter */}
         <div className="flex flex-wrap gap-2 mb-8 justify-center">

@@ -1,6 +1,7 @@
 import { ManualUpload } from '@/components/ManualUpload';
 import { ManualsList } from '@/components/ManualsList';
 import { SharedHeader } from '@/components/SharedHeader';
+import FigureEnhancementManager from '@/components/FigureEnhancementManager';
 
 
 const ManualManagement = () => {
@@ -82,6 +83,10 @@ const ManualManagement = () => {
               </div>
             </div>
           </div>
+        </div>
+        
+        <div className="section-spacing">
+          <FigureEnhancementManager />
         </div>
         
       </main>

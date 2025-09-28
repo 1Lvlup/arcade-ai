@@ -105,7 +105,9 @@ serve(async (req) => {
       url: finalUrl,
       caption: figure.caption_text || null,
       ocr_text: figure.ocr_text || null,
-      expires_at: expiresAt
+      expires_at: expiresAt,
+      // Include auth header for LlamaCloud URLs
+      auth_header: figure.image_url.startsWith('llama://') ? `Bearer ${Deno.env.get('LLAMACLOUD_API_KEY')}` : null
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

@@ -27,6 +27,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import FigureEnhancementManager from '@/components/FigureEnhancementManager';
 
 interface Idea {
   id: string;
@@ -330,6 +331,14 @@ const VisionBoard = () => {
           <p className="text-lg text-primary max-w-2xl mx-auto">
             "The thing that transforms cold calls into incoming phone calls"
           </p>
+        </div>
+
+        {/* Admin Tools Section */}
+        <div className="mb-12 space-y-6">
+          <h3 className="text-2xl font-bold text-center text-primary">Admin Tools</h3>
+          <div className="flex justify-center">
+            <FigureEnhancementManager />
+          </div>
         </div>
 
         {/* Category Filter */}

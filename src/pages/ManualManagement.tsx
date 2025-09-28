@@ -1,7 +1,6 @@
 import { ManualUpload } from '@/components/ManualUpload';
 import { ManualsList } from '@/components/ManualsList';
 import { SharedHeader } from '@/components/SharedHeader';
-import { TestEnhancement } from '@/components/TestEnhancement';
 
 const ManualManagement = () => {
   return (
@@ -72,10 +71,6 @@ const ManualManagement = () => {
               </div>
             </div>
           </div>
-        </div>
-        
-        <div className="mt-16">
-          <TestEnhancement />
         </div>
       </main>
     </div>

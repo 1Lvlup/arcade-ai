@@ -10,7 +10,6 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
-const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID')
 
 // Search thresholds
 const VECTOR_THRESHOLD = 0.7
@@ -48,7 +47,6 @@ async function createEmbedding(text: string): Promise<number[]> {
     headers: {
       'Authorization': `Bearer ${openaiApiKey}`,
       'Content-Type': 'application/json',
-      ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
     },
     body: JSON.stringify({
       model: 'text-embedding-3-small',
@@ -71,7 +69,6 @@ async function generateHypotheticalAnswer(query: string): Promise<string> {
     headers: {
       'Authorization': `Bearer ${openaiApiKey}`,
       'Content-Type': 'application/json',
-      ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
@@ -102,13 +99,12 @@ async function generateHypotheticalAnswer(query: string): Promise<string> {
 async function rerankResults(query: string, results: any[]): Promise<any[]> {
   if (results.length <= 3) return results
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-        ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
-      },
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages: [

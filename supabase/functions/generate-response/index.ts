@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -66,7 +65,6 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
-        ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
       },
       body: JSON.stringify(requestPayload),
     });

@@ -116,6 +116,8 @@ Focus on maintaining the technical accuracy and procedural structure.
         source_filename: storagePath.split('/').pop(),
         job_id: llamaData.id,
         fec_tenant_id: profile.fec_tenant_id
+      }, {
+        onConflict: 'manual_id'
       })
 
     if (insertError) {

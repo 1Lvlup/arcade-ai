@@ -50,11 +50,11 @@ serve(async (req) => {
       }
     }
 
-    // Query the figures table by figure_id (text) not database ID
+    // Query the figures table by database ID
     const { data: figure, error: figureError } = await supabase
       .from('figures')
       .select('image_url, caption_text, ocr_text')
-      .eq('figure_id', figure_id)
+      .eq('id', figure_id)
       .eq('manual_id', manual_id)
       .single()
 
@@ -82,21 +82,14 @@ serve(async (req) => {
     let finalUrl = figure.image_url
     let expiresAt = null
 
-    // Check if it's a LlamaCloud reference that needs to be fetched
-    if (figure.image_url.startsWith('llama://')) {
-      console.log('Converting LlamaCloud URL to accessible URL')
-      const match = figure.image_url.match(/^llama:\/\/([^\/]+)\/(.+)$/)
-      if (match) {
-        const [, jobId, filename] = match
-        // Return the direct LlamaCloud URL with API key for access
-        finalUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${encodeURIComponent(jobId)}/result/image/${encodeURIComponent(filename)}`
-        console.log('Converted to LlamaCloud API URL')
-      }
-    } else if (figure.image_url.startsWith('https://') && !figure.image_url.includes('.s3.')) {
+    // Check if it's a public HTTPS URL or needs presigning
+    if (figure.image_url.startsWith('https://') && !figure.image_url.includes('.s3.')) {
       console.log('Returning public HTTPS URL directly:', figure.image_url)
       finalUrl = figure.image_url
     } else if (figure.image_url.startsWith('s3://') || figure.image_url.includes('.s3.')) {
       console.log('S3 URL detected, returning as-is for now:', figure.image_url)
+      // For now, just return the URL as-is since AWS signing is complex
+      // In production, you'd implement proper S3 presigning here
       finalUrl = figure.image_url
       console.log('Returning S3 URL as-is')
     }
@@ -105,9 +98,7 @@ serve(async (req) => {
       url: finalUrl,
       caption: figure.caption_text || null,
       ocr_text: figure.ocr_text || null,
-      expires_at: expiresAt,
-      // Include auth header for LlamaCloud URLs
-      auth_header: figure.image_url.startsWith('llama://') ? `Bearer ${Deno.env.get('LLAMACLOUD_API_KEY')}` : null
+      expires_at: expiresAt
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { QualityDashboard } from '@/components/QualityDashboard';
 import { DebugFigures } from '@/components/DebugFigures';
-import { TextProcessingFix } from '@/components/TextProcessingFix';
 import { SharedHeader } from '@/components/SharedHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -236,13 +235,6 @@ const ManualDetails = () => {
             </div>
           </CardHeader>
         </Card>
-
-        {/* Text Processing Fix - Show if no chunks */}
-        <TextProcessingFix 
-          manualId={manual.manual_id}
-          hasTextChunks={chunks.length > 0}
-          jobId={manual.job_id}
-        />
 
         {/* Tabs for different views */}
         <Tabs defaultValue="quality" className="w-full">

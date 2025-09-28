@@ -8,103 +8,101 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Sarmat Analytix Color Palette */
+    /* Professional Dark Authority Theme */
     --background: 0 0% 4%;
-    --foreground: 0 0% 100%;
+    --foreground: 0 0% 95%;
 
-    --card: 0 0% 22%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 22%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 75 62% 49%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 22%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 75 45% 15%;
-    --muted-foreground: 0 0% 70%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 75 45% 15%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 22%;
-    --input: 75 45% 15%;
-    --ring: 75 62% 49%;
+    --border: 0 0% 12%;
+    --input: 0 0% 8%;
+    --ring: 217 91% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.375rem;
 
-    /* Sarmat Brand Colors */
-    --deep-black: 0 0% 4%;        /* #0B0B0B */
-    --lime-green: 75 62% 49%;     /* #9FC82C */
-    --dark-gray: 0 0% 22%;        /* #393939 */
-    --olive-green: 75 45% 15%;    /* #263112 */
-    --pure-white: 0 0% 100%;      /* #FFFFFF */
+    /* Professional Dark Color Palette */
+    --charcoal: 0 0% 4%;
+    --electric-blue: 217 91% 60%;
+    --dark-gray: 0 0% 8%;
+    --medium-gray: 0 0% 12%;
+    --text-light: 0 0% 60%;
 
-    /* Sophisticated Gradients */
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 4%) 0%, hsl(0 0% 4%) 70%, hsl(75 62% 49% / 0.08) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(75 62% 49%) 0%, hsl(75 62% 60%) 100%);
-    --gradient-mesh: linear-gradient(180deg, hsl(0 0% 4%) 0%, hsl(0 0% 4%) 60%, hsl(0 0% 4%) 80%, hsl(75 62% 49% / 0.05) 100%);
+    /* Minimal Dark Gradients */
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 4%) 0%, hsl(0 0% 6%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 70%) 100%);
     
-    /* Elegant Shadows */
-    --shadow-minimal: 0 1px 3px 0 hsl(0 0% 0% / 0.6);
-    --shadow-soft: 0 4px 12px -2px hsl(0 0% 0% / 0.7);
-    --shadow-dramatic: 0 20px 40px -12px hsl(0 0% 0% / 0.8);
-    --shadow-glow: 0 0 0 1px hsl(75 62% 49% / 0.3), 0 8px 32px hsl(75 62% 49% / 0.2);
+    /* Professional Dark Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.5), 0 4px 6px -4px hsl(0 0% 0% / 0.5);
 
     --sidebar-background: 0 0% 4%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 75 62% 49%;
-    --sidebar-primary-foreground: 0 0% 4%;
-    --sidebar-accent: 75 45% 15%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 22%;
-    --sidebar-ring: 75 62% 49%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   .dark {
     /* Light Mode Override (if needed) */
     --background: 0 0% 100%;
-    --foreground: 0 0% 4%;
+    --foreground: 0 0% 5%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 4%;
+    --card-foreground: 0 0% 5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 4%;
+    --popover-foreground: 0 0% 5%;
 
-    --primary: 75 62% 49%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 4%;
+    --secondary-foreground: 0 0% 5%;
 
-    --muted: 0 0% 96%;
+    --muted: 0 0% 98%;
     --muted-foreground: 0 0% 40%;
 
     --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 4%;
+    --accent-foreground: 0 0% 5%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 0 0% 90%;
     --input: 0 0% 96%;
-    --ring: 75 62% 49%;
+    --ring: 217 91% 60%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 4%;
-    --sidebar-primary: 75 62% 49%;
-    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-foreground: 0 0% 5%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 4%;
+    --sidebar-accent-foreground: 0 0% 5%;
     --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 75 62% 49%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -115,123 +113,69 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'N27', 'Inter', system-ui, -apple-system, sans-serif;
-    font-weight: 400;
-    letter-spacing: -0.005em;
-    line-height: 1.6;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }
 
 @layer utilities {
-  /* Background Utilities */
-  .premium-gradient {
+  .professional-gradient {
     background: var(--gradient-subtle);
-  }
-  
-  .mesh-gradient {
-    background: var(--gradient-mesh);
   }
   
   .primary-gradient {
     background: var(--gradient-primary);
   }
   
-  /* Shadow Utilities */
-  .shadow-minimal {
-    box-shadow: var(--shadow-minimal);
+  .elegant-shadow {
+    box-shadow: var(--shadow-lg);
   }
   
-  .shadow-soft {
-    box-shadow: var(--shadow-soft);
+  .subtle-shadow {
+    box-shadow: var(--shadow-sm);
   }
   
-  .shadow-dramatic {
-    box-shadow: var(--shadow-dramatic);
-  }
-  
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-  
-  /* Typography Utilities */
-  .display-heading {
-    font-family: 'Belrom', 'N27', 'Inter', sans-serif;
-    font-weight: 400;
-    letter-spacing: -0.03em;
-    line-height: 0.9;
+  .medium-shadow {
+    box-shadow: var(--shadow-md);
   }
   
   .premium-text {
-    font-family: 'Belrom', 'N27', 'Inter', sans-serif;
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
   
-  .body-text {
-    font-family: 'N27', 'Inter', sans-serif;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-    line-height: 1.7;
+  .display-text {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 1.1;
   }
   
-  .caption-text {
-    font-family: 'N27', 'Inter', sans-serif;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    font-size: 0.75rem;
+  .hover-elevate {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  /* Interactive Utilities */
-  .hover-lift {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  .hover-elevate:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
   }
   
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-dramatic);
-  }
-  
-  .hover-glow {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .hover-glow:hover {
-    box-shadow: var(--shadow-glow);
-    border-color: hsl(var(--primary) / 0.4);
-  }
-  
-  /* Layout Utilities */
-  .premium-card {
+  .minimal-card {
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-sm);
   }
   
-  .glass-card {
-    background: hsl(var(--card) / 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.5);
-    box-shadow: var(--shadow-soft);
+  .professional-bg {
+    background: var(--gradient-subtle);
   }
   
-  .section-spacing {
-    padding-top: 6rem;
-    padding-bottom: 6rem;
+  .authority-glow {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.3);
   }
   
-  .content-spacing {
-    margin-bottom: 4rem;
-  }
-  
-  /* Brand Utilities */
-  .brand-glow {
-    box-shadow: 0 0 40px hsl(var(--primary) / 0.2);
-  }
-  
-  .accent-border {
-    border: 1px solid hsl(var(--primary) / 0.3);
+  .elite-border {
+    border: 1px solid hsl(var(--primary) / 0.2);
   }
 }

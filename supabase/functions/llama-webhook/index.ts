@@ -21,6 +21,18 @@ const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Robust payload extraction helpers
+type AnyObj = Record<string, any>;
+function pick<T=any>(obj: AnyObj | undefined, path: string, def?: T): T | undefined {
+  if (!obj) return def;
+  return path.split('.').reduce<any>((o, k) => (o && k in o ? o[k] : undefined), obj) ?? def;
+}
+
+function coalesce<T>(...vals: (T | undefined | null)[]): T | undefined {
+  for (const v of vals) if (v !== undefined && v !== null && v !== '') return v as T;
+  return undefined;
+}
+
 // Batch embeddings for efficiency
 async function createEmbeddingsBatch(texts: string[], model = "text-embedding-3-small") {
   const inputs = texts.map(text => text.length > 8000 ? text.slice(0, 8000) : text);
@@ -120,15 +132,50 @@ serve(async (req) => {
   console.log("PHASE 0: begin webhook");
 
   try {
-    // Extract body data
-    const body = await req.json();
-    console.log("📥 Request body keys:", Object.keys(body));
+    // Extract body data with robust parsing
+    const raw = await req.json().catch(() => ({}));
+    console.log("📥 Request body keys:", Object.keys(raw));
 
-    // Try to extract fields from different possible payload formats
-    let manual_id = body.manual_id;
-    let job_id = body.job_id || body.jobId;
-    let tenant_id = body.tenant_id || body.fec_tenant_id;
-    
+    // Try multiple locations for each required field
+    const manual_id = coalesce<string>(
+      raw.manual_id,
+      pick(raw, 'document.id'),
+      pick(raw, 'data.document_id'),
+      pick(raw, 'metadata.manual_id'),
+    );
+    const job_id = coalesce<string>(
+      raw.job_id,
+      raw.jobId,
+      pick(raw, 'job.id'),
+      pick(raw, 'data.job_id'),
+      pick(raw, 'metadata.job_id'),
+    );
+    const title = coalesce<string>(
+      raw.title,
+      pick(raw, 'document.title'),
+      pick(raw, 'data.title'),
+      'Untitled Manual'
+    );
+    let tenant_id = coalesce<string>(
+      raw.tenant_id,
+      raw.fec_tenant_id,
+      pick(raw, 'metadata.tenant_id'),
+      pick(raw, 'data.tenant_id'),
+    );
+    const user_id = coalesce<string>(
+      raw.user_id,
+      pick(raw, 'metadata.user_id'),
+      pick(raw, 'data.user_id'),
+    );
+
+    console.log('PHASE 0: payload received', {
+      have_manual: !!manual_id,
+      have_job: !!job_id,
+      have_tenant: !!tenant_id,
+      title,
+      sample_keys: Object.keys(raw).slice(0, 10)
+    });
+
     // If we don't have manual_id/tenant_id from payload, try to get from existing document
     if (!manual_id || !tenant_id) {
       if (job_id) {
@@ -136,18 +183,49 @@ serve(async (req) => {
           .from("documents")
           .select("manual_id, fec_tenant_id")
           .eq("job_id", job_id)
-          .single();
+          .maybeSingle();
         
         if (doc) {
-          manual_id = manual_id || doc.manual_id;
-          tenant_id = tenant_id || doc.fec_tenant_id;
+          if (!manual_id) {
+            console.log("📄 Found manual_id from existing document:", doc.manual_id);
+          }
+          if (!tenant_id) {
+            tenant_id = doc.fec_tenant_id;
+            console.log("🏢 Found tenant_id from existing document:", tenant_id);
+          }
         }
       }
     }
-    
-    if (!manual_id || !job_id || !tenant_id) {
-      console.error("Missing required fields after extraction:", { manual_id, job_id, tenant_id, bodyKeys: Object.keys(body) });
-      throw new Error("Missing required fields: manual_id, job_id, tenant_id");
+
+    // HARD REQUIREMENTS: manual + job. We'll derive tenant if missing
+    if (!manual_id || !job_id) {
+      console.error("❌ Missing required fields after extraction:", { 
+        manual_id, 
+        job_id, 
+        tenant_id, 
+        bodyKeys: Object.keys(raw) 
+      });
+      return new Response(JSON.stringify({
+        ok: false,
+        error: 'Missing required fields',
+        details: { manual_id, job_id, title, tenant_id, sample_keys: Object.keys(raw).slice(0, 20) }
+      }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // If tenant_id missing, try to derive from profiles using user_id (optional)
+    if (!tenant_id && user_id) {
+      const { data: prof } = await supabase.from('profiles')
+        .select('fec_tenant_id')
+        .eq('user_id', user_id)
+        .maybeSingle();
+      tenant_id = prof?.fec_tenant_id;
+    }
+    if (!tenant_id) {
+      // final fallback default
+      tenant_id = '00000000-0000-0000-0000-000000000001';
     }
 
     // Set tenant context for RLS
@@ -157,111 +235,68 @@ serve(async (req) => {
       throw tenantError;
     }
 
-    // --- PHASE A: TEXT FIRST ---
-    console.log("PHASE A: text -> start");
-
-    // Get parse payload (prefer JSON; fallback to markdown or refetch by job_id)
-    const payload = await getLlamaPayload(req, job_id);
-    console.log("PAYLOAD KEYS", Object.keys(payload || {}));
-    console.log("pages?", !!payload?.pages, "markdown?", !!payload?.markdown);
-
-    let chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
-    if (payload?.pages) {
-      chunks = extractSemanticChunks(payload.pages);
-      console.log("PHASE A: text -> extracted from JSON", { count: chunks.length });
-    }
-    if (chunks.length === 0 && payload?.markdown) {
-      chunks = extractChunksFromMarkdown(payload.markdown);
-      console.log("PHASE A: text -> extracted from MD", { count: chunks.length });
-    }
-
-    if (!chunks.length) {
-      console.log("PHASE A: text -> NO CHUNKS FOUND");
-    } else {
-      // Batch embeddings to reduce API calls (e.g., 64 at a time)
-      const BATCH = 64;
-      let inserted = 0;
-      for (let i = 0; i < chunks.length; i += BATCH) {
-        const batch = chunks.slice(i, i + BATCH);
-        const inputs = batch.map(c => c.content);
-        const emb = await createEmbeddingsBatch(inputs, "text-embedding-3-small");
-        const rows = batch.map((c, idx) => ({
-          manual_id,
-          page_start: c.page_start ?? null,
-          page_end: c.page_end ?? null,
-          menu_path: c.menu_path ?? null,
-          content: c.content,
-          embedding: emb[idx],
-          fec_tenant_id: tenant_id,
-        }));
-        const { error } = await supabase.from("chunks_text").insert(rows);
-        if (error) throw error;
-        inserted += rows.length;
-        console.log("PHASE A: text -> inserted", { inserted, total: chunks.length });
-      }
-    }
-
-    console.log("PHASE A: text -> done", { chunks: chunks.length });
-
-    // --- PHASE B: FIGURES (METADATA ONLY) ---
-    console.log("PHASE B: figures -> start");
-
-    const figures = payload?.figures ?? extractFiguresMeta(payload);
-    const figureRows = (figures || []).map((f: any) => ({
+    // Upsert document & mark status first - ACK quickly
+    const { error: docErr } = await supabase.from('documents').upsert({
       manual_id,
-      figure_id: f.figure_id,
-      page_number: f.page_number ?? null,
-      // store original llama asset ref so later jobs can fetch:
-      llama_asset_name: f.asset_name ?? null, // <-- IMPORTANT
-      image_url: "",                          // NOT filled here - empty string for NOT NULL constraint
-      caption_text: null,
-      ocr_text: null,
-      vision_text: null,
+      title,
+      job_id,
       fec_tenant_id: tenant_id,
-    }));
-
-    if (figureRows.length) {
-      const { error } = await supabase.from("figures").upsert(figureRows, { onConflict: "manual_id,figure_id" });
-      if (error) throw error;
+    }, { onConflict: 'manual_id' });
+    if (docErr) {
+      console.error("❌ Document upsert failed:", docErr);
+      throw docErr;
     }
 
-    console.log("PHASE B: figures -> done", { figures: figureRows.length });
+    await supabase.from('processing_status').upsert({
+      manual_id,
+      job_id,
+      fec_tenant_id: tenant_id,
+      status: 'accepted',
+      stage: 'webhook_received',
+      chunks_processed: 0,
+      total_chunks: 0,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'manual_id' });
 
-    // --- PHASE C: ALL EXPENSIVE WORK SKIPPED IN WEBHOOK ---
-    if (!PROCESS_FIGURES_IN_WEBHOOK) {
-      console.log("PHASE C: expensive work skipped (PROCESS_FIGURES_IN_WEBHOOK=false)");
-    } else {
-      // If you ever flip it on, be explicit which sub-steps are allowed:
-      if (UPLOAD_FIGURES_IN_WEBHOOK) console.log("...would upload figures, but disabled");
-      if (ENHANCE_IN_WEBHOOK) console.log("...would enhance figures, but disabled");
-      if (EMBED_FIGURES_IN_WEBHOOK) console.log("...would embed figures, but disabled");
-    }
+    console.log("✅ PHASE ACK: Document accepted, returning 202");
 
-    await markProcessingStatus(manual_id, tenant_id, {
-      status: chunks.length ? "completed" : "failed",
-      chunks_processed: chunks.length,
-      total_chunks: chunks.length,
-      figures_detected: figureRows.length,
-    });
-
-    console.log("PHASE Z: webhook -> done");
-    return new Response(JSON.stringify({ success: true, chunks: chunks.length, figures: figureRows.length }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // ACK immediately so we never "stall" the caller
+    return new Response(JSON.stringify({ 
+      ok: true, 
+      manual_id, 
+      job_id, 
+      status: 'accepted',
+      message: 'Document received and queued for processing'
+    }), {
+      status: 202,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
     console.error("PHASE ERR:", error);
     // Try to mark as failed if we have manual_id and tenant_id
     try {
-      const body = await req.clone().json();
-      if (body.manual_id && body.tenant_id) {
-        await markProcessingStatus(body.manual_id, body.tenant_id, { status: "failed" });
+      const errorBody = await req.text().catch(() => '{}');
+      const parsedBody = JSON.parse(errorBody);
+      
+      const manual_id = parsedBody.manual_id || parsedBody.document?.id;
+      const tenant_id = parsedBody.tenant_id || parsedBody.fec_tenant_id || '00000000-0000-0000-0000-000000000001';
+      
+      if (manual_id && tenant_id) {
+        await markProcessingStatus(manual_id, tenant_id, { 
+          status: "failed",
+          error_message: (error as Error).message 
+        });
       }
     } catch (e) {
       console.error("Failed to mark processing status as failed:", e);
     }
 
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    return new Response(JSON.stringify({ 
+      ok: false,
+      error: (error as Error).message,
+      details: "Webhook processing failed"
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

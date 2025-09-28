@@ -124,8 +124,29 @@ serve(async (req) => {
     const body = await req.json();
     console.log("📥 Request body keys:", Object.keys(body));
 
-    const { manual_id, job_id, tenant_id } = body;
+    // Try to extract fields from different possible payload formats
+    let manual_id = body.manual_id;
+    let job_id = body.job_id || body.jobId;
+    let tenant_id = body.tenant_id || body.fec_tenant_id;
+    
+    // If we don't have manual_id/tenant_id from payload, try to get from existing document
+    if (!manual_id || !tenant_id) {
+      if (job_id) {
+        const { data: doc } = await supabase
+          .from("documents")
+          .select("manual_id, fec_tenant_id")
+          .eq("job_id", job_id)
+          .single();
+        
+        if (doc) {
+          manual_id = manual_id || doc.manual_id;
+          tenant_id = tenant_id || doc.fec_tenant_id;
+        }
+      }
+    }
+    
     if (!manual_id || !job_id || !tenant_id) {
+      console.error("Missing required fields after extraction:", { manual_id, job_id, tenant_id, bodyKeys: Object.keys(body) });
       throw new Error("Missing required fields: manual_id, job_id, tenant_id");
     }
 

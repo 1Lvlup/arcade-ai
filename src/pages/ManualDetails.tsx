@@ -52,10 +52,26 @@ export default function ManualDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                 <div><strong>Manual ID:</strong> {document?.manual_id}</div>
                 <div><strong>Text Chunks:</strong> {chunks?.length || 0}</div>
               </div>
+              
+              {chunks && chunks.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Processed Chunks:</h3>
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {chunks.map((chunk, index) => (
+                      <div key={chunk.id} className="p-3 border rounded-lg bg-muted/50">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Chunk {index + 1} {chunk.page_start && `(Page ${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''})`}
+                        </div>
+                        <div className="text-sm line-clamp-3">{chunk.content.substring(0, 200)}...</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

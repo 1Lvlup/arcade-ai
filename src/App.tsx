@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ManualManagement from "./pages/ManualManagement";
+import { ManualDetail } from "./pages/ManualDetail";
 import ManualDetails from "./pages/ManualDetails";
 import VisionBoard from "./pages/VisionBoard";
 import AIConfiguration from "./pages/AIConfiguration";
@@ -37,7 +38,7 @@ const App = () => (
             } />
             <Route path="/manuals/:manualId" element={
               <ProtectedRoute>
-                <ManualDetails />
+                <ManualDetail />
               </ProtectedRoute>
             } />
             <Route path="/vision-board" element={

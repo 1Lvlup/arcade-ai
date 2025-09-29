@@ -71,7 +71,7 @@ serve(async (req) => {
 
     console.log('📡 Submitting to LlamaCloud with AGENT parsing mode...')
 
-    // AGENT PARSING CONFIGURATION (highest quality)
+    // ENHANCED AGENT PARSING CONFIGURATION (highest quality)
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
@@ -79,9 +79,38 @@ serve(async (req) => {
     // ONLY agent mode - NO other conflicting modes
     formData.append('parse_mode', 'parse_document_with_agent')
     
-    // Basic language detection
+    // Enhanced parsing parameters for technical manuals
     formData.append('language', 'en')
     formData.append('disable_ocr', 'false')
+    
+    // Custom instructions for arcade manual parsing
+    formData.append('parsing_instructions', `
+This is a technical troubleshooting manual for arcade games. 
+Extract all procedural steps, part numbers, error codes, and technical specifications clearly.
+Preserve table structure and ensure figure references are maintained.
+Focus on actionable troubleshooting information and setup procedures.
+Maintain the hierarchical structure of sections and subsections.
+`)
+
+    // Enhanced table and layout handling
+    formData.append('output_tables_as_html', 'true')
+    formData.append('hide_headers', 'true') 
+    formData.append('hide_footers', 'true')
+    formData.append('page_separator', '\n\n<!-- Page {pageNumber} Start -->\n\n')
+    formData.append('preserve_layout_alignment_across_pages', 'true')
+    formData.append('merge_tables_across_pages', 'true')
+    formData.append('take_screenshot', 'true')
+    formData.append('preserve_very_small_text', 'true')
+
+    // Custom formatting for technical content
+    formData.append('system_prompt_append', `
+When formatting technical manuals:
+- Clearly mark troubleshooting sections with ## headers
+- Preserve part numbers and model numbers exactly
+- Format step-by-step procedures as numbered lists
+- Maintain figure and table references
+- Use consistent formatting for error codes and symptoms
+`)
     
     // Webhook for processing results
     formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)

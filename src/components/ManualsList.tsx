@@ -298,6 +298,7 @@ export function ManualsList() {
                       variant="outline"
                       size="sm"
                       onClick={() => navigate(`/manuals/${manual.manual_id}`)}
+                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       View Details

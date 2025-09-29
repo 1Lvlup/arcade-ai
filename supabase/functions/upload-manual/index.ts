@@ -77,7 +77,7 @@ serve(async (req) => {
     formData.append('result_type', 'markdown')
     
     // ONLY agent mode - NO other conflicting modes
-    formData.append('parse_mode', 'parse_page_with_agent')
+    formData.append('parse_mode', 'parse_document_with_agent')
     
     // Basic language detection
     formData.append('language', 'en')

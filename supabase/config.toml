@@ -98,3 +98,9 @@ verify_jwt = true
 
 [functions.generate-response]
 verify_jwt = true
+
+[functions.test-webhook]
+verify_jwt = false
+
+[functions.manual-test-upload]
+verify_jwt = false

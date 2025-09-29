@@ -86,7 +86,12 @@ Focus on maintaining the technical accuracy and procedural structure.
     `.trim())
     formData.append('result_type', 'markdown')
     formData.append('invalidate_cache', 'true')
-    formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)
+    
+    // Webhook URL must be publicly accessible HTTPS URL
+    const webhookUrl = `${supabaseUrl}/functions/v1/llama-webhook`
+    formData.append('webhook_url', webhookUrl)
+    
+    console.log('🔗 Webhook URL being sent to LlamaCloud:', webhookUrl)
 
     // Submit to LlamaCloud
     console.log('Submitting to LlamaCloud...')

@@ -498,14 +498,34 @@ function inferPageNumber(nameOrKey?: string, idx?: number | null) {
 }
 
 serve(async (req) => {
+  // Enhanced logging for debugging webhook calls
+  console.log(`🌐 ${req.method} ${req.url} - Headers:`, Object.fromEntries(req.headers.entries()));
+  
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    console.log("LlamaCloud webhook received");
-    const payload = await req.json();
+    console.log("🔥 WEBHOOK TRIGGERED - LlamaCloud callback received");
+    
+    // Enhanced payload logging and validation
+    const requestText = await req.text();
+    console.log("📦 Raw webhook payload (first 500 chars):", requestText.slice(0, 500));
+    
+    let payload;
+    try {
+      payload = JSON.parse(requestText);
+    } catch (parseError) {
+      console.error("❌ Failed to parse webhook payload as JSON:", parseError);
+      throw new Error(`Invalid JSON payload: ${parseError}`);
+    }
 
-    console.log("Webhook payload keys:", Object.keys(payload || {}));
-    console.log("Webhook sample (trimmed):", JSON.stringify(payload).slice(0, 2000));
+    console.log("📦 Webhook payload structure:", {
+      hasJson: !!payload.json,
+      hasImages: !!payload.images,
+      hasTxt: !!payload.txt,
+      hasMd: !!payload.md,
+      keys: Object.keys(payload || {}),
+      payloadSize: requestText.length
+    });
 
     const jobId = payload.jobId;
     if (!jobId) throw new Error("No jobId found in payload");

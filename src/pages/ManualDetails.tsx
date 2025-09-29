@@ -103,32 +103,38 @@ const ManualDetails = () => {
 
       // Generate presigned URLs for all figures
       if (figuresData && figuresData.length > 0) {
-        const urlPromises = figuresData.map(async (figure) => {
-          try {
-            const response = await supabase.functions.invoke('presign-image', {
-              body: { 
-                figure_id: figure.figure_id,
-                manual_id: manualId 
-              }
-            });
-            
-            if (response.data?.presigned_url) {
-              return { id: figure.id, url: response.data.presigned_url };
-            }
-          } catch (error) {
-            console.error(`Failed to get presigned URL for figure ${figure.figure_id}:`, error);
-          }
-          return null;
-        });
-
-        const urlResults = await Promise.all(urlPromises);
         const urlMap: Record<string, string> = {};
         
-        urlResults.forEach((result) => {
-          if (result) {
-            urlMap[result.id] = result.url;
+        // For S3 URLs, try direct access first, then presigning as fallback
+        for (const figure of figuresData) {
+          if (figure.image_url) {
+            // If it's an S3 URL, use it directly (they should be public)
+            if (figure.image_url.startsWith('https://') && figure.image_url.includes('s3')) {
+              urlMap[figure.id] = figure.image_url;
+            } else {
+              // For other URLs or if direct S3 fails, try presigning
+              try {
+                const response = await supabase.functions.invoke('presign-image', {
+                  body: { 
+                    figure_id: figure.figure_id,
+                    manual_id: manualId 
+                  }
+                });
+                
+                if (response.data?.url) {
+                  urlMap[figure.id] = response.data.url;
+                } else {
+                  // Fallback to original URL
+                  urlMap[figure.id] = figure.image_url;
+                }
+              } catch (error) {
+                console.error(`Failed to get presigned URL for figure ${figure.figure_id}:`, error);
+                // Use original URL as fallback
+                urlMap[figure.id] = figure.image_url;
+              }
+            }
           }
-        });
+        }
         
         setFigureUrls(urlMap);
       }

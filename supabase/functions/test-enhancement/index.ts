@@ -10,6 +10,7 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
+const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID')
 
 // Enhance figure with AI
 async function enhanceFigureWithAI(imageData: string, context: string): Promise<{caption: string | null, ocrText: string | null}> {
@@ -24,6 +25,7 @@ async function enhanceFigureWithAI(imageData: string, context: string): Promise<
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
+        ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -37,7 +39,7 @@ async function enhanceFigureWithAI(imageData: string, context: string): Promise<
             
             Context: ${context}
             
-            Respond in JSON format:
+            Respond in JSON format only, no markdown formatting:
             {
               "caption": "Technical description of the image",
               "ocr_text": "Any text found in the image"
@@ -69,7 +71,13 @@ async function enhanceFigureWithAI(imageData: string, context: string): Promise<
     const content = data.choices[0].message.content
 
     try {
-      const parsed = JSON.parse(content)
+      // Clean up response - remove markdown code blocks if present
+      let cleanContent = content.trim();
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      const parsed = JSON.parse(cleanContent);
       return {
         caption: parsed.caption || null,
         ocrText: parsed.ocr_text || null
@@ -101,7 +109,7 @@ serve(async (req) => {
     const { figure_id, manual_id } = await req.json()
     console.log('Enhancement request:', { figure_id, manual_id })
 
-    // Build query
+    // Build query - prioritize figures that haven't been enhanced yet
     let query = supabase
       .from('figures')
       .select('id, figure_id, manual_id, image_url, caption_text, ocr_text')
@@ -112,6 +120,11 @@ serve(async (req) => {
     if (manual_id) {
       query = query.eq('manual_id', manual_id)
     }
+
+    // Order by: figures without captions first, then by creation date
+    // This ensures we process unenhanced figures before re-processing enhanced ones
+    query = query.order('caption_text', { ascending: true, nullsFirst: true })
+                 .order('created_at', { ascending: true })
 
     // Limit to 10 figures max for batch processing
     query = query.limit(10)

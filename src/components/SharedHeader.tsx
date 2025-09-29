@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { GamepadIcon, Zap, LogOut, ArrowLeft } from 'lucide-react';
+import { Brain, LogOut, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface SharedHeaderProps {
@@ -17,32 +17,30 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/" }: Sh
   };
 
   return (
-    <header className="border-b border-primary/20 bg-card/50 backdrop-blur-sm">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+    <header className="border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="container mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center space-x-6">
           {showBackButton && (
             <Link to={backTo}>
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+              <Button variant="minimal" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
             </Link>
           )}
-          <div className="flex items-center space-x-2">
-            <GamepadIcon className="h-6 w-6 text-primary ai-glow" />
-            <Zap className="h-4 w-4 text-secondary" />
-            <h1 className="text-xl font-bold neural-text">{title}</h1>
+          <div className="flex items-center space-x-3">
+            <Brain className="h-7 w-7 text-primary" />
+            <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground font-medium">
             {user?.email}
           </span>
           <Button
-            variant="outline"
+            variant="minimal"
             size="sm"
             onClick={handleSignOut}
-            className="border-primary/30 hover:border-primary"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out

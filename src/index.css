@@ -8,102 +8,101 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Sophisticated AI Dark Theme */
-    --background: 210 20% 3%;
-    --foreground: 210 20% 95%;
+    /* Professional Dark Authority Theme */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
 
-    --card: 210 20% 6%;
-    --card-foreground: 210 20% 95%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 210 20% 6%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 25 100% 60%;
-    --primary-foreground: 210 20% 3%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 12%;
-    --secondary-foreground: 210 20% 95%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 210 20% 8%;
-    --muted-foreground: 210 10% 60%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 210 40% 15%;
-    --accent-foreground: 25 100% 60%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 95%;
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 210 20% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 12%;
-    --input: 210 20% 8%;
-    --ring: 25 100% 60%;
+    --border: 0 0% 12%;
+    --input: 0 0% 8%;
+    --ring: 217 91% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.375rem;
 
-    /* AI Theme Colors */
-    --neon-orange: 25 100% 60%;
-    --neon-orange-bright: 25 100% 70%;
-    --neon-blue: 200 100% 60%;
-    --neural-purple: 260 100% 70%;
-    --quantum-cyan: 180 100% 60%;
-    --ai-silver: 210 10% 80%;
+    /* Professional Dark Color Palette */
+    --charcoal: 0 0% 4%;
+    --electric-blue: 217 91% 60%;
+    --dark-gray: 0 0% 8%;
+    --medium-gray: 0 0% 12%;
+    --text-light: 0 0% 60%;
 
-    /* Sophisticated Gradients */
-    --gradient-neural: linear-gradient(135deg, hsl(25 100% 60%) 0%, hsl(260 100% 70%) 100%);
-    --gradient-ai: linear-gradient(135deg, hsl(210 20% 6%) 0%, hsl(210 20% 12%) 50%, hsl(25 100% 60% / 0.1) 100%);
-    --gradient-glow: radial-gradient(circle at 50% 50%, hsl(25 100% 60% / 0.3) 0%, transparent 70%);
+    /* Minimal Dark Gradients */
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 4%) 0%, hsl(0 0% 6%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 70%) 100%);
     
-    /* Glass Effects */
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    /* Professional Dark Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.5), 0 4px 6px -4px hsl(0 0% 0% / 0.5);
 
-    --sidebar-background: 210 20% 4%;
-    --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 25 100% 60%;
-    --sidebar-primary-foreground: 210 20% 3%;
-    --sidebar-accent: 210 20% 8%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 210 20% 12%;
-    --sidebar-ring: 25 100% 60%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   .dark {
-    /* Same sophisticated AI theme for dark mode */
-    --background: 210 20% 3%;
-    --foreground: 210 20% 95%;
+    /* Light Mode Override (if needed) */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 5%;
 
-    --card: 210 20% 6%;
-    --card-foreground: 210 20% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5%;
 
-    --popover: 210 20% 6%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5%;
 
-    --primary: 25 100% 60%;
-    --primary-foreground: 210 20% 3%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 12%;
-    --secondary-foreground: 210 20% 95%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 5%;
 
-    --muted: 210 20% 8%;
-    --muted-foreground: 210 10% 60%;
+    --muted: 0 0% 98%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 210 40% 15%;
-    --accent-foreground: 25 100% 60%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 5%;
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 210 20% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 12%;
-    --input: 210 20% 8%;
-    --ring: 25 100% 60%;
+    --border: 0 0% 90%;
+    --input: 0 0% 96%;
+    --ring: 217 91% 60%;
 
-    --sidebar-background: 210 20% 4%;
-    --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 25 100% 60%;
-    --sidebar-primary-foreground: 210 20% 3%;
-    --sidebar-accent: 210 20% 8%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 210 20% 12%;
-    --sidebar-ring: 25 100% 60%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 5%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 5%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -115,54 +114,68 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }
 
 @layer utilities {
-  .ai-glow {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3), 0 0 80px hsl(var(--primary) / 0.1);
+  .professional-gradient {
+    background: var(--gradient-subtle);
   }
   
-  .neural-text {
-    text-shadow: 0 0 10px hsl(var(--primary) / 0.8), 0 0 20px hsl(var(--primary) / 0.6), 0 0 30px hsl(var(--primary) / 0.4);
+  .primary-gradient {
+    background: var(--gradient-primary);
   }
   
-  .ai-bg {
-    background: var(--gradient-ai);
+  .elegant-shadow {
+    box-shadow: var(--shadow-lg);
   }
   
-  .neural-bg {
-    background: var(--gradient-neural);
+  .subtle-shadow {
+    box-shadow: var(--shadow-sm);
   }
   
-  .glass-panel {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+  .medium-shadow {
+    box-shadow: var(--shadow-md);
   }
   
-  .hover-lift {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  .premium-text {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
   
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 40px hsl(var(--primary) / 0.3);
+  .display-text {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 1.1;
   }
   
-  .pulse-ai {
-    animation: pulse-ai 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  .hover-elevate {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  @keyframes pulse-ai {
-    0%, 100% {
-      opacity: 1;
-      box-shadow: 0 0 20px hsl(var(--primary) / 0.5);
-    }
-    50% {
-      opacity: 0.8;
-      box-shadow: 0 0 40px hsl(var(--primary) / 0.8);
-    }
+  .hover-elevate:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .minimal-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .professional-bg {
+    background: var(--gradient-subtle);
+  }
+  
+  .authority-glow {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.3);
+  }
+  
+  .elite-border {
+    border: 1px solid hsl(var(--primary) / 0.2);
   }
 }

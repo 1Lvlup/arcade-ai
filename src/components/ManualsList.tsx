@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Calendar, Search, Activity, Database, Eye, Trash2 } from 'lucide-react';
+import { FileText, Calendar, Search, Activity, Database, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Manual {
@@ -28,6 +28,7 @@ export function ManualsList() {
   const [loading, setLoading] = useState(true);
   const [chunkCounts, setChunkCounts] = useState<ChunkCount[]>([]);
   const [deletingManualId, setDeletingManualId] = useState<string | null>(null);
+  const [retryingManualId, setRetryingManualId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -93,6 +94,56 @@ export function ManualsList() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const retryProcessing = async (manual: Manual) => {
+    if (!manual.job_id) {
+      toast({
+        title: 'Cannot retry',
+        description: 'No job ID found for this manual',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setRetryingManualId(manual.manual_id);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('retry-stalled-job', {
+        body: { 
+          job_id: manual.job_id,
+          manual_id: manual.manual_id 
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success) {
+        toast({
+          title: 'Processing resumed',
+          description: 'Manual processing has been restarted successfully',
+        });
+        // Refresh the manual list to get updated status
+        fetchManuals();
+      } else {
+        toast({
+          title: 'Retry failed',
+          description: data?.message || 'Could not retry the stalled job',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error retrying manual processing:', error);
+      toast({
+        title: 'Error retrying processing',
+        description: 'Failed to retry manual processing. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRetryingManualId(null);
     }
   };
 
@@ -251,6 +302,22 @@ export function ManualsList() {
                       <Eye className="h-4 w-4 mr-1" />
                       View Details
                     </Button>
+                    {status.status === 'stalled' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={retryingManualId === manual.manual_id}
+                        onClick={() => retryProcessing(manual)}
+                        title="Retry stalled processing"
+                      >
+                        {retryingManualId === manual.manual_id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-1" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                        )}
+                        Retry
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

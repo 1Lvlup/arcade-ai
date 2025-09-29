@@ -47,52 +47,76 @@ export function SimpleChat() {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Manual Chat Assistant</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Messages */}
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+    <div className="w-full max-w-4xl mx-auto p-6">
+      <div className="space-y-6">
+        {/* Messages Container */}
+        <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 p-4 rounded-lg border border-primary/20 bg-gradient-to-b from-background to-muted/20">
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`p-3 rounded-lg ${
-                message.role === 'user'
-                  ? 'bg-primary text-primary-foreground ml-auto max-w-[80%]'
-                  : 'bg-muted text-muted-foreground mr-auto max-w-[80%]'
-              }`}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {message.content}
+              <div
+                className={`max-w-[80%] p-4 rounded-lg shadow-lg ${
+                  message.role === 'user'
+                    ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-orange ml-auto'
+                    : 'bg-gradient-to-r from-secondary/40 to-muted text-foreground border border-primary/30'
+                }`}
+              >
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {message.content}
+                </div>
+              </div>
             </div>
           ))}
+          
           {isLoading && (
-            <div className="bg-muted text-muted-foreground mr-auto max-w-[80%] p-3 rounded-lg">
-              Thinking...
+            <div className="flex justify-start">
+              <div className="bg-gradient-to-r from-secondary/40 to-muted text-foreground border border-primary/30 max-w-[80%] p-4 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                  <span className="text-sm text-primary ml-2">AI is thinking...</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {messages.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-primary/60 mb-4">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 flex items-center justify-center">
+                  <div className="text-2xl">🤖</div>
+                </div>
+              </div>
+              <div className="text-lg font-medium text-primary mb-2">Ready to Help!</div>
+              <div className="text-muted-foreground max-w-md mx-auto">
+                Ask me anything about arcade game troubleshooting, repairs, or technical issues with your uploaded manuals.
+              </div>
             </div>
           )}
         </div>
 
-        {/* Input */}
-        <div className="flex gap-2">
+        {/* Input Area */}
+        <div className="flex gap-3 p-4 rounded-lg border border-primary/30 bg-gradient-to-r from-background to-muted/20 shadow-orange">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your arcade manuals..."
+            placeholder="Ask about troubleshooting, repairs, or technical issues..."
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             disabled={isLoading}
+            className="flex-1 border-primary/40 focus:border-primary focus:ring-primary/30 bg-background/80"
           />
-          <Button onClick={handleSend} disabled={isLoading || !input.trim()}>
-            Send
+          <Button 
+            onClick={handleSend} 
+            disabled={isLoading || !input.trim()}
+            className="gradient-orange shadow-orange hover:shadow-orange-strong transition-all duration-300 px-6"
+          >
+            {isLoading ? '⏳' : '🚀'} Send
           </Button>
         </div>
-
-        {messages.length === 0 && (
-          <div className="text-center text-muted-foreground">
-            Upload a manual first, then ask me anything about arcade game troubleshooting!
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

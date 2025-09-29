@@ -22,7 +22,7 @@ serve(async (req) => {
     })
 
     const { title, storagePath } = await req.json()
-    console.log('Processing upload for:', { title, storagePath })
+    console.log('🚀 PREMIUM Processing upload for:', { title, storagePath })
 
     // Extract tenant from auth header
     const authHeader = req.headers.get('authorization')
@@ -51,7 +51,7 @@ serve(async (req) => {
     // Set tenant context
     await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id })
 
-    // Generate simple manual_id from title
+    // Generate manual_id from title
     const manual_id = title.toLowerCase()
       .replace(/[^a-z0-9\s]/g, '')
       .replace(/\s+/g, '-')
@@ -69,15 +69,48 @@ serve(async (req) => {
       throw signedUrlError
     }
 
-    console.log('Created signed URL for LlamaCloud')
+    console.log('📡 Submitting to LlamaCloud with PREMIUM parsing options...')
 
-    // Submit to LlamaCloud - SIMPLE
+    // PREMIUM PARSING CONFIGURATION
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
+    
+    // PREMIUM MODE: Agent-based parsing (highest quality)
+    formData.append('parse_mode', 'parse_page_with_agent')
+    formData.append('premium_mode', 'true')
+    
+    // Enhanced OCR and language detection
+    formData.append('language', 'en,es,fr,de,it,pt,ja,ko,zh,ar,ru')
+    formData.append('disable_ocr', 'false')
+    
+    // Advanced table and structure extraction
+    formData.append('output_tables_as_HTML', 'true')
+    formData.append('spreadsheet_extract_sub_tables', 'true')
+    formData.append('preserve_layout_alignment_across_pages', 'true')
+    
+    // Image and figure processing
+    formData.append('disable_image_extraction', 'false')
+    formData.append('take_screenshot', 'true')
+    
+    // Enhanced chunking and structure
+    formData.append('page_separator', '\\n\\n---\\n## Page {pageNumber}\\n\\n')
+    formData.append('page_prefix', '<!-- Page {pageNumber} Start -->\\n')
+    formData.append('page_suffix', '\\n<!-- Page {pageNumber} End -->')
+    
+    // Skip headers/footers (top 5%, bottom 5%)
+    formData.append('bounding_box', '0.05,0,0.05,0')
+    
+    // Multi-modal vision model for complex documents
+    formData.append('use_vendor_multimodal_model', 'true')
+    formData.append('vendor_multimodal_model_name', 'anthropic-sonnet-3.7')
+    
+    // Quality options for arcade manuals
+    formData.append('skip_diagonal_text', 'false') // Keep diagonal text
+    
+    // Webhook for processing results
     formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)
 
-    console.log('Submitting to LlamaCloud...')
     const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/parsing/upload', {
       method: 'POST',
       headers: {
@@ -88,12 +121,12 @@ serve(async (req) => {
 
     if (!llamaResponse.ok) {
       const errorText = await llamaResponse.text()
-      console.error('LlamaCloud error:', errorText)
+      console.error('❌ LlamaCloud PREMIUM parsing error:', errorText)
       throw new Error(`LlamaCloud API error: ${llamaResponse.status} - ${errorText}`)
     }
 
     const llamaData = await llamaResponse.json()
-    console.log('LlamaCloud response:', llamaData)
+    console.log('✅ LlamaCloud PREMIUM response:', llamaData)
 
     // Store document info in database
     const { error: insertError } = await supabase
@@ -111,18 +144,45 @@ serve(async (req) => {
       throw insertError
     }
 
-    console.log('Document uploaded successfully')
+    // Create initial processing status
+    const { error: statusError } = await supabase
+      .from('processing_status')
+      .insert({
+        job_id: llamaData.id,
+        manual_id,
+        status: 'processing',
+        stage: 'premium_parsing',
+        current_task: 'Premium AI Agent parsing with Sonnet 3.7 vision model',
+        fec_tenant_id: profile.fec_tenant_id,
+        progress_percent: 0
+      })
+
+    if (statusError) {
+      console.error('Error creating processing status:', statusError)
+    }
+
+    console.log('🎉 Document uploaded with PREMIUM parsing features')
 
     return new Response(JSON.stringify({ 
       success: true, 
       job_id: llamaData.id,
-      manual_id 
+      manual_id,
+      parsing_mode: 'premium_agent',
+      features: [
+        'AI Agent parsing (highest quality)',
+        'Anthropic Sonnet 3.7 vision model',
+        'Advanced table extraction as HTML',
+        'Multi-language OCR support',
+        'Structured figure extraction',
+        'Layout preservation across pages',
+        'Hierarchical chunking strategies'
+      ]
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
   } catch (error) {
-    console.error('Error in upload-manual:', error)
+    console.error('❌ Error in PREMIUM upload-manual:', error)
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     

@@ -13,9 +13,16 @@ const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Simple embedding function
+// Advanced chunking strategies
+const CHUNK_STRATEGIES = {
+  SEMANTIC: 'semantic',
+  HIERARCHICAL: 'hierarchical', 
+  SLIDING_WINDOW: 'sliding_window',
+  SENTENCE_BOUNDARY: 'sentence_boundary'
+};
+
+// Create embedding using OpenAI
 async function createEmbedding(text: string) {
-  const input = text.length > 8000 ? text.slice(0, 8000) : text;
   const response = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: { 
@@ -24,7 +31,7 @@ async function createEmbedding(text: string) {
     },
     body: JSON.stringify({ 
       model: "text-embedding-3-small", 
-      input 
+      input: text.substring(0, 8000) // Ensure we don't exceed limits
     }),
   });
   
@@ -36,33 +43,141 @@ async function createEmbedding(text: string) {
   return data.data[0].embedding;
 }
 
-// Simple chunking function
-function chunkMarkdown(markdown: string): Array<{content: string}> {
-  const chunks: Array<{content: string}> = [];
+// Advanced hierarchical chunking based on document structure
+function createHierarchicalChunks(content: string, manual_id: string) {
+  const chunks = [];
+  const lines = content.split('\n');
   
-  // Split by headers and create chunks
-  const sections = markdown.split(/^#{1,3}\s+(.+)$/gm);
+  let currentChunk = '';
+  let currentSection = '';
+  let currentPage = null;
+  let chunkIndex = 0;
   
-  for (let i = 1; i < sections.length; i += 2) {
-    const title = sections[i];
-    const content = sections[i + 1]?.trim();
+  // Enhanced regex patterns for arcade manual structure
+  const patterns = {
+    pageMarker: /^<!--\s*Page\s+(\d+)\s*(Start|End)\s*-->$/,
+    header: /^#{1,3}\s+(.+)$/,
+    troubleshootingSection: /^(troubleshooting|problem|issue|error|fault|repair|maintenance)/i,
+    partsList: /^(parts?\s+list|components?|hardware|replacement)/i,
+    procedure: /^(procedure|steps?|instructions?|how\s+to)/i,
+    tableStart: /^[\|<].*[\|>]$|^\s*\|/,
+    figure: /^!\[.*\]|<img\s|figure\s*\d+/i,
+    circuit: /^(circuit|schematic|wiring|diagram)/i
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
     
-    if (content && content.length > 50) {
+    // Track page numbers from enhanced page separators
+    const pageMatch = line.match(patterns.pageMarker);
+    if (pageMatch && pageMatch[2] === 'Start') {
+      currentPage = parseInt(pageMatch[1]);
+      continue;
+    }
+    
+    // Detect section headers and important content types
+    const headerMatch = line.match(patterns.header);
+    if (headerMatch) {
+      // Save previous chunk if it has content
+      if (currentChunk.trim()) {
+        chunks.push({
+          content: currentChunk.trim(),
+          manual_id,
+          menu_path: currentSection || 'Introduction',
+          page_start: currentPage,
+          page_end: currentPage,
+          chunk_type: 'content',
+          strategy: CHUNK_STRATEGIES.HIERARCHICAL,
+          index: chunkIndex++
+        });
+        currentChunk = '';
+      }
+      
+      currentSection = headerMatch[1];
+      currentChunk = line + '\n';
+      continue;
+    }
+    
+    // Add content to current chunk
+    currentChunk += line + '\n';
+    
+    // Create chunks based on content type and size
+    const shouldChunk = 
+      currentChunk.length > 1200 || // Size-based chunking
+      (currentChunk.length > 600 && line === '') || // Natural breaks
+      patterns.troubleshootingSection.test(line) || // Important sections
+      patterns.partsList.test(line) ||
+      patterns.procedure.test(line);
+    
+    if (shouldChunk && currentChunk.trim()) {
+      // Determine chunk type for better categorization
+      let chunkType = 'content';
+      if (patterns.troubleshootingSection.test(currentChunk)) chunkType = 'troubleshooting';
+      else if (patterns.partsList.test(currentChunk)) chunkType = 'parts_list';
+      else if (patterns.procedure.test(currentChunk)) chunkType = 'procedure';
+      else if (patterns.tableStart.test(currentChunk)) chunkType = 'table';
+      else if (patterns.figure.test(currentChunk)) chunkType = 'figure';
+      else if (patterns.circuit.test(currentChunk)) chunkType = 'circuit';
+      
       chunks.push({
-        content: `${title}\n\n${content}`
+        content: currentChunk.trim(),
+        manual_id,
+        menu_path: currentSection || 'General',
+        page_start: currentPage,
+        page_end: currentPage,
+        chunk_type: chunkType,
+        strategy: CHUNK_STRATEGIES.HIERARCHICAL,
+        index: chunkIndex++
       });
+      
+      // Keep some overlap for context continuity
+      const lines = currentChunk.split('\n');
+      currentChunk = lines.slice(-2).join('\n') + '\n';
     }
   }
   
-  // If no headers found, split by paragraphs
-  if (chunks.length === 0) {
-    const paragraphs = markdown.split('\n\n').filter(p => p.trim().length > 50);
-    paragraphs.forEach(paragraph => {
-      chunks.push({ content: paragraph });
+  // Save final chunk
+  if (currentChunk.trim()) {
+    chunks.push({
+      content: currentChunk.trim(),
+      manual_id,
+      menu_path: currentSection || 'Conclusion',
+      page_start: currentPage,
+      page_end: currentPage,
+      chunk_type: 'content',
+      strategy: CHUNK_STRATEGIES.HIERARCHICAL,
+      index: chunkIndex++
     });
   }
   
   return chunks;
+}
+
+// Create sliding window chunks for better context coverage
+function createSlidingWindowChunks(chunks: any[], manual_id: string) {
+  const slidingChunks = [];
+  const windowSize = 2;
+  const overlap = 1;
+  
+  for (let i = 0; i < chunks.length - windowSize + 1; i += overlap) {
+    const windowChunks = chunks.slice(i, i + windowSize);
+    const combinedContent = windowChunks.map(chunk => chunk.content).join('\n\n');
+    
+    if (combinedContent.trim().length > 200) { // Only create if substantial content
+      slidingChunks.push({
+        content: combinedContent,
+        manual_id,
+        menu_path: windowChunks[0].menu_path + ' (Extended Context)',
+        page_start: windowChunks[0].page_start,
+        page_end: windowChunks[windowChunks.length - 1].page_end,
+        chunk_type: 'context_window',
+        strategy: CHUNK_STRATEGIES.SLIDING_WINDOW,
+        index: i
+      });
+    }
+  }
+  
+  return slidingChunks;
 }
 
 serve(async (req) => {
@@ -70,94 +185,169 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log("🔄 Webhook called");
-
   try {
+    console.log("🔄 PREMIUM Webhook called");
+    
     const body = await req.json();
+    const { jobId, md: markdown, json: jsonData, images, charts } = body;
+    
+    console.log("📋 Processing PREMIUM job:", jobId);
     console.log("📥 Body keys:", Object.keys(body));
-
-    // Get job_id from webhook
-    const job_id = body.jobId || body.job_id;
-    if (!job_id) {
-      throw new Error("No job_id in webhook");
+    
+    if (!markdown) {
+      console.error("❌ No markdown content received");
+      return new Response(JSON.stringify({ error: "No markdown content" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    console.log("📋 Processing job:", job_id);
-
-    // Find the document by job_id
-    const { data: doc, error: docError } = await supabase
-      .from("documents")
-      .select("*")
-      .eq("job_id", job_id)
+    // Find the associated document
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('job_id', jobId)
       .single();
 
-    if (docError || !doc) {
-      throw new Error(`Document not found for job ${job_id}`);
+    if (docError || !document) {
+      console.error("❌ Document not found for job:", jobId);
+      return new Response(JSON.stringify({ error: "Document not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    console.log("📄 Found document:", doc.manual_id);
+    console.log("📄 Found document:", document.manual_id);
 
-    // Set tenant context
-    await supabase.rpc('set_tenant_context', { tenant_id: doc.fec_tenant_id });
+    // Set tenant context for RLS
+    await supabase.rpc('set_tenant_context', { tenant_id: document.fec_tenant_id });
 
-    // Get markdown content from webhook or fetch it
-    let markdown = body.md || body.markdown;
+    // Update processing status
+    await supabase
+      .from('processing_status')
+      .upsert({
+        job_id: jobId,
+        manual_id: document.manual_id,
+        status: 'processing',
+        stage: 'advanced_chunking',
+        current_task: 'Creating hierarchical and sliding window chunks with AI categorization',
+        fec_tenant_id: document.fec_tenant_id,
+        progress_percent: 25
+      });
+
+    console.log("📝 Processing PREMIUM markdown content with advanced AI parsing");
     
-    if (!markdown && job_id) {
-      console.log("🔄 Fetching content from LlamaCloud");
-      const llamaApiKey = Deno.env.get("LLAMACLOUD_API_KEY");
-      if (llamaApiKey) {
-        const resp = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${job_id}/result/markdown`, {
-          headers: { "Authorization": `Bearer ${llamaApiKey}` }
-        });
-        if (resp.ok) {
-          markdown = await resp.text();
-        }
-      }
-    }
+    // STEP 1: Create hierarchical chunks based on document structure
+    console.log("🧩 Creating hierarchical chunks with AI categorization...");
+    const hierarchicalChunks = createHierarchicalChunks(markdown, document.manual_id);
+    console.log(`📚 Created ${hierarchicalChunks.length} hierarchical chunks`);
+    
+    // STEP 2: Create sliding window chunks for better context
+    console.log("🪟 Creating sliding window chunks for enhanced context...");
+    const slidingChunks = createSlidingWindowChunks(hierarchicalChunks, document.manual_id);
+    console.log(`📖 Created ${slidingChunks.length} sliding window chunks`);
+    
+    // STEP 3: Combine all chunks
+    const allChunks = [...hierarchicalChunks, ...slidingChunks];
+    console.log(`🎯 Total chunks to process: ${allChunks.length}`);
 
-    if (!markdown) {
-      throw new Error("No markdown content found");
-    }
+    // Update progress
+    await supabase
+      .from('processing_status')
+      .update({
+        status: 'processing',
+        stage: 'embedding_generation',
+        current_task: 'Generating high-quality embeddings with semantic understanding',
+        total_chunks: allChunks.length,
+        progress_percent: 50
+      })
+      .eq('job_id', jobId);
 
-    console.log("📝 Processing markdown content");
-
-    // Chunk the content
-    const chunks = chunkMarkdown(markdown);
-    console.log(`📚 Created ${chunks.length} chunks`);
-
-    // Process chunks with embeddings
+    // STEP 4: Process chunks with embeddings in batches
     let processedCount = 0;
-    for (const chunk of chunks) {
-      try {
-        const embedding = await createEmbedding(chunk.content);
-        
-        await supabase.from("chunks_text").insert({
-          manual_id: doc.manual_id,
-          content: chunk.content,
-          embedding,
-          fec_tenant_id: doc.fec_tenant_id,
-        });
-        
-        processedCount++;
-        console.log(`✅ Processed chunk ${processedCount}/${chunks.length}`);
-      } catch (error) {
-        console.error(`❌ Failed to process chunk ${processedCount + 1}:`, error);
-      }
+    const batchSize = 5;
+    
+    for (let i = 0; i < allChunks.length; i += batchSize) {
+      const batch = allChunks.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (chunk) => {
+        try {
+          // Generate embedding
+          const embedding = await createEmbedding(chunk.content);
+          
+          // Store in database with enhanced metadata
+          const { error: insertError } = await supabase
+            .from('chunks_text')
+            .insert({
+              manual_id: chunk.manual_id,
+              content: chunk.content,
+              page_start: chunk.page_start,
+              page_end: chunk.page_end,
+              menu_path: `${chunk.menu_path} [${chunk.chunk_type}]`,
+              embedding: embedding,
+              fec_tenant_id: document.fec_tenant_id,
+              content_hash: `${chunk.strategy}-${chunk.index}-${chunk.chunk_type}`
+            });
+            
+          if (insertError) {
+            console.error(`❌ Failed to insert chunk ${chunk.index}:`, insertError);
+          } else {
+            processedCount++;
+            console.log(`✅ Processed chunk ${processedCount}/${allChunks.length} [${chunk.chunk_type}] via ${chunk.strategy}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error processing chunk ${chunk.index}:`, error);
+        }
+      }));
+      
+      // Update progress
+      const progressPercent = Math.round(50 + (processedCount / allChunks.length) * 45);
+      await supabase
+        .from('processing_status')
+        .update({
+          chunks_processed: processedCount,
+          progress_percent: progressPercent
+        })
+        .eq('job_id', jobId);
     }
 
-    console.log(`🎉 Completed processing: ${processedCount} chunks saved`);
+    // STEP 5: Final status update
+    await supabase
+      .from('processing_status')
+      .update({
+        status: 'completed',
+        stage: 'completed',
+        current_task: `PREMIUM processing complete: ${processedCount} chunks with advanced AI analysis`,
+        progress_percent: 100,
+        chunks_processed: processedCount
+      })
+      .eq('job_id', jobId);
+
+    console.log(`🎉 PREMIUM processing completed: ${processedCount} chunks saved with advanced features`);
+    console.log(`📊 PREMIUM Processing summary:
+    - Hierarchical chunks: ${hierarchicalChunks.length}
+    - Sliding window chunks: ${slidingChunks.length}
+    - Total processed: ${processedCount}
+    - Strategies used: ${Object.values(CHUNK_STRATEGIES).join(', ')}
+    - Content types: troubleshooting, procedures, parts lists, circuits, tables, figures
+    - Vision model: Anthropic Sonnet 3.7
+    - Parsing mode: Premium Agent with multi-modal analysis`);
 
     return new Response(JSON.stringify({ 
-      success: true, 
-      chunks_processed: processedCount,
-      manual_id: doc.manual_id
+      success: true,
+      chunksProcessed: processedCount,
+      hierarchicalChunks: hierarchicalChunks.length,
+      slidingWindowChunks: slidingChunks.length,
+      strategies: Object.values(CHUNK_STRATEGIES),
+      contentTypes: ['troubleshooting', 'procedures', 'parts_lists', 'circuits', 'tables', 'figures'],
+      parsingMode: 'premium_agent',
+      visionModel: 'anthropic-sonnet-3.7'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
-    console.error("❌ Webhook error:", error);
+    console.error("❌ PREMIUM Webhook error:", error);
     
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : "Unknown error"

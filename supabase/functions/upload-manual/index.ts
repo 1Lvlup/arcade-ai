@@ -81,7 +81,7 @@ serve(async (req) => {
     formData.append('premium_mode', 'true')
     
     // Enhanced OCR and language detection
-    formData.append('language', 'en,es,fr,de,it,pt,ja,ko,zh,ar,ru')
+    formData.append('language', 'en')
     formData.append('disable_ocr', 'false')
     
     // Advanced table and structure extraction

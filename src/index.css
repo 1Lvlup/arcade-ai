@@ -5,48 +5,47 @@
 
 @layer base {
   :root {
-    /* Dark tech theme - almost black purple with orange accents */
-    --background: 240 15% 6%;      /* Very dark gunmetal - almost black */
-    --foreground: 0 0% 98%;        /* White */
+    /* Dark gunmetal theme with purple, blue, and white accents */
+    --background: 220 15% 8%;      /* Dark gunmetal */
+    --foreground: 0 0% 95%;        /* Clean white */
     
-    --card: 240 12% 8%;            /* Slightly lighter than background */
-    --card-foreground: 0 0% 98%;
+    --card: 220 12% 12%;           /* Slightly lighter gunmetal */
+    --card-foreground: 0 0% 95%;
     
-    --popover: 240 12% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 12% 12%;
+    --popover-foreground: 0 0% 95%;
     
-    --primary: 25 100% 50%;        /* Bright orange */
-    --primary-foreground: 0 0% 100%;
+    --primary: 270 60% 25%;        /* Dark purple */
+    --primary-foreground: 0 0% 95%;
     
-    --secondary: 270 60% 8%;       /* Very dark purple - almost black */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 200 100% 50%;     /* Electric blue */
+    --secondary-foreground: 0 0% 95%;
     
-    --muted: 240 8% 12%;           /* Muted dark */
-    --muted-foreground: 0 0% 60%;
+    --muted: 220 8% 16%;           /* Muted gunmetal */
+    --muted-foreground: 0 0% 70%;
     
-    --accent: 25 100% 55%;         /* Lighter orange for accents */
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 100%;           /* Pure white for accents */
+    --accent-foreground: 220 15% 8%;
     
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 0 0% 95%;
     
-    --border: 25 30% 20%;          /* Subtle orange border */
-    --input: 240 8% 15%;
-    --ring: 25 100% 50%;           /* Orange ring */
+    --border: 220 10% 20%;         /* Subtle gunmetal border */
+    --input: 220 8% 15%;
+    --ring: 270 60% 25%;           /* Purple ring */
     
     --radius: 0.75rem;
     
     /* Tech theme colors */
-    --orange-glow: 25 100% 50%;
-    --orange-bright: 25 100% 60%;
-    --purple-black: 270 60% 4%;    /* Almost black purple */
-    --gunmetal-dark: 240 15% 6%;
-    --tech-blue: 200 100% 50%;
+    --purple-dark: 270 60% 25%;    /* Dark purple */
+    --blue-electric: 200 100% 50%; /* Electric blue */
+    --gunmetal-dark: 220 15% 8%;   /* Dark gunmetal */
+    --white-clean: 0 0% 100%;      /* Pure white */
     
     /* Professional gradients */
-    --gradient-orange: linear-gradient(135deg, hsl(25 100% 50%), hsl(25 100% 60%));
-    --gradient-tech: linear-gradient(135deg, hsl(240 15% 6%), hsl(270 60% 8%));
-    --gradient-circuit: linear-gradient(45deg, hsl(25 100% 50% / 0.05), hsl(25 100% 60% / 0.1));
+    --gradient-purple: linear-gradient(135deg, hsl(270 60% 25%), hsl(270 60% 35%));
+    --gradient-tech: linear-gradient(135deg, hsl(220 15% 8%), hsl(220 12% 12%));
+    --gradient-electric: linear-gradient(45deg, hsl(200 100% 50% / 0.1), hsl(200 100% 60% / 0.2));
     
     /* Enhanced shadows and glows */
     --shadow-orange: 0 0 25px hsl(25 100% 50% / 0.3);
@@ -94,17 +93,6 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Space Grotesk', sans-serif;
-    background-image: 
-      /* Subtle circuit board pattern */
-      radial-gradient(circle at 25% 25%, hsl(25 100% 50% / 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, hsl(25 100% 50% / 0.08) 0%, transparent 50%),
-      /* Circuit board lines */
-      linear-gradient(0deg, transparent 24%, hsl(25 100% 50% / 0.03) 25%, hsl(25 100% 50% / 0.03) 26%, transparent 27%, transparent 74%, hsl(25 100% 50% / 0.03) 75%, hsl(25 100% 50% / 0.03) 76%, transparent 77%, transparent),
-      linear-gradient(90deg, transparent 24%, hsl(25 100% 50% / 0.03) 25%, hsl(25 100% 50% / 0.03) 26%, transparent 27%, transparent 74%, hsl(25 100% 50% / 0.03) 75%, hsl(25 100% 50% / 0.03) 76%, transparent 77%, transparent),
-      /* Circuit nodes */
-      radial-gradient(circle at 50% 50%, hsl(25 100% 50% / 0.05) 0%, transparent 3%);
-    background-size: 100px 100px, 100px 100px, 50px 50px, 50px 50px, 25px 25px;
-    background-position: 0 0, 50px 50px, 0 0, 25px 25px, 0 0;
   }
 }
 

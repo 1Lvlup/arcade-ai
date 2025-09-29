@@ -212,33 +212,33 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {coreFeatures.map((feature, index) => <div key={index} className="premium-card hover-lift p-12 rounded-3xl">
+            {coreFeatures.map((feature, index) => <div key={index} className="tech-card hover:border-primary/40 p-12 rounded-3xl transition-all duration-300">
                 <div className="space-y-8">
                   <div className="flex items-start justify-between">
-                    <div className="glass-card p-6 rounded-2xl">
+                    <div className="tech-card p-6 rounded-2xl">
                       <div className="text-primary">
                         {feature.icon}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="glass-card px-4 py-2 rounded-full">
-                        <span className="caption-text text-primary">{feature.status}</span>
+                      <div className="tech-card px-4 py-2 rounded-full">
+                        <span className="font-mono text-xs text-primary uppercase tracking-wider">{feature.status}</span>
                       </div>
-                      <div className="caption-text text-muted-foreground mt-2">{feature.metrics}</div>
+                      <div className="font-mono text-xs text-muted-foreground mt-2">{feature.metrics}</div>
                     </div>
                   </div>
                   <div className="space-y-6">
-                    <h3 className="premium-text text-2xl text-foreground">{feature.title}</h3>
-                    <p className="body-text text-muted-foreground">
+                    <h3 className="text-tech-lg text-primary">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {feature.description}
                     </p>
                   </div>
                   <div className="pt-4">
-                    {feature.onClick ? <Button onClick={feature.onClick} className="w-full primary-gradient hover-lift py-6">
+                    {feature.onClick ? <Button onClick={feature.onClick} className="w-full btn-tech py-6">
                         Launch Assistant
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </Button> : <Link to={feature.link!}>
-                        <Button variant="outline" className="w-full hover-glow py-6">
+                        <Button variant="outline" className="w-full btn-tech-outline py-6">
                           Access Platform
                           <ArrowRight className="h-4 w-4 ml-2" />
                         </Button>

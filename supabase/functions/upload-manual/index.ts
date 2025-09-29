@@ -51,13 +51,11 @@ serve(async (req) => {
     // Set tenant context
     await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id })
 
-    // Generate manual_id from title with timestamp to ensure uniqueness
-    const baseManualId = title.toLowerCase()
+    // Generate simple manual_id from title
+    const manual_id = title.toLowerCase()
       .replace(/[^a-z0-9\s]/g, '')
       .replace(/\s+/g, '-')
-      .substring(0, 40)
-    
-    const manual_id = `${baseManualId}-${Date.now()}`
+      .substring(0, 40) + '-' + Date.now()
 
     console.log('Generated manual_id:', manual_id)
 
@@ -73,24 +71,12 @@ serve(async (req) => {
 
     console.log('Created signed URL for LlamaCloud')
 
-    // Prepare FormData for LlamaCloud
+    // Submit to LlamaCloud - SIMPLE
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
-    formData.append('parsing_instruction', `
-This is a technical manual for arcade game troubleshooting. Please extract:
-1. All text content preserving structure and hierarchy
-2. Figure descriptions and captions
-3. Technical specifications and diagrams
-4. Troubleshooting steps and procedures
-5. Parts lists and component information
-
-Focus on maintaining the technical accuracy and procedural structure.
-    `.trim())
     formData.append('result_type', 'markdown')
-    formData.append('invalidate_cache', 'true')
     formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)
 
-    // Submit to LlamaCloud
     console.log('Submitting to LlamaCloud...')
     const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/parsing/upload', {
       method: 'POST',
@@ -109,7 +95,7 @@ Focus on maintaining the technical accuracy and procedural structure.
     const llamaData = await llamaResponse.json()
     console.log('LlamaCloud response:', llamaData)
 
-    // Store document info in database - use insert since manual_id is now unique
+    // Store document info in database
     const { error: insertError } = await supabase
       .from('documents')
       .insert({
@@ -137,16 +123,11 @@ Focus on maintaining the technical accuracy and procedural structure.
 
   } catch (error) {
     console.error('Error in upload-manual:', error)
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-    console.error('Error name:', error instanceof Error ? error.name : 'Unknown')
-    console.error('Error details:', JSON.stringify(error, null, 2))
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error('Returning error:', errorMessage)
     
     return new Response(JSON.stringify({ 
-      error: errorMessage,
-      details: error instanceof Error ? error.stack : 'No additional details'
+      error: errorMessage
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

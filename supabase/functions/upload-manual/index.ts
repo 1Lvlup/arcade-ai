@@ -69,15 +69,15 @@ serve(async (req) => {
       throw signedUrlError
     }
 
-    console.log('📡 Submitting to LlamaCloud with basic parsing options...')
+    console.log('📡 Submitting to LlamaCloud with AGENT parsing mode...')
 
-    // BASIC PARSING CONFIGURATION
+    // AGENT PARSING CONFIGURATION (highest quality)
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
     
-    // Basic mode only - NO conflicting modes
-    formData.append('fast_mode', 'true')
+    // ONLY agent mode - NO other conflicting modes
+    formData.append('parse_mode', 'parse_page_with_agent')
     
     // Basic language detection
     formData.append('language', 'en')

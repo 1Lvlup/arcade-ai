@@ -125,184 +125,220 @@ const Index = () => {
 
       <main className="container mx-auto px-8 py-24">
         {/* Hero Section */}
-        <section className="text-center section-spacing">
-          <div className="space-y-12">
-            <div className="space-y-8">
-              <div className="caption-text text-primary/80 mb-6">
+        <section className="text-center py-24">
+          <div className="space-y-16">
+            <div className="space-y-12">
+              <div className="caption-text text-primary/80 text-lg tracking-wider uppercase">
                 Next-Generation AI Platform
               </div>
-              <h1 className="display-heading md:text-9xl lg:text-[12rem] leading-none relative text-zinc-900 text-center text-2xl font-bold">
-                <span className="relative z-10 font-normal text-9xl text-lime-300 text-center">CHECKMATE</span>
-                <span className="absolute inset-0 text-primary text-9xl md:text-[10rem] lg:text-[14rem] opacity-20 blur-lg scale-110 -z-10">CHECKMATE</span>
+              <h1 className="display-heading leading-none relative">
+                <span className="relative z-10 font-normal text-8xl md:text-9xl lg:text-[10rem] text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  ARCADE RAG
+                </span>
+                <span className="absolute inset-0 text-primary text-8xl md:text-9xl lg:text-[10rem] opacity-10 blur-xl scale-110 -z-10">
+                  ARCADE RAG
+                </span>
               </h1>
             </div>
-            <p className="body-text text-xl md:text-2xl text-muted-foreground max-w-5xl mx-auto mt-16">
-              Revolutionary AI platform that transforms how enterprises operate. Experience 
-              unparalleled performance, precision, and scalability that Fortune 500 companies depend on.
+            <p className="body-text text-xl md:text-2xl text-muted-foreground max-w-5xl mx-auto leading-relaxed">
+              Revolutionary AI platform specifically designed for arcade technicians and operators. 
+              Transform complex technical manuals into instant, intelligent assistance.
             </p>
           </div>
           
-          <div className="flex flex-wrap items-center justify-center gap-8 mt-20">
-            <div className="glass-card px-8 py-4 hover-glow">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                <span className="caption-text text-foreground">ISO 27001 Certified</span>
+          {/* Certification/Achievement Badges */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-4xl mx-auto">
+            <div className="stat-card p-8 rounded-2xl hover-glow hover-lift">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 rounded-full bg-primary/10">
+                  <CheckCircle className="h-8 w-8 text-primary" />
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-lg text-primary">ISO 27001 Certified</div>
+                  <div className="text-sm text-muted-foreground mt-1">Enterprise Security Standard</div>
+                </div>
               </div>
             </div>
-            <div className="glass-card px-8 py-4 hover-glow">
-              <div className="flex items-center gap-3">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <span className="caption-text text-foreground">400% ROI Average</span>
+            <div className="stat-card p-8 rounded-2xl hover-glow hover-lift">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 rounded-full bg-primary/10">
+                  <TrendingUp className="h-8 w-8 text-primary" />
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-lg text-primary">400% ROI Average</div>
+                  <div className="text-sm text-muted-foreground mt-1">Proven Return on Investment</div>
+                </div>
               </div>
             </div>
-            <div className="glass-card px-8 py-4 hover-glow">
-              <div className="flex items-center gap-3">
-                <Zap className="h-5 w-5 text-primary" />
-                <span className="caption-text text-foreground">Real-time Processing</span>
+            <div className="stat-card p-8 rounded-2xl hover-glow hover-lift">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 rounded-full bg-primary/10">
+                  <Zap className="h-8 w-8 text-primary" />
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-lg text-primary">Real-time Processing</div>
+                  <div className="text-sm text-muted-foreground mt-1">Instant Technical Support</div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-16">
-            <Button onClick={handleStartGeneralChat} size="xl" className="primary-gradient hover-lift px-12 py-6 text-lg">
-              Experience IntelliCore
-              <ArrowRight className="h-5 w-5 ml-3" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mt-20">
+            <Button onClick={handleStartGeneralChat} size="xl" className="primary-gradient hover-lift px-16 py-8 text-xl font-semibold">
+              Launch AI Assistant
+              <ArrowRight className="h-6 w-6 ml-3" />
             </Button>
             <Link to="/manuals">
-              <Button variant="outline" size="xl" className="hover-glow px-12 py-6 text-lg">
-                View Documentation
+              <Button variant="outline" size="xl" className="hover-glow px-16 py-8 text-xl font-semibold border-2 border-primary">
+                Browse Manuals
               </Button>
             </Link>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="section-spacing">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-            {stats.map((stat, index) => <div key={index} className="text-center space-y-8">
-                <div className="premium-card p-6 rounded-2xl hover-lift mx-auto w-fit">
-                  <div className="text-primary">
-                    {stat.icon}
+        {/* Performance Stats Section */}
+        <section className="py-24">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Platform Performance</h2>
+            <p className="text-xl text-muted-foreground">Industry-leading metrics that power your arcade operations</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center">
+                <div className="flex flex-col items-center space-y-6">
+                  <div className="p-4 rounded-full bg-primary/10">
+                    <div className="text-primary">
+                      {stat.icon}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="text-4xl md:text-5xl font-bold text-primary">{stat.value}</div>
+                    <div className="space-y-2">
+                      <div className="font-semibold text-lg text-foreground">{stat.label}</div>
+                      <div className="text-sm text-muted-foreground">{stat.description}</div>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <div className="premium-text text-5xl text-foreground">{stat.value}</div>
-                  <div className="space-y-2">
-                    <div className="font-semibold text-lg text-foreground">{stat.label}</div>
-                    <div className="caption-text text-muted-foreground">{stat.description}</div>
-                  </div>
-                </div>
-              </div>)}
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Core Features */}
-        <section className="section-spacing">
-          <div className="text-center content-spacing">
-            <div className="caption-text text-primary/80 mb-8">
-              Enterprise Solutions
+        <section className="py-24">
+          <div className="text-center mb-20">
+            <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
+              Core Features
             </div>
-            <h2 className="premium-text text-6xl md:text-7xl text-foreground mb-8">
-              Revolutionary AI
+            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8">
+              Arcade AI Solutions
             </h2>
-            <p className="body-text text-xl text-muted-foreground max-w-4xl mx-auto">
-              Transform your enterprise with AI capabilities that redefine what's possible 
-              in automation, intelligence, and strategic decision-making.
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+              Purpose-built AI tools designed specifically for arcade technicians, operators, 
+              and enthusiasts to solve complex technical challenges instantly.
             </p>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {coreFeatures.map((feature, index) => <div key={index} className="tech-card hover:border-primary/40 p-12 rounded-3xl transition-all duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {coreFeatures.map((feature, index) => (
+              <div key={index} className="tech-card hover:border-primary/40 p-10 rounded-3xl transition-all duration-300 hover-lift">
                 <div className="space-y-8">
                   <div className="flex items-start justify-between">
-                    <div className="tech-card p-6 rounded-2xl">
+                    <div className="p-5 rounded-2xl bg-primary/10">
                       <div className="text-primary">
                         {feature.icon}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="tech-card px-4 py-2 rounded-full">
-                        <span className="font-mono text-xs text-primary uppercase tracking-wider">{feature.status}</span>
+                      <div className="px-4 py-2 rounded-full bg-primary/10">
+                        <span className="font-mono text-xs text-primary uppercase tracking-wider font-semibold">{feature.status}</span>
                       </div>
-                      <div className="font-mono text-xs text-muted-foreground mt-2">{feature.metrics}</div>
+                      <div className="font-mono text-xs text-primary mt-2 font-medium">{feature.metrics}</div>
                     </div>
                   </div>
                   <div className="space-y-6">
-                    <h3 className="text-tech-lg text-primary">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <h3 className="text-2xl font-bold text-primary">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed text-base">
                       {feature.description}
                     </p>
                   </div>
-                  <div className="pt-4">
-                    {feature.onClick ? <Button onClick={feature.onClick} className="w-full btn-tech py-6">
+                  <div className="pt-6">
+                    {feature.onClick ? (
+                      <Button onClick={feature.onClick} className="w-full btn-tech py-4 text-lg font-semibold">
                         Launch Assistant
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button> : <Link to={feature.link!}>
-                        <Button variant="outline" className="w-full btn-tech-outline py-6">
+                        <ArrowRight className="h-5 w-5 ml-2" />
+                      </Button>
+                    ) : (
+                      <Link to={feature.link!}>
+                        <Button variant="outline" className="w-full btn-tech-outline py-4 text-lg font-semibold">
                           Access Platform
-                          <ArrowRight className="h-4 w-4 ml-2" />
+                          <ArrowRight className="h-5 w-5 ml-2" />
                         </Button>
-                      </Link>}
+                      </Link>
+                    )}
                   </div>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Capabilities Grid */}
-        <section className="section-spacing">
-          <div className="text-center content-spacing">
-            <div className="caption-text text-primary/80 mb-8">
+        <section className="py-24">
+          <div className="text-center mb-20">
+            <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
               Advanced Capabilities
             </div>
-            <h2 className="premium-text text-6xl md:text-7xl text-foreground mb-8">
-              Industry Standards
+            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8">
+              Professional Features
             </h2>
-            <p className="body-text text-xl text-muted-foreground max-w-4xl mx-auto">
-              Cutting-edge features that establish new benchmarks for 
-              enterprise AI performance and reliability.
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+              Enterprise-grade capabilities designed to meet the demanding requirements 
+              of professional arcade operations and technical support teams.
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl">
-                <div className="space-y-6">
-                  <div className="glass-card p-5 rounded-2xl inline-flex">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {capabilities.map((capability, index) => (
+              <div key={index} className="premium-card hover-lift p-10 rounded-3xl">
+                <div className="space-y-8">
+                  <div className="p-5 rounded-2xl bg-primary/10 inline-flex">
                     <div className="text-primary">
                       {capability.icon}
                     </div>
                   </div>
-                  <h3 className="premium-text text-2xl text-foreground">{capability.title}</h3>
-                  <p className="body-text text-muted-foreground">
+                  <h3 className="text-2xl font-bold text-foreground">{capability.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed text-base">
                     {capability.description}
                   </p>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="text-center section-spacing">
-          <div className="content-spacing">
-            <div className="caption-text text-primary/80 mb-8">
-              Transform Today
+        <section className="text-center py-24">
+          <div className="mb-16">
+            <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
+              Get Started Today
             </div>
-            <h2 className="premium-text text-6xl md:text-7xl text-foreground mb-8">
-              Ready for the Future?
+            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8">
+              Ready to Transform Your Arcade Operations?
             </h2>
-            <p className="body-text text-xl text-muted-foreground max-w-4xl mx-auto">
-              Join industry leaders who've already revolutionized their operations 
-              with IntelliCore's next-generation AI platform.
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+              Join arcade professionals who've already revolutionized their technical support 
+              and troubleshooting processes with our AI-powered platform.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-            <Button onClick={handleStartGeneralChat} size="xl" className="primary-gradient hover-lift px-12 py-6 text-lg">
+            <Button onClick={handleStartGeneralChat} size="xl" className="primary-gradient hover-lift px-16 py-8 text-xl font-semibold">
               Start Free Trial
-              <ArrowRight className="h-5 w-5 ml-3" />
+              <ArrowRight className="h-6 w-6 ml-3" />
             </Button>
             <Link to="/manuals">
-              <Button variant="outline" size="xl" className="hover-glow px-12 py-6 text-lg">
-                Schedule Demo
+              <Button variant="outline" size="xl" className="hover-glow px-16 py-8 text-xl font-semibold border-2 border-primary">
+                Explore Platform
               </Button>
             </Link>
           </div>

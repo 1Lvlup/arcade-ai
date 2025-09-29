@@ -186,16 +186,23 @@ serve(async (req) => {
   }
 
   try {
-    console.log("🔄 PREMIUM Webhook called");
+    console.log("🔄 Webhook called - Starting processing");
     
     const body = await req.json();
+    console.log("📋 Parsed body keys:", Object.keys(body));
+    console.log("📋 Full body:", JSON.stringify(body, null, 2));
+    
     const { jobId, md: markdown, json: jsonData, images, charts } = body;
     
-    console.log("📋 Processing PREMIUM job:", jobId);
-    console.log("📥 Body keys:", Object.keys(body));
+    console.log("🔍 Job details:");
+    console.log("- jobId:", jobId);
+    console.log("- markdown length:", markdown?.length || 0);
+    console.log("- has jsonData:", !!jsonData);
+    console.log("- images count:", images?.length || 0);
     
     if (!markdown) {
-      console.error("❌ No markdown content received");
+      console.error("❌ CRITICAL: No markdown content received");
+      console.log("📥 Full body structure:", Object.keys(body));
       return new Response(JSON.stringify({ error: "No markdown content" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -203,21 +210,27 @@ serve(async (req) => {
     }
 
     // Find the associated document
+    console.log("🔍 Looking for document with job_id:", jobId);
     const { data: document, error: docError } = await supabase
       .from('documents')
       .select('*')
       .eq('job_id', jobId)
       .single();
 
+    console.log("📄 Document query result:");
+    console.log("- error:", docError);
+    console.log("- document:", document);
+
     if (docError || !document) {
-      console.error("❌ Document not found for job:", jobId);
+      console.error("❌ CRITICAL: Document not found for job:", jobId);
+      console.error("- docError:", docError);
       return new Response(JSON.stringify({ error: "Document not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("📄 Found document:", document.manual_id);
+    console.log("✅ Found document:", document.manual_id, "tenant:", document.fec_tenant_id);
 
     // Set tenant context for RLS
     await supabase.rpc('set_tenant_context', { tenant_id: document.fec_tenant_id });
@@ -270,33 +283,44 @@ serve(async (req) => {
     for (let i = 0; i < allChunks.length; i += batchSize) {
       const batch = allChunks.slice(i, i + batchSize);
       
-      await Promise.all(batch.map(async (chunk) => {
+      await Promise.all(batch.map(async (chunk, batchIndex) => {
         try {
-          // Generate embedding
-          const embedding = await createEmbedding(chunk.content);
+          console.log(`🔄 Processing chunk ${i + batchIndex + 1}/${allChunks.length}`);
+          console.log(`- content preview: "${chunk.content.substring(0, 100)}..."`);
           
-          // Store in database with enhanced metadata
-          const { error: insertError } = await supabase
+          // Generate embedding
+          console.log("🔮 Generating embedding...");
+          const embedding = await createEmbedding(chunk.content);
+          console.log("✅ Embedding generated, length:", embedding?.length || 0);
+          
+          // Store in database
+          console.log("💾 Inserting into database...");
+          const insertData = {
+            manual_id: chunk.manual_id,
+            content: chunk.content,
+            page_start: chunk.page_start,
+            page_end: chunk.page_end,
+            menu_path: chunk.menu_path,
+            embedding: embedding,
+            fec_tenant_id: document.fec_tenant_id
+          };
+          
+          console.log("📝 Insert data:", JSON.stringify(insertData, null, 2));
+          
+          const { error: insertError, data: insertResult } = await supabase
             .from('chunks_text')
-            .insert({
-              manual_id: chunk.manual_id,
-              content: chunk.content,
-              page_start: chunk.page_start,
-              page_end: chunk.page_end,
-              menu_path: `${chunk.menu_path} [${chunk.chunk_type}]`,
-              embedding: embedding,
-              fec_tenant_id: document.fec_tenant_id
-              // content_hash is auto-generated, don't set it manually
-            });
+            .insert(insertData);
             
           if (insertError) {
-            console.error(`❌ Failed to insert chunk ${chunk.index}:`, insertError);
+            console.error(`❌ CRITICAL: Failed to insert chunk ${chunk.index}:`, insertError);
+            console.error("- Insert data was:", insertData);
           } else {
             processedCount++;
-            console.log(`✅ Processed chunk ${processedCount}/${allChunks.length} [${chunk.chunk_type}] via ${chunk.strategy}`);
+            console.log(`✅ SUCCESS: Chunk ${processedCount}/${allChunks.length} saved with ID:`, insertResult);
           }
         } catch (error) {
-          console.error(`❌ Error processing chunk ${chunk.index}:`, error);
+          console.error(`❌ CRITICAL: Error processing chunk ${chunk.index}:`, error);
+          console.error("- Chunk data:", chunk);
         }
       }));
       
@@ -323,34 +347,26 @@ serve(async (req) => {
       })
       .eq('job_id', jobId);
 
-    console.log(`🎉 PREMIUM processing completed: ${processedCount} chunks saved with advanced features`);
-    console.log(`📊 PREMIUM Processing summary:
-    - Hierarchical chunks: ${hierarchicalChunks.length}
-    - Sliding window chunks: ${slidingChunks.length}
-    - Total processed: ${processedCount}
-    - Strategies used: ${Object.values(CHUNK_STRATEGIES).join(', ')}
-    - Content types: troubleshooting, procedures, parts lists, circuits, tables, figures
-    - Vision model: Anthropic Sonnet 3.7
-    - Parsing mode: Premium Agent with multi-modal analysis`);
-
+    console.log(`🎉 Processing completed: ${processedCount} chunks saved`);
+    
     return new Response(JSON.stringify({ 
-      success: true,
-      chunksProcessed: processedCount,
-      hierarchicalChunks: hierarchicalChunks.length,
-      slidingWindowChunks: slidingChunks.length,
-      strategies: Object.values(CHUNK_STRATEGIES),
-      contentTypes: ['troubleshooting', 'procedures', 'parts_lists', 'circuits', 'tables', 'figures'],
-      parsingMode: 'premium_agent',
-      visionModel: 'anthropic-sonnet-3.7'
+      success: true, 
+      processed: processedCount,
+      total: allChunks.length 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
-    console.error("❌ PREMIUM Webhook error:", error);
+    console.error("❌ CRITICAL WEBHOOK ERROR:", error);
+    if (error instanceof Error) {
+      console.error("- Error stack:", error.stack);
+      console.error("- Error message:", error.message);
+    }
     
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: "Internal server error", 
+      details: error instanceof Error ? error.message : "Unknown error"
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

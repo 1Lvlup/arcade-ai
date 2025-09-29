@@ -51,11 +51,13 @@ serve(async (req) => {
     // Set tenant context
     await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id })
 
-    // Generate manual_id from title
-    const manual_id = title.toLowerCase()
+    // Generate manual_id from title with timestamp to ensure uniqueness
+    const baseManualId = title.toLowerCase()
       .replace(/[^a-z0-9\s]/g, '')
       .replace(/\s+/g, '-')
-      .substring(0, 50)
+      .substring(0, 40)
+    
+    const manual_id = `${baseManualId}-${Date.now()}`
 
     console.log('Generated manual_id:', manual_id)
 
@@ -107,17 +109,15 @@ Focus on maintaining the technical accuracy and procedural structure.
     const llamaData = await llamaResponse.json()
     console.log('LlamaCloud response:', llamaData)
 
-    // Store document info in database
+    // Store document info in database - use insert since manual_id is now unique
     const { error: insertError } = await supabase
       .from('documents')
-      .upsert({
+      .insert({
         manual_id,
         title,
         source_filename: storagePath.split('/').pop(),
         job_id: llamaData.id,
         fec_tenant_id: profile.fec_tenant_id
-      }, {
-        onConflict: 'manual_id'
       })
 
     if (insertError) {

@@ -102,12 +102,15 @@ Maintain the hierarchical structure of sections and subsections.
     formData.append('take_screenshot', 'true')
     formData.append('preserve_very_small_text', 'true')
     
-    // CRITICAL: Enable figure/image extraction
+    // CRITICAL: Enable figure/image extraction with correct LlamaCloud parameters
     formData.append('extract_images', 'true')
-    formData.append('extract_tables', 'true')
     formData.append('extract_figures', 'true')
-    formData.append('figure_extraction_mode', 'advanced')
-    formData.append('table_extraction_mode', 'advanced')
+    formData.append('split_by_page', 'false')
+    formData.append('include_page_breaks', 'true')
+    formData.append('fast_mode', 'false')
+    formData.append('do_table_extraction', 'true')
+    formData.append('table_extraction_mode', 'accurate')
+    formData.append('extract_charts', 'true')
 
     // Custom formatting for technical content
     formData.append('system_prompt_append', `

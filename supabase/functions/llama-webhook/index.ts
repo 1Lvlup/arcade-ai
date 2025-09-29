@@ -192,13 +192,26 @@ serve(async (req) => {
     console.log("📋 Parsed body keys:", Object.keys(body));
     console.log("📋 Full body:", JSON.stringify(body, null, 2));
     
-    const { jobId, md: markdown, json: jsonData, images, charts } = body;
+    const { jobId, md: markdown, json: jsonData, images, charts, pages } = body;
     
     console.log("🔍 Job details:");
     console.log("- jobId:", jobId);
     console.log("- markdown length:", markdown?.length || 0);
     console.log("- has jsonData:", !!jsonData);
     console.log("- images count:", images?.length || 0);
+    console.log("- charts count:", charts?.length || 0);
+    console.log("- pages count:", pages?.length || 0);
+    
+    // Log structure of received data
+    if (images && images.length > 0) {
+      console.log("📸 Images structure:", images[0]);
+    }
+    if (charts && charts.length > 0) {
+      console.log("📊 Charts structure:", charts[0]);
+    }
+    if (pages && pages.length > 0) {
+      console.log("📄 Pages structure:", Object.keys(pages[0]));
+    }
     
     if (!markdown) {
       console.error("❌ CRITICAL: No markdown content received");
@@ -335,24 +348,78 @@ serve(async (req) => {
         .eq('job_id', jobId);
     }
 
-    // STEP 5: Final status update
+    // STEP 5: Process images and figures
+    let figuresProcessed = 0;
+    const allFigures = [...(images || []), ...(charts || [])];
+    
+    if (allFigures.length > 0) {
+      console.log(`🖼️ Processing ${allFigures.length} figures...`);
+      
+      await supabase
+        .from('processing_status')
+        .update({
+          status: 'processing',
+          stage: 'image_processing',
+          current_task: 'Processing images with AI vision analysis',
+          total_figures: allFigures.length,
+          progress_percent: 95
+        })
+        .eq('job_id', jobId);
+
+      for (const figure of allFigures) {
+        try {
+          console.log(`🔄 Processing figure: ${figure.name || figure.id || 'unnamed'}`);
+          
+          // Store figure in database - LlamaCloud provides direct image URLs
+          const figureData = {
+            manual_id: document.manual_id,
+            figure_id: figure.name || figure.id || `figure_${figuresProcessed}`,
+            image_url: figure.url || figure.image_url || figure.path,
+            page_number: figure.page || null,
+            bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
+            llama_asset_name: figure.name || null,
+            fec_tenant_id: document.fec_tenant_id
+          };
+          
+          console.log("📸 Storing figure:", figureData);
+          
+          const { error: figureError } = await supabase
+            .from('figures')
+            .insert(figureData);
+            
+          if (figureError) {
+            console.error("❌ Error storing figure:", figureError);
+          } else {
+            figuresProcessed++;
+            console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
+          }
+        } catch (error) {
+          console.error("❌ Error processing figure:", error);
+        }
+      }
+    }
+
+    // STEP 6: Final status update
     await supabase
       .from('processing_status')
       .update({
         status: 'completed',
         stage: 'completed',
-        current_task: `PREMIUM processing complete: ${processedCount} chunks with advanced AI analysis`,
+        current_task: `PREMIUM processing complete: ${processedCount} chunks, ${figuresProcessed} figures with advanced AI analysis`,
         progress_percent: 100,
-        chunks_processed: processedCount
+        chunks_processed: processedCount,
+        figures_processed: figuresProcessed
       })
       .eq('job_id', jobId);
 
-    console.log(`🎉 Processing completed: ${processedCount} chunks saved`);
+    console.log(`🎉 Processing completed: ${processedCount} chunks, ${figuresProcessed} figures saved`);
     
     return new Response(JSON.stringify({ 
       success: true, 
-      processed: processedCount,
-      total: allChunks.length 
+      chunks_processed: processedCount,
+      total_chunks: allChunks.length,
+      figures_processed: figuresProcessed,
+      total_figures: allFigures.length
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

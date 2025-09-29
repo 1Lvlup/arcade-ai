@@ -5,14 +5,14 @@
 
 @layer base {
   :root {
-    /* Dark gunmetal theme with purple, blue, and white accents */
-    --background: 220 15% 8%;      /* Dark gunmetal */
-    --foreground: 0 0% 95%;        /* Clean white */
+    /* Modern dark blue theme - no white backgrounds */
+    --background: 215 28% 12%;     /* Deep navy background */
+    --foreground: 0 0% 95%;        /* Clean white text */
     
-    --card: 220 12% 12%;           /* Slightly lighter gunmetal */
+    --card: 215 25% 16%;           /* Slightly lighter navy for cards */
     --card-foreground: 0 0% 95%;
     
-    --popover: 220 12% 12%;
+    --popover: 215 25% 16%;
     --popover-foreground: 0 0% 95%;
     
     --primary: 205 100% 55%;       /* Bright electric blue */
@@ -21,17 +21,17 @@
     --secondary: 205 100% 45%;     /* Darker blue */
     --secondary-foreground: 0 0% 95%;
     
-    --muted: 220 8% 16%;           /* Muted gunmetal */
+    --muted: 215 20% 20%;          /* Muted navy */
     --muted-foreground: 0 0% 70%;
     
-    --accent: 0 0% 100%;           /* Pure white for accents */
-    --accent-foreground: 220 15% 8%;
+    --accent: 205 100% 55%;        /* Bright blue for accents */
+    --accent-foreground: 0 0% 95%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 95%;
     
-    --border: 220 10% 20%;         /* Subtle gunmetal border */
-    --input: 220 8% 15%;
+    --border: 215 15% 24%;         /* Subtle navy border */
+    --input: 215 20% 18%;          /* Dark input background */
     --ring: 205 100% 55%;          /* Bright blue ring */
     
     --radius: 0.75rem;

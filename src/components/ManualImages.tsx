@@ -140,17 +140,17 @@ export function ManualImages({ manualId }: ManualImagesProps) {
 
   if (loading) {
     return (
-      <Card className="border-green-200">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-green-900">
+          <CardTitle className="flex items-center space-x-2 text-foreground">
             <Image className="h-6 w-6" />
             <span>Manual Images</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
-            <span className="ml-3 text-gray-600">Loading images...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <span className="ml-3 text-muted-foreground">Loading images...</span>
           </div>
         </CardContent>
       </Card>

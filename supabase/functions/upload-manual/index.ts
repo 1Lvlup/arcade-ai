@@ -101,6 +101,13 @@ Maintain the hierarchical structure of sections and subsections.
     formData.append('merge_tables_across_pages', 'true')
     formData.append('take_screenshot', 'true')
     formData.append('preserve_very_small_text', 'true')
+    
+    // CRITICAL: Enable figure/image extraction
+    formData.append('extract_images', 'true')
+    formData.append('extract_tables', 'true')
+    formData.append('extract_figures', 'true')
+    formData.append('figure_extraction_mode', 'advanced')
+    formData.append('table_extraction_mode', 'advanced')
 
     // Custom formatting for technical content
     formData.append('system_prompt_append', `

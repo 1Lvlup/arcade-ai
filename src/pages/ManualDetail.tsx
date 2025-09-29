@@ -253,8 +253,8 @@ export function ManualDetail() {
       
       <main className="container mx-auto px-6 py-8 space-y-8">
         {/* Header Card */}
-        <Card className="border-blue-200 bg-white shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+        <Card className="border-border bg-card shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-t-lg">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-3xl font-bold flex items-center space-x-3">

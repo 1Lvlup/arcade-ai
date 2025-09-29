@@ -9,884 +9,470 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// FEATURE FLAGS - DEFAULT OFF TO PREVENT EXPENSIVE OPERATIONS IN WEBHOOK
+const ENHANCE_IN_WEBHOOK = (Deno.env.get("ENHANCE_IN_WEBHOOK") ?? "false").toLowerCase() === "true";
+const PROCESS_FIGURES_IN_WEBHOOK = (Deno.env.get("PROCESS_FIGURES_IN_WEBHOOK") ?? "false").toLowerCase() === "true";
+const UPLOAD_FIGURES_IN_WEBHOOK = (Deno.env.get("UPLOAD_FIGURES_IN_WEBHOOK") ?? "false").toLowerCase() === "true";
+const EMBED_FIGURES_IN_WEBHOOK = (Deno.env.get("EMBED_FIGURES_IN_WEBHOOK") ?? "false").toLowerCase() === "true";
+
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
-const awsAccessKeyId = Deno.env.get("AWS_ACCESS_KEY_ID")!;
-const awsSecretAccessKey = Deno.env.get("AWS_SECRET_ACCESS_KEY")!;
-const awsRegion = Deno.env.get("AWS_REGION")!;
-const s3Bucket = Deno.env.get("S3_BUCKET")!;
-
-// Environment variable logging
-console.log("🔑 Environment variables check:");
-console.log(`SUPABASE_URL: ${supabaseUrl ? "✅ Present" : "❌ Missing"}`);
-console.log(`SUPABASE_SERVICE_ROLE_KEY: ${supabaseServiceKey ? "✅ Present" : "❌ Missing"}`);
-console.log(`OPENAI_API_KEY: ${openaiApiKey ? "✅ Present" : "❌ Missing"}`);
-console.log(`AWS_ACCESS_KEY_ID: ${awsAccessKeyId ? "✅ Present" : "❌ Missing"}`);
-console.log(`AWS_SECRET_ACCESS_KEY: ${awsSecretAccessKey ? "✅ Present" : "❌ Missing"}`);
-console.log(`AWS_REGION: ${awsRegion ? "✅ Present" : "❌ Missing"}`);
-console.log(`S3_BUCKET: ${s3Bucket ? "✅ Present" : "❌ Missing"}`);
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const aws = new AwsClient({
-  accessKeyId: awsAccessKeyId,
-  secretAccessKey: awsSecretAccessKey,
-  region: awsRegion,
-  service: "s3",
-});
-
-async function uploadToS3(buffer: Uint8Array, key: string, contentType = "application/octet-stream"): Promise<{httpUrl: string; s3Uri: string; size: number; contentType: string}> {
-  const httpUrl = `https://${s3Bucket}.s3.${awsRegion}.amazonaws.com/${key}`;
-  const s3Uri = `s3://${s3Bucket}/${key}`;
-  
-  const resp = await aws.fetch(httpUrl, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: new Uint8Array(buffer)
-  });
-  const body = await resp.text();
-  if (!resp.ok) throw new Error(`S3 upload failed: ${resp.status} ${resp.statusText} – ${body.slice(0, 1000)}`);
-
-  // (optional) keep your debug logs
-  const magicBytes = Array.from(buffer.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
-  console.log(`🔎 Magic bytes for ${key}: ${magicBytes}`);
-  console.log(`🪣 S3 verify -> key=${key} size=${buffer.length}B type=${contentType}`);
-
-  // Return complete upload metadata
-  return {
-    httpUrl,
-    s3Uri,
-    size: buffer.length,
-    contentType
-  };
+// Robust payload extraction helpers
+type AnyObj = Record<string, any>;
+function pick<T=any>(obj: AnyObj | undefined, path: string, def?: T): T | undefined {
+  if (!obj) return def;
+  return path.split('.').reduce<any>((o, k) => (o && k in o ? o[k] : undefined), obj) ?? def;
 }
 
-async function createEmbedding(text: string) {
-  const input = text.length > 8000 ? text.slice(0, 8000) : text;
+function coalesce<T>(...vals: (T | undefined | null)[]): T | undefined {
+  for (const v of vals) if (v !== undefined && v !== null && v !== '') return v as T;
+  return undefined;
+}
+
+// Batch embeddings for efficiency
+async function createEmbeddingsBatch(texts: string[], model = "text-embedding-3-small") {
+  const inputs = texts.map(text => text.length > 8000 ? text.slice(0, 8000) : text);
   const r = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "text-embedding-3-small", input }),
+    body: JSON.stringify({ model, input: inputs }),
   });
   const t = await r.text();
-  if (!r.ok) throw new Error(`OpenAI embedding failed: ${r.status} ${r.statusText} – ${t.slice(0, 1000)}`);
+  if (!r.ok) throw new Error(`OpenAI batch embedding failed: ${r.status} ${r.statusText} – ${t.slice(0, 1000)}`);
   const data = JSON.parse(t);
-  return data.data[0].embedding as number[];
+  return data.data.map((item: any) => item.embedding as number[]);
 }
-
-/* ============================
-   PATCH START: Image helpers
-   ============================ */
-
-// Universal image resolver (string/URL/object) → bytes + contentType + ext
-async function resolveImageInput(imageInput: any): Promise<{buffer: Uint8Array, contentType: string, ext: string}> {
-  let base64Data = "";
-  let contentType = "image/png";
-
-  // Accept strings: data URLs, http(s) URLs, raw base64
-  if (typeof imageInput === "string") {
-    if (imageInput.startsWith("data:")) {
-      const [header, data] = imageInput.split(",");
-      if (!header || !data) throw new Error("Invalid data URL format");
-      const mimeMatch = header.match(/data:([^;]+)/);
-      if (mimeMatch) contentType = mimeMatch[1];
-      base64Data = data;
-    } else if (imageInput.startsWith("http")) {
-      const response = await fetch(imageInput);
-      if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
-      contentType = response.headers.get("content-type") || "image/png";
-      const arrayBuffer = await response.arrayBuffer();
-      base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    } else {
-      base64Data = imageInput; // raw base64
-    }
-  } else if (imageInput && typeof imageInput === "object") {
-    // Try common keys: data/base64/b64_json/image_data/url/content
-    const keys = ["data", "base64", "b64_json", "image_data", "url", "content"];
-    for (const k of keys) {
-      if (imageInput[k]) {
-        return resolveImageInput(imageInput[k]); // recurse
-      }
-    }
-    throw new Error("No recognized image data key found in object");
-  } else {
-    throw new Error(`Unsupported image input type: ${typeof imageInput}`);
-  }
-
-  // Validate base64
-  if (!base64Data || base64Data.length < 100) throw new Error(`Base64 too short: ${base64Data?.length || 0}`);
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Data)) throw new Error("Invalid base64 format");
-
-  // Convert to bytes
-  let buffer: Uint8Array;
-  try {
-    const bin = atob(base64Data);
-    buffer = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) buffer[i] = bin.charCodeAt(i);
-  } catch {
-    throw new Error("Base64 decode failed");
-  }
-  if (buffer.length < 100) throw new Error(`Decoded buffer too small: ${buffer.length} bytes`);
-
-  // Sniff common mime types by magic bytes if unknown
-  if (contentType === "image/png" && buffer.length >= 4) {
-    if (buffer[0] === 0xff && buffer[1] === 0xd8) contentType = "image/jpeg";
-    else if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) contentType = "image/gif";
-    else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) contentType = "image/webp";
-  }
-  const ext =
-    contentType.includes("jpeg") ? "jpg" :
-    contentType.includes("gif") ? "gif" :
-    contentType.includes("webp") ? "webp" : "png";
-
-  return { buffer, contentType, ext };
-}
-
-// Collect all plausible sources for a given image name from payload
-function findAllImageSources(payload: any, imageName: string): any[] {
-  const sources: any[] = [];
-  if (!payload?.images) return sources;
-
-  try {
-    if (Array.isArray(payload.images)) {
-      // Array of strings or objects
-      const nameMatch = payload.images.find((x: any) => typeof x === "string" && x.includes(imageName));
-      if (nameMatch) sources.push(nameMatch);
-
-      const objectMatches = payload.images.filter(
-        (x: any) => x && typeof x === "object" && (x.name === imageName || x.filename === imageName || x.id === imageName),
-      );
-      sources.push(...objectMatches);
-
-      // Index-aligned fallback if counts happen to match
-      if (payload.json && Array.isArray(payload.json)) {
-        for (const page of payload.json) {
-          if (page.images && Array.isArray(page.images)) {
-            const idx = page.images.findIndex((img: any) => img.name === imageName);
-            if (idx >= 0 && idx < payload.images.length) sources.push(payload.images[idx]);
-          }
-        }
-      }
-    } else if (typeof payload.images === "object") {
-      // Object keyed by name variations
-      const direct = payload.images[imageName];
-      if (direct) sources.push(direct);
-
-      const base = imageName?.replace(/\.[^/.]+$/, "");
-      if (payload.images[base]) sources.push(payload.images[base]);
-
-      const variations = [
-        imageName?.toLowerCase(),
-        imageName?.toUpperCase(),
-        `img_${imageName}`,
-        `figure_${imageName}`,
-      ].filter(Boolean);
-      for (const v of variations) {
-        if (payload.images[v]) sources.push(payload.images[v]);
-      }
-    }
-
-    // Embedded in page JSON
-    if (Array.isArray(payload.json)) {
-      for (const page of payload.json) {
-        if (page.images && Array.isArray(page.images)) {
-          for (const img of page.images) {
-            if (img.name === imageName) {
-              const embeddedKeys = ["data", "base64", "image_data", "url", "src"];
-              for (const k of embeddedKeys) if (img[k]) sources.push(img[k]);
-            }
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.warn(`⚠️ Error detecting sources for ${imageName}:`, e);
-  }
-
-  return sources;
-}
-/* ============================
-   PATCH END: Image helpers
-   ============================ */
-
-// Fetch an image file (bytes) from LlamaCloud result images by jobId + filename
-async function fetchImageFromLlama(jobId: string, filename: string): Promise<{buffer: Uint8Array, contentType: string, ext: string}> {
-  // LlamaCloud correct image result endpoint
-  const url = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${encodeURIComponent(jobId)}/result/image/${encodeURIComponent(filename)}`;
-
-  const resp = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${Deno.env.get("LLAMACLOUD_API_KEY")!}`
-    }
-  });
-
-  if (!resp.ok) {
-    const txt = await resp.text();
-    throw new Error(`Llama assets fetch failed (${resp.status} ${resp.statusText}) for ${filename}: ${txt.slice(0, 500)}`);
-  }
-
-  // Get content-type and bytes
-  const contentType = resp.headers.get("content-type") || "image/png";
-  const arr = new Uint8Array(await resp.arrayBuffer());
-
-  let ext = "png";
-  if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = "jpg";
-  else if (contentType.includes("gif")) ext = "gif";
-  else if (contentType.includes("webp")) ext = "webp";
-
-  if (arr.length < 100) {
-    throw new Error(`Downloaded asset too small (${arr.length} bytes) for ${filename}`);
-  }
-
-  return { buffer: arr, contentType, ext };
-}
-
-// Vision analysis (single, correct version)
-async function analyzeFigureWithVision(imageData: string, context: string) {
-  if (!openaiApiKey) {
-    console.error("❌ OPENAI_API_KEY not available - skipping vision analysis");
-    return null;
-  }
-  
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Analyze this technical diagram from an arcade game manual. Context: ${context}.
-              Focus on: (1) components/labels, (2) wiring/connectors, (3) specs/part numbers, (4) troubleshooting hints, (5) safety notes. Be specific.`,
-            },
-            {
-              type: "image_url", 
-              image_url: { url: imageData },
-            },
-          ],
-        }],
-        max_tokens: 500,
-        temperature: 0.3,
-      }),
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ Vision analysis failed: ${response.status} ${response.statusText} - ${errorText.slice(0, 300)}`);
-      return null;
-    }
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || null;
-  } catch (error) {
-    console.error(`❌ Vision analysis error:`, error);
-    return null;
-  }
-}
-
-// AI-powered OCR and caption generation for figures
-async function enhanceFigureWithAI(imageData: string, context: string): Promise<{caption: string | null, ocrText: string | null}> {
-  if (!openaiApiKey) {
-    console.error("❌ OPENAI_API_KEY not available - skipping AI enhancement");
-    return {caption: null, ocrText: null};
-  }
-  
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{
-          role: "system",
-          content: `You are an expert at analyzing technical diagrams and images from arcade game manuals. Your job is to:
-1. Generate a descriptive caption for the image (focus on what it shows functionally)
-2. Extract any visible text from the image (OCR)
-
-Respond in JSON format:
-{
-  "caption": "Brief descriptive caption of what the image shows",
-  "ocr_text": "All visible text extracted from the image, or null if no text"
-}`
-        }, {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Analyze this image from an arcade game manual. Context: ${context}. Provide a caption and extract any text.`
-            },
-            {
-              type: "image_url",
-              image_url: { url: imageData }
-            }
-          ]
-        }],
-        max_tokens: 300,
-        temperature: 0.1,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn(`⚠️ OpenAI API failed: ${response.status} ${response.statusText} - ${errorText.slice(0, 200)}`);
-      return {caption: null, ocrText: null};
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    
-    if (!content) return {caption: null, ocrText: null};
-
-    try {
-      const parsed = JSON.parse(content);
-      return {
-        caption: parsed.caption || null,
-        ocrText: parsed.ocr_text || null
-      };
-    } catch {
-      // Fallback: treat the response as a caption
-      return {caption: content.slice(0, 200), ocrText: null};
-    }
-  } catch (error) {
-    console.warn(`⚠️ Figure enhancement failed:`, error);
-    return {caption: null, ocrText: null};
-  }
-}
-
 
 // Semantic chunking with hierarchical structure
-function extractSemanticChunks(jsonData: any[]): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string; chunk_type?: string; parent_id?: string}> {
-  const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string; chunk_type?: string; parent_id?: string}> = [];
+function extractSemanticChunks(jsonData: any[]): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> {
+  const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
 
   for (const page of jsonData) {
     if (!page.blocks || !Array.isArray(page.blocks)) continue;
 
     let currentSection = "";
-    let currentSubsection = "";
     let currentContent = "";
     const pageNum = page.page || null;
-    let sectionId = "";
 
     for (const block of page.blocks) {
       const blockText = block.content || block.text || "";
       if (!blockText.trim()) continue;
 
-      // junk filter
+      // Filter out junk content
       if (
         blockText.match(/^[A-Z0-9_]+\.(VSD|PDF|DOC|DWG)$/i) ||
         blockText.match(/^[#\d\s\-_]+$/) ||
-        blockText.match(/^(FILENAME|ENGINEER|DRAWN BY|DATE|REVISED|PAGE \d+ OF \d+|VENDOR|COPYRIGHT|PROPRIETARY)[\s\d]*$/i) ||
-        blockText.length < 15 ||
-        blockText.match(/^(Figure|Fig|Diagram|Table|Chart)\s*\d*$/i)
+        blockText.length < 15
       ) continue;
 
       const isMainTitle = blockText.match(/^[A-Z\s&]{5,}$/) || block.block_type === "title";
-      const isSubtitle = blockText.match(/^\d+\.\s/) || blockText.match(/^[A-Z][a-z\s]+:$/);
-      const isTOC = blockText.toLowerCase().includes("table of contents");
-      if (isTOC) continue;
-
-      if (isMainTitle && !isSubtitle) {
+      
+      if (isMainTitle) {
         if (currentContent.trim() && currentContent.length > 100) {
           chunks.push({
             content: `${currentSection}\n\n${currentContent}`.trim(),
             page_start: pageNum,
             page_end: pageNum,
             menu_path: currentSection,
-            chunk_type: "section",
-            parent_id: sectionId,
           });
         }
         currentSection = blockText.trim();
-        currentSubsection = "";
-        currentContent = "";
-        sectionId = crypto.randomUUID();
-      } else if (isSubtitle) {
-        if (currentContent.trim() && currentContent.length > 80) {
-          chunks.push({
-            content: `${currentSection}\n${currentSubsection}\n\n${currentContent}`.trim(),
-            page_start: pageNum,
-            page_end: pageNum,
-            menu_path: `${currentSection} > ${currentSubsection}`,
-            chunk_type: "subsection",
-            parent_id: sectionId,
-          });
-        }
-        currentSubsection = blockText.trim();
         currentContent = "";
       } else {
-        currentContent += blockText + "\n\n";
+        currentContent += blockText + "\n";
       }
     }
 
-    if (currentContent.trim() && currentContent.length > 80) {
+    // Add final chunk if exists
+    if (currentContent.trim() && currentContent.length > 100) {
       chunks.push({
-        content: `${currentSection}\n${currentSubsection}\n\n${currentContent}`.trim(),
+        content: `${currentSection}\n\n${currentContent}`.trim(),
         page_start: pageNum,
         page_end: pageNum,
-        menu_path: currentSubsection ? `${currentSection} > ${currentSubsection}` : currentSection,
-        chunk_type: currentSubsection ? "subsection" : "section",
-        parent_id: sectionId,
+        menu_path: currentSection,
       });
     }
   }
 
-  // dedupe by semantic fingerprint
-  const deduped: typeof chunks = [];
-  const seen = new Map<string, typeof chunks[0]>();
-  for (const ch of chunks) {
-    const fingerprint = ch.content.toLowerCase().replace(/\s+/g, " ").trim().slice(0, 150);
-    const existing = seen.get(fingerprint);
-    if (!existing || ch.content.length > existing.content.length) seen.set(fingerprint, ch);
-  }
-  return Array.from(seen.values());
+  return chunks;
 }
 
-// Markdown fallback
-function extractChunksFromMarkdown(text: string): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> {
+// Simple markdown chunking fallback
+function extractChunksFromMarkdown(markdown: string): Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> {
   const chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
-  const sections = text.split(/^#{2,3}\s+(.+)$/m);
+  
+  // Split by headers and process
+  const sections = markdown.split(/^#{1,3}\s+(.+)$/gm);
+  
   for (let i = 1; i < sections.length; i += 2) {
-    const heading = sections[i]?.trim();
+    const title = sections[i];
     const content = sections[i + 1]?.trim();
-    if (content && content.length > 120 && !content.match(/^(FILENAME|ENGINEER|DRAWN BY|COPYRIGHT|PROPRIETARY)/i)) {
-      chunks.push({ content: heading ? `${heading}\n\n${content}` : content, menu_path: heading || undefined });
+    
+    if (content && content.length > 100) {
+      chunks.push({
+        content: `${title}\n\n${content}`,
+        menu_path: title,
+      });
     }
   }
-  if (chunks.length === 0) {
-    const paras = text.split(/\n\s*\n/).filter((p) => p.trim().length > 150);
-    for (const para of paras) if (!para.match(/^(FILENAME|ENGINEER|DRAWN BY|COPYRIGHT)/i)) chunks.push({ content: para.trim() });
-  }
+  
   return chunks;
 }
 
-// Plain text fallback
-function chunkPlainText(text: string): Array<{content: string}> {
-  const chunks: Array<{content: string}> = [];
-  const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 50);
-  const chunkSize = 5;
-  for (let i = 0; i < sentences.length; i += chunkSize) {
-    const chunk = sentences.slice(i, i + chunkSize).join(". ").trim();
-    if (chunk.length > 120 && !chunk.match(/^(FILENAME|ENGINEER|DRAWN BY)/i)) chunks.push({ content: chunk });
-  }
-  return chunks;
-}
-
-// Helper to infer page numbers from filenames or indices
-function inferPageNumber(nameOrKey?: string, idx?: number | null) {
-  const s = String(nameOrKey || "");
-
-  // Common patterns: "page_12", "page-012", "p12", "p_12", "Page 7", "img_p21_1.png"
-  const m =
-    s.match(/page[_\-\s]?(\d{1,4})/i) ||
-    s.match(/\bp(?:age)?[_\-\s]?(\d{1,4})\b/i) ||
-    s.match(/img_p(\d{1,4})/i) || // LlamaCloud format like "img_p21_1.png"
-    // trailing number before extension: "..._003.png"
-    s.match(/[_\-](\d{1,4})\.(?:png|jpe?g|gif|webp|bmp|tiff?)$/i);
-
-  if (m) {
-    const n = parseInt(m[1], 10);
-    if (!Number.isNaN(n)) return n;
-  }
-
-  // As a last resort, if you believe images[] order ≈ page order
-  if (typeof idx === "number") return idx + 1; // 1-based page guess
-
-  return null;
-}
-
+// Main handler
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  console.log("PHASE 0: begin webhook");
 
   try {
-    console.log("LlamaCloud webhook received");
-    const payload = await req.json();
+    // Extract body data with robust parsing
+    const raw = await req.json().catch(() => ({}));
+    console.log("📥 Request body keys:", Object.keys(raw));
 
-    console.log("Webhook payload keys:", Object.keys(payload || {}));
-    console.log("Webhook sample (trimmed):", JSON.stringify(payload).slice(0, 2000));
+    // Try multiple locations for each required field
+    const manual_id = coalesce<string>(
+      raw.manual_id,
+      pick(raw, 'document.id'),
+      pick(raw, 'data.document_id'),
+      pick(raw, 'metadata.manual_id'),
+    );
+    const job_id = coalesce<string>(
+      raw.job_id,
+      raw.jobId,
+      pick(raw, 'job.id'),
+      pick(raw, 'data.job_id'),
+      pick(raw, 'metadata.job_id'),
+    );
+    const title = coalesce<string>(
+      raw.title,
+      pick(raw, 'document.title'),
+      pick(raw, 'data.title'),
+      'Untitled Manual'
+    );
+    let tenant_id = coalesce<string>(
+      raw.tenant_id,
+      raw.fec_tenant_id,
+      pick(raw, 'metadata.tenant_id'),
+      pick(raw, 'data.tenant_id'),
+    );
+    const user_id = coalesce<string>(
+      raw.user_id,
+      pick(raw, 'metadata.user_id'),
+      pick(raw, 'data.user_id'),
+    );
 
-    const jobId = payload.jobId;
-    if (!jobId) throw new Error("No jobId found in payload");
-
-    const { data: docData, error: docError } = await supabase
-      .from("documents")
-      .select("manual_id, fec_tenant_id")
-      .eq("job_id", jobId)
-      .single();
-
-    if (docError || !docData) {
-      console.error("Failed to find document with job_id:", jobId, docError);
-      throw new Error(`No document found for job_id: ${jobId}`);
-    }
-
-    await supabase.rpc("set_tenant_context", { tenant_id: docData.fec_tenant_id });
-    console.log(`Set tenant context: ${docData.fec_tenant_id}`);
-
-    const manual_id = docData.manual_id;
-    console.log(`Processing manual: ${manual_id} (job: ${jobId})`);
-
-    // Clear old data
-    console.log("🧹 Clearing old data for safe re-ingestion...");
-    await supabase.from("chunks_text").delete().eq("manual_id", manual_id);
-    await supabase.from("figures").delete().eq("manual_id", manual_id);
-    console.log("✅ Old data cleared successfully");
-
-    // Extract chunks (JSON → MD → TXT)
-    let chunks: any[] = [];
-    if (payload.json && Array.isArray(payload.json)) {
-      chunks = extractSemanticChunks(payload.json);
-      console.log(`Extracted ${chunks.length} semantic chunks with hierarchical structure`);
-    }
-    if (chunks.length === 0) {
-      console.warn("No chunks from JSON, falling back to markdown");
-      const md = payload.md || "";
-      if (md) {
-        chunks = extractChunksFromMarkdown(md);
-        console.log(`Fallback: Extracted ${chunks.length} chunks from markdown`);
-      }
-    }
-    if (chunks.length === 0) {
-      console.warn("No chunks from markdown, falling back to plain text");
-      const txt = payload.txt || "";
-      if (txt) {
-        chunks = chunkPlainText(txt);
-        console.log(`Fallback: Extracted ${chunks.length} chunks from plain text`);
-      }
-    }
-
-    /* ============================
-       PATCH START: Figures section
-       ============================ */
-    const figures: Array<{
-      figure_id: string;
-      image_sources: any[];
-      llama_asset_name: string | null;
-      caption_text: string | null;
-      ocr_text: string | null;
-      page_number: number | null;
-      callouts: any;
-      bbox_pdf_coords: string | null;
-    }> = [];
-
-    console.log("🖼️ Starting figure extraction...", {
-      hasJson: !!payload.json,
-      hasImages: !!payload.images,
-      jsonLength: Array.isArray(payload.json) ? payload.json.length : 0,
-      imagesType: typeof payload.images,
-      imagesLength: Array.isArray(payload.images) ? payload.images.length : (payload.images ? Object.keys(payload.images).length : 0),
+    console.log('PHASE 0: payload received', {
+      have_manual: !!manual_id,
+      have_job: !!job_id,
+      have_tenant: !!tenant_id,
+      title,
+      sample_keys: Object.keys(raw).slice(0, 10)
     });
 
-    if (payload.json && Array.isArray(payload.json)) {
-      for (const page of payload.json) {
-        if (page.images && Array.isArray(page.images)) {
-          console.log(`📄 Page ${page.page} has ${page.images.length} images`);
-          for (const img of page.images) {
-            const imageName = img.name || `page${page.page}_img`;
-            const imageSources = findAllImageSources(payload, imageName);
-
-            console.log(`🔍 Image source detection for ${imageName}:`, {
-              sourcesFound: imageSources.length,
-              sourceTypes: imageSources.map((s) => typeof s),
-              sourcePreview: imageSources.map((s) =>
-                typeof s === "string" ? s.slice(0, 50) + "..." : (s && typeof s === "object" ? Object.keys(s) : String(s)),
-              ),
-            });
-
-            figures.push({
-              figure_id: imageName.replace(/\.[^/.]+$/, "") || crypto.randomUUID(),
-              image_sources: imageSources,
-              llama_asset_name: imageName || null, // Add asset name for fallback
-              caption_text: img.caption || img.alt || null,
-              ocr_text: img.text || null,
-              page_number: page.page ?? null,
-              callouts: img.callouts ?? null,
-              bbox_pdf_coords: JSON.stringify({
-                x: img.x || 0,
-                y: img.y || 0,
-                width: img.width || 0,
-                height: img.height || 0,
-              }),
-            });
-          }
-        }
-      }
-    }
-
-    // If JSON didn't yield figures but payload.images exists, fall back to images-only ingestion
-    if (figures.length === 0 && payload.images) {
-      console.log("🧯 No page JSON, but payload.images present — using assets-only path…");
-      const imgs = Array.isArray(payload.images)
-        ? payload.images
-        : Object.keys(payload.images || {});
-      for (const name of imgs.slice(0, 3)) {
-        console.log("  sample image entry:", typeof name === "string" ? name : JSON.stringify(name).slice(0, 120));
-      }
-
-      // Minimal figures from image list
-      const list = Array.isArray(payload.images) ? payload.images : Object.keys(payload.images);
-      for (const raw of list) {
-        const name = typeof raw === "string" ? raw : raw?.name || String(raw);
-        figures.push({
-          figure_id: name.replace(/\.[^/.]+$/, ""),
-          image_sources: [],                // none inline
-          llama_asset_name: name,           // use assets fallback
-          caption_text: null,
-          ocr_text: null,
-          page_number: null,                // no page info available
-          callouts: null,
-          bbox_pdf_coords: null
-        });
-      }
-      console.log(`🧩 Staged ${figures.length} figures from images-only list`);
-    }
-
-
-    console.log(`Found ${figures.length} figures to process`);
-
-    let processedFigures = 0;
-    let skippedFigures = 0;
-    const processingErrors: Array<{ figure_id: string; error: string; sources_tried: number }> = [];
-
-    console.log(`🔄 Processing ${figures.length} figures...`);
-
-    for (let i = 0; i < figures.length; i++) {
-      const fig = figures[i];
-      console.log(`📷 Processing figure ${i + 1}/${figures.length}: ${fig.figure_id}`);
-
-      try {
-        if ((!fig.image_sources || fig.image_sources.length === 0) && !fig.llama_asset_name) {
-          console.warn(`⚠️ Skipping ${fig.figure_id}: no image sources and no asset name`);
-          skippedFigures++;
-          processingErrors.push({ figure_id: fig.figure_id, error: "No image sources or asset name found", sources_tried: 0 });
-          continue;
-        }
-
-        // Try multiple sources until one resolves
-        let resolved: { buffer: Uint8Array; contentType: string; ext: string } | null = null;
-        let tried = 0;
-        let lastErr = "";
-
-        for (const src of fig.image_sources) {
-          tried++;
-          try {
-            resolved = await resolveImageInput(src);
-            console.log(`✅ Resolved ${fig.figure_id} from source ${tried}: ${resolved.buffer.length} bytes (${resolved.contentType})`);
-            break;
-          } catch (e: any) {
-            lastErr = e?.message || String(e);
-            console.warn(`⚠️ Source ${tried} failed for ${fig.figure_id}: ${lastErr}`);
-          }
-        }
-
-        // If we still don't have a resolved image, try LlamaCloud assets by filename
-        if (!resolved && fig.llama_asset_name) {
-          try {
-            console.log(`🪄 Falling back to Llama assets for ${fig.llama_asset_name}`);
-            const fetched = await fetchImageFromLlama(jobId, fig.llama_asset_name);
-            resolved = fetched;
-            console.log(`✅ Asset fetch succeeded for ${fig.llama_asset_name} (${fetched.buffer.length} bytes)`);
-          } catch (assetErr) {
-            console.warn(`⚠️ Asset fetch failed for ${fig.llama_asset_name}:`, assetErr);
-          }
-        }
-
-        if (!resolved) {
-          console.error(`❌ All ${tried} sources failed for ${fig.figure_id}. Last: ${lastErr}`);
-          skippedFigures++;
-          processingErrors.push({ figure_id: fig.figure_id, error: `All sources failed. Last: ${lastErr}`, sources_tried: tried });
-          continue;
-        }
-
-       // Upload to S3 (with retry)
-const key = `manuals/${manual_id}/${fig.figure_id}.${resolved.ext}`;
-
-let uploadInfo: { httpUrl: string; s3Uri: string; size: number; contentType: string } | null = null;
-let uploadAttempts = 0;
-const maxRetries = 2;
-
-while (uploadAttempts <= maxRetries) {
-  try {
-    uploadInfo = await uploadToS3(resolved.buffer, key, resolved.contentType);
-    console.log(`📤 Uploaded ${fig.figure_id} to S3: ${uploadInfo.httpUrl}`);
-    break;
-  } catch (uploadError) {
-    uploadAttempts++;
-    console.warn(`⚠️ S3 upload attempt ${uploadAttempts} failed for ${fig.figure_id}:`, uploadError);
-    if (uploadAttempts > maxRetries) throw uploadError;
-    await new Promise(r => setTimeout(r, 1000));
-  }
-}
-
-if (!uploadInfo) throw new Error(`Upload never succeeded for ${fig.figure_id}`);
-
-        // Enhanced figure processing with AI caption and OCR
-        let enhancedCaption = fig.caption_text;
-        let enhancedOcr = fig.ocr_text;
-        let visionAnalysis: string | null = null;
+    // If we don't have manual_id/tenant_id from payload, try to get from existing document
+    if (!manual_id || !tenant_id) {
+      if (job_id) {
+        const { data: doc } = await supabase
+          .from("documents")
+          .select("manual_id, fec_tenant_id")
+          .eq("job_id", job_id)
+          .maybeSingle();
         
-        try {
-          // Build imageDataUri using the S3 URL we just uploaded
-          // This ensures OpenAI vision API gets a valid, accessible URL
-          let imageDataUri: string | null = null;
-          
-          if (uploadInfo?.httpUrl) {
-            // Use the S3 URL that was just uploaded - this is publicly accessible
-            imageDataUri = uploadInfo.httpUrl;
-            console.log(`🔗 Using S3 URL for vision analysis: ${fig.figure_id} -> ${imageDataUri}`);
-          } else if (resolved?.buffer) {
-            // Fallback: create base64 data URI from resolved buffer
-            const base64Data = btoa(String.fromCharCode(...resolved.buffer));
-            imageDataUri = `data:${resolved.contentType};base64,${base64Data}`;
-            console.log(`🔧 Created base64 data URI for vision analysis from resolved buffer: ${fig.figure_id}`);
+        if (doc) {
+          if (!manual_id) {
+            console.log("📄 Found manual_id from existing document:", doc.manual_id);
           }
-
-          if (imageDataUri) {
-            const context = `Manual: ${manual_id}, Page: ${fig.page_number}`;
-            
-            console.log(`🔍 Vision processing enabled for ${fig.figure_id} - imageDataUri available`);
-            
-            // Get AI enhancement if we don't have good caption/OCR (aligned with quality-check threshold)
-            const needsEnhancement = !enhancedCaption || enhancedCaption.length < 50 || !enhancedOcr;
-            if (needsEnhancement) {
-              if (!openaiApiKey) {
-                console.log(`⚠️ AI enhancement SKIPPED for ${fig.figure_id} - OPENAI_API_KEY not available`);
-              } else {
-                console.log(`🔍 Enhancing figure ${fig.figure_id} with AI...`);
-                const enhancement = await enhanceFigureWithAI(imageDataUri, context);
-                if (enhancement.caption && (!enhancedCaption || enhancedCaption.length < 50)) {
-                  enhancedCaption = enhancement.caption;
-                  console.log(`✨ Generated caption for ${fig.figure_id}: ${enhancedCaption.slice(0, 50)}...`);
-                }
-                if (enhancement.ocrText && !enhancedOcr) {
-                  enhancedOcr = enhancement.ocrText;
-                  console.log(`📝 Extracted OCR for ${fig.figure_id}: ${enhancedOcr.slice(0, 50)}...`);
-                }
-              }
-            } else {
-              console.log(`✅ Enhancement skipped for ${fig.figure_id} - already has good caption/OCR`);
-            }
-
-            // Get vision analysis for additional context
-            visionAnalysis = await analyzeFigureWithVision(imageDataUri, context);
-            console.log(`🔮 Vision analysis ${visionAnalysis ? 'completed' : 'failed'} for ${fig.figure_id}`);
-          } else {
-            console.log(`⚠️ Vision enhancement SKIPPED for ${fig.figure_id} - no valid imageDataUri available`);
+          if (!tenant_id) {
+            tenant_id = doc.fec_tenant_id;
+            console.log("🏢 Found tenant_id from existing document:", tenant_id);
           }
-        } catch (vErr) {
-          console.warn(`⚠️ Vision/Enhancement failed for ${fig.figure_id}:`, vErr);
-        }
-
-        const figureContent = [enhancedCaption || "", enhancedOcr || "", visionAnalysis || ""].filter(Boolean).join("\n");
-        let embedding: number[] | null = null;
-        if (figureContent.length > 10) {
-      try {
-        embedding = await createEmbedding(figureContent);
-        console.log(`🔗 Generated figure embedding (${embedding.length} dimensions): ${fig.figure_id}`);
-      } catch (embErr) {
-        const errorMessage = embErr instanceof Error ? embErr.message : String(embErr);
-        console.error(`❌ Figure embedding failed for ${fig.figure_id}:`, errorMessage);
-      }
-        }
-
-        console.log(`💾 Inserting figure: ${fig.figure_id}, URL: ${uploadInfo!.httpUrl}, Size: ${uploadInfo!.size} bytes`);
-        
-        const { error: figureInsertError } = await supabase.from("figures").upsert({
-          manual_id,
-          page_number: fig.page_number ?? null,
-          figure_id: fig.figure_id,
-          image_url: uploadInfo!.httpUrl,
-          caption_text: enhancedCaption ?? null,
-          ocr_text: enhancedOcr ?? null,
-          vision_text: visionAnalysis ?? null,
-          callouts_json: fig.callouts ?? null,
-          bbox_pdf_coords: fig.bbox_pdf_coords ?? null,
-          embedding_text: embedding,
-          fec_tenant_id: docData.fec_tenant_id,
-        }, {
-          onConflict: 'manual_id,figure_id'
-        });
-        if (figureInsertError) {
-          console.error(`❌ DB insert failed for ${fig.figure_id}:`, figureInsertError);
-        } else {
-          processedFigures++;
-          console.log(`✅ Stored figure ${fig.figure_id}`);
-        }
-      } catch (e) {
-        console.error(`❌ Critical error processing figure ${fig.figure_id}:`, e);
-        skippedFigures++;
-      }
-    }
-
-    console.log(`📊 Figure processing summary: ${processedFigures} processed, ${skippedFigures} skipped`);
-
-    if (skippedFigures) {
-      console.log("🔍 Figure failure summary recorded");
-    }
-    /* ============================
-       PATCH END: Figures section
-       ============================ */
-
-    // Chunks → embeddings → DB
-    let processedChunks = 0;
-    if (chunks && chunks.length > 0) {
-      console.log(`Processing ${chunks.length} quality chunks`);
-      for (const ch of chunks) {
-        try {
-          const embedding = await createEmbedding(ch.content);
-          const { error: insErr } = await supabase.from("chunks_text").insert({
-            manual_id,
-            page_start: ch.page_start ?? null,
-            page_end: ch.page_end ?? null,
-            menu_path: ch.menu_path ?? null,
-            content: ch.content,
-            embedding,
-            fec_tenant_id: docData.fec_tenant_id,
-            // NOTE: content_hash is a generated column (md5(content)) — do not set manually
-          });
-          if (insErr) console.error("chunks_text insert error:", insErr);
-          else processedChunks++;
-        } catch (e) {
-          console.error("Chunk embed/insert error:", e);
         }
       }
     }
 
-    // Update document & processing status
-    await supabase.from("documents").update({ updated_at: new Date().toISOString() }).eq("manual_id", manual_id);
+    // HARD REQUIREMENTS: manual + job. We'll derive tenant if missing
+    if (!manual_id || !job_id) {
+      console.error("❌ Missing required fields after extraction:", { 
+        manual_id, 
+        job_id, 
+        tenant_id, 
+        bodyKeys: Object.keys(raw) 
+      });
+      return new Response(JSON.stringify({
+        ok: false,
+        error: 'Missing required fields',
+        details: { manual_id, job_id, title, tenant_id, sample_keys: Object.keys(raw).slice(0, 20) }
+      }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
-    await supabase.from("processing_status").upsert({
-      job_id: jobId,
+    // If tenant_id missing, try to derive from profiles using user_id (optional)
+    if (!tenant_id && user_id) {
+      const { data: prof } = await supabase.from('profiles')
+        .select('fec_tenant_id')
+        .eq('user_id', user_id)
+        .maybeSingle();
+      tenant_id = prof?.fec_tenant_id;
+    }
+    if (!tenant_id) {
+      // final fallback default
+      tenant_id = '00000000-0000-0000-0000-000000000001';
+    }
+
+    // Set tenant context for RLS
+    const { error: tenantError } = await supabase.rpc('set_tenant_context', { tenant_id });
+    if (tenantError) {
+      console.error("❌ Failed to set tenant context:", tenantError);
+      throw tenantError;
+    }
+
+    // Upsert document & mark status first - ACK quickly
+    const { error: docErr } = await supabase.from('documents').upsert({
       manual_id,
-      status: "completed",
-      stage: "finished",
-      current_task: `Processing complete - ${processedFigures} / ${figures.length} figures successful`,
-      progress_percent: 100,
-      total_chunks: chunks.length,
-      chunks_processed: processedChunks,
-      total_figures: figures.length,
-      figures_processed: processedFigures,
-      fec_tenant_id: docData.fec_tenant_id,
+      title,
+      job_id,
+      fec_tenant_id: tenant_id,
+    }, { onConflict: 'manual_id' });
+    if (docErr) {
+      console.error("❌ Document upsert failed:", docErr);
+      throw docErr;
+    }
+
+    await supabase.from('processing_status').upsert({
+      manual_id,
+      job_id,
+      fec_tenant_id: tenant_id,
+      status: 'processing',
+      stage: 'text_extraction',
+      chunks_processed: 0,
+      total_chunks: 0,
       updated_at: new Date().toISOString(),
-    }, { onConflict: "job_id" });
+    }, { onConflict: 'manual_id' });
 
-    console.log(`✅ Processing complete: ${processedChunks}/${chunks.length} chunks, ${processedFigures}/${figures.length} figures for manual ${manual_id}`);
-    return new Response(JSON.stringify({
-      success: true,
+    // --- PHASE A: TEXT PROCESSING (AUTO) ---
+    console.log("PHASE A: text -> start");
+
+    // Get parse payload (prefer JSON; fallback to markdown or refetch by job_id)
+    const payload = await getLlamaPayload(req, job_id);
+    console.log("PAYLOAD KEYS", Object.keys(payload || {}));
+    console.log("pages?", !!payload?.pages, "markdown?", !!payload?.markdown);
+
+    let chunks: Array<{content: string; page_start?: number; page_end?: number; menu_path?: string}> = [];
+    if (payload?.pages) {
+      chunks = extractSemanticChunks(payload.pages);
+      console.log("PHASE A: text -> extracted from JSON", { count: chunks.length });
+    }
+    if (chunks.length === 0 && payload?.markdown) {
+      chunks = extractChunksFromMarkdown(payload.markdown);
+      console.log("PHASE A: text -> extracted from MD", { count: chunks.length });
+    }
+
+    if (!chunks.length) {
+      console.log("PHASE A: text -> NO CHUNKS FOUND");
+    } else {
+      // Batch embeddings to reduce API calls (e.g., 64 at a time)
+      const BATCH = 64;
+      let inserted = 0;
+      for (let i = 0; i < chunks.length; i += BATCH) {
+        const batch = chunks.slice(i, i + BATCH);
+        const inputs = batch.map(c => c.content);
+        const emb = await createEmbeddingsBatch(inputs, "text-embedding-3-small");
+        const rows = batch.map((c, idx) => ({
+          manual_id,
+          page_start: c.page_start ?? null,
+          page_end: c.page_end ?? null,
+          menu_path: c.menu_path ?? null,
+          content: c.content,
+          embedding: emb[idx],
+          fec_tenant_id: tenant_id,
+        }));
+        const { error } = await supabase.from("chunks_text").insert(rows);
+        if (error) throw error;
+        inserted += rows.length;
+        console.log("PHASE A: text -> inserted", { inserted, total: chunks.length });
+      }
+    }
+
+    console.log("PHASE A: text -> done", { chunks: chunks.length });
+
+    // --- PHASE B: FIGURES (METADATA ONLY) ---
+    console.log("PHASE B: figures -> start");
+
+    const figures = payload?.figures ?? extractFiguresMeta(payload);
+    const figureRows = (figures || []).map((f: any) => ({
       manual_id,
-      processed_chunks: processedChunks,
+      figure_id: f.figure_id,
+      page_number: f.page_number ?? null,
+      // store original llama asset ref so later jobs can fetch:
+      llama_asset_name: f.asset_name ?? null,
+      image_url: "",  // NOT filled here - empty string for NOT NULL constraint
+      caption_text: null,
+      ocr_text: null,
+      vision_text: null,
+      fec_tenant_id: tenant_id,
+    }));
+
+    if (figureRows.length) {
+      const { error } = await supabase.from("figures").upsert(figureRows, { onConflict: "manual_id,figure_id" });
+      if (error) throw error;
+    }
+
+    console.log("PHASE B: figures -> done", { figures: figureRows.length });
+
+    // --- PHASE C: EXPENSIVE WORK SKIPPED ---
+    if (!PROCESS_FIGURES_IN_WEBHOOK) {
+      console.log("PHASE C: expensive work skipped (PROCESS_FIGURES_IN_WEBHOOK=false)");
+    }
+
+    await markProcessingStatus(manual_id, tenant_id, {
+      status: chunks.length ? "completed" : "failed",
+      chunks_processed: chunks.length,
       total_chunks: chunks.length,
-      processed_figures: processedFigures,
-      total_figures: figures.length,
-      skipped_figures: figures.length - processedFigures,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      figures_detected: figureRows.length,
+    });
+
+    console.log("PHASE Z: webhook -> done");
+    return new Response(JSON.stringify({ 
+      success: true, 
+      chunks: chunks.length, 
+      figures: figureRows.length,
+      message: `Processed ${chunks.length} text chunks and ${figureRows.length} figures`
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   } catch (error) {
-    console.error("llama-webhook error:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(JSON.stringify({ error: errorMessage, details: String(error) }), {
+    console.error("PHASE ERR:", error);
+    // Try to mark as failed if we have manual_id and tenant_id
+    try {
+      const errorBody = await req.text().catch(() => '{}');
+      const parsedBody = JSON.parse(errorBody);
+      
+      const manual_id = parsedBody.manual_id || parsedBody.document?.id;
+      const tenant_id = parsedBody.tenant_id || parsedBody.fec_tenant_id || '00000000-0000-0000-0000-000000000001';
+      
+      if (manual_id && tenant_id) {
+        await markProcessingStatus(manual_id, tenant_id, { 
+          status: "failed",
+          error_message: (error as Error).message 
+        });
+      }
+    } catch (e) {
+      console.error("Failed to mark processing status as failed:", e);
+    }
+
+    return new Response(JSON.stringify({ 
+      ok: false,
+      error: (error as Error).message,
+      details: "Webhook processing failed"
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
+
+// Helper functions
+
+async function getLlamaPayload(req: Request, jobId?: string): Promise<any> {
+  try {
+    const body = await req.clone().json();
+    
+    // First try to get from request body
+    if (body.json || body.markdown || body.figures) {
+      return {
+        pages: body.json,
+        markdown: body.markdown,
+        figures: body.figures
+      };
+    }
+
+    // Fallback: fetch from LlamaCloud API if we have job_id
+    if (jobId) {
+      console.log("🔄 Fetching payload from LlamaCloud for job:", jobId);
+      
+      const llamaApiKey = Deno.env.get("LLAMACLOUD_API_KEY");
+      if (!llamaApiKey) {
+        console.warn("⚠️ LLAMACLOUD_API_KEY not available for refetch");
+        return null;
+      }
+
+      const resp = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/json`, {
+        headers: { "Authorization": `Bearer ${llamaApiKey}` }
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        console.log("✅ Successfully fetched payload from LlamaCloud");
+        return { pages: data };
+      } else {
+        console.warn("⚠️ Failed to fetch from LlamaCloud:", resp.status, resp.statusText);
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("❌ Error getting Llama payload:", error);
+    return null;
+  }
+}
+
+function extractFiguresMeta(payload: any): any[] {
+  const figures: any[] = [];
+  
+  if (!payload) return figures;
+
+  // Extract from pages if available
+  if (payload.pages && Array.isArray(payload.pages)) {
+    for (const page of payload.pages) {
+      if (page.images && Array.isArray(page.images)) {
+        for (const img of page.images) {
+          figures.push({
+            figure_id: img.name || img.id || crypto.randomUUID(),
+            page_number: page.page || null,
+            asset_name: img.name || img.filename || null
+          });
+        }
+      }
+    }
+  }
+
+  // Extract from direct figures array if available
+  if (payload.figures && Array.isArray(payload.figures)) {
+    for (const fig of payload.figures) {
+      figures.push({
+        figure_id: fig.figure_id || fig.name || fig.id || crypto.randomUUID(),
+        page_number: fig.page_number || fig.page || null,
+        asset_name: fig.asset_name || fig.name || fig.filename || null
+      });
+    }
+  }
+
+  return figures;
+}
+
+async function markProcessingStatus(manualId: string, tenantId: string, updates: any) {
+  const { error } = await supabase
+    .from("processing_status")
+    .upsert({
+      manual_id: manualId,
+      fec_tenant_id: tenantId,
+      job_id: updates.job_id || manualId,
+      ...updates,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "manual_id" });
+
+  if (error) {
+    console.error("❌ Failed to update processing status:", error);
+    throw error;
+  }
+}

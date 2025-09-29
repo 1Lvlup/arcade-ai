@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+
 interface Idea {
   id: string;
   name: string;
@@ -331,6 +332,7 @@ const VisionBoard = () => {
             "The thing that transforms cold calls into incoming phone calls"
           </p>
         </div>
+
 
         {/* Category Filter */}
         <div className="flex flex-wrap gap-2 mb-8 justify-center">

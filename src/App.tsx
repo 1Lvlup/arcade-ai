@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import ManualManagement from "./pages/ManualManagement";
 import ManualDetails from "./pages/ManualDetails";
 import VisionBoard from "./pages/VisionBoard";
+import AIConfiguration from "./pages/AIConfiguration";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -43,6 +44,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <VisionBoard />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/ai-config" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AIConfiguration />
                 </AdminRoute>
               </ProtectedRoute>
             } />

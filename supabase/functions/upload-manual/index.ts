@@ -116,6 +116,8 @@ Focus on maintaining the technical accuracy and procedural structure.
         source_filename: storagePath.split('/').pop(),
         job_id: llamaData.id,
         fec_tenant_id: profile.fec_tenant_id
+      }, {
+        onConflict: 'manual_id'
       })
 
     if (insertError) {
@@ -135,8 +137,16 @@ Focus on maintaining the technical accuracy and procedural structure.
 
   } catch (error) {
     console.error('Error in upload-manual:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown')
+    console.error('Error details:', JSON.stringify(error, null, 2))
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Returning error:', errorMessage)
+    
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: errorMessage,
+      details: error instanceof Error ? error.stack : 'No additional details'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

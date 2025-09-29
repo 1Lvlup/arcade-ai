@@ -69,44 +69,19 @@ serve(async (req) => {
       throw signedUrlError
     }
 
-    console.log('📡 Submitting to LlamaCloud with PREMIUM parsing options...')
+    console.log('📡 Submitting to LlamaCloud with basic parsing options...')
 
-    // PREMIUM PARSING CONFIGURATION
+    // BASIC PARSING CONFIGURATION
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
     
-    // PREMIUM MODE: Agent-based parsing (highest quality)
-    formData.append('parse_mode', 'parse_page_with_agent')
-    formData.append('premium_mode', 'true')
+    // Basic mode only - NO conflicting modes
+    formData.append('fast_mode', 'true')
     
-    // Enhanced OCR and language detection
+    // Basic language detection
     formData.append('language', 'en')
     formData.append('disable_ocr', 'false')
-    
-    // Advanced table and structure extraction
-    formData.append('output_tables_as_HTML', 'true')
-    formData.append('spreadsheet_extract_sub_tables', 'true')
-    formData.append('preserve_layout_alignment_across_pages', 'true')
-    
-    // Image and figure processing
-    formData.append('disable_image_extraction', 'false')
-    formData.append('take_screenshot', 'true')
-    
-    // Enhanced chunking and structure
-    formData.append('page_separator', '\\n\\n---\\n## Page {pageNumber}\\n\\n')
-    formData.append('page_prefix', '<!-- Page {pageNumber} Start -->\\n')
-    formData.append('page_suffix', '\\n<!-- Page {pageNumber} End -->')
-    
-    // Skip headers/footers (top 5%, bottom 5%)
-    formData.append('bounding_box', '0.05,0,0.05,0')
-    
-    // Multi-modal vision model for complex documents
-    formData.append('use_vendor_multimodal_model', 'true')
-    formData.append('vendor_multimodal_model_name', 'anthropic-sonnet-3.7')
-    
-    // Quality options for arcade manuals
-    formData.append('skip_diagonal_text', 'false') // Keep diagonal text
     
     // Webhook for processing results
     formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)

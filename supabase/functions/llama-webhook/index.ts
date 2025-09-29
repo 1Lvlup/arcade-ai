@@ -285,8 +285,8 @@ serve(async (req) => {
               page_end: chunk.page_end,
               menu_path: `${chunk.menu_path} [${chunk.chunk_type}]`,
               embedding: embedding,
-              fec_tenant_id: document.fec_tenant_id,
-              content_hash: `${chunk.strategy}-${chunk.index}-${chunk.chunk_type}`
+              fec_tenant_id: document.fec_tenant_id
+              // content_hash is auto-generated, don't set it manually
             });
             
           if (insertError) {

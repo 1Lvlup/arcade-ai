@@ -47,24 +47,34 @@ export function SimpleChat() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6">
+    <div className="w-full max-w-4xl mx-auto">
       <div className="space-y-6">
         {/* Messages Container */}
-        <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 p-4 rounded-lg border border-primary/20 bg-gradient-to-b from-background to-muted/20">
+        <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 p-6 rounded-xl tech-card bg-gradient-tech custom-scrollbar">
           {messages.map((message, index) => (
             <div
               key={index}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] p-4 rounded-lg shadow-lg ${
+                className={`max-w-[80%] p-4 rounded-xl font-body ${
                   message.role === 'user'
-                    ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-orange ml-auto'
-                    : 'bg-gradient-to-r from-secondary/40 to-muted text-foreground border border-primary/30'
+                    ? 'gradient-orange text-white shadow-orange ml-auto border border-primary/20'
+                    : 'tech-card text-foreground border-tech mr-auto'
                 }`}
               >
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                <div className="text-sm leading-relaxed">
                   {message.content}
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    message.role === 'user' ? 'bg-white/60' : 'bg-primary/60'
+                  }`}></div>
+                  <span className={`font-mono text-xs ${
+                    message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'
+                  }`}>
+                    {message.role === 'user' ? 'USER' : 'AI ASSISTANT'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -72,49 +82,65 @@ export function SimpleChat() {
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-gradient-to-r from-secondary/40 to-muted text-foreground border border-primary/30 max-w-[80%] p-4 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
-                  <span className="text-sm text-primary ml-2">AI is thinking...</span>
+              <div className="tech-card text-foreground border-tech max-w-[80%] p-4 rounded-xl mr-auto">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                  </div>
+                  <span className="font-mono text-sm text-primary">AI PROCESSING...</span>
                 </div>
               </div>
             </div>
           )}
           
           {messages.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-primary/60 mb-4">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 flex items-center justify-center">
+            <div className="text-center py-16">
+              <div className="tech-card p-8 max-w-md mx-auto">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
                   <div className="text-2xl">🤖</div>
                 </div>
-              </div>
-              <div className="text-lg font-medium text-primary mb-2">Ready to Help!</div>
-              <div className="text-muted-foreground max-w-md mx-auto">
-                Ask me anything about arcade game troubleshooting, repairs, or technical issues with your uploaded manuals.
+                <div className="text-tech-lg text-primary mb-3 text-glow">AI READY</div>
+                <div className="font-body text-muted-foreground text-center">
+                  Query the technical documentation for troubleshooting procedures, 
+                  component specifications, or repair instructions.
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Input Area */}
-        <div className="flex gap-3 p-4 rounded-lg border border-primary/30 bg-gradient-to-r from-background to-muted/20 shadow-orange">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about troubleshooting, repairs, or technical issues..."
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            disabled={isLoading}
-            className="flex-1 border-primary/40 focus:border-primary focus:ring-primary/30 bg-background/80"
-          />
-          <Button 
-            onClick={handleSend} 
-            disabled={isLoading || !input.trim()}
-            className="gradient-orange shadow-orange hover:shadow-orange-strong transition-all duration-300 px-6"
-          >
-            {isLoading ? '⏳' : '🚀'} Send
-          </Button>
+        {/* Input Interface */}
+        <div className="tech-card p-4">
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Enter technical query or troubleshooting request..."
+                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                disabled={isLoading}
+                className="bg-background/80 border-primary/30 focus:border-primary font-body placeholder:text-muted-foreground/60"
+              />
+            </div>
+            <Button 
+              onClick={handleSend} 
+              disabled={isLoading || !input.trim()}
+              className="btn-tech px-6"
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  SEND
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 font-tech">
+                  🚀 EXECUTE
+                </div>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

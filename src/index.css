@@ -1,76 +1,78 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Orange theme colors */
-    --background: 240 15% 12%;  /* Dark gunmetal */
-    --foreground: 0 0% 98%;     /* White */
+    /* Dark tech theme - almost black purple with orange accents */
+    --background: 240 15% 6%;      /* Very dark gunmetal - almost black */
+    --foreground: 0 0% 98%;        /* White */
     
-    --card: 240 12% 15%;        /* Slightly lighter gunmetal */
+    --card: 240 12% 8%;            /* Slightly lighter than background */
     --card-foreground: 0 0% 98%;
     
-    --popover: 240 12% 15%;
+    --popover: 240 12% 8%;
     --popover-foreground: 0 0% 98%;
     
-    --primary: 25 100% 50%;     /* Bright orange */
+    --primary: 25 100% 50%;        /* Bright orange */
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 270 50% 25%;   /* Dark deep purple */
+    --secondary: 270 60% 8%;       /* Very dark purple - almost black */
     --secondary-foreground: 0 0% 98%;
     
-    --muted: 240 10% 18%;       /* Muted gunmetal */
-    --muted-foreground: 0 0% 65%;
+    --muted: 240 8% 12%;           /* Muted dark */
+    --muted-foreground: 0 0% 60%;
     
-    --accent: 25 100% 55%;      /* Lighter orange for accents */
+    --accent: 25 100% 55%;         /* Lighter orange for accents */
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 25 50% 30%;       /* Orange border */
-    --input: 240 10% 20%;
-    --ring: 25 100% 50%;        /* Orange ring */
+    --border: 25 30% 20%;          /* Subtle orange border */
+    --input: 240 8% 15%;
+    --ring: 25 100% 50%;           /* Orange ring */
     
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     
-    /* Custom orange variations */
+    /* Tech theme colors */
     --orange-glow: 25 100% 50%;
     --orange-bright: 25 100% 60%;
-    --purple-deep: 270 60% 20%;
-    --gunmetal: 240 15% 12%;
-    --gunmetal-light: 240 12% 18%;
+    --purple-black: 270 60% 4%;    /* Almost black purple */
+    --gunmetal-dark: 240 15% 6%;
+    --tech-blue: 200 100% 50%;
     
-    /* Gradients */
+    /* Professional gradients */
     --gradient-orange: linear-gradient(135deg, hsl(25 100% 50%), hsl(25 100% 60%));
-    --gradient-circuit: linear-gradient(45deg, hsl(25 100% 50% / 0.1), hsl(25 100% 60% / 0.2));
+    --gradient-tech: linear-gradient(135deg, hsl(240 15% 6%), hsl(270 60% 8%));
+    --gradient-circuit: linear-gradient(45deg, hsl(25 100% 50% / 0.05), hsl(25 100% 60% / 0.1));
     
-    /* Shadows and glows */
-    --shadow-orange: 0 0 20px hsl(25 100% 50% / 0.3);
-    --shadow-orange-strong: 0 0 30px hsl(25 100% 50% / 0.5);
-    --glow-orange: 0 0 15px hsl(25 100% 50% / 0.4);
+    /* Enhanced shadows and glows */
+    --shadow-orange: 0 0 25px hsl(25 100% 50% / 0.3);
+    --shadow-orange-strong: 0 0 40px hsl(25 100% 50% / 0.5);
+    --glow-orange: 0 0 20px hsl(25 100% 50% / 0.4);
+    --glow-tech: 0 0 30px hsl(25 100% 50% / 0.2);
   }
 
   .dark {
-    --background: 240 15% 12%;
+    --background: 240 15% 6%;
     --foreground: 0 0% 98%;
     
-    --card: 240 12% 15%;
+    --card: 240 12% 8%;
     --card-foreground: 0 0% 98%;
     
-    --popover: 240 12% 15%;
+    --popover: 240 12% 8%;
     --popover-foreground: 0 0% 98%;
     
     --primary: 25 100% 50%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 270 50% 25%;
+    --secondary: 270 60% 8%;
     --secondary-foreground: 0 0% 98%;
     
-    --muted: 240 10% 18%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 240 8% 12%;
+    --muted-foreground: 0 0% 60%;
     
     --accent: 25 100% 55%;
     --accent-foreground: 0 0% 100%;
@@ -78,8 +80,8 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 25 50% 30%;
-    --input: 240 10% 20%;
+    --border: 25 30% 20%;
+    --input: 240 8% 15%;
     --ring: 25 100% 50%;
   }
 }
@@ -91,16 +93,48 @@
   
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     background-image: 
-      radial-gradient(circle at 20% 80%, hsl(25 100% 50% / 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, hsl(25 100% 50% / 0.15) 0%, transparent 50%),
-      url("data:image/svg+xml,%3csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3e%3cg fill='none' fill-rule='evenodd'%3e%3cg fill='%23ff6600' fill-opacity='0.08'%3e%3cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3e%3c/g%3e%3c/g%3e%3c/svg%3e");
+      /* Subtle circuit board pattern */
+      radial-gradient(circle at 25% 25%, hsl(25 100% 50% / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, hsl(25 100% 50% / 0.08) 0%, transparent 50%),
+      /* Circuit board lines */
+      linear-gradient(0deg, transparent 24%, hsl(25 100% 50% / 0.03) 25%, hsl(25 100% 50% / 0.03) 26%, transparent 27%, transparent 74%, hsl(25 100% 50% / 0.03) 75%, hsl(25 100% 50% / 0.03) 76%, transparent 77%, transparent),
+      linear-gradient(90deg, transparent 24%, hsl(25 100% 50% / 0.03) 25%, hsl(25 100% 50% / 0.03) 26%, transparent 27%, transparent 74%, hsl(25 100% 50% / 0.03) 75%, hsl(25 100% 50% / 0.03) 76%, transparent 77%, transparent),
+      /* Circuit nodes */
+      radial-gradient(circle at 50% 50%, hsl(25 100% 50% / 0.05) 0%, transparent 3%);
+    background-size: 100px 100px, 100px 100px, 50px 50px, 50px 50px, 25px 25px;
+    background-position: 0 0, 50px 50px, 0 0, 25px 25px, 0 0;
   }
 }
 
-/* Custom utility classes */
+/* Tech Typography System */
 @layer utilities {
+  .font-tech {
+    font-family: 'Orbitron', monospace;
+  }
+  
+  .font-body {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  .text-tech-xl {
+    @apply font-tech text-4xl font-bold tracking-wider;
+  }
+  
+  .text-tech-lg {
+    @apply font-tech text-2xl font-semibold tracking-wide;
+  }
+  
+  .text-tech-base {
+    @apply font-tech text-lg font-medium tracking-wide;
+  }
+  
+  /* Enhanced glows and effects */
   .glow-orange {
     box-shadow: var(--glow-orange);
   }
@@ -117,12 +151,77 @@
     background: var(--gradient-orange);
   }
   
+  .gradient-tech {
+    background: var(--gradient-tech);
+  }
+  
   .border-glow {
     border: 1px solid hsl(var(--primary));
-    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.3);
+  }
+  
+  .border-tech {
+    border: 1px solid hsl(var(--primary) / 0.3);
+    box-shadow: inset 0 0 10px hsl(var(--primary) / 0.1);
   }
   
   .text-glow {
-    text-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+    text-shadow: 0 0 15px hsl(var(--primary) / 0.6);
+  }
+  
+  .tech-card {
+    @apply bg-card border border-primary/20 rounded-xl backdrop-blur-sm;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+    box-shadow: 
+      0 4px 20px hsl(var(--primary) / 0.1),
+      inset 0 1px 0 hsl(var(--primary) / 0.1);
+  }
+  
+  .tech-card:hover {
+    @apply border-primary/40;
+    box-shadow: 
+      0 8px 32px hsl(var(--primary) / 0.2),
+      inset 0 1px 0 hsl(var(--primary) / 0.2);
+  }
+  
+  .nav-tech {
+    @apply bg-background/80 backdrop-blur-md border-b border-primary/20;
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%);
+  }
+  
+  .btn-tech {
+    @apply bg-primary text-primary-foreground font-tech font-medium tracking-wide;
+    @apply hover:bg-primary/90 transition-all duration-300;
+    @apply shadow-orange hover:shadow-orange-strong;
+    @apply border border-primary/20;
+  }
+  
+  .btn-tech-outline {
+    @apply bg-transparent text-primary border border-primary/40 font-tech font-medium tracking-wide;
+    @apply hover:bg-primary/10 hover:border-primary transition-all duration-300;
+    @apply shadow-lg hover:shadow-orange;
+  }
+  
+  /* Custom scrollbar for tech theme */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.3) transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.3);
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
   }
 }

@@ -1,7 +1,8 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { SharedHeader } from '@/components/SharedHeader';
 import { SimpleChat } from '@/components/SimpleChat';
 import { FileText } from 'lucide-react';
@@ -41,80 +42,159 @@ export default function ManualDetails() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SharedHeader title="Manual Details" />
+      <SharedHeader title="Manual Analysis" showBackButton={true} backTo="/manuals" />
+      
+      {/* Action Bar */}
+      <div className="nav-tech border-b border-primary/10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h2 className="text-tech-lg text-primary">Technical Documentation</h2>
+              <div className="w-px h-6 bg-primary/30"></div>
+              <span className="font-mono text-sm text-muted-foreground">
+                ID: {document?.manual_id?.split('-').pop()}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link to="/manuals">
+                <Button className="btn-tech-outline">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Browse Manuals
+                </Button>
+              </Link>
+              <Link to="/manuals/upload">
+                <Button className="btn-tech">
+                  Upload New Manual
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
       <main className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
-          {/* Header Card with Glow */}
-          <Card className="border-glow shadow-orange">
-            <CardHeader className="bg-gradient-to-r from-secondary/20 to-primary/10 rounded-t-lg">
-              <CardTitle className="flex items-center gap-2 text-glow">
-                <FileText className="h-6 w-6 text-primary" />
-                {document?.title || 'Manual Details'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="p-4 rounded-lg bg-muted/50 border border-primary/20">
-                  <div className="text-sm text-muted-foreground">Manual ID</div>
-                  <div className="font-mono text-sm text-primary">{document?.manual_id}</div>
+        <div className="space-y-8">
+          {/* Status Overview */}
+          <div className="tech-card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <FileText className="h-6 w-6 text-primary" />
                 </div>
-                <div className="p-4 rounded-lg bg-muted/50 border border-primary/20">
-                  <div className="text-sm text-muted-foreground">Text Chunks</div>
-                  <div className="text-2xl font-bold text-primary">{chunks?.length || 0}</div>
+                <div>
+                  <h1 className="text-tech-xl text-primary text-glow">
+                    {document?.title || 'Manual Analysis'}
+                  </h1>
+                  <p className="font-mono text-sm text-muted-foreground mt-1">
+                    Source: {document?.source_filename}
+                  </p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/50 border border-primary/20">
-                  <div className="text-sm text-muted-foreground">Source File</div>
-                  <div className="text-sm text-foreground truncate">{document?.source_filename}</div>
+              </div>
+              <div className="text-right">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                  <span className="font-mono text-sm text-primary">ANALYZED</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="tech-card p-4 bg-gradient-tech">
+                <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Manual ID</div>
+                <div className="font-mono text-sm text-primary mt-1 break-all">{document?.manual_id}</div>
+              </div>
+              <div className="tech-card p-4 bg-gradient-tech">
+                <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Content Chunks</div>
+                <div className="text-tech-base text-primary mt-1">{chunks?.length || 0}</div>
+              </div>
+              <div className="tech-card p-4 bg-gradient-tech">
+                <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Processing Status</div>
+                <div className="text-sm text-green-400 mt-1">✓ COMPLETE</div>
+              </div>
+              <div className="tech-card p-4 bg-gradient-tech">
+                <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider">File Size</div>
+                <div className="text-sm text-foreground mt-1">Optimized</div>
+              </div>
+            </div>
+          </div>
+              
+          {/* Content Analysis */}
+          {chunks && chunks.length > 0 && (
+            <div className="tech-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-tech-lg text-primary flex items-center gap-3">
+                  <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                  Content Analysis Results
+                </h2>
+                <div className="font-mono text-sm text-muted-foreground">
+                  {chunks.length} segments processed
                 </div>
               </div>
               
-              {chunks && chunks.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    Processed Content Chunks
-                  </h3>
-                  <div className="max-h-96 overflow-y-auto space-y-3 pr-2">
-                    {chunks.map((chunk, index) => (
-                      <div key={chunk.id} className="p-4 border border-primary/30 rounded-lg bg-gradient-to-r from-background to-muted/30 hover:border-primary/50 transition-all duration-300 glow-orange hover:shadow-orange-strong">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs text-primary font-medium">
-                            Chunk #{index + 1}
-                          </div>
-                          {chunk.page_start && (
-                            <div className="text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded">
-                              Page {chunk.page_start}{chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}
-                            </div>
-                          )}
+              <div className="max-h-[500px] overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                {chunks.map((chunk, index) => (
+                  <div key={chunk.id} className="tech-card p-5 hover:border-primary/40 transition-all duration-300 group">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                          <span className="font-mono text-xs text-primary font-bold">
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
                         </div>
-                        <div className="text-sm text-foreground/90 leading-relaxed">
-                          {chunk.content.length > 300 ? 
-                            `${chunk.content.substring(0, 300)}...` : 
-                            chunk.content
-                          }
+                        <div className="font-mono text-xs text-primary uppercase tracking-wider">
+                          Segment {index + 1}
                         </div>
-                        {chunk.menu_path && (
-                          <div className="mt-2 text-xs text-orange-400 font-mono">
-                            📍 {chunk.menu_path}
-                          </div>
-                        )}
                       </div>
-                    ))}
+                      {chunk.page_start && (
+                        <div className="px-3 py-1 rounded-full bg-secondary/30 border border-primary/20">
+                          <span className="font-mono text-xs text-muted-foreground">
+                            Page {chunk.page_start}{chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="bg-background/50 rounded-lg p-4 border border-primary/10">
+                      <div className="text-sm text-foreground/90 leading-relaxed font-body">
+                        {chunk.content.length > 400 ? 
+                          `${chunk.content.substring(0, 400)}...` : 
+                          chunk.content
+                        }
+                      </div>
+                    </div>
+                    
+                    {chunk.menu_path && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <div className="w-4 h-px bg-primary/30"></div>
+                        <span className="font-mono text-xs text-primary/70">
+                          {chunk.menu_path}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* Chat Interface */}
-          <Card className="border-glow shadow-orange">
-            <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/20 rounded-t-lg">
-              <CardTitle className="text-primary text-glow">Ask Questions About This Manual</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
+          {/* AI Chat Interface */}
+          <div className="tech-card p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="w-6 h-6 text-primary">🤖</div>
+              </div>
+              <div>
+                <h2 className="text-tech-lg text-primary text-glow">
+                  AI Technical Assistant
+                </h2>
+                <p className="font-mono text-sm text-muted-foreground">
+                  Ask questions about troubleshooting, repairs, or technical specifications
+                </p>
+              </div>
+            </div>
+            <div className="border-t border-primary/10 pt-6">
               <SimpleChat />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </main>
     </div>

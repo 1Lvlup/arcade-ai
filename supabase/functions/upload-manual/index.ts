@@ -102,12 +102,13 @@ Maintain the hierarchical structure of sections and subsections.
     formData.append('take_screenshot', 'true')
     formData.append('preserve_very_small_text', 'true')
     
-    // CRITICAL: Enable figure/image extraction (proven working settings from Space Invaders Frenzy)
-    formData.append('extract_images', 'true')
-    formData.append('extract_figures', 'true')
-    formData.append('split_by_page', 'false')
-    formData.append('include_page_breaks', 'true')
-    formData.append('fast_mode', 'false')
+    // CRITICAL: Space Invaders proven working settings - LlamaCloud API parameters
+    formData.append('extract_images', 'true')  // ✅ Working: extracts individual figures 
+    formData.append('extract_figures', 'true') // ✅ Working: extracts embedded figures
+    formData.append('take_screenshot', 'true') // ✅ Working: creates page screenshots 
+    formData.append('split_by_page', 'false')  // ✅ Working: keeps document structure
+    formData.append('include_page_breaks', 'true') // ✅ Working: preserves pagination
+    formData.append('fast_mode', 'false')      // ✅ Working: thorough processing
 
     // Custom formatting for technical content
     formData.append('system_prompt_append', `

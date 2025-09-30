@@ -369,70 +369,29 @@ serve(async (req) => {
       for (const figure of allFigures) {
         try {
           console.log(`🔄 Processing figure: ${figure.name || figure.id || figure || 'unnamed'}`);
-          console.log("🔍 Figure structure:", JSON.stringify(figure, null, 2));
           
-          // Handle different figure formats from LlamaCloud
-          let imageUrl = null;
-          let figureName = null;
+          // Simple approach - store whatever image URL/path LlamaCloud provides
+          const figureData = {
+            manual_id: document.manual_id,
+            figure_id: figure.name || figure.id || `figure_${figuresProcessed}`,
+            image_url: figure.url || figure.image_url || figure.path || figure,
+            page_number: figure.page || null,
+            bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
+            llama_asset_name: figure.name || figure,
+            fec_tenant_id: document.fec_tenant_id
+          };
           
-          if (typeof figure === 'string') {
-            // Current format: just filename like "img_p0_1.png"
-            figureName = figure;
-            console.log(`📄 Processing filename: ${figure}`);
-            
-            // Try to fetch the image from LlamaCloud assets
-            try {
-              const assetUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/${figure}`;
-              console.log(`🔗 Attempting to fetch asset: ${assetUrl}`);
-              
-              const assetResponse = await fetch(assetUrl, {
-                headers: {
-                  'Authorization': `Bearer ${Deno.env.get('LLAMA_CLOUD_API_KEY')}`
-                }
-              });
-              
-              if (assetResponse.ok) {
-                console.log(`✅ Asset found for ${figure}`);
-                imageUrl = assetUrl; // Use the direct asset URL
-              } else {
-                console.log(`⚠️ Asset not found for ${figure}, status: ${assetResponse.status}`);
-              }
-            } catch (error) {
-              console.error(`❌ Error fetching asset ${figure}:`, error);
-            }
-          } else if (typeof figure === 'object') {
-            // Legacy format: object with url/image_url/path properties
-            figureName = figure.name || figure.id || `figure_${figuresProcessed}`;
-            imageUrl = figure.url || figure.image_url || figure.path;
-            console.log(`📊 Processing object figure: ${figureName} -> ${imageUrl}`);
-          }
+          console.log("📸 Storing figure:", figureData);
           
-          // Only store if we have a valid image URL
-          if (imageUrl) {
-            const figureData = {
-              manual_id: document.manual_id,
-              figure_id: figureName || `figure_${figuresProcessed}`,
-              image_url: imageUrl,
-              page_number: figure.page || null,
-              bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
-              llama_asset_name: figureName,
-              fec_tenant_id: document.fec_tenant_id
-            };
+          const { error: figureError } = await supabase
+            .from('figures')
+            .insert(figureData);
             
-            console.log("📸 Storing figure:", figureData);
-            
-            const { error: figureError } = await supabase
-              .from('figures')
-              .insert(figureData);
-              
-            if (figureError) {
-              console.error("❌ Error storing figure:", figureError);
-            } else {
-              figuresProcessed++;
-              console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
-            }
+          if (figureError) {
+            console.error("❌ Error storing figure:", figureError);
           } else {
-            console.log(`⚠️ Skipping figure ${figureName || figure} - no valid URL found`);
+            figuresProcessed++;
+            console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
           }
         } catch (error) {
           console.error("❌ Error processing figure:", error);

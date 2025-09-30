@@ -149,10 +149,11 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
       }
     }
 
-    // 3. Process text content from webhook payload (faster) or jobResult
-    const textContent = payload.txt || jobResult.text;
+    // 3. Process text content - prioritize API result over webhook payload
+    const textContent = jobResult.text || payload.txt;
     if (textContent) {
       console.log(`📝 Step 3: Processing text content (${textContent.length} characters)...`);
+      console.log(`📝 Text source: ${jobResult.text ? 'API result (full text)' : 'webhook payload (preview)'}`);
       
       // Log first 200 chars to debug content
       console.log(`📝 Text preview: ${textContent.substring(0, 200)}...`);

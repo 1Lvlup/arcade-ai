@@ -154,9 +154,14 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
     if (textContent) {
       console.log(`📝 Step 3: Processing text content (${textContent.length} characters)...`);
       
+      // Log first 200 chars to debug content
+      console.log(`📝 Text preview: ${textContent.substring(0, 200)}...`);
+      
       const chunks = splitTextIntoChunks(textContent, 4000);
+      console.log(`📝 Split into ${chunks.length} chunks`);
       
       for (let i = 0; i < chunks.length; i++) {
+        console.log(`💾 Processing chunk ${i + 1}/${chunks.length} (${chunks[i].length} chars)...`);
         const chunkData = {
           manual_id: manualSlug,
           content: chunks[i],
@@ -250,25 +255,40 @@ function extractTitleFromFilename(filename: string): string {
 }
 
 function splitTextIntoChunks(text: string, maxLength: number): string[] {
+  console.log(`🔧 splitTextIntoChunks called with text length: ${text.length}, maxLength: ${maxLength}`);
+  
+  if (text.length <= maxLength) {
+    console.log(`🔧 Text is shorter than maxLength, returning as single chunk`);
+    return [text];
+  }
+  
   const chunks: string[] = [];
   let currentChunk = '';
   
+  // Split by sentences first
   const sentences = text.split(/[.!?]+/);
+  console.log(`🔧 Split into ${sentences.length} sentences`);
   
   for (const sentence of sentences) {
-    if (currentChunk.length + sentence.length + 1 <= maxLength) {
-      currentChunk += (currentChunk ? '. ' : '') + sentence.trim();
+    const trimmedSentence = sentence.trim();
+    if (!trimmedSentence) continue;
+    
+    if (currentChunk.length + trimmedSentence.length + 2 <= maxLength) {
+      currentChunk += (currentChunk ? '. ' : '') + trimmedSentence;
     } else {
       if (currentChunk) {
         chunks.push(currentChunk);
+        console.log(`🔧 Created chunk ${chunks.length}: ${currentChunk.length} chars`);
       }
-      currentChunk = sentence.trim();
+      currentChunk = trimmedSentence;
     }
   }
   
   if (currentChunk) {
     chunks.push(currentChunk);
+    console.log(`🔧 Created final chunk ${chunks.length}: ${currentChunk.length} chars`);
   }
   
+  console.log(`🔧 splitTextIntoChunks returning ${chunks.length} chunks`);
   return chunks.filter(chunk => chunk.length > 0);
 }

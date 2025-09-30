@@ -28,41 +28,23 @@ serve(async (req) => {
 
     // Handle both job_id and jobId formats from LlamaCloud
     const llamaJobId = payload.job_id || payload.jobId;
-    const status = payload.status;
+    const { txt, figures = [], pages = [] } = payload;
     
     if (!llamaJobId) {
       throw new Error("Missing job_id/jobId in webhook payload");
     }
     
-    console.log(`🔍 Processing job: ${llamaJobId}, status: ${status}`);
+    console.log(`🔍 Processing job: ${llamaJobId}`);
+    console.log(`📊 Payload contents: txt=${txt ? 'present' : 'missing'}, figures=${figures.length}, pages=${pages.length}`);
 
     // Initialize Supabase with service role key for bypassing RLS
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if this webhook has already been processed
-    const { data: existingStatus } = await supabase
-      .from('processing_status')
-      .select('status')
-      .eq('job_id', llamaJobId)
-      .maybeSingle();
-
-    if (existingStatus?.status === 'completed') {
-      console.log(`⚠️ Job ${llamaJobId} already processed, skipping`);
-      return new Response(JSON.stringify({ message: 'Already processed' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-    }
-
-    if (status === 'SUCCESS') {
-      console.log(`✅ Job ${llamaJobId} completed successfully, processing results...`);
-      await processCompletedJob(llamaJobId, supabase);
-    } else if (status === 'ERROR') {
-      console.log(`❌ Job ${llamaJobId} failed`);
-      await updateProcessingStatus(llamaJobId, 'error', supabase, 'LlamaCloud job failed');
-    }
+    // Process the completed job directly (no status checking needed)
+    console.log(`✅ Job ${llamaJobId} webhook received, processing results...`);
+    await processCompletedJob(llamaJobId, payload, supabase);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -78,31 +60,27 @@ serve(async (req) => {
   }
 });
 
-async function processCompletedJob(llamaJobId: string, supabase: any) {
+async function processCompletedJob(llamaJobId: string, payload: any, supabase: any) {
   try {
-    // Fetch job details from LlamaCloud
-    const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY');
+    console.log(`🔍 Processing completed job ${llamaJobId}`);
     
-    console.log(`🔍 Fetching job details for ${llamaJobId}`);
-    const jobDetailsResponse = await fetch(`${LLAMACLOUD_BASE}/parsing/job/${llamaJobId}`, {
-      headers: { 'Authorization': `Bearer ${llamaApiKey}` }
-    });
-
-    if (!jobDetailsResponse.ok) {
-      throw new Error(`Failed to fetch job details: ${jobDetailsResponse.status}`);
+    // Get manual_id from existing processing_status or documents table
+    const { data: statusData } = await supabase
+      .from('processing_status')
+      .select('manual_id')
+      .eq('job_id', llamaJobId)
+      .single();
+    
+    if (!statusData?.manual_id) {
+      throw new Error(`No manual_id found for job ${llamaJobId}`);
     }
-
-    const jobDetails = await jobDetailsResponse.json();
-    console.log(`📄 Job details fetched for ${llamaJobId}`);
-
-    // Generate manual slug from job details
-    const originalFilename = jobDetails.file_name || 'unknown-manual';
-    const manualSlug = generateManualSlug(originalFilename);
+    
+    const manualSlug = statusData.manual_id;
     const tenantId = DEFAULT_TENANT_ID;
     
-    console.log(`📋 Generated manual_slug: ${manualSlug}, tenant_id: ${tenantId}`);
+    console.log(`📋 Processing for manual_slug: ${manualSlug}, tenant_id: ${tenantId}`);
 
-    // 1. GOLDEN SEQUENCE STEP 1: Set tenant context (CRITICAL)
+    // 1. Set tenant context (CRITICAL)
     console.log(`🎯 Step 1: Setting tenant context`);
     const { error: rpcError } = await supabase.rpc('set_tenant_context', {
       p_tenant_id: tenantId
@@ -114,91 +92,28 @@ async function processCompletedJob(llamaJobId: string, supabase: any) {
     }
     console.log(`✅ Tenant context set successfully`);
 
-    // 2. GOLDEN SEQUENCE STEP 2: Create/ensure document row
-    console.log(`📄 Step 2: Creating document entry`);
-    const documentData = {
-      manual_id: manualSlug,
-      title: extractTitleFromFilename(originalFilename),
-      source_filename: originalFilename,
-      job_id: llamaJobId,
-      fec_tenant_id: tenantId
-    };
-
-    const { error: docError } = await supabase
-      .from('documents')
-      .upsert(documentData, { onConflict: 'manual_id' });
-
-    if (docError) {
-      console.error('❌ Document creation failed:', docError);
-      throw new Error(`Document creation error: ${docError.message}`);
-    }
-    console.log(`✅ Document created/updated for ${manualSlug}`);
-
-    // Fetch the full job result with all content
-    console.log(`📥 Fetching job result content`);
-    const resultResponse = await fetch(`${LLAMACLOUD_BASE}/parsing/job/${llamaJobId}/result/json`, {
-      headers: { 'Authorization': `Bearer ${llamaApiKey}` }
-    });
-
-    if (!resultResponse.ok) {
-      throw new Error(`Failed to fetch job result: ${resultResponse.status}`);
-    }
-
-    const jobResult = await resultResponse.json();
-    console.log(`📊 Job result structure:`, Object.keys(jobResult));
-
     let figuresProcessed = 0;
     let chunksProcessed = 0;
 
-    // 3. GOLDEN SEQUENCE STEP 3: Insert figures with on_conflict
-    if (jobResult.pages) {
-      console.log(`🖼️ Step 3: Processing figures from pages...`);
+    // 2. Process figures from payload
+    if (payload.figures && payload.figures.length > 0) {
+      console.log(`🖼️ Step 2: Processing ${payload.figures.length} figures...`);
       
-      const allFigures: string[] = [];
-      
-      // Extract figures from pages (matching the working golden logs pattern)
-      jobResult.pages.forEach((page: any, pageIndex: number) => {
-        if (page.images) {
-          page.images.forEach((image: any) => {
-            if (image.name || image.path) {
-              allFigures.push(image.name || image.path);
-            }
-          });
-        }
-      });
-
-      // Also check for direct figures array
-      if (jobResult.figures) {
-        jobResult.figures.forEach((figure: any) => {
-          if (typeof figure === 'string') {
-            allFigures.push(figure);
-          } else if (figure.name || figure.path) {
-            allFigures.push(figure.name || figure.path);
-          }
-        });
-      }
-
-      console.log(`🖼️ Found ${allFigures.length} figures to process`);
-      
-      for (const figure of allFigures) {
+      for (const figure of payload.figures) {
         try {
-          console.log(`🔄 Processing figure: ${figure}`);
-          
           // Construct proper S3 URL following golden configuration pattern
-          const figureName = typeof figure === 'string' ? figure : `figure_${figuresProcessed}`;
+          const figureName = typeof figure === 'string' ? figure : (figure.name || `figure_${figuresProcessed}`);
           const s3ImageUrl = `https://${ARTIFACTS_BUCKET}.s3.${AWS_REGION}.amazonaws.com/manuals/${manualSlug}/${figureName}`;
           
           const figureData = {
             manual_id: manualSlug,
             figure_id: figureName,
             image_url: s3ImageUrl,
-            page_number: null,
-            bbox_pdf_coords: null,
+            page_number: figure.page || null,
+            bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
             llama_asset_name: figureName,
             fec_tenant_id: tenantId
           };
-          
-          console.log("📸 Storing figure:", figureData);
           
           // Use on_conflict as in golden configuration
           const { error: figureError } = await supabase
@@ -209,7 +124,7 @@ async function processCompletedJob(llamaJobId: string, supabase: any) {
             console.error("❌ Error storing figure:", figureError);
           } else {
             figuresProcessed++;
-            console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
+            console.log(`✅ Figure ${figuresProcessed}/${payload.figures.length} stored`);
           }
         } catch (error) {
           console.error("❌ Error processing figure:", error);
@@ -217,72 +132,33 @@ async function processCompletedJob(llamaJobId: string, supabase: any) {
       }
     }
 
-    // 4. GOLDEN SEQUENCE STEP 4: Insert text chunks
-    if (jobResult.text || (jobResult.pages && jobResult.pages.length > 0)) {
-      console.log(`📝 Step 4: Processing text chunks...`);
+    // 3. Process text content 
+    if (payload.txt) {
+      console.log(`📝 Step 3: Processing text content (${payload.txt.length} characters)...`);
       
-      // If we have full text, split it into manageable chunks
-      if (jobResult.text) {
-        console.log(`📝 Processing full document text (${jobResult.text.length} characters)`);
+      const chunks = splitTextIntoChunks(payload.txt, 4000);
+      
+      for (let i = 0; i < chunks.length; i++) {
+        const chunkData = {
+          manual_id: manualSlug,
+          content: chunks[i],
+          page_start: null,
+          page_end: null,
+          menu_path: `Document Chunk ${i + 1}`,
+          fec_tenant_id: tenantId
+        };
         
-        const chunks = splitTextIntoChunks(jobResult.text, 4000); // Golden config chunk size
-        
-        for (let i = 0; i < chunks.length; i++) {
-          const chunkData = {
-            manual_id: manualSlug,
-            content: chunks[i],
-            page_start: null,
-            page_end: null,
-            menu_path: `Document Chunk ${i + 1}`,
-            fec_tenant_id: tenantId
-          };
+        const { error: chunkError } = await supabase
+          .from('chunks_text')
+          .insert(chunkData);
           
-          console.log(`💾 Inserting chunk ${i + 1}/${chunks.length}...`);
-          
-          const { error: chunkError } = await supabase
-            .from('chunks_text')
-            .insert(chunkData);
-            
-          if (chunkError) {
-            console.error(`❌ Error storing chunk ${i + 1}:`, chunkError);
-          } else {
-            chunksProcessed++;
-            console.log(`✅ SUCCESS: Chunk ${chunksProcessed}/${chunks.length} saved`);
-          }
+        if (chunkError) {
+          console.error(`❌ Error storing chunk ${i + 1}:`, chunkError);
+        } else {
+          chunksProcessed++;
+          console.log(`✅ SUCCESS: Chunk ${chunksProcessed}/${chunks.length} saved`);
         }
       }
-      // Also process page-by-page content if available
-      else if (jobResult.pages) {
-        for (let pageIndex = 0; pageIndex < jobResult.pages.length; pageIndex++) {
-          const page = jobResult.pages[pageIndex];
-          
-          if (page.text && page.text.trim()) {
-            const chunkData = {
-              manual_id: manualSlug,
-              content: page.text,
-              page_start: pageIndex + 1,
-              page_end: pageIndex + 1,
-              menu_path: page.metadata?.section || `Page ${pageIndex + 1}`,
-              fec_tenant_id: tenantId
-            };
-            
-            console.log(`💾 Inserting page chunk ${pageIndex + 1}...`);
-            
-            const { error: chunkError } = await supabase
-              .from('chunks_text')
-              .insert(chunkData);
-              
-            if (chunkError) {
-              console.error(`❌ Error storing page chunk ${pageIndex + 1}:`, chunkError);
-            } else {
-              chunksProcessed++;
-              console.log(`✅ SUCCESS: Page chunk ${chunksProcessed} saved`);
-            }
-          }
-        }
-      }
-      
-      console.log(`✅ Text chunks processing complete: ${chunksProcessed} stored`);
     }
 
     // 5. GOLDEN SEQUENCE STEP 5: Mark status as completed with on_conflict

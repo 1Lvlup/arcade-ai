@@ -26,10 +26,12 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("📦 Webhook payload received (first 120 chars):", JSON.stringify(payload).substring(0, 120));
 
-    const { job_id: llamaJobId, status } = payload;
+    // Handle both job_id and jobId formats from LlamaCloud
+    const llamaJobId = payload.job_id || payload.jobId;
+    const status = payload.status;
     
     if (!llamaJobId) {
-      throw new Error("Missing job_id in webhook payload");
+      throw new Error("Missing job_id/jobId in webhook payload");
     }
     
     console.log(`🔍 Processing job: ${llamaJobId}, status: ${status}`);

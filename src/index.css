@@ -5,47 +5,47 @@
 
 @layer base {
   :root {
-    /* Modern dark blue theme - no white backgrounds */
-    --background: 215 28% 12%;     /* Deep navy background */
-    --foreground: 0 0% 95%;        /* Clean white text */
+    /* Modern dark theme with black background and flipped blues */
+    --background: 0 0% 0%;          /* Pure black background */
+    --foreground: 0 0% 95%;         /* Clean white text */
     
-    --card: 215 25% 16%;           /* Slightly lighter navy for cards */
+    --card: 215 25% 8%;             /* Very dark navy for cards */
     --card-foreground: 0 0% 95%;
     
-    --popover: 215 25% 16%;
+    --popover: 215 25% 8%;
     --popover-foreground: 0 0% 95%;
     
-    --primary: 205 100% 55%;       /* Bright electric blue */
-    --primary-foreground: 0 0% 95%;
+    --primary: 205 100% 65%;        /* Light electric blue (flipped) */
+    --primary-foreground: 0 0% 0%;
     
-    --secondary: 205 100% 45%;     /* Darker blue */
+    --secondary: 205 100% 45%;      /* Darker blue (flipped) */
     --secondary-foreground: 0 0% 95%;
     
-    --muted: 215 20% 20%;          /* Muted navy */
+    --muted: 215 20% 15%;           /* Muted dark */
     --muted-foreground: 0 0% 70%;
     
-    --accent: 205 100% 55%;        /* Bright blue for accents */
-    --accent-foreground: 0 0% 95%;
+    --accent: 205 100% 65%;         /* Light blue for accents */
+    --accent-foreground: 0 0% 0%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 95%;
     
-    --border: 215 15% 24%;         /* Subtle navy border */
-    --input: 215 20% 18%;          /* Dark input background */
-    --ring: 205 100% 55%;          /* Bright blue ring */
+    --border: 215 15% 20%;          /* Subtle border */
+    --input: 215 20% 10%;           /* Very dark input background */
+    --ring: 205 100% 65%;           /* Light blue ring */
     
     --radius: 0.75rem;
     
-    /* Tech theme colors */
-    --blue-bright: 205 100% 55%;   /* Bright electric blue */
-    --blue-electric: 205 100% 65%; /* Lighter electric blue */
-    --gunmetal-dark: 220 15% 8%;   /* Dark gunmetal */
-    --white-clean: 0 0% 100%;      /* Pure white */
+    /* Tech theme colors - flipped */
+    --blue-bright: 205 100% 65%;    /* Light electric blue */
+    --blue-electric: 205 100% 55%;  /* Medium electric blue */
+    --gunmetal-dark: 0 0% 0%;       /* Pure black */
+    --white-clean: 0 0% 100%;       /* Pure white */
     
-    /* Professional gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(205 100% 55%), hsl(205 100% 65%));
-    --gradient-tech: linear-gradient(135deg, hsl(220 15% 8%), hsl(220 12% 12%));
-    --gradient-electric: linear-gradient(45deg, hsl(205 100% 55% / 0.1), hsl(205 100% 65% / 0.2));
+    /* Professional gradients - flipped */
+    --gradient-primary: linear-gradient(135deg, hsl(205 100% 65%), hsl(205 100% 75%));
+    --gradient-tech: linear-gradient(135deg, hsl(0 0% 0%), hsl(215 20% 5%));
+    --gradient-electric: linear-gradient(45deg, hsl(205 100% 65% / 0.1), hsl(205 100% 75% / 0.2));
     
     /* Enhanced shadows and glows */
     --shadow-orange: 0 0 25px hsl(25 100% 50% / 0.3);
@@ -203,30 +203,30 @@
   }
   
   .btn-tech {
-    background: linear-gradient(135deg, hsl(205 100% 55%) 0%, hsl(205 100% 65%) 100%);
-    border: 1px solid hsl(205 100% 55%);
-    color: hsl(0 0% 100%);
+    background: linear-gradient(135deg, hsl(205 100% 65%) 0%, hsl(205 100% 75%) 100%);
+    border: 1px solid hsl(205 100% 65%);
+    color: hsl(0 0% 0%);
     font-family: 'Space Grotesk', sans-serif;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.3s ease;
   }
   
   .btn-tech:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px hsl(205 100% 55% / 0.3);
+    box-shadow: 0 10px 25px hsl(205 100% 65% / 0.3);
   }
   
   .btn-tech-outline {
     background: transparent;
-    border: 2px solid hsl(205 100% 55%);
-    color: hsl(205 100% 55%);
+    border: 2px solid hsl(205 100% 65%);
+    color: hsl(205 100% 65%);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 500;
     transition: all 0.3s ease;
   }
   
   .btn-tech-outline:hover {
-    background: hsl(205 100% 55% / 0.1);
+    background: hsl(205 100% 65% / 0.1);
     transform: translateY(-2px);
   }
   

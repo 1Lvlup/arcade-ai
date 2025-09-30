@@ -73,17 +73,17 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
 
   if (loading) {
     return (
-      <Card className="border-blue-200">
+      <Card className="border-primary/30 bg-card">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-blue-900">
-            <Database className="h-6 w-6" />
+          <CardTitle className="flex items-center space-x-2 text-foreground">
+            <Database className="h-6 w-6 text-primary" />
             <span>Text Chunks</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-            <span className="ml-3 text-gray-600">Loading text chunks...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <span className="ml-3 text-foreground">Loading text chunks...</span>
           </div>
         </CardContent>
       </Card>
@@ -91,12 +91,12 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
   }
 
   return (
-    <Card className="border-blue-200">
+    <Card className="border-primary/30 bg-card">
       <CardHeader>
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2 text-blue-900">
-              <Database className="h-6 w-6" />
+            <CardTitle className="flex items-center space-x-2 text-foreground">
+              <Database className="h-6 w-6 text-primary" />
               <span>Text Chunks</span>
               <Badge variant="secondary">{filteredChunks.length}</Badge>
             </CardTitle>
@@ -104,12 +104,12 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
           
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search chunks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-input border-primary/30"
             />
           </div>
         </div>
@@ -119,17 +119,17 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
           <div className="text-center py-12">
             {chunks.length === 0 ? (
               <>
-                <Database className="h-16 w-16 mx-auto mb-4 text-blue-300" />
-                <h3 className="text-xl font-semibold text-blue-900 mb-2">No Text Chunks</h3>
-                <p className="text-blue-600">
+                <Database className="h-16 w-16 mx-auto mb-4 text-primary/50" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No Text Chunks</h3>
+                <p className="text-muted-foreground">
                   No text chunks were processed for this manual yet.
                 </p>
               </>
             ) : (
               <>
-                <Search className="h-16 w-16 mx-auto mb-4 text-blue-300" />
-                <h3 className="text-xl font-semibold text-blue-900 mb-2">No Results Found</h3>
-                <p className="text-blue-600">
+                <Search className="h-16 w-16 mx-auto mb-4 text-primary/50" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No Results Found</h3>
+                <p className="text-muted-foreground">
                   No chunks match your search term "{searchTerm}".
                 </p>
               </>
@@ -138,7 +138,7 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
         ) : (
           <div className="space-y-4">
             {filteredChunks.map((chunk, index) => (
-              <Card key={chunk.id} className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
+              <Card key={chunk.id} className="border-l-4 border-l-primary hover:shadow-lg transition-shadow bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-3">
@@ -159,13 +159,13 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
                         </Badge>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {new Date(chunk.created_at).toLocaleDateString()}
                     </div>
                   </div>
                   
                   <div 
-                    className="text-gray-800 leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto"
+                    className="text-foreground leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto custom-scrollbar"
                     dangerouslySetInnerHTML={{
                       __html: highlightSearchTerm(chunk.content, searchTerm)
                     }}

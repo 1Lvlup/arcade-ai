@@ -9,7 +9,7 @@
     --background: 0 0% 0%;          /* Pure black background */
     --foreground: 0 0% 95%;         /* Clean white text */
     
-    --card: 215 25% 8%;             /* Very dark navy for cards */
+    --card: 0 0% 0%;                /* Pure black for cards */
     --card-foreground: 0 0% 95%;
     
     --popover: 215 25% 8%;

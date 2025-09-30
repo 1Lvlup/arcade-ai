@@ -190,13 +190,13 @@ export function ManualDetail() {
   };
 
   const getStatusColor = () => {
-    if (!processingStatus) return 'bg-gray-500';
+    if (!processingStatus) return 'bg-muted';
     
     switch (processingStatus.status) {
       case 'completed': return 'bg-green-500';
-      case 'processing': return 'bg-blue-500';
-      case 'failed': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'processing': return 'bg-primary';
+      case 'failed': return 'bg-destructive';
+      default: return 'bg-muted';
     }
   };
 
@@ -215,12 +215,12 @@ export function ManualDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="min-h-screen bg-background">
         <SharedHeader title="Loading Manual..." showBackButton={true} backTo="/manuals" />
         <main className="container mx-auto px-6 py-8">
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-            <span className="ml-4 text-xl text-gray-600">Loading manual details...</span>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+            <span className="ml-4 text-xl text-foreground">Loading manual details...</span>
           </div>
         </main>
       </div>
@@ -229,13 +229,13 @@ export function ManualDetail() {
 
   if (!manual) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="min-h-screen bg-background">
         <SharedHeader title="Manual Not Found" showBackButton={true} backTo="/manuals" />
         <main className="container mx-auto px-6 py-8">
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-destructive bg-card">
             <CardContent className="text-center py-12">
-              <h2 className="text-2xl font-bold text-red-800 mb-4">Manual Not Found</h2>
-              <p className="text-red-600">The requested manual could not be found.</p>
+              <h2 className="text-2xl font-bold text-destructive mb-4">Manual Not Found</h2>
+              <p className="text-muted-foreground">The requested manual could not be found.</p>
             </CardContent>
           </Card>
         </main>
@@ -244,7 +244,7 @@ export function ManualDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-background">
       <SharedHeader 
         title={manual.title} 
         showBackButton={true} 
@@ -253,7 +253,7 @@ export function ManualDetail() {
       
       <main className="container mx-auto px-6 py-8 space-y-8">
         {/* Header Card */}
-        <Card className="border-border bg-card shadow-lg">
+        <Card className="border-primary/30 bg-card shadow-lg">
           <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-t-lg">
             <div className="flex items-center justify-between">
               <div>
@@ -261,12 +261,12 @@ export function ManualDetail() {
                   <Database className="h-8 w-8" />
                   <span>{manual.title}</span>
                 </CardTitle>
-                <CardDescription className="text-blue-100 text-lg mt-2">
+                <CardDescription className="text-primary-foreground/80 text-lg mt-2">
                   {manual.source_filename}
                 </CardDescription>
               </div>
               <div className="text-right">
-                <div className="text-blue-100 text-sm">Manual ID</div>
+                <div className="text-primary-foreground/80 text-sm">Manual ID</div>
                 <div className="font-mono text-sm">{manual.manual_id}</div>
               </div>
             </div>
@@ -286,7 +286,7 @@ export function ManualDetail() {
                 </div>
                 <Progress value={processingStatus.progress_percent} className="h-3" />
                 {processingStatus.status === 'processing' && (
-                  <div className="mt-2 text-sm text-gray-600">
+                  <div className="mt-2 text-sm text-muted-foreground">
                     {processingStatus.chunks_processed} / {processingStatus.total_chunks} chunks processed
                   </div>
                 )}
@@ -295,20 +295,20 @@ export function ManualDetail() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-blue-50 rounded-lg p-6 text-center">
-                <Database className="h-12 w-12 text-blue-600 mx-auto mb-3" />
-                <div className="text-3xl font-bold text-blue-900">{stats.chunks}</div>
-                <div className="text-blue-700 font-medium">Text Chunks</div>
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-6 text-center">
+                <Database className="h-12 w-12 text-primary mx-auto mb-3" />
+                <div className="text-3xl font-bold text-foreground">{stats.chunks}</div>
+                <div className="text-muted-foreground font-medium">Text Chunks</div>
               </div>
-              <div className="bg-green-50 rounded-lg p-6 text-center">
-                <Image className="h-12 w-12 text-green-600 mx-auto mb-3" />
-                <div className="text-3xl font-bold text-green-900">{stats.figures}</div>
-                <div className="text-green-700 font-medium">Images</div>
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 text-center">
+                <Image className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                <div className="text-3xl font-bold text-foreground">{stats.figures}</div>
+                <div className="text-muted-foreground font-medium">Images</div>
               </div>
-              <div className="bg-purple-50 rounded-lg p-6 text-center">
-                <Brain className="h-12 w-12 text-purple-600 mx-auto mb-3" />
-                <div className="text-3xl font-bold text-purple-900">{stats.questions}</div>
-                <div className="text-purple-700 font-medium">Golden Questions</div>
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6 text-center">
+                <Brain className="h-12 w-12 text-purple-500 mx-auto mb-3" />
+                <div className="text-3xl font-bold text-foreground">{stats.questions}</div>
+                <div className="text-muted-foreground font-medium">Golden Questions</div>
               </div>
             </div>
 
@@ -317,7 +317,7 @@ export function ManualDetail() {
               <Button 
                 onClick={generateGoldenQuestions}
                 disabled={generatingQuestions || processingStatus?.status !== 'completed'}
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
               >
                 {generatingQuestions ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -346,45 +346,45 @@ export function ManualDetail() {
 
         {/* Tabs Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white border border-blue-200">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+          <TabsList className="grid w-full grid-cols-4 bg-card border border-primary/30">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Overview
             </TabsTrigger>
-            <TabsTrigger value="questions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <TabsTrigger value="questions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Golden Questions
             </TabsTrigger>
-            <TabsTrigger value="images" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <TabsTrigger value="images" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Images
             </TabsTrigger>
-            <TabsTrigger value="chunks" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <TabsTrigger value="chunks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Text Chunks
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <Card className="border-blue-200">
+            <Card className="border-primary/30 bg-card">
               <CardHeader>
-                <CardTitle className="text-2xl text-blue-900">Manual Overview</CardTitle>
+                <CardTitle className="text-2xl text-foreground">Manual Overview</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="font-semibold text-lg mb-3">Document Information</h3>
-                    <div className="space-y-2">
-                      <div><span className="font-medium">Title:</span> {manual.title}</div>
-                      <div><span className="font-medium">Filename:</span> {manual.source_filename}</div>
-                      <div><span className="font-medium">Created:</span> {new Date(manual.created_at).toLocaleString()}</div>
-                      <div><span className="font-medium">Updated:</span> {new Date(manual.updated_at).toLocaleString()}</div>
+                    <h3 className="font-semibold text-lg mb-3 text-foreground">Document Information</h3>
+                    <div className="space-y-2 text-muted-foreground">
+                      <div><span className="font-medium text-foreground">Title:</span> {manual.title}</div>
+                      <div><span className="font-medium text-foreground">Filename:</span> {manual.source_filename}</div>
+                      <div><span className="font-medium text-foreground">Created:</span> {new Date(manual.created_at).toLocaleString()}</div>
+                      <div><span className="font-medium text-foreground">Updated:</span> {new Date(manual.updated_at).toLocaleString()}</div>
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-3">Processing Details</h3>
-                    <div className="space-y-2">
-                      <div><span className="font-medium">Job ID:</span> {manual.job_id || 'N/A'}</div>
-                      <div><span className="font-medium">Status:</span> {processingStatus?.status || 'Unknown'}</div>
-                      <div><span className="font-medium">Stage:</span> {processingStatus?.stage || 'N/A'}</div>
+                    <h3 className="font-semibold text-lg mb-3 text-foreground">Processing Details</h3>
+                    <div className="space-y-2 text-muted-foreground">
+                      <div><span className="font-medium text-foreground">Job ID:</span> {manual.job_id || 'N/A'}</div>
+                      <div><span className="font-medium text-foreground">Status:</span> {processingStatus?.status || 'Unknown'}</div>
+                      <div><span className="font-medium text-foreground">Stage:</span> {processingStatus?.stage || 'N/A'}</div>
                       {processingStatus?.error_message && (
-                        <div className="text-red-600">
+                        <div className="text-destructive">
                           <span className="font-medium">Error:</span> {processingStatus.error_message}
                         </div>
                       )}

@@ -11,6 +11,83 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
+// Build structured summary from LlamaCloud parsed data
+function buildStructuredSummary(
+  manual: { title: string; source_filename: string },
+  chunks: Array<{ content: string; menu_path: string | null; page_start: number | null; page_end: number | null }>,
+  figures: Array<{ caption_text: string | null; keywords: string[] | null; page_number: number | null; vision_text: string | null }>
+): string {
+  const sections: string[] = [];
+
+  // Manual metadata
+  sections.push(`# MANUAL METADATA`);
+  sections.push(`Title: ${manual.title}`);
+  sections.push(`Source: ${manual.source_filename}`);
+  sections.push(`Total Pages: ${Math.max(...chunks.map(c => c.page_end || 0))}`);
+  sections.push('');
+
+  // Extract unique section hierarchy
+  const menuPaths = new Set<string>();
+  chunks.forEach(chunk => {
+    if (chunk.menu_path) {
+      menuPaths.add(chunk.menu_path);
+    }
+  });
+
+  sections.push(`# TABLE OF CONTENTS (${menuPaths.size} sections)`);
+  Array.from(menuPaths)
+    .sort()
+    .forEach(path => sections.push(`  • ${path}`));
+  sections.push('');
+
+  // Figure captions and keywords
+  if (figures.length > 0) {
+    sections.push(`# FIGURES AND DIAGRAMS (${figures.length} total)`);
+    figures.slice(0, 20).forEach((fig, idx) => {
+      if (fig.caption_text || fig.keywords?.length) {
+        sections.push(`Figure ${idx + 1} (Page ${fig.page_number}):`);
+        if (fig.caption_text) sections.push(`  Caption: ${fig.caption_text}`);
+        if (fig.keywords?.length) sections.push(`  Keywords: ${fig.keywords.join(', ')}`);
+        if (fig.vision_text) sections.push(`  Description: ${fig.vision_text.substring(0, 150)}...`);
+      }
+    });
+    sections.push('');
+  }
+
+  // Extract tables from content (look for table-like patterns)
+  const tableChunks = chunks.filter(c => 
+    c.content.toLowerCase().includes('table') || 
+    c.content.includes('|') && c.content.split('|').length > 5
+  );
+  
+  if (tableChunks.length > 0) {
+    sections.push(`# TABLES AND SPECIFICATIONS (${tableChunks.length} found)`);
+    tableChunks.slice(0, 5).forEach(chunk => {
+      const preview = chunk.content.substring(0, 200).replace(/\n/g, ' ');
+      sections.push(`  • ${chunk.menu_path || 'General'}: ${preview}...`);
+    });
+    sections.push('');
+  }
+
+  // Sample content from key sections
+  sections.push(`# CONTENT SAMPLES`);
+  const keywordSections = ['troubleshooting', 'maintenance', 'installation', 'setup', 'safety', 'specifications', 'error'];
+  const relevantChunks = chunks.filter(c => 
+    keywordSections.some(keyword => 
+      c.menu_path?.toLowerCase().includes(keyword) || 
+      c.content.toLowerCase().includes(keyword)
+    )
+  );
+
+  relevantChunks.slice(0, 8).forEach(chunk => {
+    sections.push(`## ${chunk.menu_path || 'General Section'} (Pages ${chunk.page_start}-${chunk.page_end})`);
+    sections.push(chunk.content.substring(0, 400));
+    sections.push('...\n');
+  });
+
+  return sections.join('\n');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -65,12 +142,14 @@ serve(async (req) => {
       throw new Error('Manual not found');
     }
 
-    // Get a sample of chunks for context
+    console.log('📊 Building comprehensive manual summary...');
+
+    // Get all chunks to extract section hierarchy
     const { data: chunks, error: chunksError } = await supabase
       .from('chunks_text')
-      .select('content, menu_path')
+      .select('content, menu_path, page_start, page_end')
       .eq('manual_id', manual_id)
-      .limit(10);
+      .order('page_start', { ascending: true });
 
     if (chunksError) {
       console.error('Error fetching chunks:', chunksError);
@@ -81,11 +160,16 @@ serve(async (req) => {
       throw new Error('No content found for this manual');
     }
 
-    // Prepare content for AI analysis
-    const contentSample = chunks
-      .map(chunk => `Section: ${chunk.menu_path || 'General'}\nContent: ${chunk.content}`)
-      .join('\n\n---\n\n');
+    // Get all figures for captions and keywords
+    const { data: figures } = await supabase
+      .from('figures')
+      .select('caption_text, keywords, page_number, vision_text')
+      .eq('manual_id', manual_id)
+      .order('page_number', { ascending: true });
 
+    // Build structured summary
+    const summary = buildStructuredSummary(manual, chunks, figures || []);
+    
     console.log('📝 Analyzing content with AI...');
 
     // Generate golden questions using OpenAI
@@ -125,12 +209,9 @@ Importance levels: high, medium, low`
           },
           {
             role: 'user',
-            content: `Generate 8-12 golden questions for this arcade game manual:
+            content: `Generate 8-12 golden questions for this technical manual using the comprehensive summary below:
 
-MANUAL: ${manual.title} (${manual.source_filename})
-
-CONTENT SAMPLE:
-${contentSample.substring(0, 4000)}`
+${summary.substring(0, 8000)}`
           }
         ],
         temperature: 0.7,

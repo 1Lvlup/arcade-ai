@@ -80,6 +80,22 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
     
     console.log(`📋 Processing for manual_slug: ${manualSlug}, tenant_id: ${tenantId}`);
 
+    // Fetch the full job result from LlamaCloud to get images
+    const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY');
+    console.log(`📥 Fetching job result from LlamaCloud for images...`);
+    
+    const resultResponse = await fetch(`${LLAMACLOUD_BASE}/parsing/job/${llamaJobId}/result/json`, {
+      headers: { 'Authorization': `Bearer ${llamaApiKey}` }
+    });
+
+    if (!resultResponse.ok) {
+      throw new Error(`Failed to fetch job result: ${resultResponse.status}`);
+    }
+
+    const jobResult = await resultResponse.json();
+    console.log(`📊 Job result structure:`, Object.keys(jobResult));
+    console.log(`📊 Job result details: figures=${jobResult.figures?.length || 0}, pages=${jobResult.pages?.length || 0}`);
+
     // 1. Set tenant context (CRITICAL)
     console.log(`🎯 Step 1: Setting tenant context`);
     const { error: rpcError } = await supabase.rpc('set_tenant_context', {
@@ -95,23 +111,23 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
     let figuresProcessed = 0;
     let chunksProcessed = 0;
 
-    // 2. Process figures from payload
-    if (payload.figures && payload.figures.length > 0) {
-      console.log(`🖼️ Step 2: Processing ${payload.figures.length} figures...`);
+    // 2. Process figures from LlamaCloud result (not webhook payload)
+    if (jobResult.figures && jobResult.figures.length > 0) {
+      console.log(`🖼️ Step 2: Processing ${jobResult.figures.length} figures from LlamaCloud...`);
       
-      for (const figure of payload.figures) {
+      for (let i = 0; i < jobResult.figures.length; i++) {
+        const figure = jobResult.figures[i];
         try {
-          // Construct proper S3 URL following golden configuration pattern
-          const figureName = typeof figure === 'string' ? figure : (figure.name || `figure_${figuresProcessed}`);
-          const s3ImageUrl = `https://${ARTIFACTS_BUCKET}.s3.${AWS_REGION}.amazonaws.com/manuals/${manualSlug}/${figureName}`;
+          // For now, use LlamaCloud URL directly (temporary solution)
+          const llamaImageUrl = `${LLAMACLOUD_BASE}/parsing/job/${llamaJobId}/result/image/${figure}`;
           
           const figureData = {
             manual_id: manualSlug,
-            figure_id: figureName,
-            image_url: s3ImageUrl,
-            page_number: figure.page || null,
-            bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
-            llama_asset_name: figureName,
+            figure_id: figure,
+            image_url: llamaImageUrl, // Use LlamaCloud URL temporarily
+            page_number: null,
+            bbox_pdf_coords: null,
+            llama_asset_name: figure,
             fec_tenant_id: tenantId
           };
           
@@ -124,7 +140,7 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
             console.error("❌ Error storing figure:", figureError);
           } else {
             figuresProcessed++;
-            console.log(`✅ Figure ${figuresProcessed}/${payload.figures.length} stored`);
+            console.log(`✅ Figure ${figuresProcessed}/${jobResult.figures.length} stored with LlamaCloud URL`);
           }
         } catch (error) {
           console.error("❌ Error processing figure:", error);
@@ -132,11 +148,12 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
       }
     }
 
-    // 3. Process text content 
-    if (payload.txt) {
-      console.log(`📝 Step 3: Processing text content (${payload.txt.length} characters)...`);
+    // 3. Process text content from webhook payload (faster) or jobResult
+    const textContent = payload.txt || jobResult.text;
+    if (textContent) {
+      console.log(`📝 Step 3: Processing text content (${textContent.length} characters)...`);
       
-      const chunks = splitTextIntoChunks(payload.txt, 4000);
+      const chunks = splitTextIntoChunks(textContent, 4000);
       
       for (let i = 0; i < chunks.length; i++) {
         const chunkData = {

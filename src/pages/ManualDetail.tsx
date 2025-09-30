@@ -295,17 +295,17 @@ export function ManualDetail() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-primary/10 border border-primary/30 rounded-lg p-6 text-center">
+              <div className="bg-card border border-primary/30 rounded-lg p-6 text-center">
                 <Database className="h-12 w-12 text-primary mx-auto mb-3" />
                 <div className="text-3xl font-bold text-foreground">{stats.chunks}</div>
                 <div className="text-muted-foreground font-medium">Text Chunks</div>
               </div>
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 text-center">
+              <div className="bg-card border border-green-500/30 rounded-lg p-6 text-center">
                 <Image className="h-12 w-12 text-green-500 mx-auto mb-3" />
                 <div className="text-3xl font-bold text-foreground">{stats.figures}</div>
                 <div className="text-muted-foreground font-medium">Images</div>
               </div>
-              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6 text-center">
+              <div className="bg-card border border-purple-500/30 rounded-lg p-6 text-center">
                 <Brain className="h-12 w-12 text-purple-500 mx-auto mb-3" />
                 <div className="text-3xl font-bold text-foreground">{stats.questions}</div>
                 <div className="text-muted-foreground font-medium">Golden Questions</div>

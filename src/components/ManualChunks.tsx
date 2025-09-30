@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database, Search, FileText, BookOpen } from 'lucide-react';
+import { Database, Search } from 'lucide-react';
 
 interface Chunk {
   id: string;
@@ -26,7 +24,6 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredChunks, setFilteredChunks] = useState<Chunk[]>([]);
-  const [selectedChunk, setSelectedChunk] = useState<Chunk | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,11 +62,6 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const truncateContent = (content: string, maxLength: number = 300) => {
-    if (content.length <= maxLength) return content;
-    return content.substring(0, maxLength) + '...';
   };
 
   const highlightSearchTerm = (text: string, searchTerm: string) => {
@@ -173,50 +165,17 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
                   </div>
                   
                   <div 
-                    className="text-gray-800 leading-relaxed whitespace-pre-wrap"
+                    className="text-gray-800 leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto"
                     dangerouslySetInnerHTML={{
-                      __html: highlightSearchTerm(truncateContent(chunk.content), searchTerm)
+                      __html: highlightSearchTerm(chunk.content, searchTerm)
                     }}
                   />
-                  
-                  {chunk.content.length > 300 && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="mt-3 text-blue-600"
-                      onClick={() => setSelectedChunk(chunk)}
-                    >
-                      <BookOpen className="h-4 w-4 mr-1" />
-                      Read More
-                    </Button>
-                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </CardContent>
-
-      <Dialog open={!!selectedChunk} onOpenChange={() => setSelectedChunk(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Full Chunk Content
-              {selectedChunk?.page_start && (
-                <Badge variant="secondary" className="ml-2">
-                  {selectedChunk.page_start === selectedChunk.page_end 
-                    ? `Page ${selectedChunk.page_start}` 
-                    : `Pages ${selectedChunk.page_start}-${selectedChunk.page_end}`}
-                </Badge>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed">
-            {selectedChunk?.content}
-          </div>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 }

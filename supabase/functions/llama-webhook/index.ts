@@ -370,14 +370,17 @@ serve(async (req) => {
         try {
           console.log(`🔄 Processing figure: ${figure.name || figure.id || figure || 'unnamed'}`);
           
-          // Simple approach - store whatever image URL/path LlamaCloud provides
+          // Construct proper S3 URL for the image
+          const figureName = figure.name || figure.id || figure || `figure_${figuresProcessed}`;
+          const s3ImageUrl = `https://arcade-postparse-images.s3.us-east-2.amazonaws.com/manuals/${document.manual_id}/${figureName}`;
+          
           const figureData = {
             manual_id: document.manual_id,
-            figure_id: figure.name || figure.id || `figure_${figuresProcessed}`,
-            image_url: figure.url || figure.image_url || figure.path || figure,
+            figure_id: figureName,
+            image_url: s3ImageUrl,
             page_number: figure.page || null,
             bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
-            llama_asset_name: figure.name || figure,
+            llama_asset_name: figureName,
             fec_tenant_id: document.fec_tenant_id
           };
           

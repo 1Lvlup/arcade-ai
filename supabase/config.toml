@@ -104,6 +104,9 @@ verify_jwt = true
 [functions.generate-golden-questions]
 verify_jwt = true
 
+[functions.evaluate-manual]
+verify_jwt = true
+
 [functions.generate-image-caption]
 verify_jwt = true
 

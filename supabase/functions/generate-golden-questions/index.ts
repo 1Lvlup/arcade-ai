@@ -161,8 +161,28 @@ ${contentSample.substring(0, 4000)}`
 
     console.log(`📋 Generated ${questions.length} golden questions`);
 
-    // TODO: Store questions in database when golden_questions table is created
-    // For now, return the questions
+    // Store questions in database
+    const questionsToInsert = questions.map((q: any) => ({
+      manual_id,
+      fec_tenant_id: profile.fec_tenant_id,
+      question: q.question,
+      question_type: q.type || q.category || 'general',
+      category: q.category,
+      importance: q.importance,
+      expected_keywords: q.expected_keywords || [],
+      filters: q.filters || null
+    }));
+
+    const { error: insertError } = await supabase
+      .from('golden_questions')
+      .insert(questionsToInsert);
+
+    if (insertError) {
+      console.error('Error storing questions:', insertError);
+      throw new Error('Failed to store questions');
+    }
+
+    console.log('✅ Questions stored successfully');
     
     return new Response(JSON.stringify({ 
       success: true, 

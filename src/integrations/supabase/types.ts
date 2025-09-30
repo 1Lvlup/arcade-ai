@@ -209,6 +209,7 @@ export type Database = {
           figure_id: string | null
           id: string
           image_url: string
+          job_id: string | null
           keywords: string[] | null
           llama_asset_name: string | null
           manual_id: string
@@ -226,6 +227,7 @@ export type Database = {
           figure_id?: string | null
           id?: string
           image_url: string
+          job_id?: string | null
           keywords?: string[] | null
           llama_asset_name?: string | null
           manual_id: string
@@ -243,6 +245,7 @@ export type Database = {
           figure_id?: string | null
           id?: string
           image_url?: string
+          job_id?: string | null
           keywords?: string[] | null
           llama_asset_name?: string | null
           manual_id?: string
@@ -259,6 +262,48 @@ export type Database = {
             referencedColumns: ["manual_id"]
           },
         ]
+      }
+      golden_questions: {
+        Row: {
+          category: string
+          created_at: string
+          expected_keywords: string[] | null
+          fec_tenant_id: string
+          filters: Json | null
+          id: string
+          importance: string
+          manual_id: string
+          question: string
+          question_type: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          expected_keywords?: string[] | null
+          fec_tenant_id?: string
+          filters?: Json | null
+          id?: string
+          importance: string
+          manual_id: string
+          question: string
+          question_type: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          expected_keywords?: string[] | null
+          fec_tenant_id?: string
+          filters?: Json | null
+          id?: string
+          importance?: string
+          manual_id?: string
+          question?: string
+          question_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       processing_status: {
         Row: {
@@ -345,6 +390,65 @@ export type Database = {
             columns: ["fec_tenant_id"]
             isOneToOne: false
             referencedRelation: "fec_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_evaluations: {
+        Row: {
+          answer: string
+          answer_model: string | null
+          citations: Json | null
+          coverage: string | null
+          created_at: string
+          evidence_pages: number[] | null
+          fec_tenant_id: string
+          grader_model: string | null
+          id: string
+          manual_id: string
+          missing_keywords: string[] | null
+          question_id: string
+          rationale: string | null
+          score: string
+        }
+        Insert: {
+          answer: string
+          answer_model?: string | null
+          citations?: Json | null
+          coverage?: string | null
+          created_at?: string
+          evidence_pages?: number[] | null
+          fec_tenant_id?: string
+          grader_model?: string | null
+          id?: string
+          manual_id: string
+          missing_keywords?: string[] | null
+          question_id: string
+          rationale?: string | null
+          score: string
+        }
+        Update: {
+          answer?: string
+          answer_model?: string | null
+          citations?: Json | null
+          coverage?: string | null
+          created_at?: string
+          evidence_pages?: number[] | null
+          fec_tenant_id?: string
+          grader_model?: string | null
+          id?: string
+          manual_id?: string
+          missing_keywords?: string[] | null
+          question_id?: string
+          rationale?: string | null
+          score?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_evaluations_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "golden_questions"
             referencedColumns: ["id"]
           },
         ]
@@ -474,7 +578,7 @@ export type Database = {
         }[]
       }
       set_tenant_context: {
-        Args: { tenant_id: string }
+        Args: { p_tenant_id: string } | { tenant_id: string }
         Returns: undefined
       }
       simple_search: {

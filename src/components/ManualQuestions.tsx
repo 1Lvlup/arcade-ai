@@ -30,9 +30,14 @@ export function ManualQuestions({ manualId }: ManualQuestionsProps) {
 
   const fetchQuestions = async () => {
     try {
-      // TODO: Implement golden_questions table and fetch logic
-      // For now, return empty array
-      setQuestions([]);
+      const { data, error } = await supabase
+        .from('golden_questions')
+        .select('*')
+        .eq('manual_id', manualId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setQuestions(data || []);
     } catch (error) {
       console.error('Error fetching questions:', error);
       toast({

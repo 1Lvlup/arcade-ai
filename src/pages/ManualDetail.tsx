@@ -12,6 +12,7 @@ import { SharedHeader } from '@/components/SharedHeader';
 import { ManualQuestions } from '@/components/ManualQuestions';
 import { ManualImages } from '@/components/ManualImages';
 import { ManualChunks } from '@/components/ManualChunks';
+import { QualityEvaluation } from '@/components/QualityEvaluation';
 
 interface Manual {
   id: string;
@@ -346,12 +347,15 @@ export function ManualDetail() {
 
         {/* Tabs Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-card border border-primary/30">
+          <TabsList className="grid w-full grid-cols-5 bg-card border border-primary/30">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Overview
             </TabsTrigger>
             <TabsTrigger value="questions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Golden Questions
+              Questions
+            </TabsTrigger>
+            <TabsTrigger value="evaluation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              RAG Quality
             </TabsTrigger>
             <TabsTrigger value="images" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Images
@@ -397,6 +401,10 @@ export function ManualDetail() {
 
           <TabsContent value="questions">
             <ManualQuestions manualId={manualId!} />
+          </TabsContent>
+
+          <TabsContent value="evaluation">
+            <QualityEvaluation manualId={manualId!} />
           </TabsContent>
 
           <TabsContent value="images">

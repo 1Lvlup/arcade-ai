@@ -400,19 +400,19 @@ export function ManualDetail() {
           </TabsContent>
 
           <TabsContent value="questions">
-            <ManualQuestions manualId={manualId!} />
+            {activeTab === 'questions' && <ManualQuestions manualId={manualId!} />}
           </TabsContent>
 
           <TabsContent value="evaluation">
-            <QualityEvaluation manualId={manualId!} />
+            {activeTab === 'evaluation' && <QualityEvaluation manualId={manualId!} />}
           </TabsContent>
 
           <TabsContent value="images">
-            <ManualImages manualId={manualId!} />
+            {activeTab === 'images' && <ManualImages manualId={manualId!} />}
           </TabsContent>
 
           <TabsContent value="chunks">
-            <ManualChunks manualId={manualId!} />
+            {activeTab === 'chunks' && <ManualChunks manualId={manualId!} />}
           </TabsContent>
         </Tabs>
       </main>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,11 +36,7 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchEvaluations();
-  }, [manualId]);
-
-  const fetchEvaluations = async () => {
+  const fetchEvaluations = React.useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('question_evaluations')
@@ -58,7 +54,11 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [manualId]);
+
+  useEffect(() => {
+    fetchEvaluations();
+  }, [fetchEvaluations]);
 
   const runEvaluation = async () => {
     setEvaluating(true);
@@ -69,19 +69,23 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
 
       if (error) throw error;
 
-      toast({
-        title: 'Evaluation complete',
-        description: `Pass rate: ${data.summary.pass_rate}% (${data.summary.pass}/${data.summary.total})`,
-      });
+      if (toast) {
+        toast({
+          title: 'Evaluation complete',
+          description: `Pass rate: ${data.summary.pass_rate}% (${data.summary.pass}/${data.summary.total})`,
+        });
+      }
 
       fetchEvaluations();
     } catch (error) {
       console.error('Error running evaluation:', error);
-      toast({
-        title: 'Evaluation failed',
-        description: error instanceof Error ? error.message : 'Failed to evaluate manual',
-        variant: 'destructive',
-      });
+      if (toast) {
+        toast({
+          title: 'Evaluation failed',
+          description: error instanceof Error ? error.message : 'Failed to evaluate manual',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setEvaluating(false);
     }

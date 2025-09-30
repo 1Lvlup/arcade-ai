@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,11 +24,7 @@ export function ManualQuestions({ manualId }: ManualQuestionsProps) {
   const [generating, setGenerating] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchQuestions();
-  }, [manualId]);
-
-  const fetchQuestions = async () => {
+  const fetchQuestions = React.useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('golden_questions')
@@ -48,7 +44,11 @@ export function ManualQuestions({ manualId }: ManualQuestionsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [manualId, toast]);
+
+  useEffect(() => {
+    fetchQuestions();
+  }, [fetchQuestions]);
 
   const generateQuestions = async () => {
     setGenerating(true);

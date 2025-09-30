@@ -149,11 +149,23 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
       }
     }
 
-    // 3. Process text content - prioritize API result over webhook payload
-    const textContent = jobResult.text || payload.txt;
+    // 3. Process text content - extract from pages or use webhook payload as fallback
+    let textContent = '';
+    
+    // First try to get full text from pages (this is where the complete text is)
+    if (jobResult.pages && jobResult.pages.length > 0) {
+      textContent = jobResult.pages.map((page: any) => page.text || '').join('\n').trim();
+      console.log(`📝 Extracted ${textContent.length} characters from ${jobResult.pages.length} pages`);
+    }
+    
+    // Fallback to webhook payload if no pages text
+    if (!textContent && payload.txt) {
+      textContent = payload.txt;
+      console.log(`📝 Using webhook payload text (${textContent.length} characters) as fallback`);
+    }
+    
     if (textContent) {
       console.log(`📝 Step 3: Processing text content (${textContent.length} characters)...`);
-      console.log(`📝 Text source: ${jobResult.text ? 'API result (full text)' : 'webhook payload (preview)'}`);
       
       // Log first 200 chars to debug content
       console.log(`📝 Text preview: ${textContent.substring(0, 200)}...`);

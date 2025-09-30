@@ -209,7 +209,6 @@ export type Database = {
           figure_id: string | null
           id: string
           image_url: string
-          job_id: string | null
           keywords: string[] | null
           llama_asset_name: string | null
           manual_id: string
@@ -227,7 +226,6 @@ export type Database = {
           figure_id?: string | null
           id?: string
           image_url: string
-          job_id?: string | null
           keywords?: string[] | null
           llama_asset_name?: string | null
           manual_id: string
@@ -245,7 +243,6 @@ export type Database = {
           figure_id?: string | null
           id?: string
           image_url?: string
-          job_id?: string | null
           keywords?: string[] | null
           llama_asset_name?: string | null
           manual_id?: string
@@ -477,7 +474,7 @@ export type Database = {
         }[]
       }
       set_tenant_context: {
-        Args: { p_tenant_id: string } | { tenant_id: string }
+        Args: { tenant_id: string }
         Returns: undefined
       }
       simple_search: {

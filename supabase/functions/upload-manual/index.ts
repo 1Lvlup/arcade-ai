@@ -102,13 +102,29 @@ Maintain the hierarchical structure of sections and subsections.
     formData.append('take_screenshot', 'true')
     formData.append('preserve_very_small_text', 'true')
     
-    // CRITICAL: Space Invaders proven working settings - LlamaCloud API parameters
-    formData.append('extract_images', 'true')  // ✅ Working: extracts individual figures 
-    formData.append('extract_figures', 'true') // ✅ Working: extracts embedded figures
-    formData.append('take_screenshot', 'true') // ✅ Working: creates page screenshots 
-    formData.append('split_by_page', 'false')  // ✅ Working: keeps document structure
-    formData.append('include_page_breaks', 'true') // ✅ Working: preserves pagination
-    formData.append('fast_mode', 'false')      // ✅ Working: thorough processing
+    // GOLDEN CONFIGURATION: Space Invaders proven working settings
+    formData.append('extract_images', 'true')  // ✅ GOLDEN: extracts individual figures 
+    formData.append('extract_figures', 'true') // ✅ GOLDEN: extracts embedded figures
+    formData.append('take_screenshot', 'true') // ✅ GOLDEN: creates page screenshots 
+    formData.append('split_by_page', 'false')  // ✅ GOLDEN: keeps document structure
+    formData.append('include_page_breaks', 'true') // ✅ GOLDEN: preserves pagination
+    formData.append('fast_mode', 'false')      // ✅ GOLDEN: thorough processing
+    
+    // ADDITIONAL GOLDEN SETTINGS FOR FIGURE EXTRACTION
+    formData.append('precise_bounding_boxes', 'true') 
+    formData.append('specialized_image_parsing', 'true')
+    formData.append('high_resolution_ocr', 'true')
+    formData.append('ocr_languages', 'en')
+    formData.append('return_layout', 'true')
+    formData.append('return_page_screenshots', 'true')
+    
+    // Header/footer trimming via bounding box (GOLDEN SETTINGS)
+    formData.append('bbox_top', '0.08')
+    formData.append('bbox_bottom', '0.05')
+    
+    // Table extraction (GOLDEN SETTINGS)
+    formData.append('adaptive_long_table', 'true')
+    formData.append('outlined_table_extraction', 'true')
 
     // Custom formatting for technical content
     formData.append('system_prompt_append', `

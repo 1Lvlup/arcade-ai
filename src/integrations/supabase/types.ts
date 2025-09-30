@@ -474,7 +474,7 @@ export type Database = {
         }[]
       }
       set_tenant_context: {
-        Args: { tenant_id: string }
+        Args: { p_tenant_id: string } | { tenant_id: string }
         Returns: undefined
       }
       simple_search: {

@@ -132,7 +132,7 @@
       radial-gradient(circle at 20% 80%, hsl(205 100% 55% / 0.12) 0%, transparent 50%),
       radial-gradient(circle at 80% 20%, hsl(205 100% 65% / 0.12) 0%, transparent 50%),
       radial-gradient(circle at 40% 40%, hsl(205 100% 55% / 0.08) 0%, transparent 50%),
-      hsl(var(--background));
+      hsl(0 0% 0%);
   }
   
   .stat-card {

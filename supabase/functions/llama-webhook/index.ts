@@ -118,17 +118,18 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
       for (let i = 0; i < jobResult.figures.length; i++) {
         const figure = jobResult.figures[i];
         try {
-          // For now, use LlamaCloud URL directly (temporary solution)
+          // Use LlamaCloud URL directly with auth headers
           const llamaImageUrl = `${LLAMACLOUD_BASE}/parsing/job/${llamaJobId}/result/image/${figure}`;
           
           const figureData = {
             manual_id: manualSlug,
             figure_id: figure,
-            image_url: llamaImageUrl, // Use LlamaCloud URL temporarily
+            image_url: llamaImageUrl, // Use LlamaCloud URL directly
             page_number: null,
             bbox_pdf_coords: null,
             llama_asset_name: figure,
-            fec_tenant_id: tenantId
+            fec_tenant_id: tenantId,
+            llama_job_id: llamaJobId // Store job_id for auth
           };
           
           // Use on_conflict as in golden configuration

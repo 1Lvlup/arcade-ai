@@ -7,6 +7,7 @@ import { Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, Shield, Bar
 import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
+import checkmateLogoImage from '@/assets/checkmate-logo.png';
 
 import { Link } from 'react-router-dom';
 const Index = () => {
@@ -132,11 +133,16 @@ const Index = () => {
                 Next-Generation AI Platform
               </div>
               <h1 className="display-heading leading-none relative">
+                <img 
+                  src={checkmateLogoImage} 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full object-contain opacity-20 -z-10 scale-150"
+                />
                 <span className="relative z-10 font-normal text-8xl md:text-9xl lg:text-[10rem] text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  ARCADE RAG
+                  CHECKMATE
                 </span>
                 <span className="absolute inset-0 text-primary text-8xl md:text-9xl lg:text-[10rem] opacity-10 blur-xl scale-110 -z-10">
-                  ARCADE RAG
+                  CHECKMATE
                 </span>
               </h1>
             </div>

@@ -118,18 +118,18 @@ async function processCompletedJob(llamaJobId: string, payload: any, supabase: a
       for (let i = 0; i < jobResult.figures.length; i++) {
         const figure = jobResult.figures[i];
         try {
-          // Use LlamaCloud URL directly with auth headers
-          const llamaImageUrl = `${LLAMACLOUD_BASE}/parsing/job/${llamaJobId}/result/image/${figure}`;
+          // Use our serve-image function to proxy LlamaCloud images
+          const proxyImageUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/serve-image?job_id=${llamaJobId}&figure=${encodeURIComponent(figure)}`;
           
           const figureData = {
             manual_id: manualSlug,
             figure_id: figure,
-            image_url: llamaImageUrl, // Use LlamaCloud URL directly
+            image_url: proxyImageUrl, // Use our proxy endpoint
             page_number: null,
             bbox_pdf_coords: null,
             llama_asset_name: figure,
             fec_tenant_id: tenantId,
-            llama_job_id: llamaJobId // Store job_id for auth
+            job_id: llamaJobId // Store job_id for reference
           };
           
           // Use on_conflict as in golden configuration

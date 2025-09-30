@@ -13,12 +13,9 @@ const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Advanced chunking strategies
+// Chunking strategy
 const CHUNK_STRATEGIES = {
-  SEMANTIC: 'semantic',
-  HIERARCHICAL: 'hierarchical', 
-  SLIDING_WINDOW: 'sliding_window',
-  SENTENCE_BOUNDARY: 'sentence_boundary'
+  HIERARCHICAL: 'hierarchical'
 };
 
 // Create embedding using OpenAI
@@ -103,8 +100,8 @@ function createHierarchicalChunks(content: string, manual_id: string) {
     
     // Create chunks based on content type and size
     const shouldChunk = 
-      currentChunk.length > 1200 || // Size-based chunking
-      (currentChunk.length > 600 && line === '') || // Natural breaks
+      currentChunk.length > 1500 || // Larger chunks for better context
+      (currentChunk.length > 800 && line === '') || // Natural breaks
       patterns.troubleshootingSection.test(line) || // Important sections
       patterns.partsList.test(line) ||
       patterns.procedure.test(line);
@@ -130,9 +127,8 @@ function createHierarchicalChunks(content: string, manual_id: string) {
         index: chunkIndex++
       });
       
-      // Keep some overlap for context continuity
-      const lines = currentChunk.split('\n');
-      currentChunk = lines.slice(-2).join('\n') + '\n';
+      // Reset chunk without overlap to avoid duplication
+      currentChunk = '';
     }
   }
   
@@ -153,32 +149,6 @@ function createHierarchicalChunks(content: string, manual_id: string) {
   return chunks;
 }
 
-// Create sliding window chunks for better context coverage
-function createSlidingWindowChunks(chunks: any[], manual_id: string) {
-  const slidingChunks = [];
-  const windowSize = 2;
-  const overlap = 1;
-  
-  for (let i = 0; i < chunks.length - windowSize + 1; i += overlap) {
-    const windowChunks = chunks.slice(i, i + windowSize);
-    const combinedContent = windowChunks.map(chunk => chunk.content).join('\n\n');
-    
-    if (combinedContent.trim().length > 200) { // Only create if substantial content
-      slidingChunks.push({
-        content: combinedContent,
-        manual_id,
-        menu_path: windowChunks[0].menu_path + ' (Extended Context)',
-        page_start: windowChunks[0].page_start,
-        page_end: windowChunks[windowChunks.length - 1].page_end,
-        chunk_type: 'context_window',
-        strategy: CHUNK_STRATEGIES.SLIDING_WINDOW,
-        index: i
-      });
-    }
-  }
-  
-  return slidingChunks;
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -255,27 +225,18 @@ serve(async (req) => {
         job_id: jobId,
         manual_id: document.manual_id,
         status: 'processing',
-        stage: 'advanced_chunking',
-        current_task: 'Creating hierarchical and sliding window chunks with AI categorization',
+        stage: 'chunking',
+        current_task: 'Creating semantic chunks based on document structure',
         fec_tenant_id: document.fec_tenant_id,
         progress_percent: 25
       });
 
-    console.log("📝 Processing PREMIUM markdown content with advanced AI parsing");
+    console.log("📝 Processing markdown content with hierarchical chunking");
     
-    // STEP 1: Create hierarchical chunks based on document structure
-    console.log("🧩 Creating hierarchical chunks with AI categorization...");
-    const hierarchicalChunks = createHierarchicalChunks(markdown, document.manual_id);
-    console.log(`📚 Created ${hierarchicalChunks.length} hierarchical chunks`);
-    
-    // STEP 2: Create sliding window chunks for better context
-    console.log("🪟 Creating sliding window chunks for enhanced context...");
-    const slidingChunks = createSlidingWindowChunks(hierarchicalChunks, document.manual_id);
-    console.log(`📖 Created ${slidingChunks.length} sliding window chunks`);
-    
-    // STEP 3: Combine all chunks
-    const allChunks = [...hierarchicalChunks, ...slidingChunks];
-    console.log(`🎯 Total chunks to process: ${allChunks.length}`);
+    // Create hierarchical chunks based on document structure
+    console.log("🧩 Creating hierarchical chunks with semantic categorization...");
+    const allChunks = createHierarchicalChunks(markdown, document.manual_id);
+    console.log(`📚 Created ${allChunks.length} hierarchical chunks`);
 
     // Update progress
     await supabase

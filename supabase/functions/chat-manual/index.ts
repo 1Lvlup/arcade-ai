@@ -251,6 +251,39 @@ async function generateResponse(query: string, chunks: any[]) {
   console.log('📝 Formatted context with', chunks.length, 'chunks');
   console.log('📄 Context preview:', context.substring(0, 200) + '...');
 
+  const messages = [
+    {
+      role: "system",
+      content: `Lead Arcade Technician AI Assistant.
+
+CRITICAL INSTRUCTIONS:
+- Use ONLY the provided manual context
+- If the answer is not in the context, respond with: "I don't find this in the manual"
+- Return STRICT JSON with this exact structure:
+{
+  "summary": "Brief overview of the solution",
+  "steps": ["Step 1 description", "Step 2 description", ...],
+  "why": ["Explanation 1", "Explanation 2", ...],
+  "safety": ["Safety warning 1", "Safety warning 2", ...],
+  "sources": ["p8", "fig 12", ...]
+}
+
+- summary: Concise answer to the question
+- steps: Ordered list of actions to take (use empty array if not applicable)
+- why: Explanations of why these steps work (use empty array if not applicable)  
+- safety: Important safety warnings (use empty array if none)
+- sources: Page numbers and figure references from the manual (e.g., "p8", "fig 12", "pages 5-7")`
+    },
+    {
+      role: "user",
+      content: `Question:\n${query}`
+    },
+    {
+      role: "assistant",
+      content: `Manual context:\n${context}`
+    }
+  ];
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { 
@@ -260,29 +293,10 @@ async function generateResponse(query: string, chunks: any[]) {
     },
     body: JSON.stringify({
       model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are a helpful AI assistant that helps technicians troubleshoot arcade game issues using technical manuals.
-
-CRITICAL INSTRUCTIONS:
-- ONLY use information from the manual content provided below
-- If the answer is in the manual, cite the specific page numbers when you reference information
-- If the information is NOT in the provided manual content, clearly state: "I don't find this information in the manual"
-- Keep your answers practical and focused on troubleshooting
-- Do NOT make up information or guess if it's not in the manual content
-- When referring to figures, diagrams, or specific sections, mention the page numbers
-
-RELEVANT MANUAL CONTENT:
-${context}`
-        },
-        {
-          role: "user",
-          content: query
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 1500
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      max_tokens: 900,
+      messages
     }),
   });
   
@@ -293,7 +307,11 @@ ${context}`
   }
   
   const data = await response.json();
-  return data.choices[0].message.content;
+  const jsonResponse = JSON.parse(data.choices[0].message.content);
+  
+  console.log('✅ Parsed JSON response:', JSON.stringify(jsonResponse).substring(0, 200) + '...');
+  
+  return jsonResponse;
 }
 
 serve(async (req) => {
@@ -399,7 +417,7 @@ serve(async (req) => {
     const aiResponse = await generateResponse(query, chunks);
 
     console.log("🤖 Generated response");
-    console.log("Response preview:", aiResponse.substring(0, 200) + "...");
+    console.log("Response preview:", JSON.stringify(aiResponse).substring(0, 200) + "...");
     console.log("\n=================================\n");
 
     return new Response(JSON.stringify({ 

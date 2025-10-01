@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -14,6 +15,16 @@ interface Message {
     evidence_pages?: string[];
     rationale?: string;
   };
+  metadata?: {
+    manual_id: string;
+    embedding_model: string;
+    retrieval_strategy: string;
+    candidate_count: number;
+    rerank_scores: (number | null)[];
+    answerability_passed: boolean;
+    sources_used: any[];
+  };
+  context_seen?: string;
 }
 
 interface SimpleChatProps {
@@ -24,6 +35,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [expandedContext, setExpandedContext] = useState<number | null>(null);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -43,7 +55,9 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
       const assistantMessage: Message = { 
         role: 'assistant', 
         content: data.response || 'Sorry, I could not generate a response.',
-        grading: data.grading
+        grading: data.grading,
+        metadata: data.metadata,
+        context_seen: data.context_seen
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
@@ -104,6 +118,64 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
                     </div>
                   )}
                 </div>
+
+                {/* Metadata & Context Toggle */}
+                {message.role === 'assistant' && message.metadata && (
+                  <div className="mt-3 pt-3 border-t border-primary/10">
+                    <button
+                      onClick={() => setExpandedContext(expandedContext === index ? null : index)}
+                      className="flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {expandedContext === index ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      View Context & Metadata
+                    </button>
+                    
+                    {expandedContext === index && (
+                      <div className="mt-2 space-y-2 text-xs font-mono">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-muted-foreground">Manual:</span>
+                            <span className="ml-2 text-foreground">{message.metadata.manual_id}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Strategy:</span>
+                            <span className="ml-2 text-foreground">{message.metadata.retrieval_strategy}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Candidates:</span>
+                            <span className="ml-2 text-foreground">{message.metadata.candidate_count}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Answerability:</span>
+                            <span className={`ml-2 ${message.metadata.answerability_passed ? 'text-green-500' : 'text-red-500'}`}>
+                              {message.metadata.answerability_passed ? 'PASS' : 'FAIL'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <span className="text-muted-foreground">Rerank Scores (top 10):</span>
+                          <div className="ml-2 text-foreground">
+                            {message.metadata.rerank_scores.map((score, i) => (
+                              <span key={i} className="mr-2">
+                                {score !== null ? score.toFixed(3) : 'N/A'}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {message.context_seen && (
+                          <div className="mt-2">
+                            <span className="text-muted-foreground">Context GPT Saw:</span>
+                            <div className="mt-1 p-2 bg-background/50 rounded border border-primary/20 max-h-64 overflow-y-auto text-foreground whitespace-pre-wrap">
+                              {message.context_seen}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}

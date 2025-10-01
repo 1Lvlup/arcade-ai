@@ -699,6 +699,34 @@ serve(async (req) => {
       console.log('✅ Grading complete:', grading.overall);
       console.log('   Scores:', Object.entries(grading.score).map(([k, v]) => `${k}:${v}`).join(', '));
     }
+
+    // Build metadata for logging and transparency
+    const metadata = {
+      manual_id: manual_id || "all_manuals",
+      embedding_model: "text-embedding-3-small",
+      retrieval_strategy: strategy,
+      candidate_count: chunks.length,
+      rerank_scores: chunks.slice(0, 10).map(c => c.rerank_score ?? null),
+      answerability_passed: !weak,
+      sources_used: chunks.map(c => ({
+        manual_id: c.manual_id,
+        pages: `${c.page_start}${c.page_end && c.page_end !== c.page_start ? `-${c.page_end}` : ''}`,
+        menu_path: c.menu_path,
+        score: c.score,
+        rerank_score: c.rerank_score
+      }))
+    };
+
+    // Build the context that GPT saw
+    const contextSeen = chunks.map(chunk => {
+      const pageInfo = chunk.page_start 
+        ? `[Pages ${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}]`
+        : '';
+      const pathInfo = chunk.menu_path ? `[${chunk.menu_path}]` : '';
+      return `${pageInfo}${pathInfo ? ' ' + pathInfo : ''}\n${chunk.content}`;
+    }).join('\n\n---\n\n');
+
+    console.log("📋 Metadata:", JSON.stringify(metadata, null, 2));
     console.log("\n=================================\n");
 
     return new Response(JSON.stringify({ 
@@ -712,7 +740,9 @@ serve(async (req) => {
         score: chunk.score
       })),
       strategy,
-      grading
+      grading,
+      metadata,
+      context_seen: contextSeen
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

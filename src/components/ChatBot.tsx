@@ -10,47 +10,46 @@ import {
   Send, 
   Loader2, 
   Bot, 
-  User, 
+  User,
+  CheckCircle2,
+  Lightbulb,
   FileText,
-  Image as ImageIcon
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-type OpenAIMessage = { role: 'user' | 'assistant'; content: string };
+interface AnswerStep {
+  step: string;
+  expected?: string;
+  source?: 'manual' | 'expert';
+}
+
+interface AnswerSource {
+  page: number;
+  note: string;
+}
+
+interface StructuredAnswer {
+  summary: string;
+  steps?: AnswerStep[];
+  why?: string[];
+  expert_advice?: string[];
+  safety?: string[];
+  sources?: AnswerSource[];
+}
 
 interface ChatMessage {
   id: string;
   type: 'user' | 'bot';
-  content: string;
+  content: string | StructuredAnswer;
   timestamp: Date;
-  searchResults?: SearchResult[]; // reserved for future: showing sources/figures
-}
-
-interface SearchResult {
-  id: string;
-  content: string;
-  manual_id: string;
-  manual_title: string;
-  page_start?: number;
-  page_end?: number;
-  menu_path?: string;
-  similarity: number;
-  content_type: 'text' | 'figure';
-  image_available?: boolean;
 }
 
 interface ChatBotProps {
   selectedManualId?: string;
   manualTitle?: string;
-}
-
-function toOpenAIMessages(chat: ChatMessage[]): OpenAIMessage[] {
-  return chat
-    .filter(m => m.type === 'user' || m.type === 'bot')
-    .map(m => ({
-      role: m.type === 'user' ? 'user' : 'assistant',
-      content: m.content
-    }));
 }
 
 export function ChatBot({ selectedManualId: initialManualId, manualTitle: initialManualTitle }: ChatBotProps) {
@@ -59,6 +58,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [isLoading, setIsLoading] = useState(false);
   const [selectedManualId, setSelectedManualId] = useState<string | null>(initialManualId || null);
   const [manualTitle, setManualTitle] = useState<string | null>(initialManualTitle || null);
+  const [expandedSources, setExpandedSources] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -107,18 +107,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     setIsLoading(true);
 
     try {
-      // OPTIONAL: ensure the user is logged in if your function requires auth
-      // const { data: { session } } = await supabase.auth.getSession();
-      // if (!session) { /* prompt login */ }
-
-      // Prepare OpenAI-style messages for the edge function
-      const convo = toOpenAIMessages([...messages, userMessage]);
-
-      // —— THIS IS “CALLING THE EDGE FUNCTION” ——
-      const { data, error } = await supabase.functions.invoke('chat-assistant', {
+      const { data, error } = await supabase.functions.invoke('chat-manual', {
         body: {
-          messages: convo,                         // [{ role: 'user'|'assistant', content: '...' }]
-          manual_id: selectedManualId ?? null      // scope to one manual if selected
+          query: inputValue.trim(),
+          manual_id: selectedManualId ?? null
         },
       });
 
@@ -129,15 +121,13 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: data?.answer ?? 'Sorry—I couldn’t generate a response.',
-        timestamp: new Date(),
-        // If your edge function later returns sources/figures, attach here:
-        // searchResults: data.sources ?? undefined
+        content: data?.response ?? 'Sorry - I could not generate a response.',
+        timestamp: new Date()
       };
 
       setMessages(prev => [...prev, botMessage]);
     } catch (err: any) {
-      console.error('chat-assistant failed:', err);
+      console.error('chat-manual failed:', err);
       toast({
         title: 'Error',
         description: 'Failed to process your question. Please try again.',
@@ -160,6 +150,124 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       handleSendMessage();
     }
   };
+
+  const isStructuredAnswer = (content: any): content is StructuredAnswer => {
+    return typeof content === 'object' && content !== null && 'summary' in content;
+  };
+
+  const renderStructuredAnswer = (answer: StructuredAnswer, messageId: string) => (
+    <div className="space-y-3">
+      {/* Summary */}
+      <div className="text-sm leading-relaxed">
+        {answer.summary}
+      </div>
+
+      {/* Steps as Checklist */}
+      {answer.steps && answer.steps.length > 0 && (
+        <div className="space-y-2">
+          <div className="font-semibold text-xs text-primary uppercase tracking-wider">Procedure</div>
+          {answer.steps.map((stepItem, i) => (
+            <div key={i} className="flex gap-2 items-start">
+              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1 space-y-1">
+                <div className="flex items-start gap-2">
+                  <span className="text-sm">{stepItem.step}</span>
+                  {stepItem.source && (
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        stepItem.source === 'manual' 
+                          ? 'bg-green-500/10 text-green-500 border-green-500/30' 
+                          : 'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                      }`}
+                    >
+                      {stepItem.source}
+                    </Badge>
+                  )}
+                </div>
+                {stepItem.expected && (
+                  <div className="text-xs text-muted-foreground">
+                    Expected: {stepItem.expected}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Why Explanation */}
+      {answer.why && answer.why.length > 0 && (
+        <div className="space-y-2">
+          <div className="font-semibold text-xs text-primary uppercase tracking-wider">Why This Works</div>
+          {answer.why.map((reason, i) => (
+            <div key={i} className="text-sm text-muted-foreground pl-4 border-l-2 border-primary/20">
+              {reason}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Expert Advice / Pro Tips */}
+      {answer.expert_advice && answer.expert_advice.length > 0 && (
+        <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 space-y-2">
+          <div className="flex items-center gap-2 font-semibold text-xs text-blue-500 uppercase tracking-wider">
+            <Lightbulb className="h-4 w-4" />
+            Pro Tips
+          </div>
+          {answer.expert_advice.map((tip, i) => (
+            <div key={i} className="text-sm">
+              • {tip}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Safety Warnings */}
+      {answer.safety && answer.safety.length > 0 && (
+        <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-3 space-y-2">
+          <div className="flex items-center gap-2 font-semibold text-xs text-orange-500 uppercase tracking-wider">
+            <AlertTriangle className="h-4 w-4" />
+            Safety
+          </div>
+          {answer.safety.map((warning, i) => (
+            <div key={i} className="text-sm">
+              ⚠️ {warning}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Sources Toggle */}
+      {answer.sources && answer.sources.length > 0 && (
+        <div className="border-t border-border pt-3">
+          <button
+            onClick={() => setExpandedSources(expandedSources === messageId ? null : messageId)}
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            {expandedSources === messageId ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <FileText size={14} />
+            View Sources ({answer.sources.length})
+          </button>
+          
+          {expandedSources === messageId && (
+            <div className="mt-2 space-y-2">
+              {answer.sources.map((source, i) => (
+                <div key={i} className="text-xs p-2 bg-background/50 rounded border border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline" className="text-xs">
+                      Page {source.page}
+                    </Badge>
+                    <span className="text-muted-foreground">{source.note}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <Card className="border-primary/20 h-[600px] flex flex-col">
@@ -198,7 +306,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                     : 'bg-muted'
                 }`}
               >
-                <div className="flex items-center space-x-2 mb-1">
+                <div className="flex items-center space-x-2 mb-2">
                   {message.type === 'user' ? (
                     <User className="h-4 w-4" />
                   ) : (
@@ -209,48 +317,12 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                   </span>
                 </div>
                 
-                <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-
-                {/* (Optional) Sources block — wire up later when your function returns sources */}
-                {message.searchResults && message.searchResults.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <div className="text-xs font-medium opacity-70">
-                      Sources ({message.searchResults.length})
-                    </div>
-                    {message.searchResults.map((result) => (
-                      <div
-                        key={result.id}
-                        className="text-xs p-2 bg-background/50 rounded border border-border"
-                      >
-                        <div className="flex items-center space-x-1 mb-1">
-                          {result.content_type === 'figure' ? (
-                            <ImageIcon className="h-3 w-3" />
-                          ) : (
-                            <FileText className="h-3 w-3" />
-                          )}
-                          <span className="font-medium">{result.manual_title}</span>
-                          {result.page_start && (
-                            <span className="text-muted-foreground">
-                              Page {result.page_start}
-                            </span>
-                          )}
-                          <Badge variant="secondary" className="text-xs">
-                            {Math.round(result.similarity * 100)}% match
-                          </Badge>
-                        </div>
-                        {result.menu_path && (
-                          <div className="text-muted-foreground mb-1">
-                            {result.menu_path}
-                          </div>
-                        )}
-                        <div className="text-muted-foreground">
-                          {result.content.length > 150 
-                            ? `${result.content.slice(0, 150)}...` 
-                            : result.content}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                {message.type === 'user' ? (
+                  <div className="text-sm whitespace-pre-wrap">{message.content as string}</div>
+                ) : isStructuredAnswer(message.content) ? (
+                  renderStructuredAnswer(message.content, message.id)
+                ) : (
+                  <div className="text-sm whitespace-pre-wrap">{message.content as string}</div>
                 )}
               </div>
             </div>

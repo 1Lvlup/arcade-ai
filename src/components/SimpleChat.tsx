@@ -3,11 +3,32 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, Lightbulb, FileText, AlertTriangle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+interface AnswerStep {
+  step: string;
+  expected?: string;
+  source?: 'manual' | 'expert';
+}
+
+interface AnswerSource {
+  page: number;
+  note: string;
+}
+
+interface StructuredAnswer {
+  summary: string;
+  steps?: AnswerStep[];
+  why?: string[];
+  expert_advice?: string[];
+  safety?: string[];
+  sources?: AnswerSource[];
+}
 
 interface Message {
   role: 'user' | 'assistant';
-  content: string;
+  content: string | StructuredAnswer;
   grading?: {
     overall: 'PASS' | 'PARTIAL' | 'FAIL';
     score: Record<string, 'PASS' | 'PARTIAL' | 'FAIL'>;
@@ -36,6 +57,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [expandedContext, setExpandedContext] = useState<number | null>(null);
+  const [expandedSources, setExpandedSources] = useState<number | null>(null);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -72,6 +94,124 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
     }
   };
 
+  const isStructuredAnswer = (content: any): content is StructuredAnswer => {
+    return typeof content === 'object' && content !== null && 'summary' in content;
+  };
+
+  const renderStructuredAnswer = (answer: StructuredAnswer, index: number) => (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="text-sm leading-relaxed">
+        {answer.summary}
+      </div>
+
+      {/* Steps as Checklist */}
+      {answer.steps && answer.steps.length > 0 && (
+        <div className="space-y-2">
+          <div className="font-tech text-xs text-primary uppercase tracking-wider">Procedure</div>
+          {answer.steps.map((stepItem, i) => (
+            <div key={i} className="flex gap-3 items-start">
+              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1 space-y-1">
+                <div className="flex items-start gap-2">
+                  <span className="text-sm">{stepItem.step}</span>
+                  {stepItem.source && (
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        stepItem.source === 'manual' 
+                          ? 'bg-green-500/10 text-green-500 border-green-500/30' 
+                          : 'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                      }`}
+                    >
+                      {stepItem.source}
+                    </Badge>
+                  )}
+                </div>
+                {stepItem.expected && (
+                  <div className="text-xs text-muted-foreground">
+                    Expected: {stepItem.expected}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Why Explanation */}
+      {answer.why && answer.why.length > 0 && (
+        <div className="space-y-2">
+          <div className="font-tech text-xs text-primary uppercase tracking-wider">Why This Works</div>
+          {answer.why.map((reason, i) => (
+            <div key={i} className="text-sm text-muted-foreground pl-4 border-l-2 border-primary/20">
+              {reason}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Expert Advice / Pro Tips */}
+      {answer.expert_advice && answer.expert_advice.length > 0 && (
+        <div className="tech-card bg-blue-500/5 border-blue-500/20 p-4 space-y-2">
+          <div className="flex items-center gap-2 font-tech text-xs text-blue-500 uppercase tracking-wider">
+            <Lightbulb className="h-4 w-4" />
+            Pro Tips
+          </div>
+          {answer.expert_advice.map((tip, i) => (
+            <div key={i} className="text-sm text-foreground">
+              • {tip}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Safety Warnings */}
+      {answer.safety && answer.safety.length > 0 && (
+        <div className="tech-card bg-orange-500/5 border-orange-500/20 p-4 space-y-2">
+          <div className="flex items-center gap-2 font-tech text-xs text-orange-500 uppercase tracking-wider">
+            <AlertTriangle className="h-4 w-4" />
+            Safety
+          </div>
+          {answer.safety.map((warning, i) => (
+            <div key={i} className="text-sm text-foreground">
+              ⚠️ {warning}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Sources Toggle */}
+      {answer.sources && answer.sources.length > 0 && (
+        <div className="border-t border-primary/10 pt-3">
+          <button
+            onClick={() => setExpandedSources(expandedSources === index ? null : index)}
+            className="flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-primary transition-colors"
+          >
+            {expandedSources === index ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <FileText size={14} />
+            View Sources ({answer.sources.length})
+          </button>
+          
+          {expandedSources === index && (
+            <div className="mt-2 space-y-2">
+              {answer.sources.map((source, i) => (
+                <div key={i} className="text-xs p-2 tech-card bg-background/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline" className="text-xs">
+                      Page {source.page}
+                    </Badge>
+                    <span className="text-muted-foreground">{source.note}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <div className="space-y-6">
@@ -89,9 +229,18 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
                     : 'tech-card text-foreground border-tech mr-auto'
                 }`}
               >
-                <div className="text-sm leading-relaxed">
-                  {message.content}
-                </div>
+                {message.role === 'user' ? (
+                  <div className="text-sm leading-relaxed">
+                    {message.content as string}
+                  </div>
+                ) : isStructuredAnswer(message.content) ? (
+                  renderStructuredAnswer(message.content, index)
+                ) : (
+                  <div className="text-sm leading-relaxed">
+                    {message.content as string}
+                  </div>
+                )}
+                
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${

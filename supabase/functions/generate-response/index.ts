@@ -65,7 +65,7 @@ serve(async (req) => {
         { role: 'user', content: user_message }
       ],
       max_tokens: 1000,
-      temperature: 0.7,
+      temperature: 0.2,
     };
 
     console.log('📤 [GENERATE] Calling OpenAI API:', {

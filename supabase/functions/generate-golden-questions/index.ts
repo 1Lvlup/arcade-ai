@@ -214,7 +214,7 @@ Importance levels: high, medium, low`
 ${summary.substring(0, 8000)}`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.2,
         max_tokens: 2000
       }),
     });

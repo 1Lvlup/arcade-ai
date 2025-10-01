@@ -9,7 +9,11 @@ interface Message {
   content: string;
 }
 
-export function SimpleChat() {
+interface SimpleChatProps {
+  manualId?: string;
+}
+
+export function SimpleChat({ manualId }: SimpleChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +28,7 @@ export function SimpleChat() {
 
     try {
       const { data, error } = await supabase.functions.invoke('chat-manual', {
-        body: { query: input }
+        body: { query: input, manual_id: manualId }
       });
 
       if (error) throw error;

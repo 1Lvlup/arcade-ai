@@ -192,7 +192,7 @@ export default function ManualDetails() {
               </div>
             </div>
             <div className="border-t border-primary/10 pt-6">
-              <SimpleChat />
+              <SimpleChat manualId={manualId} />
             </div>
           </div>
         </div>

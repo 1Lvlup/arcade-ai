@@ -14,6 +14,17 @@ const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Extract technical keywords from query
+function keywordLine(q: string): string {
+  const toks = q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/ig) || [];
+  return [...new Set(toks)].join(" ");
+}
+
+// Token boost for exact technical term matches
+function tokenBoost(text: string): number {
+  return /\b(CR-?2032|CMOS|BIOS|HDMI|J\d+|pin\s?\d+|[0-9]+V)\b/i.test(text) ? 0.15 : 0;
+}
+
 // Maximal Marginal Relevance for result diversity
 function applyMMR(results: any[], lambda = 0.7, targetCount = 10): any[] {
   if (results.length <= targetCount) return results;
@@ -27,7 +38,7 @@ function applyMMR(results: any[], lambda = 0.7, targetCount = 10): any[] {
 
     for (let i = 0; i < remaining.length; i++) {
       const candidate = remaining[i];
-      const relevanceScore = candidate.score || 0;
+      const relevanceScore = (candidate.score || 0) + tokenBoost(candidate.content);
 
       // Calculate diversity (1 - max similarity to selected items)
       let maxSimilarity = 0;
@@ -90,9 +101,17 @@ async function createEmbedding(text: string) {
 // Search for relevant chunks using hybrid approach
 async function searchChunks(query: string, manual_id?: string, tenant_id?: string) {
   const startTime = Date.now();
-  console.log('🔍 Starting hybrid search for query:', query.substring(0, 100));
   
-  const queryEmbedding = await createEmbedding(query);
+  // Extract keywords and enhance query
+  const keywords = keywordLine(query);
+  const hybridQuery = keywords ? `${query}\nKeywords: ${keywords}` : query;
+  
+  console.log('🔍 Starting hybrid search for query:', query.substring(0, 100));
+  if (keywords) {
+    console.log('🔑 Extracted keywords:', keywords);
+  }
+  
+  const queryEmbedding = await createEmbedding(hybridQuery);
   console.log('✅ Created query embedding');
 
   // Strategy 1: Vector search
@@ -114,7 +133,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   let textResults = [];
   if (!vectorResults || vectorResults.length < 5) {
     const { data: textData, error: textError } = await supabase.rpc('match_chunks_text', {
-      query_text: query,
+      query_text: hybridQuery,
       top_k: 20,
       manual: manual_id,
       tenant_id: tenant_id

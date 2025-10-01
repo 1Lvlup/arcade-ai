@@ -156,30 +156,47 @@ ${passagesText.substring(0, 8000)}`
       const answer = JSON.parse(answerData.choices[0].message.content);
       console.log(`✍️ Generated answer (${answer.coverage} coverage)`);
 
-      // Step 3: Grade the answer
+      // Step 3: Grade the answer with strict technical rubric
       const gradePrompt = {
-        system: `You grade an answer to a Golden Question using the provided manual passages.
+        system: `You are a strict technical grader for arcade troubleshooting answers.
 
-Scoring criteria:
-- PASS: Answer is supported by passages AND contains expected keywords (or true equivalents)
-- PARTIAL: Answer is supported but missing 1-2 expected items or somewhat vague
-- FAIL: Answer is unsupported, contradicts passages, or completely misses the question
+Score each category as PASS/PARTIAL/FAIL:
+- citation_fidelity: Does answer cite actual passages? Are citations accurate?
+- specificity: Are component names, part numbers, values specific (not vague)?
+- procedure_completeness: Are all steps mentioned? Any critical gaps?
+- tooling_context: Correct tools/equipment mentioned when needed?
+- escalation_outcome: Clear next steps or when to escalate?
+- safety_accuracy: No unsafe advice? Correct safety warnings?
+
+CRITICAL RULES:
+- If no overlap with passages and no cites → citation_fidelity = FAIL
+- If ≥2 categories FAIL → overall = FAIL
+- Otherwise if any PARTIAL or FAIL → overall = PARTIAL
+- All PASS → overall = PASS
 
 Return JSON with this exact structure:
 {
-  "score": "PASS|PARTIAL|FAIL",
+  "score": {
+    "citation_fidelity": "PASS|PARTIAL|FAIL",
+    "specificity": "PASS|PARTIAL|FAIL",
+    "procedure_completeness": "PASS|PARTIAL|FAIL",
+    "tooling_context": "PASS|PARTIAL|FAIL",
+    "escalation_outcome": "PASS|PARTIAL|FAIL",
+    "safety_accuracy": "PASS|PARTIAL|FAIL"
+  },
+  "overall": "PASS|PARTIAL|FAIL",
   "missing_keywords": ["keyword1", "keyword2"],
-  "rationale": "brief explanation of the score",
-  "evidence_pages": [page numbers that support or contradict the answer]
+  "evidence_pages": [1, 5, 12],
+  "rationale": "brief summary explaining the overall score"
 }`,
         user: `Question: ${q.question}
 
-Expected keywords: ${JSON.stringify(q.expected_keywords)}
+Expected keywords: ${JSON.stringify(q.expected_keywords || [])}
 
 Manual passages:
 ${passagesText.substring(0, 6000)}
 
-Answer to grade:
+Assistant's answer JSON to grade:
 ${JSON.stringify(answer)}`
       };
 
@@ -210,20 +227,29 @@ ${JSON.stringify(answer)}`
       
       console.log(`📊 Score: ${grade.score}`);
 
-      // Store evaluation result
+      // Store evaluation result with V2 structured data
       const { error: insertError } = await supabase
         .from('question_evaluations')
         .insert({
           question_id: q.id,
           manual_id,
           fec_tenant_id: profile.fec_tenant_id,
-          answer: answer.answer,
+          answer: answer.answer, // legacy plain text
+          answer_json: answer, // full structured answer
           citations: answer.citations,
-          coverage: answer.coverage,
-          score: grade.score,
+          grade_overall: grade.overall,
+          grade_breakdown: grade.score, // detailed category scores
           missing_keywords: grade.missing_keywords || [],
           rationale: grade.rationale,
           evidence_pages: grade.evidence_pages || [],
+          retrieval_debug: {
+            passages_count: passages.length,
+            passages: passages.slice(0, 3).map((p: any) => ({
+              page: p.page_start,
+              score: p.score,
+              preview: p.content.substring(0, 200)
+            }))
+          },
           answer_model: 'gpt-4o',
           grader_model: 'gpt-4o'
         });
@@ -236,8 +262,8 @@ ${JSON.stringify(answer)}`
         question_id: q.id,
         question: q.question,
         answer: answer.answer,
-        score: grade.score,
-        coverage: answer.coverage
+        score: grade.overall,
+        grade_breakdown: grade.score
       });
     }
 

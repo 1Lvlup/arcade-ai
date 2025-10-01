@@ -8,15 +8,25 @@ import { useToast } from '@/hooks/use-toast';
 import { Brain, CheckCircle2, AlertCircle, XCircle, Play, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
+interface GradeBreakdown {
+  citation_fidelity: 'PASS' | 'PARTIAL' | 'FAIL';
+  specificity: 'PASS' | 'PARTIAL' | 'FAIL';
+  procedure_completeness: 'PASS' | 'PARTIAL' | 'FAIL';
+  tooling_context: 'PASS' | 'PARTIAL' | 'FAIL';
+  escalation_outcome: 'PASS' | 'PARTIAL' | 'FAIL';
+  safety_accuracy: 'PASS' | 'PARTIAL' | 'FAIL';
+}
+
 interface EvaluationResult {
   id: string;
   question_id: string;
   answer: string;
-  score: 'PASS' | 'PARTIAL' | 'FAIL';
-  coverage: string;
+  grade_overall: 'PASS' | 'PARTIAL' | 'FAIL';
+  grade_breakdown: GradeBreakdown | null;
   rationale: string;
   missing_keywords: string[];
   citations: any[];
+  evidence_pages: number[];
   question: {
     question: string;
     category: string;
@@ -48,7 +58,7 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setResults((data || []) as EvaluationResult[]);
+      setResults((data || []) as unknown as EvaluationResult[]);
     } catch (error) {
       console.error('Error fetching evaluations:', error);
     } finally {
@@ -123,9 +133,9 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
 
   const summary = {
     total: results.length,
-    pass: results.filter(r => r.score === 'PASS').length,
-    partial: results.filter(r => r.score === 'PARTIAL').length,
-    fail: results.filter(r => r.score === 'FAIL').length,
+    pass: results.filter(r => r.grade_overall === 'PASS').length,
+    partial: results.filter(r => r.grade_overall === 'PARTIAL').length,
+    fail: results.filter(r => r.grade_overall === 'FAIL').length,
   };
   const passRate = summary.total > 0 ? (summary.pass / summary.total * 100).toFixed(1) : '0';
 
@@ -207,22 +217,24 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
                   open={expandedId === result.id}
                   onOpenChange={() => setExpandedId(expandedId === result.id ? null : result.id)}
                 >
-                  <Card className={`border-l-4 ${result.score === 'PASS' ? 'border-l-green-500' : result.score === 'PARTIAL' ? 'border-l-yellow-500' : 'border-l-red-500'}`}>
+                  <Card className={`border-l-4 ${result.grade_overall === 'PASS' ? 'border-l-green-500' : result.grade_overall === 'PARTIAL' ? 'border-l-yellow-500' : 'border-l-red-500'}`}>
                     <CollapsibleTrigger className="w-full">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 text-left">
                             <div className="flex items-center gap-2 mb-2">
-                              {getScoreIcon(result.score)}
-                              <Badge className={getScoreBadge(result.score)}>
-                                {result.score}
+                              {getScoreIcon(result.grade_overall)}
+                              <Badge className={getScoreBadge(result.grade_overall)}>
+                                {result.grade_overall}
                               </Badge>
                               <Badge variant="outline" className="text-xs">
                                 {result.question.category}
                               </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {result.coverage} coverage
-                              </Badge>
+                              {result.question.importance && (
+                                <Badge variant="outline" className="text-xs">
+                                  {result.question.importance}
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-sm font-medium text-foreground">
                               {result.question.question}
@@ -243,6 +255,24 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
                           <p className="text-sm text-foreground">{result.answer}</p>
                         </div>
                         
+                        {result.grade_breakdown && (
+                          <div>
+                            <div className="text-xs font-semibold text-muted-foreground mb-2">Grade Breakdown:</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {Object.entries(result.grade_breakdown).map(([category, grade]) => (
+                                <div key={category} className="flex items-center justify-between text-xs p-2 rounded bg-card border border-border/50">
+                                  <span className="capitalize text-muted-foreground">
+                                    {category.replace(/_/g, ' ')}
+                                  </span>
+                                  <Badge className={getScoreBadge(grade as string)} variant="outline">
+                                    {grade}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
                         {result.rationale && (
                           <div>
                             <div className="text-xs font-semibold text-muted-foreground mb-1">Rationale:</div>
@@ -255,7 +285,7 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
                             <div className="text-xs font-semibold text-muted-foreground mb-1">Missing Keywords:</div>
                             <div className="flex flex-wrap gap-1">
                               {result.missing_keywords.map((kw, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
+                                <Badge key={i} variant="outline" className="text-xs text-red-500">
                                   {kw}
                                 </Badge>
                               ))}
@@ -270,6 +300,19 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
                               {result.citations.map((citation: any, i: number) => (
                                 <Badge key={i} variant="secondary" className="text-xs">
                                   Page {citation.page}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {result.evidence_pages?.length > 0 && (
+                          <div>
+                            <div className="text-xs font-semibold text-muted-foreground mb-1">Evidence Pages:</div>
+                            <div className="flex flex-wrap gap-1">
+                              {result.evidence_pages.map((page, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">
+                                  {page}
                                 </Badge>
                               ))}
                             </div>

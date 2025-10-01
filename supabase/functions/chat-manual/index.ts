@@ -312,7 +312,75 @@ Provide a draft answer in structured JSON with these fields:
   return draftJson;
 }
 
-// Generate AI response with page-prefixed context
+// STAGE 2: Enhance draft with expert knowledge
+async function generateExpertAnswer(query: string, draftJson: any) {
+  console.log('🎓 [STAGE 2] Enhancing draft with expert knowledge...');
+
+  const messages = [
+    {
+      role: "system",
+      content: `You are a master arcade technician mentor. You have:
+- The user's question
+- A structured draft answer from the manual
+- Your own expert knowledge of similar machines and common failures
+
+Tasks:
+1. Review the draft for accuracy against the manual.
+2. If the manual contains enough info, polish it into a clear, conversational answer.
+3. If the manual lacks detail, add your own expert reasoning and best-practice troubleshooting steps beyond the manual (clearly labeled as "Expert Advice").
+4. Do not hallucinate specifics about this exact model if unsupported; instead, give generalized best practices or next-step tests a pro would run.
+5. Always cite the manual where applicable, and clearly separate "manual content" vs "expert advice."
+6. Make the answer conversational, supportive, and actionable.
+
+Return JSON in this schema:
+{
+  "summary": string,
+  "steps": [ { "step": string, "expected": string, "source": "manual"|"expert" } ],
+  "expert_advice": [string],
+  "safety": [string],
+  "sources": [ { "page": number, "note": string } ]
+}`
+    },
+    {
+      role: "user",
+      content: `Question: ${query}
+Manual-based draft answer:
+${JSON.stringify(draftJson, null, 2)}`
+    }
+  ];
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { 
+      Authorization: `Bearer ${openaiApiKey}`, 
+      "Content-Type": "application/json",
+      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0.4, // Slightly higher for more creative expert advice
+      response_format: { type: "json_object" },
+      max_tokens: 1200,
+      messages
+    }),
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ [STAGE 2] Expert enhancement failed:', response.status, errorText);
+    console.log('⚠️ Falling back to draft answer');
+    return draftJson; // Fallback to draft if enhancement fails
+  }
+  
+  const data = await response.json();
+  const expertJson = JSON.parse(data.choices[0].message.content);
+  
+  console.log('✅ [STAGE 2] Expert answer generated:', JSON.stringify(expertJson).substring(0, 200) + '...');
+  
+  return expertJson;
+}
+
+
 async function generateResponse(query: string, chunks: any[]) {
   // Format context with [pX] prefixes for easy citation
   // Each line is prefixed with page info to make citations simple

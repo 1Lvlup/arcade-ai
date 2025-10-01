@@ -114,11 +114,11 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   const queryEmbedding = await createEmbedding(hybridQuery);
   console.log('✅ Created query embedding');
 
-  // Strategy 1: Vector search
+  // Strategy 1: Vector search - retrieve top 60 for reranking
   const { data: vectorResults, error: vectorError } = await supabase.rpc('match_chunks_improved', {
     query_embedding: queryEmbedding,
-    top_k: 20,
-    min_score: 0.25,
+    top_k: 60,
+    min_score: 0.20,
     manual: manual_id,
     tenant_id: tenant_id
   });
@@ -131,10 +131,10 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 
   // Strategy 2: Text search fallback
   let textResults = [];
-  if (!vectorResults || vectorResults.length < 5) {
+  if (!vectorResults || vectorResults.length < 10) {
     const { data: textData, error: textError } = await supabase.rpc('match_chunks_text', {
       query_text: hybridQuery,
-      top_k: 20,
+      top_k: 60,
       manual: manual_id,
       tenant_id: tenant_id
     });
@@ -154,7 +154,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
       search_query: query,
       search_manual: manual_id,
       search_tenant: tenant_id,
-      search_limit: 12
+      search_limit: 60
     });
 
     if (simpleError) {
@@ -169,28 +169,64 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
     }
   }
 
-  // Choose best results
-  let finalResults = [];
+  // Choose best candidates for reranking
+  let candidates = [];
   let strategy = 'none';
   if (vectorResults && vectorResults.length > 0) {
-    finalResults = vectorResults;
+    candidates = vectorResults;
     strategy = 'vector';
   } else if (textResults.length > 0) {
-    finalResults = textResults;
+    candidates = textResults;
     strategy = 'text';
   } else {
-    finalResults = simpleResults;
+    candidates = simpleResults;
     strategy = 'simple';
   }
 
-  console.log(`✅ Using ${strategy} search strategy`);
+  console.log(`✅ Using ${strategy} search strategy with ${candidates.length} candidates`);
 
-  // Apply MMR for diversity if we have enough results
-  if (finalResults.length > 10) {
-    finalResults = applyMMR(finalResults, 0.7, 10);
-    console.log('✅ Applied MMR for result diversity');
-  } else {
-    finalResults = finalResults.slice(0, 10);
+  // Apply Cohere Rerank if we have candidates
+  let finalResults = [];
+  if (candidates.length > 0) {
+    try {
+      const cohereApiKey = Deno.env.get("COHERE_API_KEY");
+      if (!cohereApiKey) {
+        console.warn('⚠️ COHERE_API_KEY not found, skipping rerank');
+        finalResults = candidates.slice(0, 10);
+      } else {
+        console.log('🔄 Reranking with Cohere...');
+        const cohereRes = await fetch("https://api.cohere.ai/v1/rerank", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${cohereApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "rerank-english-v3.0",
+            query: query,
+            documents: candidates.map(c => c.content),
+            top_n: 10
+          })
+        });
+
+        if (!cohereRes.ok) {
+          const errorText = await cohereRes.text();
+          console.error('❌ Cohere rerank failed:', cohereRes.status, errorText);
+          finalResults = candidates.slice(0, 10);
+        } else {
+          const rerank = await cohereRes.json();
+          finalResults = rerank.results.map((r: any) => ({
+            ...candidates[r.index],
+            rerank_score: r.relevance_score,
+            original_score: candidates[r.index].score
+          }));
+          console.log(`✅ Reranked to top ${finalResults.length} results`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Rerank error:', error);
+      finalResults = candidates.slice(0, 10);
+    }
   }
 
   const searchTime = Date.now() - startTime;
@@ -312,7 +348,10 @@ serve(async (req) => {
       console.log('  Manual:', chunk.manual_id);
       console.log('  Pages:', chunk.page_start, '-', chunk.page_end);
       console.log('  Menu Path:', chunk.menu_path || 'N/A');
-      console.log('  Score:', chunk.score?.toFixed(3) || 'N/A');
+      console.log('  Original Score:', chunk.original_score?.toFixed(3) || chunk.score?.toFixed(3) || 'N/A');
+      if (chunk.rerank_score !== undefined) {
+        console.log('  Rerank Score:', chunk.rerank_score.toFixed(3));
+      }
       console.log('  Content preview:', chunk.content.substring(0, 150) + '...');
     });
     console.log('\n=================================\n');

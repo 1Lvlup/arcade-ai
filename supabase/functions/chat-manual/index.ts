@@ -367,6 +367,34 @@ serve(async (req) => {
       });
     }
 
+    // Check answerability score before calling GPT
+    const weak = (chunks.length < 3) || 
+                 (chunks.every(c => (c.score ?? 0) < 0.3) && 
+                  chunks.every(c => (c.rerank_score ?? 0) < 0.45));
+    
+    if (weak) {
+      console.log('⚠️ Low answerability score - returning early without GPT call');
+      console.log('  Chunk count:', chunks.length);
+      console.log('  Max score:', Math.max(...chunks.map(c => c.score ?? 0)));
+      console.log('  Max rerank score:', Math.max(...chunks.map(c => c.rerank_score ?? 0)));
+      
+      return new Response(JSON.stringify({ 
+        response: "I don't find this information in the manual for this question. The retrieved content may not be relevant enough to provide a reliable answer.",
+        sources: chunks.map((chunk: any) => ({
+          manual_id: chunk.manual_id,
+          content: chunk.content.substring(0, 200) + "...",
+          page_start: chunk.page_start,
+          page_end: chunk.page_end,
+          menu_path: chunk.menu_path,
+          score: chunk.score,
+          rerank_score: chunk.rerank_score
+        })),
+        strategy
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Generate AI response with context
     const aiResponse = await generateResponse(query, chunks);
 

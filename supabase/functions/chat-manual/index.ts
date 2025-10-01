@@ -14,14 +14,6 @@ const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// FEATURE FLAG: RAG Pipeline V2
-// When true: Use 3-stage pipeline (draft → expert → review)
-// When false: Use legacy single-call generateResponse
-// Default: true for staging/dev, false for production
-const RAG_PIPELINE_V2 = Deno.env.get("RAG_PIPELINE_V2") === "false" ? false : true;
-
-console.log(`🚩 RAG_PIPELINE_V2 feature flag: ${RAG_PIPELINE_V2 ? 'ENABLED' : 'DISABLED'}`);
-
 // Extract technical keywords from query
 function keywordLine(q: string): string {
   const toks = q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/ig) || [];
@@ -139,59 +131,9 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 
   console.log(`📊 Vector search found ${vectorResults?.length || 0} results`);
 
-  // Strategy 2: Text search fallback
-  let textResults = [];
-  if (!vectorResults || vectorResults.length < 10) {
-    const { data: textData, error: textError } = await supabase.rpc('match_chunks_text', {
-      query_text: hybridQuery,
-      top_k: 60,
-      manual: manual_id,
-      tenant_id: tenant_id
-    });
-
-    if (textError) {
-      console.error('❌ Text search error:', textError);
-    } else {
-      textResults = textData || [];
-      console.log(`📊 Text search found ${textResults.length} results`);
-    }
-  }
-
-  // Strategy 3: Simple search as last resort
-  let simpleResults = [];
-  if ((!vectorResults || vectorResults.length === 0) && textResults.length === 0) {
-    const { data: simpleData, error: simpleError } = await supabase.rpc('simple_search', {
-      search_query: query,
-      search_manual: manual_id,
-      search_tenant: tenant_id,
-      search_limit: 60
-    });
-
-    if (simpleError) {
-      console.error('❌ Simple search error:', simpleError);
-    } else {
-      simpleResults = (simpleData || []).map((r: any) => ({
-        ...r,
-        score: 0.5,
-        content_type: 'text'
-      }));
-      console.log(`📊 Simple search found ${simpleResults.length} results`);
-    }
-  }
-
-  // Choose best candidates for reranking
-  let candidates = [];
-  let strategy = 'none';
-  if (vectorResults && vectorResults.length > 0) {
-    candidates = vectorResults;
-    strategy = 'vector';
-  } else if (textResults.length > 0) {
-    candidates = textResults;
-    strategy = 'text';
-  } else {
-    candidates = simpleResults;
-    strategy = 'simple';
-  }
+  // Use vector results as candidates for reranking
+  const candidates = vectorResults || [];
+  const strategy = candidates.length > 0 ? 'vector' : 'none';
 
   console.log(`✅ Using ${strategy} search strategy with ${candidates.length} candidates`);
 
@@ -519,251 +461,6 @@ async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: s
   };
 }
 
-// ============================================================
-// LEGACY FUNCTIONS (Used when RAG_PIPELINE_V2 = false)
-// ============================================================
-
-/**
- * @deprecated Use runRagPipelineV2 instead. This function is kept for backward compatibility.
- * Legacy single-call generation that stuffs context into system prompt.
- */
-async function generateResponse(query: string, chunks: any[]) {
-  // Format context with [pX] prefixes for easy citation
-  // Each line is prefixed with page info to make citations simple
-  const context = chunks.map((chunk: any, idx: number) => {
-    const pagePrefix = chunk.page_start 
-      ? `[p${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}]`
-      : '[p?]';
-    const menuPath = chunk.menu_path ? ` ${chunk.menu_path}` : '';
-    
-    return `${pagePrefix}${menuPath}\n${chunk.content}`;
-  }).join('\n\n---\n\n');
-
-  console.log('📝 Formatted context with', chunks.length, 'chunks');
-  console.log('📄 Context preview:', context.substring(0, 200) + '...');
-
-  const messages = [
-    {
-      role: "system",
-      content: `Lead Arcade Technician AI Assistant.
-
-CRITICAL INSTRUCTIONS:
-- Use ONLY the provided manual context (context is prefixed with [pX] page markers)
-- If the answer is not in the context, respond with: "I don't find this in the manual"
-- Temperature: 0.2 for grounded, consistent answers
-- Return STRICT JSON with this exact structure:
-{
-  "summary": "Brief overview of the solution",
-  "steps": ["Step 1 description", "Step 2 description", ...],
-  "why": ["Explanation 1", "Explanation 2", ...],
-  "safety": ["Safety warning 1", "Safety warning 2", ...],
-  "sources": ["p8", "p12-15", "fig 12", ...]
-}
-
-- summary: Concise answer to the question
-- steps: Ordered, atomic actions (use empty array if not applicable)
-- why: Explanations of why these steps work (use empty array if not applicable)  
-- safety: Important safety warnings (use empty array if none)
-- sources: Page numbers and figure references from context (e.g., "p8", "p12-15", "fig 12")`
-    },
-    {
-      role: "user",
-      content: `Question:\n${query}`
-    },
-    {
-      role: "assistant",
-      content: `Manual context:\n${context}`
-    }
-  ];
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { 
-      Authorization: `Bearer ${openaiApiKey}`, 
-      "Content-Type": "application/json",
-      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      max_tokens: 900,
-      messages
-    }),
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('❌ OpenAI chat failed:', response.status, errorText);
-    throw new Error(`OpenAI chat failed: ${response.status}`);
-  }
-  
-  const data = await response.json();
-  const draftJson = JSON.parse(data.choices[0].message.content);
-  
-  console.log('✅ Parsed draft JSON response:', JSON.stringify(draftJson).substring(0, 200) + '...');
-  
-  // Run reviewer pass to ensure quality and accuracy
-  console.log('🔍 Running reviewer pass...');
-  const reviewerMessages = [
-    {
-      role: "system",
-      content: `You are a strict reviewer. Your job is to edit the JSON response to ensure:
-1. All claims are present in the provided context (no hallucinations)
-2. Steps are atomic and properly ordered
-3. Page citations are included in sources array
-4. Generic fluff is removed
-
-CRITICAL: Do NOT add facts that are not in the context. Only edit, refine, and cite properly.
-Return the edited JSON in the same structure.`
-    },
-    {
-      role: "user",
-      content: `QUESTION:\n${query}\n\nCONTEXT:\n${context}\n\nDRAFT_JSON:\n${JSON.stringify(draftJson)}`
-    }
-  ];
-
-  const reviewResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { 
-      Authorization: `Bearer ${openaiApiKey}`, 
-      "Content-Type": "application/json",
-      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      max_tokens: 900,
-      messages: reviewerMessages
-    }),
-  });
-  
-  if (!reviewResponse.ok) {
-    const errorText = await reviewResponse.text();
-    console.error('❌ Reviewer pass failed:', reviewResponse.status, errorText);
-    console.log('⚠️ Falling back to draft response');
-    return draftJson;
-  }
-  
-  const reviewData = await reviewResponse.json();
-  const finalJson = JSON.parse(reviewData.choices[0].message.content);
-  
-  console.log('✅ Reviewer pass complete:', JSON.stringify(finalJson).substring(0, 200) + '...');
-  
-  return finalJson;
-}
-
-// Grade the answer using a rubric
-async function gradeAnswerWithRubric(params: {
-  question: string;
-  answer: any;
-  passages: any[];
-  openaiApiKey: string;
-  openaiProjectId?: string;
-}): Promise<any> {
-  const systemPrompt = `You are an expert grader for technical support answers. Grade answers using this rubric:
-
-**citation_fidelity**: Are all facts cited with specific pages/figures from passages?
-- PASS: Every claim has a page/figure cite
-- PARTIAL: Most claims cited, 1-2 missing
-- FAIL: Many claims lack citations
-
-**specificity**: Are part numbers, voltages, torque values, error codes given when in passages?
-- PASS: All specific details included
-- PARTIAL: Some details missing
-- FAIL: Generic answer when specifics available
-
-**procedure_completeness**: For multi-step procedures, are all steps from passages included in order?
-- PASS: All steps present and ordered
-- PARTIAL: Minor steps missing
-- FAIL: Major steps missing or out of order
-
-**tooling_context**: If passages mention required tools, are they listed?
-- PASS: All tools listed
-- PARTIAL: Some tools missing
-- FAIL: Tools not mentioned when required
-
-**escalation_outcome**: If passages say "contact service", is that preserved?
-- PASS: Escalation properly included
-- PARTIAL: Escalation mentioned but unclear
-- FAIL: Missing escalation when required
-
-**safety_accuracy**: Are safety warnings from passages included accurately?
-- PASS: All warnings present
-- PARTIAL: Some warnings missing
-- FAIL: Safety info omitted or incorrect
-
-Return JSON:
-{
-  "score": {
-    "citation_fidelity": "PASS"|"PARTIAL"|"FAIL",
-    "specificity": "PASS"|"PARTIAL"|"FAIL",
-    "procedure_completeness": "PASS"|"PARTIAL"|"FAIL",
-    "tooling_context": "PASS"|"PARTIAL"|"FAIL",
-    "escalation_outcome": "PASS"|"PARTIAL"|"FAIL",
-    "safety_accuracy": "PASS"|"PARTIAL"|"FAIL"
-  },
-  "overall": "PASS"|"PARTIAL"|"FAIL",
-  "missing_keywords": ["keyword1", "keyword2"],
-  "evidence_pages": ["p8", "fig 12"],
-  "rationale": "brief explanation"
-}`;
-
-  const passagesBlock = params.passages.map(p => {
-    const tags = [];
-    if (p.page_start) tags.push(`p${p.page_start}`);
-    if (p.page_end && p.page_end !== p.page_start) tags.push(`-${p.page_end}`);
-    const tag = tags.join('');
-    return `${tag ? `[${tag}] ` : ""}${p.content}`;
-  }).join("\n---\n");
-
-  const answerText = typeof params.answer === 'string' 
-    ? params.answer 
-    : JSON.stringify(params.answer);
-
-  const userPrompt = `
-QUESTION:
-${params.question}
-
-ASSISTANT_ANSWER:
-${answerText}
-
-RETRIEVED_PASSAGES (verbatim; include page/figure if you have them):
-${passagesBlock}
-
-Now grade according to the rubric and return JSON only.
-  `.trim();
-
-  const gradeResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { 
-      Authorization: `Bearer ${params.openaiApiKey}`, 
-      "Content-Type": "application/json",
-      ...(params.openaiProjectId && { "OpenAI-Project": params.openaiProjectId }),
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ]
-    }),
-  });
-
-  if (!gradeResponse.ok) {
-    const errorText = await gradeResponse.text();
-    console.error('❌ Grading failed:', gradeResponse.status, errorText);
-    return null;
-  }
-
-  const gradeData = await gradeResponse.json();
-  return JSON.parse(gradeData.choices[0].message.content);
-}
-
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -805,186 +502,35 @@ serve(async (req) => {
       }
     }
 
-    // Check feature flag and route to appropriate pipeline
-    if (RAG_PIPELINE_V2) {
-      // ===== NEW V2 PIPELINE =====
-      console.log('🚩 Using RAG Pipeline V2\n');
-      
-      const result = await runRagPipelineV2(query, manual_id, tenant_id);
-      
-      const { response: finalAnswer, sources, strategy, chunks } = result;
-      
-      // Grade the answer
-      console.log("📊 Grading answer quality...");
-      const grading = await gradeAnswerWithRubric({
-        question: query,
-        answer: finalAnswer,
-        passages: chunks || [],
-        openaiApiKey,
-        openaiProjectId
-      });
-
-      if (grading) {
-        console.log('✅ Grading complete:', grading.overall);
-        console.log('   Scores:', Object.entries(grading.score).map(([k, v]) => `${k}:${v}`).join(', '));
-      }
-
-      // Build metadata
-      const metadata = {
-        pipeline_version: 'v2',
-        manual_id: manual_id || "all_manuals",
-        embedding_model: "text-embedding-3-small",
-        retrieval_strategy: strategy,
-        candidate_count: chunks?.length || 0,
-        rerank_scores: chunks?.slice(0, 10).map(c => c.rerank_score ?? null) || [],
-      };
-
-      const contextSeen = chunks?.map(chunk => {
-        const pageInfo = chunk.page_start 
-          ? `[Pages ${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}]`
-          : '';
-        const pathInfo = chunk.menu_path ? `[${chunk.menu_path}]` : '';
-        return `${pageInfo}${pathInfo ? ' ' + pathInfo : ''}\n${chunk.content}`;
-      }).join('\n\n---\n\n') || '';
-
-      return new Response(JSON.stringify({ 
-        response: finalAnswer,
-        sources,
-        strategy,
-        grading,
-        metadata,
-        context_seen: contextSeen
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // ===== LEGACY PIPELINE (when flag is false) =====
-    console.log('⚠️ Using LEGACY pipeline (RAG_PIPELINE_V2 = false)\n');
+    // Run V2 Pipeline
+    console.log('🚀 Using RAG Pipeline V2\n');
     
-    // Search for relevant chunks with hybrid approach
-    const { results: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
+    const result = await runRagPipelineV2(query, manual_id, tenant_id);
     
-    console.log('\n📚 RETRIEVED CHUNKS:');
-    console.log('Strategy used:', strategy);
-    console.log('Total chunks:', chunks.length);
-    chunks.forEach((chunk: any, idx: number) => {
-      console.log(`\n[Chunk ${idx + 1}]`);
-      console.log('  Manual:', chunk.manual_id);
-      console.log('  Pages:', chunk.page_start, '-', chunk.page_end);
-      console.log('  Menu Path:', chunk.menu_path || 'N/A');
-      console.log('  Original Score:', chunk.original_score?.toFixed(3) || chunk.score?.toFixed(3) || 'N/A');
-      if (chunk.rerank_score !== undefined) {
-        console.log('  Rerank Score:', chunk.rerank_score.toFixed(3));
-      }
-      console.log('  Content preview:', chunk.content.substring(0, 150) + '...');
-    });
-    console.log('\n=================================\n');
+    const { response: finalAnswer, sources, strategy, chunks } = result;
 
-    if (chunks.length === 0) {
-      console.log('⚠️ No relevant chunks found');
-      return new Response(JSON.stringify({ 
-        response: "I couldn't find any relevant information in the manual for your question. Please try rephrasing or ask about a different topic.",
-        sources: [],
-        strategy: 'none',
-        pipeline_version: 'legacy'
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Answerability gate: chunks<3 OR (max(rerank)<0.45 AND all base scores <0.30)
-    const maxRerankScore = Math.max(...chunks.map(c => c.rerank_score ?? 0));
-    const allBaseScoresLow = chunks.every(c => (c.score ?? 0) < 0.30);
-    const weak = (chunks.length < 3) || (maxRerankScore < 0.45 && allBaseScoresLow);
-    
-    if (weak) {
-      console.log('⚠️ Low answerability score - returning early without GPT call');
-      console.log('  Chunk count:', chunks.length);
-      console.log('  Max score:', Math.max(...chunks.map(c => c.score ?? 0)));
-      console.log('  Max rerank score:', Math.max(...chunks.map(c => c.rerank_score ?? 0)));
-      
-      return new Response(JSON.stringify({ 
-        response: "I don't find this information in the manual for this question. The retrieved content may not be relevant enough to provide a reliable answer.",
-        sources: chunks.map((chunk: any) => ({
-          manual_id: chunk.manual_id,
-          content: chunk.content.substring(0, 200) + "...",
-          page_start: chunk.page_start,
-          page_end: chunk.page_end,
-          menu_path: chunk.menu_path,
-          score: chunk.score,
-          rerank_score: chunk.rerank_score
-        })),
-        strategy,
-        pipeline_version: 'legacy'
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // LEGACY: Use old generateResponse
-    const aiResponse = await generateResponse(query, chunks);
-
-    console.log("🤖 [LEGACY] Generated response");
-    console.log("Response preview:", JSON.stringify(aiResponse).substring(0, 200) + "...");
-
-    // Grade the answer (legacy)
-    console.log("📊 [LEGACY] Grading answer quality...");
-    const grading = await gradeAnswerWithRubric({
-      question: query,
-      answer: aiResponse,
-      passages: chunks,
-      openaiApiKey,
-      openaiProjectId
-    });
-
-    if (grading) {
-      console.log('✅ [LEGACY] Grading complete:', grading.overall);
-      console.log('   Scores:', Object.entries(grading.score).map(([k, v]) => `${k}:${v}`).join(', '));
-    }
-
-    // Build metadata for logging and transparency
+    // Build metadata
     const metadata = {
-      pipeline_version: 'legacy',
+      pipeline_version: 'v2',
       manual_id: manual_id || "all_manuals",
       embedding_model: "text-embedding-3-small",
       retrieval_strategy: strategy,
-      candidate_count: chunks.length,
-      rerank_scores: chunks.slice(0, 10).map(c => c.rerank_score ?? null),
-      answerability_passed: !weak,
-      sources_used: chunks.map(c => ({
-        manual_id: c.manual_id,
-        pages: `${c.page_start}${c.page_end && c.page_end !== c.page_start ? `-${c.page_end}` : ''}`,
-        menu_path: c.menu_path,
-        score: c.score,
-        rerank_score: c.rerank_score
-      }))
+      candidate_count: chunks?.length || 0,
+      rerank_scores: chunks?.slice(0, 10).map(c => c.rerank_score ?? null) || [],
     };
 
-    // Build the context that GPT saw
-    const contextSeen = chunks.map(chunk => {
+    const contextSeen = chunks?.map(chunk => {
       const pageInfo = chunk.page_start 
         ? `[Pages ${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}]`
         : '';
       const pathInfo = chunk.menu_path ? `[${chunk.menu_path}]` : '';
       return `${pageInfo}${pathInfo ? ' ' + pathInfo : ''}\n${chunk.content}`;
-    }).join('\n\n---\n\n');
-
-    console.log("📋 [LEGACY] Metadata:", JSON.stringify(metadata, null, 2));
-    console.log("\n=================================\n");
+    }).join('\n\n---\n\n') || '';
 
     return new Response(JSON.stringify({ 
-      response: aiResponse,
-      sources: chunks.map((chunk: any) => ({
-        manual_id: chunk.manual_id,
-        content: chunk.content.substring(0, 200) + "...",
-        page_start: chunk.page_start,
-        page_end: chunk.page_end,
-        menu_path: chunk.menu_path,
-        score: chunk.score
-      })),
+      response: finalAnswer,
+      sources,
       strategy,
-      grading,
       metadata,
       context_seen: contextSeen
     }), {

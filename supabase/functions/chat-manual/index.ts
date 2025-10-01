@@ -422,10 +422,19 @@ async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: s
     };
   }
 
-  // Answerability gate: chunks<3 OR (max(rerank)<0.45 AND all base scores <0.30)
+  // Answerability gate: chunks<2 OR (max(rerank)<0.35 AND all base scores <0.25)
   const maxRerankScore = Math.max(...chunks.map(c => c.rerank_score ?? 0));
-  const allBaseScoresLow = chunks.every(c => (c.score ?? 0) < 0.30);
-  const weak = (chunks.length < 3) || (maxRerankScore < 0.45 && allBaseScoresLow);
+  const maxBaseScore = Math.max(...chunks.map(c => c.score ?? 0));
+  const allBaseScoresLow = chunks.every(c => (c.score ?? 0) < 0.25);
+  const weak = (chunks.length < 2) || (maxRerankScore < 0.35 && allBaseScoresLow);
+  
+  console.log(`📊 [RAG V2] Answerability check:`, {
+    chunk_count: chunks.length,
+    max_rerank_score: maxRerankScore.toFixed(3),
+    max_base_score: maxBaseScore.toFixed(3),
+    all_base_scores_low: allBaseScoresLow,
+    is_weak: weak
+  });
   
   if (weak) {
     console.log('⚠️ [RAG V2] Low answerability - returning early');
@@ -445,13 +454,19 @@ async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: s
   }
 
   // Stage 1: Draft answer (manual only)
+  console.log('📝 [RAG V2] Starting Stage 1: Draft Answer');
   const draftAnswer = await generateDraftAnswer(query, chunks);
+  console.log('✅ [RAG V2] Stage 1 complete, draft length:', JSON.stringify(draftAnswer).length);
   
   // Stage 2: Expert enhancement
+  console.log('🔧 [RAG V2] Starting Stage 2: Expert Enhancement');
   const expertAnswer = await generateExpertAnswer(query, draftAnswer);
+  console.log('✅ [RAG V2] Stage 2 complete, expert answer length:', JSON.stringify(expertAnswer).length);
   
   // Stage 3: Review
+  console.log('🔍 [RAG V2] Starting Stage 3: Review');
   const finalAnswer = await reviewAnswer(query, expertAnswer);
+  console.log('✅ [RAG V2] Stage 3 complete, final answer length:', JSON.stringify(finalAnswer).length);
 
   console.log('✅ [RAG V2] Pipeline complete\n');
 

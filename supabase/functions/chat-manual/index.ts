@@ -422,24 +422,39 @@ async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: s
     };
   }
 
-  // Answerability gate: chunks<2 OR (max(rerank)<0.35 AND all base scores <0.25)
+  // Answerability gate: Require BOTH good base scores AND good rerank scores
   const maxRerankScore = Math.max(...chunks.map(c => c.rerank_score ?? 0));
   const maxBaseScore = Math.max(...chunks.map(c => c.score ?? 0));
-  const allBaseScoresLow = chunks.every(c => (c.score ?? 0) < 0.25);
-  const weak = (chunks.length < 2) || (maxRerankScore < 0.35 && allBaseScoresLow);
+  const hasGoodRerank = maxRerankScore >= 0.50; // Cohere score must be decent
+  const hasGoodBase = maxBaseScore >= 0.40; // Vector score must be decent
+  const weak = (chunks.length < 3) || !hasGoodRerank || !hasGoodBase;
   
   console.log(`📊 [RAG V2] Answerability check:`, {
     chunk_count: chunks.length,
     max_rerank_score: maxRerankScore.toFixed(3),
     max_base_score: maxBaseScore.toFixed(3),
-    all_base_scores_low: allBaseScoresLow,
+    has_good_rerank: hasGoodRerank,
+    has_good_base: hasGoodBase,
     is_weak: weak
   });
   
   if (weak) {
     console.log('⚠️ [RAG V2] Low answerability - returning early');
+    const reason = chunks.length < 3 
+      ? `only ${chunks.length} chunks found`
+      : !hasGoodRerank 
+        ? `low rerank scores (max: ${maxRerankScore.toFixed(2)})`
+        : `low base scores (max: ${maxBaseScore.toFixed(2)})`;
+    
     return {
-      response: "I don't find this information in the manual for this question. The retrieved content may not be relevant enough.",
+      response: {
+        summary: `I couldn't find relevant information in the manual to answer this question. The search ${reason}, which suggests this topic may not be covered in the manual.`,
+        steps: [],
+        why: [],
+        expert_advice: [`This specific issue may not be documented in this manual. Consider checking if you're looking at the correct manual for your equipment.`],
+        safety: [],
+        sources: []
+      },
       sources: chunks.map((chunk: any) => ({
         manual_id: chunk.manual_id,
         content: chunk.content.substring(0, 200) + "...",

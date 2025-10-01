@@ -279,7 +279,7 @@ ${context}`
     {
       role: "user",
       content: `Question: ${query}
-Provide a draft answer in structured JSON with these fields:
+Provide a draft answer in structured JSON with fields:
 {
   "summary": string,
   "steps": [ { "step": string, "expected": string } ],
@@ -333,14 +333,14 @@ async function generateExpertAnswer(query: string, draftJson: any) {
 - Your own expert knowledge of similar machines and common failures
 
 Tasks:
-1. Review the draft for accuracy against the manual.
-2. If the manual contains enough info, polish it into a clear, conversational answer.
-3. If the manual lacks detail, add your own expert reasoning and best-practice troubleshooting steps beyond the manual (clearly labeled as "Expert Advice").
-4. Do not hallucinate specifics about this exact model if unsupported; instead, give generalized best practices or next-step tests a pro would run.
-5. Always cite the manual where applicable, and clearly separate "manual content" vs "expert advice."
-6. Make the answer conversational, supportive, and actionable.
+1) Review the draft for accuracy against the manual.
+2) If the manual contains enough info, polish it into a clear, conversational answer.
+3) If the manual lacks detail, add your own expert reasoning and best-practice troubleshooting steps beyond the manual (clearly labeled as "Expert Advice").
+4) Do not hallucinate specifics about this exact model if unsupported; give generalized best practices or non-destructive tests a pro would run.
+5) Always cite the manual where applicable, and clearly separate "manual" vs "expert advice."
+6) Make the answer concise, supportive, and actionable.
 
-Return JSON in this schema:
+Return STRICT JSON:
 {
   "summary": string,
   "steps": [ { "step": string, "expected": string, "source": "manual"|"expert" } ],
@@ -366,7 +366,7 @@ ${JSON.stringify(draftJson, null, 2)}`
     },
     body: JSON.stringify({
       model: "gpt-4o",
-      temperature: 0.4, // Slightly higher for more creative expert advice
+      temperature: 0.2,
       response_format: { type: "json_object" },
       max_tokens: 1200,
       messages
@@ -422,7 +422,7 @@ Review and correct if needed, maintaining the same JSON structure.`
     },
     body: JSON.stringify({
       model: "gpt-4o",
-      temperature: 0, // Zero temperature for strict reviewing
+      temperature: 0.2,
       response_format: { type: "json_object" },
       max_tokens: 1200,
       messages

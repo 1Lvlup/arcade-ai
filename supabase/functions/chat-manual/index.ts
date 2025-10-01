@@ -242,6 +242,76 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   return { results: finalResults, strategy };
 }
 
+// STAGE 1: Generate draft answer using ONLY manual context
+async function generateDraftAnswer(query: string, chunks: any[]) {
+  // Format context with [pX] prefixes for easy citation
+  const context = chunks.map((chunk: any, idx: number) => {
+    const pagePrefix = chunk.page_start 
+      ? `[p${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}]`
+      : '[p?]';
+    const menuPath = chunk.menu_path ? ` ${chunk.menu_path}` : '';
+    
+    return `${pagePrefix}${menuPath}\n${chunk.content}`;
+  }).join('\n\n---\n\n');
+
+  console.log('📝 [STAGE 1] Formatted context with', chunks.length, 'chunks');
+  console.log('📄 Context preview:', context.substring(0, 200) + '...');
+
+  const messages = [
+    {
+      role: "system",
+      content: `You are a senior arcade technician. Using ONLY the provided manual content below,
+create a structured draft answer. Include citations (page numbers/figures) where you use information.
+If the answer is not in the manual, say so clearly in the draft.
+Do not guess or add information beyond the manual in this stage.
+
+MANUAL CONTEXT:
+${context}`
+    },
+    {
+      role: "user",
+      content: `Question: ${query}
+Provide a draft answer in structured JSON with these fields:
+{
+  "summary": string,
+  "steps": [ { "step": string, "expected": string } ],
+  "why": [string],
+  "safety": [string],
+  "sources": [ { "page": number, "note": string } ]
+}`
+    }
+  ];
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { 
+      Authorization: `Bearer ${openaiApiKey}`, 
+      "Content-Type": "application/json",
+      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      max_tokens: 900,
+      messages
+    }),
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ [STAGE 1] Draft generation failed:', response.status, errorText);
+    throw new Error(`Draft generation failed: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  const draftJson = JSON.parse(data.choices[0].message.content);
+  
+  console.log('✅ [STAGE 1] Draft answer generated:', JSON.stringify(draftJson).substring(0, 200) + '...');
+  
+  return draftJson;
+}
+
 // Generate AI response with page-prefixed context
 async function generateResponse(query: string, chunks: any[]) {
   // Format context with [pX] prefixes for easy citation

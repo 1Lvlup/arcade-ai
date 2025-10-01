@@ -115,10 +115,12 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   console.log('✅ Created query embedding');
 
   // Strategy 1: Vector search - retrieve top 60 for reranking
+  // Tuning: top_k_raw = 60, will rerank to top 10
+  // Min score gate: 0.30 (tunable to 0.30-0.35 based on telemetry)
   const { data: vectorResults, error: vectorError } = await supabase.rpc('match_chunks_improved', {
     query_embedding: queryEmbedding,
     top_k: 60,
-    min_score: 0.20,
+    min_score: 0.30,
     manual: manual_id,
     tenant_id: tenant_id
   });
@@ -235,17 +237,17 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   return { results: finalResults, strategy };
 }
 
-// Generate AI response
+// Generate AI response with page-prefixed context
 async function generateResponse(query: string, chunks: any[]) {
-  // Format context with detailed information
+  // Format context with [pX] prefixes for easy citation
+  // Each line is prefixed with page info to make citations simple
   const context = chunks.map((chunk: any, idx: number) => {
-    const pageInfo = chunk.page_start 
-      ? `Pages ${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}`
-      : 'Page unknown';
-    const menuPath = chunk.menu_path ? `Section: ${chunk.menu_path}` : '';
-    const score = chunk.score ? `(Score: ${chunk.score.toFixed(3)})` : '';
+    const pagePrefix = chunk.page_start 
+      ? `[p${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}]`
+      : '[p?]';
+    const menuPath = chunk.menu_path ? ` ${chunk.menu_path}` : '';
     
-    return `[Chunk ${idx + 1}] ${pageInfo} ${menuPath} ${score}\n${chunk.content}`;
+    return `${pagePrefix}${menuPath}\n${chunk.content}`;
   }).join('\n\n---\n\n');
 
   console.log('📝 Formatted context with', chunks.length, 'chunks');
@@ -257,22 +259,23 @@ async function generateResponse(query: string, chunks: any[]) {
       content: `Lead Arcade Technician AI Assistant.
 
 CRITICAL INSTRUCTIONS:
-- Use ONLY the provided manual context
+- Use ONLY the provided manual context (context is prefixed with [pX] page markers)
 - If the answer is not in the context, respond with: "I don't find this in the manual"
+- Temperature: 0.2 for grounded, consistent answers
 - Return STRICT JSON with this exact structure:
 {
   "summary": "Brief overview of the solution",
   "steps": ["Step 1 description", "Step 2 description", ...],
   "why": ["Explanation 1", "Explanation 2", ...],
   "safety": ["Safety warning 1", "Safety warning 2", ...],
-  "sources": ["p8", "fig 12", ...]
+  "sources": ["p8", "p12-15", "fig 12", ...]
 }
 
 - summary: Concise answer to the question
-- steps: Ordered list of actions to take (use empty array if not applicable)
+- steps: Ordered, atomic actions (use empty array if not applicable)
 - why: Explanations of why these steps work (use empty array if not applicable)  
 - safety: Important safety warnings (use empty array if none)
-- sources: Page numbers and figure references from the manual (e.g., "p8", "fig 12", "pages 5-7")`
+- sources: Page numbers and figure references from context (e.g., "p8", "p12-15", "fig 12")`
     },
     {
       role: "user",

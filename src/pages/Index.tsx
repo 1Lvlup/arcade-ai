@@ -55,7 +55,12 @@ const Index = () => {
   };
   if (showChat) {
     return <div className="min-h-screen professional-bg">
-        <SharedHeader title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} showBackButton={true} backTo="/" />
+        <SharedHeader 
+          title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} 
+          showBackButton={true} 
+          backTo="/" 
+          onBackClick={handleBackToHome}
+        />
         <main className="container mx-auto px-4 py-8">
           <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />
         </main>

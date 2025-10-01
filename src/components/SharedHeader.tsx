@@ -7,9 +7,10 @@ interface SharedHeaderProps {
   title: string;
   showBackButton?: boolean;
   backTo?: string;
+  onBackClick?: () => void;
 }
 
-export const SharedHeader = ({ title, showBackButton = false, backTo = "/" }: SharedHeaderProps) => {
+export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBackClick }: SharedHeaderProps) => {
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -21,12 +22,19 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/" }: Sh
       <div className="container mx-auto px-6 py-6 flex items-center justify-between">
         <div className="flex items-center space-x-6">
           {showBackButton && (
-            <Link to={backTo}>
-              <Button variant="minimal" size="sm">
+            onBackClick ? (
+              <Button variant="minimal" size="sm" onClick={onBackClick}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-            </Link>
+            ) : (
+              <Link to={backTo}>
+                <Button variant="minimal" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+              </Link>
+            )
           )}
           <div className="flex items-center space-x-3">
             <Brain className="h-7 w-7 text-primary" />

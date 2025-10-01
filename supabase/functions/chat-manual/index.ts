@@ -469,10 +469,10 @@ async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: s
     };
   }
 
-  // Check answerability before proceeding
-  const weak = (chunks.length < 3) || 
-               (chunks.every(c => (c.score ?? 0) < 0.3) && 
-                chunks.every(c => (c.rerank_score ?? 0) < 0.45));
+  // Answerability gate: chunks<3 OR (max(rerank)<0.45 AND all base scores <0.30)
+  const maxRerankScore = Math.max(...chunks.map(c => c.rerank_score ?? 0));
+  const allBaseScoresLow = chunks.every(c => (c.score ?? 0) < 0.30);
+  const weak = (chunks.length < 3) || (maxRerankScore < 0.45 && allBaseScoresLow);
   
   if (weak) {
     console.log('⚠️ [RAG V2] Low answerability - returning early');
@@ -893,10 +893,10 @@ serve(async (req) => {
       });
     }
 
-    // Check answerability score before calling GPT
-    const weak = (chunks.length < 3) || 
-                 (chunks.every(c => (c.score ?? 0) < 0.3) && 
-                  chunks.every(c => (c.rerank_score ?? 0) < 0.45));
+    // Answerability gate: chunks<3 OR (max(rerank)<0.45 AND all base scores <0.30)
+    const maxRerankScore = Math.max(...chunks.map(c => c.rerank_score ?? 0));
+    const allBaseScoresLow = chunks.every(c => (c.score ?? 0) < 0.30);
+    const weak = (chunks.length < 3) || (maxRerankScore < 0.45 && allBaseScoresLow);
     
     if (weak) {
       console.log('⚠️ Low answerability score - returning early without GPT call');

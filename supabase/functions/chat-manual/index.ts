@@ -772,17 +772,26 @@ serve(async (req) => {
       });
     }
 
-    // Generate AI response with context
-    const aiResponse = await generateResponse(query, chunks);
+    // THREE-STAGE AI PIPELINE
+    console.log('\n🚀 Starting 3-stage AI pipeline...\n');
+    
+    // Stage 1: Generate draft from manual only
+    const draftAnswer = await generateDraftAnswer(query, chunks);
+    
+    // Stage 2: Enhance with expert knowledge
+    const expertAnswer = await generateExpertAnswer(query, draftAnswer);
+    
+    // Stage 3: Review for correctness and polish
+    const finalAnswer = await reviewAnswer(query, expertAnswer);
 
-    console.log("🤖 Generated response");
-    console.log("Response preview:", JSON.stringify(aiResponse).substring(0, 200) + "...");
+    console.log("✅ 3-stage pipeline complete");
+    console.log("Final answer preview:", JSON.stringify(finalAnswer).substring(0, 200) + "...");
 
     // Grade the answer
     console.log("📊 Grading answer quality...");
     const grading = await gradeAnswerWithRubric({
       question: query,
-      answer: aiResponse,
+      answer: finalAnswer,
       passages: chunks,
       openaiApiKey,
       openaiProjectId
@@ -823,7 +832,7 @@ serve(async (req) => {
     console.log("\n=================================\n");
 
     return new Response(JSON.stringify({ 
-      response: aiResponse,
+      response: finalAnswer,
       sources: chunks.map((chunk: any) => ({
         manual_id: chunk.manual_id,
         content: chunk.content.substring(0, 200) + "...",

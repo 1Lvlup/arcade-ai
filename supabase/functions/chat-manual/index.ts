@@ -215,6 +215,12 @@ create a structured draft answer. Include citations (page numbers/figures) where
 If the answer is not in the manual, say so clearly in the draft.
 Do not guess or add information beyond the manual in this stage.
 
+CRITICAL RULES:
+- NO generic fallbacks like "check cables" or "call a technician"
+- Safety warnings ONLY if they appear in the manual context
+- If manual doesn't cover it, leave fields empty or state "not in manual"
+- Do not invent safety boilerplate
+
 MANUAL CONTEXT:
 ${context}`
     },
@@ -281,6 +287,11 @@ Tasks:
 4) Do not hallucinate specifics about this exact model if unsupported; give generalized best practices or non-destructive tests a pro would run.
 5) Always cite the manual where applicable, and clearly separate "manual" vs "expert advice."
 6) Make the answer concise, supportive, and actionable.
+
+FORBIDDEN FALLBACKS:
+- NO generic "check cables / call a technician" templates
+- NO safety boilerplate disconnected from manual or actual diagnostic context
+- The ONLY allowed fallback is explicit expert advice for non-destructive diagnostic tests when manual is silent
 
 Return STRICT JSON:
 {

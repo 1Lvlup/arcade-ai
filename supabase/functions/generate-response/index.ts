@@ -1,3 +1,18 @@
+/**
+ * @deprecated This function provides generic OpenAI chat without RAG context.
+ * 
+ * For manual-based Q&A, use the `chat-manual` function with RAG_PIPELINE_V2 instead,
+ * which provides:
+ * - Hybrid retrieval with Cohere reranking
+ * - 3-stage pipeline (draft → expert → review)
+ * - Proper citations and source tracking
+ * - Quality grading
+ * 
+ * This function may still be used for:
+ * - Simple chat UI interactions (greetings, small talk)
+ * - Generic text generation without manual context
+ * - Legacy integrations that don't need RAG
+ */
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 

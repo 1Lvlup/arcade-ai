@@ -14,6 +14,14 @@ const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// FEATURE FLAG: RAG Pipeline V2
+// When true: Use 3-stage pipeline (draft → expert → review)
+// When false: Use legacy single-call generateResponse
+// Default: true for staging/dev, false for production
+const RAG_PIPELINE_V2 = Deno.env.get("RAG_PIPELINE_V2") === "false" ? false : true;
+
+console.log(`🚩 RAG_PIPELINE_V2 feature flag: ${RAG_PIPELINE_V2 ? 'ENABLED' : 'DISABLED'}`);
+
 // Extract technical keywords from query
 function keywordLine(q: string): string {
   const toks = q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/ig) || [];
@@ -436,6 +444,89 @@ Review and correct if needed, maintaining the same JSON structure.`
   return reviewedJson;
 }
 
+// ============================================================
+// UNIFIED RAG PIPELINE V2
+// ============================================================
+// Single entry point for the 3-stage RAG pipeline:
+// 1. Retrieve chunks (with Cohere reranking)
+// 2. Generate draft answer (manual-only)
+// 3. Enhance with expert knowledge
+// 4. Review for correctness
+async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: string) {
+  console.log('\n🚀 [RAG V2] Starting unified pipeline...\n');
+  
+  // Stage 0: Retrieve and rerank chunks
+  const { results: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
+  
+  console.log(`📚 [RAG V2] Retrieved ${chunks.length} chunks using ${strategy} strategy`);
+  
+  if (chunks.length === 0) {
+    return {
+      response: "I couldn't find any relevant information in the manual for your question.",
+      sources: [],
+      strategy: 'none',
+      pipeline_version: 'v2'
+    };
+  }
+
+  // Check answerability before proceeding
+  const weak = (chunks.length < 3) || 
+               (chunks.every(c => (c.score ?? 0) < 0.3) && 
+                chunks.every(c => (c.rerank_score ?? 0) < 0.45));
+  
+  if (weak) {
+    console.log('⚠️ [RAG V2] Low answerability - returning early');
+    return {
+      response: "I don't find this information in the manual for this question. The retrieved content may not be relevant enough.",
+      sources: chunks.map((chunk: any) => ({
+        manual_id: chunk.manual_id,
+        content: chunk.content.substring(0, 200) + "...",
+        page_start: chunk.page_start,
+        page_end: chunk.page_end,
+        score: chunk.score,
+        rerank_score: chunk.rerank_score
+      })),
+      strategy,
+      pipeline_version: 'v2'
+    };
+  }
+
+  // Stage 1: Draft answer (manual only)
+  const draftAnswer = await generateDraftAnswer(query, chunks);
+  
+  // Stage 2: Expert enhancement
+  const expertAnswer = await generateExpertAnswer(query, draftAnswer);
+  
+  // Stage 3: Review
+  const finalAnswer = await reviewAnswer(query, expertAnswer);
+
+  console.log('✅ [RAG V2] Pipeline complete\n');
+
+  return {
+    response: finalAnswer,
+    sources: chunks.map((chunk: any) => ({
+      manual_id: chunk.manual_id,
+      content: chunk.content.substring(0, 200) + "...",
+      page_start: chunk.page_start,
+      page_end: chunk.page_end,
+      menu_path: chunk.menu_path,
+      score: chunk.score,
+      rerank_score: chunk.rerank_score
+    })),
+    strategy,
+    chunks,
+    pipeline_version: 'v2'
+  };
+}
+
+// ============================================================
+// LEGACY FUNCTIONS (Used when RAG_PIPELINE_V2 = false)
+// ============================================================
+
+/**
+ * @deprecated Use runRagPipelineV2 instead. This function is kept for backward compatibility.
+ * Legacy single-call generation that stuffs context into system prompt.
+ */
 async function generateResponse(query: string, chunks: any[]) {
   // Format context with [pX] prefixes for easy citation
   // Each line is prefixed with page info to make citations simple
@@ -714,6 +805,63 @@ serve(async (req) => {
       }
     }
 
+    // Check feature flag and route to appropriate pipeline
+    if (RAG_PIPELINE_V2) {
+      // ===== NEW V2 PIPELINE =====
+      console.log('🚩 Using RAG Pipeline V2\n');
+      
+      const result = await runRagPipelineV2(query, manual_id, tenant_id);
+      
+      const { response: finalAnswer, sources, strategy, chunks } = result;
+      
+      // Grade the answer
+      console.log("📊 Grading answer quality...");
+      const grading = await gradeAnswerWithRubric({
+        question: query,
+        answer: finalAnswer,
+        passages: chunks || [],
+        openaiApiKey,
+        openaiProjectId
+      });
+
+      if (grading) {
+        console.log('✅ Grading complete:', grading.overall);
+        console.log('   Scores:', Object.entries(grading.score).map(([k, v]) => `${k}:${v}`).join(', '));
+      }
+
+      // Build metadata
+      const metadata = {
+        pipeline_version: 'v2',
+        manual_id: manual_id || "all_manuals",
+        embedding_model: "text-embedding-3-small",
+        retrieval_strategy: strategy,
+        candidate_count: chunks?.length || 0,
+        rerank_scores: chunks?.slice(0, 10).map(c => c.rerank_score ?? null) || [],
+      };
+
+      const contextSeen = chunks?.map(chunk => {
+        const pageInfo = chunk.page_start 
+          ? `[Pages ${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}]`
+          : '';
+        const pathInfo = chunk.menu_path ? `[${chunk.menu_path}]` : '';
+        return `${pageInfo}${pathInfo ? ' ' + pathInfo : ''}\n${chunk.content}`;
+      }).join('\n\n---\n\n') || '';
+
+      return new Response(JSON.stringify({ 
+        response: finalAnswer,
+        sources,
+        strategy,
+        grading,
+        metadata,
+        context_seen: contextSeen
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ===== LEGACY PIPELINE (when flag is false) =====
+    console.log('⚠️ Using LEGACY pipeline (RAG_PIPELINE_V2 = false)\n');
+    
     // Search for relevant chunks with hybrid approach
     const { results: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
     
@@ -738,7 +886,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         response: "I couldn't find any relevant information in the manual for your question. Please try rephrasing or ask about a different topic.",
         sources: [],
-        strategy: 'none'
+        strategy: 'none',
+        pipeline_version: 'legacy'
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -766,44 +915,37 @@ serve(async (req) => {
           score: chunk.score,
           rerank_score: chunk.rerank_score
         })),
-        strategy
+        strategy,
+        pipeline_version: 'legacy'
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // THREE-STAGE AI PIPELINE
-    console.log('\n🚀 Starting 3-stage AI pipeline...\n');
-    
-    // Stage 1: Generate draft from manual only
-    const draftAnswer = await generateDraftAnswer(query, chunks);
-    
-    // Stage 2: Enhance with expert knowledge
-    const expertAnswer = await generateExpertAnswer(query, draftAnswer);
-    
-    // Stage 3: Review for correctness and polish
-    const finalAnswer = await reviewAnswer(query, expertAnswer);
+    // LEGACY: Use old generateResponse
+    const aiResponse = await generateResponse(query, chunks);
 
-    console.log("✅ 3-stage pipeline complete");
-    console.log("Final answer preview:", JSON.stringify(finalAnswer).substring(0, 200) + "...");
+    console.log("🤖 [LEGACY] Generated response");
+    console.log("Response preview:", JSON.stringify(aiResponse).substring(0, 200) + "...");
 
-    // Grade the answer
-    console.log("📊 Grading answer quality...");
+    // Grade the answer (legacy)
+    console.log("📊 [LEGACY] Grading answer quality...");
     const grading = await gradeAnswerWithRubric({
       question: query,
-      answer: finalAnswer,
+      answer: aiResponse,
       passages: chunks,
       openaiApiKey,
       openaiProjectId
     });
 
     if (grading) {
-      console.log('✅ Grading complete:', grading.overall);
+      console.log('✅ [LEGACY] Grading complete:', grading.overall);
       console.log('   Scores:', Object.entries(grading.score).map(([k, v]) => `${k}:${v}`).join(', '));
     }
 
     // Build metadata for logging and transparency
     const metadata = {
+      pipeline_version: 'legacy',
       manual_id: manual_id || "all_manuals",
       embedding_model: "text-embedding-3-small",
       retrieval_strategy: strategy,
@@ -828,11 +970,11 @@ serve(async (req) => {
       return `${pageInfo}${pathInfo ? ' ' + pathInfo : ''}\n${chunk.content}`;
     }).join('\n\n---\n\n');
 
-    console.log("📋 Metadata:", JSON.stringify(metadata, null, 2));
+    console.log("📋 [LEGACY] Metadata:", JSON.stringify(metadata, null, 2));
     console.log("\n=================================\n");
 
     return new Response(JSON.stringify({ 
-      response: finalAnswer,
+      response: aiResponse,
       sources: chunks.map((chunk: any) => ({
         manual_id: chunk.manual_id,
         content: chunk.content.substring(0, 200) + "...",

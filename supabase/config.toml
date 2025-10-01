@@ -118,3 +118,9 @@ verify_jwt = true
 
 [functions.chat-manual]
 verify_jwt = true
+[functions.chat-manual.env]
+# RAG_PIPELINE_V2 feature flag
+# true (default): Use 3-stage pipeline (draft → expert → review) with Cohere reranking
+# false: Use legacy single-call generateResponse
+# Set to "false" explicitly to disable V2 pipeline
+RAG_PIPELINE_V2 = "true"

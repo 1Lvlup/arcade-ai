@@ -380,6 +380,61 @@ ${JSON.stringify(draftJson, null, 2)}`
   return expertJson;
 }
 
+// STAGE 3: Lightweight reviewer for correctness and polish
+async function reviewAnswer(query: string, expertJson: any) {
+  console.log('🔍 [STAGE 3] Reviewing answer for correctness...');
+
+  const messages = [
+    {
+      role: "system",
+      content: `You are a strict reviewer. Ensure:
+- All manual facts are accurate and cited.
+- Expert advice is clearly labeled as "expert".
+- Steps are atomic and actionable (one action per step).
+- No hallucinations about page numbers or labels.
+Return corrected JSON only.`
+    },
+    {
+      role: "user",
+      content: `Question: ${query}
+
+Answer to review:
+${JSON.stringify(expertJson, null, 2)}
+
+Review and correct if needed, maintaining the same JSON structure.`
+    }
+  ];
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { 
+      Authorization: `Bearer ${openaiApiKey}`, 
+      "Content-Type": "application/json",
+      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0, // Zero temperature for strict reviewing
+      response_format: { type: "json_object" },
+      max_tokens: 1200,
+      messages
+    }),
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ [STAGE 3] Review failed:', response.status, errorText);
+    console.log('⚠️ Falling back to expert answer without review');
+    return expertJson; // Fallback to expert answer if review fails
+  }
+  
+  const data = await response.json();
+  const reviewedJson = JSON.parse(data.choices[0].message.content);
+  
+  console.log('✅ [STAGE 3] Answer reviewed and polished');
+  
+  return reviewedJson;
+}
 
 async function generateResponse(query: string, chunks: any[]) {
   // Format context with [pX] prefixes for easy citation

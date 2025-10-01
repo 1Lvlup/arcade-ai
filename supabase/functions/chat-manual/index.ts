@@ -197,6 +197,11 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
         finalResults = candidates.slice(0, 10);
       } else {
         console.log('🔄 Reranking with Cohere...');
+        // Truncate documents to ~1500 chars to stay within API limits
+        const truncatedDocs = candidates.map(c => 
+          c.content.length > 1500 ? c.content.slice(0, 1500) : c.content
+        );
+        
         const cohereRes = await fetch("https://api.cohere.ai/v1/rerank", {
           method: "POST",
           headers: {
@@ -204,9 +209,9 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "rerank-english-v3.0",
+            model: "rerank-3",
             query: query,
-            documents: candidates.map(c => c.content),
+            documents: truncatedDocs,
             top_n: 10
           })
         });
@@ -474,114 +479,6 @@ Now grade according to the rubric and return JSON only.
   return JSON.parse(gradeData.choices[0].message.content);
 }
 
-// Grade the answer using a rubric
-async function gradeAnswerWithRubric(params: {
-  question: string;
-  answer: any;
-  passages: any[];
-  openaiApiKey: string;
-  openaiProjectId?: string;
-}): Promise<any> {
-  const systemPrompt = `You are an expert grader for technical support answers. Grade answers using this rubric:
-
-**citation_fidelity**: Are all facts cited with specific pages/figures from passages?
-- PASS: Every claim has a page/figure cite
-- PARTIAL: Most claims cited, 1-2 missing
-- FAIL: Many claims lack citations
-
-**specificity**: Are part numbers, voltages, torque values, error codes given when in passages?
-- PASS: All specific details included
-- PARTIAL: Some details missing
-- FAIL: Generic answer when specifics available
-
-**procedure_completeness**: For multi-step procedures, are all steps from passages included in order?
-- PASS: All steps present and ordered
-- PARTIAL: Minor steps missing
-- FAIL: Major steps missing or out of order
-
-**tooling_context**: If passages mention required tools, are they listed?
-- PASS: All tools listed
-- PARTIAL: Some tools missing
-- FAIL: Tools not mentioned when required
-
-**escalation_outcome**: If passages say "contact service", is that preserved?
-- PASS: Escalation properly included
-- PARTIAL: Escalation mentioned but unclear
-- FAIL: Missing escalation when required
-
-**safety_accuracy**: Are safety warnings from passages included accurately?
-- PASS: All warnings present
-- PARTIAL: Some warnings missing
-- FAIL: Safety info omitted or incorrect
-
-Return JSON:
-{
-  "score": {
-    "citation_fidelity": "PASS"|"PARTIAL"|"FAIL",
-    "specificity": "PASS"|"PARTIAL"|"FAIL",
-    "procedure_completeness": "PASS"|"PARTIAL"|"FAIL",
-    "tooling_context": "PASS"|"PARTIAL"|"FAIL",
-    "escalation_outcome": "PASS"|"PARTIAL"|"FAIL",
-    "safety_accuracy": "PASS"|"PARTIAL"|"FAIL"
-  },
-  "overall": "PASS"|"PARTIAL"|"FAIL",
-  "missing_keywords": ["keyword1", "keyword2"],
-  "evidence_pages": ["p8", "fig 12"],
-  "rationale": "brief explanation"
-}`;
-
-  const passagesBlock = params.passages.map(p => {
-    const tags = [];
-    if (p.page_start) tags.push(`p${p.page_start}`);
-    if (p.page_end && p.page_end !== p.page_start) tags.push(`-${p.page_end}`);
-    const tag = tags.join('');
-    return `${tag ? `[${tag}] ` : ""}${p.content}`;
-  }).join("\n---\n");
-
-  const answerText = typeof params.answer === 'string' 
-    ? params.answer 
-    : JSON.stringify(params.answer);
-
-  const userPrompt = `
-QUESTION:
-${params.question}
-
-ASSISTANT_ANSWER:
-${answerText}
-
-RETRIEVED_PASSAGES (verbatim; include page/figure if you have them):
-${passagesBlock}
-
-Now grade according to the rubric and return JSON only.
-  `.trim();
-
-  const gradeResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { 
-      Authorization: `Bearer ${params.openaiApiKey}`, 
-      "Content-Type": "application/json",
-      ...(params.openaiProjectId && { "OpenAI-Project": params.openaiProjectId }),
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ]
-    }),
-  });
-
-  if (!gradeResponse.ok) {
-    const errorText = await gradeResponse.text();
-    console.error('❌ Grading failed:', gradeResponse.status, errorText);
-    return null;
-  }
-
-  const gradeData = await gradeResponse.json();
-  return JSON.parse(gradeData.choices[0].message.content);
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

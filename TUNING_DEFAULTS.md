@@ -40,8 +40,10 @@
 - **Purpose**: Convert text to vector embeddings for semantic search
 
 ## Reranking
-- **Model**: rerank-english-v3.0 (Cohere)
+- **Model**: rerank-3 (Cohere)
 - **Purpose**: Improve relevance ordering of initial candidates
+- **Document truncation**: 1500 characters per document (API limit safety)
+- **Fallback**: Falls back to original vector scores if Cohere fails/times out
 
 ## Quality Grading
 - **Model**: gpt-4o

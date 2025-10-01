@@ -7,6 +7,13 @@ import { supabase } from '@/integrations/supabase/client';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  grading?: {
+    overall: 'PASS' | 'PARTIAL' | 'FAIL';
+    score: Record<string, 'PASS' | 'PARTIAL' | 'FAIL'>;
+    missing_keywords?: string[];
+    evidence_pages?: string[];
+    rationale?: string;
+  };
 }
 
 interface SimpleChatProps {
@@ -35,7 +42,8 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
 
       const assistantMessage: Message = { 
         role: 'assistant', 
-        content: data.response || 'Sorry, I could not generate a response.' 
+        content: data.response || 'Sorry, I could not generate a response.',
+        grading: data.grading
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
@@ -70,15 +78,31 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
                 <div className="text-sm leading-relaxed">
                   {message.content}
                 </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    message.role === 'user' ? 'bg-white/60' : 'bg-primary/60'
-                  }`}></div>
-                  <span className={`font-mono text-xs ${
-                    message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'
-                  }`}>
-                    {message.role === 'user' ? 'USER' : 'AI ASSISTANT'}
-                  </span>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      message.role === 'user' ? 'bg-white/60' : 'bg-primary/60'
+                    }`}></div>
+                    <span className={`font-mono text-xs ${
+                      message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'
+                    }`}>
+                      {message.role === 'user' ? 'USER' : 'AI ASSISTANT'}
+                    </span>
+                  </div>
+                  {message.role === 'assistant' && message.grading && (
+                    <div 
+                      className={`px-2 py-1 rounded text-xs font-mono border ${
+                        message.grading.overall === 'PASS' 
+                          ? 'bg-green-500/10 text-green-500 border-green-500/30' 
+                          : message.grading.overall === 'PARTIAL'
+                          ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
+                          : 'bg-red-500/10 text-red-500 border-red-500/30'
+                      }`}
+                      title={message.grading.rationale}
+                    >
+                      {message.grading.overall}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

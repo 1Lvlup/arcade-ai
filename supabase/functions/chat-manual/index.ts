@@ -307,11 +307,59 @@ CRITICAL INSTRUCTIONS:
   }
   
   const data = await response.json();
-  const jsonResponse = JSON.parse(data.choices[0].message.content);
+  const draftJson = JSON.parse(data.choices[0].message.content);
   
-  console.log('✅ Parsed JSON response:', JSON.stringify(jsonResponse).substring(0, 200) + '...');
+  console.log('✅ Parsed draft JSON response:', JSON.stringify(draftJson).substring(0, 200) + '...');
   
-  return jsonResponse;
+  // Run reviewer pass to ensure quality and accuracy
+  console.log('🔍 Running reviewer pass...');
+  const reviewerMessages = [
+    {
+      role: "system",
+      content: `You are a strict reviewer. Your job is to edit the JSON response to ensure:
+1. All claims are present in the provided context (no hallucinations)
+2. Steps are atomic and properly ordered
+3. Page citations are included in sources array
+4. Generic fluff is removed
+
+CRITICAL: Do NOT add facts that are not in the context. Only edit, refine, and cite properly.
+Return the edited JSON in the same structure.`
+    },
+    {
+      role: "user",
+      content: `QUESTION:\n${query}\n\nCONTEXT:\n${context}\n\nDRAFT_JSON:\n${JSON.stringify(draftJson)}`
+    }
+  ];
+
+  const reviewResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { 
+      Authorization: `Bearer ${openaiApiKey}`, 
+      "Content-Type": "application/json",
+      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0,
+      response_format: { type: "json_object" },
+      max_tokens: 900,
+      messages: reviewerMessages
+    }),
+  });
+  
+  if (!reviewResponse.ok) {
+    const errorText = await reviewResponse.text();
+    console.error('❌ Reviewer pass failed:', reviewResponse.status, errorText);
+    console.log('⚠️ Falling back to draft response');
+    return draftJson;
+  }
+  
+  const reviewData = await reviewResponse.json();
+  const finalJson = JSON.parse(reviewData.choices[0].message.content);
+  
+  console.log('✅ Reviewer pass complete:', JSON.stringify(finalJson).substring(0, 200) + '...');
+  
+  return finalJson;
 }
 
 serve(async (req) => {

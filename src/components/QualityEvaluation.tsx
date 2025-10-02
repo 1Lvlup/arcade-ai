@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Brain, CheckCircle2, AlertCircle, XCircle, Play, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Brain, CheckCircle2, AlertCircle, XCircle, Play, Eye, ChevronDown, ChevronUp, Download, FileJson, FileSpreadsheet } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface GradeBreakdown {
@@ -69,6 +69,79 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
   useEffect(() => {
     fetchEvaluations();
   }, [fetchEvaluations]);
+
+  const exportAsJSON = () => {
+    const exportData = {
+      manual_id: manualId,
+      exported_at: new Date().toISOString(),
+      summary: {
+        total: results.length,
+        pass: results.filter(r => r.grade_overall === 'PASS').length,
+        partial: results.filter(r => r.grade_overall === 'PARTIAL').length,
+        fail: results.filter(r => r.grade_overall === 'FAIL').length,
+        pass_rate: summary.total > 0 ? (summary.pass / summary.total * 100).toFixed(1) : '0'
+      },
+      evaluations: results.map(r => ({
+        question: r.question.question,
+        category: r.question.category,
+        importance: r.question.importance,
+        grade: r.grade_overall,
+        answer: r.answer,
+        citations: r.citations,
+        evidence_pages: r.evidence_pages,
+        missing_keywords: r.missing_keywords,
+        grade_breakdown: r.grade_breakdown,
+        rationale: r.rationale
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `evaluation-${manualId}-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Exported as JSON',
+      description: 'Evaluation results downloaded successfully'
+    });
+  };
+
+  const exportAsCSV = () => {
+    const headers = ['Question', 'Category', 'Importance', 'Grade', 'Citation Fidelity', 'Specificity', 'Completeness', 'Tooling', 'Escalation', 'Safety', 'Evidence Pages', 'Missing Keywords'];
+    
+    const rows = results.map(r => [
+      `"${r.question.question.replace(/"/g, '""')}"`,
+      r.question.category,
+      r.question.importance,
+      r.grade_overall,
+      r.grade_breakdown?.citation_fidelity || 'N/A',
+      r.grade_breakdown?.specificity || 'N/A',
+      r.grade_breakdown?.procedure_completeness || 'N/A',
+      r.grade_breakdown?.tooling_context || 'N/A',
+      r.grade_breakdown?.escalation_outcome || 'N/A',
+      r.grade_breakdown?.safety_accuracy || 'N/A',
+      r.evidence_pages?.join('; ') || '',
+      r.missing_keywords?.join('; ') || ''
+    ]);
+
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `evaluation-${manualId}-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Exported as CSV',
+      description: 'Evaluation results downloaded successfully'
+    });
+  };
 
   const runEvaluation = async () => {
     setEvaluating(true);
@@ -147,23 +220,45 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
             <Brain className="h-6 w-6 text-primary" />
             <span>RAG Quality Evaluation</span>
           </CardTitle>
-          <Button 
-            onClick={runEvaluation}
-            disabled={evaluating}
-            className="bg-primary hover:bg-primary/90"
-          >
-            {evaluating ? (
+          <div className="flex gap-2">
+            {results.length > 0 && (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Evaluating...
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4 mr-2" />
-                Run Evaluation
+                <Button
+                  onClick={exportAsJSON}
+                  variant="outline"
+                  size="sm"
+                >
+                  <FileJson className="h-4 w-4 mr-2" />
+                  JSON
+                </Button>
+                <Button
+                  onClick={exportAsCSV}
+                  variant="outline"
+                  size="sm"
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  CSV
+                </Button>
               </>
             )}
-          </Button>
+            <Button 
+              onClick={runEvaluation}
+              disabled={evaluating}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {evaluating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Evaluating...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Run Evaluation
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

@@ -110,11 +110,11 @@ serve(async (req) => {
     formData.append('preserve_very_small_text', 'true') // Keeps tiny pin labels
     formData.append('preserve_layout_alignment_across_pages', 'true') // Maintains alignment
     
-    // === FIGURES & IMAGES === (More conservative settings)
+    // === FIGURES & IMAGES === (Balanced extraction)
     formData.append('save_images', 'true') // Save extracted images
-    formData.append('extract_images', 'true') // Extract meaningful figures only
+    formData.append('extract_images', 'true') // Extract images from document
     formData.append('extract_figures', 'true') // Extract diagrams and schematics
-    formData.append('inline_images_in_markdown', 'false') // Keep images separate
+    formData.append('inline_images_in_markdown', 'true') // Include image references in markdown
     formData.append('disable_image_extraction', 'false') // Allow extraction
     
     // === TABLES ===

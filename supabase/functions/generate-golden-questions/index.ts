@@ -237,13 +237,15 @@ IMPORTANT: You must respond with valid JSON only. Return a JSON object with a "q
     {
       "question": "How do I reset the game when it freezes during gameplay?",
       "category": "troubleshooting",
-      "importance": "high"
+      "importance": "high",
+      "explanation": "Brief explanation of why this question is important and what value it provides to users"
     }
   ]
 }
 
 Categories should be: troubleshooting, setup, maintenance, safety, specifications
-Importance levels: high, medium, low`
+Importance levels: high, medium, low
+Each question must include an explanation field.`
         },
         {
           role: 'user',
@@ -321,6 +323,7 @@ ${summary.substring(0, 8000)}`
       question_type: q.type || q.category || 'general',
       category: q.category,
       importance: q.importance,
+      explanation: q.explanation || '',
       expected_keywords: q.expected_keywords || [],
       filters: q.filters || null
     }));

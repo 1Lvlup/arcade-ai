@@ -11,6 +11,7 @@ interface GoldenQuestion {
   question: string;
   category: string;
   importance: string;
+  explanation?: string;
   created_at: string;
 }
 
@@ -193,6 +194,11 @@ export function ManualQuestions({ manualId }: ManualQuestionsProps) {
                   <p className="text-gray-800 font-medium text-lg leading-relaxed">
                     {question.question}
                   </p>
+                  {question.explanation && (
+                    <p className="mt-2 text-gray-600 text-sm">
+                      {question.explanation}
+                    </p>
+                  )}
                   <div className="mt-3 text-sm text-gray-500">
                     Generated {new Date(question.created_at).toLocaleDateString()}
                   </div>

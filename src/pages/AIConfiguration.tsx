@@ -30,9 +30,7 @@ const AI_MODELS = {
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)' }
   ],
   embeddings: [
-    { value: 'text-embedding-3-small', label: 'Text Embedding 3 Small' },
-    { value: 'text-embedding-3-large', label: 'Text Embedding 3 Large' },
-    { value: 'text-embedding-ada-002', label: 'Ada 002 (Legacy)' }
+    { value: 'text-embedding-3-small', label: 'Text Embedding 3 Small (Recommended)' }
   ]
 };
 
@@ -242,6 +240,9 @@ export default function AIConfiguration() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-sm text-muted-foreground">
+                      OpenAI embedding model for vector search (NOT LlamaCloud)
+                    </p>
                   </div>
                 </div>
 

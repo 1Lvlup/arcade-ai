@@ -2,6 +2,7 @@ import { ManualUpload } from '@/components/ManualUpload';
 import { ManualsList } from '@/components/ManualsList';
 import { SharedHeader } from '@/components/SharedHeader';
 import FigureEnhancementManager from '@/components/FigureEnhancementManager';
+import { ChatBot } from '@/components/ChatBot';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -56,6 +57,11 @@ const ManualManagement = () => {
               Experience unprecedented accuracy in extraction, analysis, and structured data creation.
             </p>
           </div>
+        </div>
+
+        {/* Chat Interface */}
+        <div className="section-spacing">
+          <ChatBot />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 section-spacing">

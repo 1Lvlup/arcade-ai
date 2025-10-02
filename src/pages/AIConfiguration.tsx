@@ -169,9 +169,13 @@ export default function AIConfiguration() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SharedHeader title="AI Configuration" />
+  return (
+    <div className="min-h-screen bg-background">
+      <SharedHeader 
+        title="AI Configuration" 
+        showBackButton={true}
+        backTo="/manuals"
+      />
         <div className="flex items-center justify-center h-96">
           <div className="text-center">Loading AI configuration...</div>
         </div>

@@ -271,24 +271,29 @@ ${summary.substring(0, 8000)}`
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const aiResponse = await response.json();
     console.log('✅ AI response received');
+    console.log('📦 Full response:', JSON.stringify(aiResponse, null, 2));
 
     let questions;
     try {
-      let content = aiResponse.choices[0].message.content;
+      const content = aiResponse.choices?.[0]?.message?.content;
       
-      if (!content) {
-        throw new Error('Empty response from AI');
+      console.log('📝 Content received:', content);
+      
+      if (!content || content.trim() === '') {
+        console.error('❌ Empty content received from OpenAI');
+        console.error('Full API response:', JSON.stringify(aiResponse, null, 2));
+        throw new Error('Empty response from AI - try using GPT-4o instead of GPT-5');
       }
       
       // Strip markdown code blocks if present
-      content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      const cleanedContent = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(cleanedContent);
       
       // Handle both array format and object with questions array
       questions = Array.isArray(parsed) ? parsed : parsed.questions;
@@ -297,9 +302,9 @@ ${summary.substring(0, 8000)}`
         throw new Error('Response does not contain a questions array');
       }
     } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
-      console.error('Raw content:', aiResponse.choices[0]?.message?.content);
-      throw new Error('Failed to parse AI response');
+      console.error('❌ Error parsing AI response:', parseError);
+      console.error('Raw content:', aiResponse.choices?.[0]?.message?.content);
+      throw new Error('Failed to parse AI response - try using GPT-4o instead of GPT-5');
     }
 
     if (!Array.isArray(questions)) {

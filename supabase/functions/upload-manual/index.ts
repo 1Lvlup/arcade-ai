@@ -51,11 +51,30 @@ serve(async (req) => {
     // Set tenant context
     await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id })
 
-    // Generate manual_id from title
-    const manual_id = title.toLowerCase()
+    // Generate clean manual_id from title
+    const baseSlug = title.toLowerCase()
       .replace(/[^a-z0-9\s]/g, '')
       .replace(/\s+/g, '-')
-      .substring(0, 40) + '-' + Date.now()
+      .substring(0, 50)
+    
+    // Check if this manual_id already exists and find a unique one
+    let manual_id = baseSlug
+    let suffix = 1
+    
+    while (true) {
+      const { data: existing } = await supabase
+        .from('documents')
+        .select('manual_id')
+        .eq('manual_id', manual_id)
+        .maybeSingle()
+      
+      if (!existing) {
+        break // Found a unique ID
+      }
+      
+      suffix++
+      manual_id = `${baseSlug}-${suffix}`
+    }
 
     console.log('Generated manual_id:', manual_id)
 

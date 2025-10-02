@@ -40,6 +40,8 @@ export default function AIConfiguration() {
   const [testPrompt, setTestPrompt] = useState('How do I troubleshoot power issues?');
   const [testResponse, setTestResponse] = useState('');
   const [isTestingPrompt, setIsTestingPrompt] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Fetch AI configuration
   const { data: aiConfigs, isLoading } = useQuery({
@@ -57,23 +59,28 @@ export default function AIConfiguration() {
 
   // Update configuration mutation
   const updateConfigMutation = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      const { error } = await supabase
-        .from('ai_config')
-        .update({ config_value: value })
-        .eq('config_key', key);
-      
-      if (error) throw error;
+    mutationFn: async (changes: Record<string, any>) => {
+      // Update all pending changes
+      for (const [key, value] of Object.entries(changes)) {
+        const { error } = await supabase
+          .from('ai_config')
+          .update({ config_value: value })
+          .eq('config_key', key);
+        
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-config'] });
-      toast({ title: 'Configuration updated successfully' });
+      setPendingChanges({});
+      setHasUnsavedChanges(false);
+      toast({ title: 'Configuration saved successfully' });
     },
     onError: (error) => {
       console.error('Failed to update config:', error);
       toast({ 
-        title: 'Update failed', 
-        description: 'Failed to update configuration',
+        title: 'Save failed', 
+        description: 'Failed to save configuration',
         variant: 'destructive' 
       });
     }
@@ -106,8 +113,13 @@ export default function AIConfiguration() {
     }
   });
 
-  const handleConfigUpdate = (key: string, value: any) => {
-    updateConfigMutation.mutate({ key, value });
+  const handleConfigChange = (key: string, value: any) => {
+    setPendingChanges(prev => ({ ...prev, [key]: value }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSaveChanges = () => {
+    updateConfigMutation.mutate(pendingChanges);
   };
 
   const handleTestPrompt = () => {
@@ -134,6 +146,11 @@ export default function AIConfiguration() {
   };
 
   const getConfigValue = (key: string, defaultValue: any = '') => {
+    // Check pending changes first
+    if (key in pendingChanges) {
+      return pendingChanges[key];
+    }
+    
     const config = aiConfigs?.find(c => c.config_key === key);
     if (!config) return defaultValue;
     
@@ -179,6 +196,16 @@ export default function AIConfiguration() {
           </div>
           
           <div className="flex gap-2">
+            {hasUnsavedChanges && (
+              <Button 
+                onClick={handleSaveChanges}
+                disabled={updateConfigMutation.isPending}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {updateConfigMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            )}
             <Button variant="outline" onClick={exportConfig}>
               <Download className="h-4 w-4 mr-2" />
               Export Config
@@ -208,7 +235,7 @@ export default function AIConfiguration() {
                     <Label htmlFor="chat-model">Chat Model</Label>
                     <Select
                       value={getConfigValue('chat_model', 'gpt-5-2025-08-07')}
-                      onValueChange={(value) => handleConfigUpdate('chat_model', value)}
+                      onValueChange={(value) => handleConfigChange('chat_model', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select chat model" />
@@ -227,7 +254,7 @@ export default function AIConfiguration() {
                     <Label htmlFor="search-model">Embedding Model</Label>
                     <Select
                       value={getConfigValue('search_model', 'text-embedding-3-small')}
-                      onValueChange={(value) => handleConfigUpdate('search_model', value)}
+                      onValueChange={(value) => handleConfigChange('search_model', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select embedding model" />
@@ -255,7 +282,7 @@ export default function AIConfiguration() {
                     max="2"
                     step="0.1"
                     value={getConfigValue('response_temperature')}
-                    onChange={(e) => handleConfigUpdate('response_temperature', parseFloat(e.target.value))}
+                    onChange={(e) => handleConfigChange('response_temperature', parseFloat(e.target.value))}
                   />
                   <p className="text-sm text-muted-foreground">
                     Controls randomness: 0 = focused, 2 = creative
@@ -280,7 +307,7 @@ export default function AIConfiguration() {
                     id="system-prompt"
                     className="min-h-[400px] font-mono text-sm"
                     value={getConfigValue('system_prompt', '')}
-                    onChange={(e) => handleConfigUpdate('system_prompt', e.target.value)}
+                    onChange={(e) => handleConfigChange('system_prompt', e.target.value)}
                   />
                 </div>
                 
@@ -314,7 +341,7 @@ export default function AIConfiguration() {
                       max="1"
                       step="0.01"
                       value={getConfigValue('vector_threshold')}
-                      onChange={(e) => handleConfigUpdate('vector_threshold', parseFloat(e.target.value))}
+                      onChange={(e) => handleConfigChange('vector_threshold', parseFloat(e.target.value))}
                     />
                     <p className="text-sm text-muted-foreground">
                       Minimum similarity for vector search (0.3 recommended)
@@ -330,7 +357,7 @@ export default function AIConfiguration() {
                       max="1"
                       step="0.01"
                       value={getConfigValue('text_threshold')}
-                      onChange={(e) => handleConfigUpdate('text_threshold', parseFloat(e.target.value))}
+                      onChange={(e) => handleConfigChange('text_threshold', parseFloat(e.target.value))}
                     />
                     <p className="text-sm text-muted-foreground">
                       Minimum score for text search (0.1 recommended)
@@ -345,7 +372,7 @@ export default function AIConfiguration() {
                       min="1"
                       max="50"
                       value={getConfigValue('max_results')}
-                      onChange={(e) => handleConfigUpdate('max_results', parseInt(e.target.value))}
+                      onChange={(e) => handleConfigChange('max_results', parseInt(e.target.value))}
                     />
                     <p className="text-sm text-muted-foreground">
                       Maximum search results to return
@@ -361,7 +388,7 @@ export default function AIConfiguration() {
                     min="1"
                     max="20"
                     value={getConfigValue('rerank_threshold')}
-                    onChange={(e) => handleConfigUpdate('rerank_threshold', parseInt(e.target.value))}
+                    onChange={(e) => handleConfigChange('rerank_threshold', parseInt(e.target.value))}
                   />
                   <p className="text-sm text-muted-foreground">
                     Minimum results before applying AI reranking (3 recommended)

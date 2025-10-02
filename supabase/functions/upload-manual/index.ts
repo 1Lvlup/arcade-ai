@@ -88,22 +88,22 @@ serve(async (req) => {
       throw signedUrlError
     }
 
-    console.log('📡 Submitting to LlamaCloud with standard parsing mode...')
+    console.log('📡 Submitting to LlamaCloud with AI Agent parsing (Sonnet 3.7)...')
 
-    // STANDARD PARSING CONFIGURATION (with image extraction)
+    // AI AGENT PARSING WITH SONNET 3.7
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
     
-    // Standard document parsing (this mode DOES extract images)
-    // Note: Not using parse_mode parameter at all - default behavior includes image extraction
+    // Use AI Agent parsing with Sonnet 3.7 vision model
+    formData.append('parse_mode', 'parse_document_with_agent')
     
     // Enhanced parsing parameters for technical manuals
     formData.append('language', 'en')
     formData.append('disable_ocr', 'false')
     
     // === CORE LAYOUT & OCR ===
-    formData.append('high_res_ocr', 'true') // Captures tiny silkscreen text and faint headers
+    formData.append('high_res_ocr', 'false') // Disabled - causing too many false positives
     formData.append('layout_aware', 'true') // Preserves section structure and callouts
     formData.append('extract_layout', 'true') // Preserves step numbers and alignment
     formData.append('precise_bounding_box', 'false') // Keep content as text
@@ -197,8 +197,8 @@ When formatting technical manuals:
         job_id: llamaData.id,
         manual_id,
         status: 'processing',
-        stage: 'standard_parsing',
-        current_task: 'Standard document parsing with LLM enhancement',
+        stage: 'ai_agent_parsing',
+        current_task: 'AI Agent parsing with Sonnet 3.7 vision model',
         fec_tenant_id: profile.fec_tenant_id,
         progress_percent: 0
       })
@@ -207,18 +207,18 @@ When formatting technical manuals:
       console.error('Error creating processing status:', statusError)
     }
 
-    console.log('🎉 Document uploaded with standard LLM parsing')
+    console.log('🎉 Document uploaded with AI Agent parsing (Sonnet 3.7)')
 
     return new Response(JSON.stringify({ 
       success: true, 
       job_id: llamaData.id,
       manual_id,
-      parsing_mode: 'standard_llm',
+      parsing_mode: 'ai_agent',
       features: [
-        'LLM-enhanced document parsing',
+        'AI Agent parsing with Sonnet 3.7',
+        'Advanced vision model analysis',
         'Advanced table extraction as HTML',
-        'Multi-language OCR support',
-        'Figure extraction (conservative)',
+        'Figure extraction (vision-based)',
         'Layout preservation across pages',
         'Hierarchical chunking strategies'
       ]

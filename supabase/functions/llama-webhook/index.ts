@@ -65,6 +65,11 @@ function createHierarchicalChunks(content: string, manual_id: string) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
+    // Skip image markdown lines to prevent them from being included in text chunks
+    if (patterns.figure.test(line)) {
+      continue;
+    }
+    
     // Track page numbers from enhanced page separators
     const pageMatch = line.match(patterns.pageMarker);
     if (pageMatch && pageMatch[2] === 'Start') {
@@ -329,17 +334,23 @@ serve(async (req) => {
 
       for (const figure of allFigures) {
         try {
-          console.log(`🔄 Processing figure: ${figure.name || figure.id || figure || 'unnamed'}`);
+          console.log(`🔄 Processing figure:`, JSON.stringify(figure, null, 2));
           
-          // Construct proper S3 URL for the image
-          const figureName = figure.name || figure.id || figure || `figure_${figuresProcessed}`;
-          const s3ImageUrl = `https://arcade-postparse-images.s3.us-east-2.amazonaws.com/manuals/${document.manual_id}/${figureName}`;
+          // Use the actual URL from LlamaCloud response
+          const imageUrl = figure.url || figure.image_url || figure;
+          const figureName = figure.name || figure.id || `figure_${figuresProcessed}`;
+          const pageNumber = figure.page || figure.page_number || null;
+          
+          if (!imageUrl || typeof imageUrl !== 'string') {
+            console.error("❌ No valid image URL found for figure:", figure);
+            continue;
+          }
           
           const figureData = {
             manual_id: document.manual_id,
             figure_id: figureName,
-            image_url: s3ImageUrl,
-            page_number: figure.page || null,
+            image_url: imageUrl,
+            page_number: pageNumber,
             bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
             llama_asset_name: figureName,
             fec_tenant_id: document.fec_tenant_id

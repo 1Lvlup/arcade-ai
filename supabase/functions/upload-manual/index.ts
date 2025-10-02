@@ -88,15 +88,15 @@ serve(async (req) => {
       throw signedUrlError
     }
 
-    console.log('📡 Submitting to LlamaCloud with AGENT parsing mode...')
+    console.log('📡 Submitting to LlamaCloud with standard parsing mode (no vision model)...')
 
-    // ENHANCED AGENT PARSING CONFIGURATION (highest quality)
+    // ENHANCED STANDARD PARSING CONFIGURATION (no vision model)
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
     
-    // ONLY agent mode - NO other conflicting modes
-    formData.append('parse_mode', 'parse_document_with_agent')
+    // Standard document parsing (NO agent/vision model)
+    formData.append('parse_mode', 'parse_document')
     
     // Enhanced parsing parameters for technical manuals
     formData.append('language', 'en')
@@ -106,16 +106,16 @@ serve(async (req) => {
     formData.append('high_res_ocr', 'true') // Captures tiny silkscreen text and faint headers
     formData.append('layout_aware', 'true') // Preserves section structure and callouts
     formData.append('extract_layout', 'true') // Preserves step numbers and alignment
-    formData.append('precise_bounding_box', 'false') // Keep content as text rather than extracting everything as images
+    formData.append('precise_bounding_box', 'false') // Keep content as text
     formData.append('preserve_very_small_text', 'true') // Keeps tiny pin labels
     formData.append('preserve_layout_alignment_across_pages', 'true') // Maintains alignment
     
-    // === FIGURES & IMAGES ===
+    // === FIGURES & IMAGES === (More conservative settings)
     formData.append('save_images', 'true') // Save extracted images
-    formData.append('extract_images', 'true') // Extract individual figures
-    formData.append('extract_figures', 'true') // Extract embedded figures
-    formData.append('inline_images_in_markdown', 'false') // Keep images separate, not inline, to preserve more text
-    formData.append('disable_image_extraction', 'false') // Ensure image extraction is enabled
+    formData.append('extract_images', 'true') // Extract meaningful figures only
+    formData.append('extract_figures', 'true') // Extract diagrams and schematics
+    formData.append('inline_images_in_markdown', 'false') // Keep images separate
+    formData.append('disable_image_extraction', 'false') // Allow extraction
     
     // === TABLES ===
     formData.append('extract_tables', 'true') // Extract all tables

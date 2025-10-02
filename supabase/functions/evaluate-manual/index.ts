@@ -87,6 +87,7 @@ serve(async (req) => {
       console.log(`\n🤔 Question: ${q.question}`);
 
       // Step 1: Search for relevant passages using existing search-manuals-robust function
+      console.log(`🔍 Searching for: "${q.question}"`);
       const searchResponse = await fetch(`${supabaseUrl}/functions/v1/search-manuals-robust`, {
         method: 'POST',
         headers: {
@@ -101,7 +102,9 @@ serve(async (req) => {
       });
 
       if (!searchResponse.ok) {
-        console.error('Search failed for question:', q.question);
+        const errorText = await searchResponse.text();
+        console.error(`❌ Search failed (${searchResponse.status}):`, errorText);
+        console.error('Failed question:', q.question);
         continue;
       }
 

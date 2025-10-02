@@ -230,9 +230,15 @@ ${summary.substring(0, 8000)}`
 
     let questions;
     try {
-      questions = JSON.parse(aiResponse.choices[0].message.content);
+      let content = aiResponse.choices[0].message.content;
+      
+      // Strip markdown code blocks if present
+      content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      
+      questions = JSON.parse(content);
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
+      console.error('Raw content:', aiResponse.choices[0].message.content);
       throw new Error('Failed to parse AI response');
     }
 

@@ -268,6 +268,7 @@ export type Database = {
           category: string
           created_at: string
           expected_keywords: string[] | null
+          explanation: string | null
           fec_tenant_id: string
           filters: Json | null
           id: string
@@ -281,6 +282,7 @@ export type Database = {
           category: string
           created_at?: string
           expected_keywords?: string[] | null
+          explanation?: string | null
           fec_tenant_id?: string
           filters?: Json | null
           id?: string
@@ -294,6 +296,7 @@ export type Database = {
           category?: string
           created_at?: string
           expected_keywords?: string[] | null
+          explanation?: string | null
           fec_tenant_id?: string
           filters?: Json | null
           id?: string

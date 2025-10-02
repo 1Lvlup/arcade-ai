@@ -271,7 +271,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
   return (
     <Card className="border-primary/20 h-[600px] flex flex-col">
-      <CardHeader className="border-b border-border">
+      <CardHeader className="border-b border-border flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <MessageCircle className="h-5 w-5 text-primary" />
@@ -291,9 +291,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         )}
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col p-0">
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -344,7 +344,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         </div>
         
         {/* Input Area */}
-        <div className="border-t border-border p-4">
+        <div className="border-t border-border p-4 flex-shrink-0">
           <div className="flex space-x-2">
             <Input
               value={inputValue}

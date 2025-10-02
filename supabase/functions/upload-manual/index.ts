@@ -197,8 +197,8 @@ When formatting technical manuals:
         job_id: llamaData.id,
         manual_id,
         status: 'processing',
-        stage: 'premium_parsing',
-        current_task: 'Premium AI Agent parsing with Sonnet 3.7 vision model',
+        stage: 'standard_parsing',
+        current_task: 'Standard document parsing with LLM enhancement',
         fec_tenant_id: profile.fec_tenant_id,
         progress_percent: 0
       })
@@ -207,19 +207,18 @@ When formatting technical manuals:
       console.error('Error creating processing status:', statusError)
     }
 
-    console.log('🎉 Document uploaded with PREMIUM parsing features')
+    console.log('🎉 Document uploaded with standard LLM parsing')
 
     return new Response(JSON.stringify({ 
       success: true, 
       job_id: llamaData.id,
       manual_id,
-      parsing_mode: 'premium_agent',
+      parsing_mode: 'standard_llm',
       features: [
-        'AI Agent parsing (highest quality)',
-        'Anthropic Sonnet 3.7 vision model',
+        'LLM-enhanced document parsing',
         'Advanced table extraction as HTML',
         'Multi-language OCR support',
-        'Structured figure extraction',
+        'Figure extraction (conservative)',
         'Layout preservation across pages',
         'Hierarchical chunking strategies'
       ]

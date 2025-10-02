@@ -344,11 +344,22 @@ serve(async (req) => {
           if (typeof figure === 'string') {
             // If figure is just a string filename, construct CDN URL
             figureName = figure;
-            // LlamaCloud CDN format: https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}/result/image/{filename}
+            // Skip if filename suggests it's a background or decorative element
+            if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
+              console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
+              continue;
+            }
             imageUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
           } else if (typeof figure === 'object') {
             // If it's an object, extract properties
             figureName = figure.name || figure.id || figure.filename || `figure_${figuresProcessed}`;
+            
+            // Skip if filename suggests it's a background or decorative element
+            if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
+              console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
+              continue;
+            }
+            
             imageUrl = figure.url || figure.image_url || figure.path || 
                       `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
             pageNumber = figure.page || figure.page_number || null;

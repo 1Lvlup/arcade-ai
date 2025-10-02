@@ -95,8 +95,8 @@ serve(async (req) => {
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
     
-    // Standard document parsing (NO agent/vision model)
-    formData.append('parse_mode', 'parse_document')
+    // Standard document parsing with LLM (NO vision model)
+    formData.append('parse_mode', 'parse_document_with_llm')
     
     // Enhanced parsing parameters for technical manuals
     formData.append('language', 'en')

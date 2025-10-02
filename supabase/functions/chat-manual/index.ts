@@ -14,6 +14,26 @@ const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Helper to get AI config and determine model parameters
+async function getModelConfig(tenant_id: string) {
+  await supabase.rpc('set_tenant_context', { tenant_id });
+  
+  const { data: config } = await supabase
+    .from('ai_config')
+    .select('config_value')
+    .eq('config_key', 'chat_model')
+    .single();
+  
+  const model = config?.config_value ? JSON.parse(config.config_value) : 'gpt-5-2025-08-07';
+  const isGpt5 = model.includes('gpt-5');
+  
+  return {
+    model,
+    maxTokensParam: isGpt5 ? 'max_completion_tokens' : 'max_tokens',
+    supportsTemperature: !isGpt5
+  };
+}
+
 // Extract technical keywords from query
 function keywordLine(q: string): string {
   const toks = q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/ig) || [];
@@ -238,6 +258,19 @@ Provide a draft answer in structured JSON with fields:
     }
   ];
 
+  const modelConfig = await getModelConfig(tenant_id || '00000000-0000-0000-0000-000000000001');
+  
+  const requestBody: any = {
+    model: modelConfig.model,
+    response_format: { type: "json_object" },
+    [modelConfig.maxTokensParam]: 900,
+    messages
+  };
+  
+  if (modelConfig.supportsTemperature) {
+    requestBody.temperature = 0.2;
+  }
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { 
@@ -245,13 +278,7 @@ Provide a draft answer in structured JSON with fields:
       "Content-Type": "application/json",
       ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
     },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      max_tokens: 900,
-      messages
-    }),
+    body: JSON.stringify(requestBody),
   });
   
   if (!response.ok) {
@@ -310,6 +337,19 @@ ${JSON.stringify(draftJson, null, 2)}`
     }
   ];
 
+  const modelConfig = await getModelConfig(tenant_id || '00000000-0000-0000-0000-000000000001');
+  
+  const requestBody: any = {
+    model: modelConfig.model,
+    response_format: { type: "json_object" },
+    [modelConfig.maxTokensParam]: 1200,
+    messages
+  };
+  
+  if (modelConfig.supportsTemperature) {
+    requestBody.temperature = 0.2;
+  }
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { 
@@ -317,13 +357,7 @@ ${JSON.stringify(draftJson, null, 2)}`
       "Content-Type": "application/json",
       ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
     },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      max_tokens: 1200,
-      messages
-    }),
+    body: JSON.stringify(requestBody),
   });
   
   if (!response.ok) {
@@ -366,6 +400,19 @@ Review and correct if needed, maintaining the same JSON structure.`
     }
   ];
 
+  const modelConfig = await getModelConfig(tenant_id || '00000000-0000-0000-0000-000000000001');
+  
+  const requestBody: any = {
+    model: modelConfig.model,
+    response_format: { type: "json_object" },
+    [modelConfig.maxTokensParam]: 1200,
+    messages
+  };
+  
+  if (modelConfig.supportsTemperature) {
+    requestBody.temperature = 0.2;
+  }
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { 
@@ -373,13 +420,7 @@ Review and correct if needed, maintaining the same JSON structure.`
       "Content-Type": "application/json",
       ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
     },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      max_tokens: 1200,
-      messages
-    }),
+    body: JSON.stringify(requestBody),
   });
   
   if (!response.ok) {

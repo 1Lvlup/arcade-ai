@@ -11,6 +11,26 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
+// Helper to get AI config
+async function getModelConfig(supabase: any, tenant_id: string) {
+  await supabase.rpc('set_tenant_context', { tenant_id });
+  
+  const { data: config } = await supabase
+    .from('ai_config')
+    .select('config_value')
+    .eq('config_key', 'chat_model')
+    .single();
+  
+  const model = config?.config_value ? JSON.parse(config.config_value) : 'gpt-5-2025-08-07';
+  const isGpt5 = model.includes('gpt-5');
+  
+  return {
+    model,
+    maxTokensParam: isGpt5 ? 'max_completion_tokens' : 'max_tokens',
+    supportsTemperature: !isGpt5
+  };
+}
+
 interface GoldenQuestion {
   id: string;
   question: string;
@@ -82,6 +102,10 @@ serve(async (req) => {
 
     const results = [];
 
+    // Get model config once for all questions
+    const modelConfig = await getModelConfig(supabase, profile.fec_tenant_id);
+    console.log(`🤖 Using model: ${modelConfig.model}`);
+
     // Process each question
     for (const q of questions as GoldenQuestion[]) {
       console.log(`\n🤔 Question: ${q.question}`);
@@ -133,21 +157,26 @@ Passages (verbatim from manual):
 ${passagesText.substring(0, 8000)}`
       };
 
+      const answerRequestBody: any = {
+        model: modelConfig.model,
+        messages: [
+          { role: 'system', content: answerPrompt.system },
+          { role: 'user', content: answerPrompt.user }
+        ],
+        response_format: { type: 'json_object' },
+      };
+      
+      if (modelConfig.supportsTemperature) {
+        answerRequestBody.temperature = 0.3;
+      }
+
       const answerResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${openaiApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: answerPrompt.system },
-            { role: 'user', content: answerPrompt.user }
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.3,
-        }),
+        body: JSON.stringify(answerRequestBody),
       });
 
       if (!answerResponse.ok) {
@@ -203,21 +232,26 @@ Assistant's answer JSON to grade:
 ${JSON.stringify(answer)}`
       };
 
+      const gradeRequestBody: any = {
+        model: modelConfig.model,
+        messages: [
+          { role: 'system', content: gradePrompt.system },
+          { role: 'user', content: gradePrompt.user }
+        ],
+        response_format: { type: 'json_object' },
+      };
+      
+      if (modelConfig.supportsTemperature) {
+        gradeRequestBody.temperature = 0.1;
+      }
+
       const gradeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${openaiApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: gradePrompt.system },
-            { role: 'user', content: gradePrompt.user }
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.1, // Low temp for consistent grading
-        }),
+        body: JSON.stringify(gradeRequestBody),
       });
 
       if (!gradeResponse.ok) {
@@ -253,8 +287,8 @@ ${JSON.stringify(answer)}`
               preview: p.content.substring(0, 200)
             }))
           },
-          answer_model: 'gpt-4o',
-          grader_model: 'gpt-4o'
+          answer_model: modelConfig.model,
+          grader_model: modelConfig.model
         });
 
       if (insertError) {

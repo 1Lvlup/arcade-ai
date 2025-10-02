@@ -11,6 +11,26 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
+// Helper to get AI config
+async function getModelConfig(supabase: any, tenant_id: string) {
+  await supabase.rpc('set_tenant_context', { tenant_id });
+  
+  const { data: config } = await supabase
+    .from('ai_config')
+    .select('config_value')
+    .eq('config_key', 'chat_model')
+    .single();
+  
+  const model = config?.config_value ? JSON.parse(config.config_value) : 'gpt-5-2025-08-07';
+  const isGpt5 = model.includes('gpt-5');
+  
+  return {
+    model,
+    maxTokensParam: isGpt5 ? 'max_completion_tokens' : 'max_tokens',
+    supportsTemperature: !isGpt5
+  };
+}
+
 // Build structured summary from LlamaCloud parsed data
 function buildStructuredSummary(
   manual: { title: string; source_filename: string },
@@ -171,20 +191,18 @@ serve(async (req) => {
     const summary = buildStructuredSummary(manual, chunks, figures || []);
     
     console.log('📝 Analyzing content with AI...');
+    
+    // Get model config
+    const modelConfig = await getModelConfig(supabase, profile.fec_tenant_id);
+    console.log(`🤖 Using model: ${modelConfig.model}`);
 
     // Generate golden questions using OpenAI
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert technical documentation analyst. Your task is to generate "Golden Questions" - the most valuable, frequently needed questions that users would ask about this arcade game manual.
+    const requestBody: any = {
+      model: modelConfig.model,
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert technical documentation analyst. Your task is to generate "Golden Questions" - the most valuable, frequently needed questions that users would ask about this arcade game manual.
 
 Golden Questions should be:
 1. Practical and actionable
@@ -206,17 +224,28 @@ Return your response as a JSON array with this structure:
 
 Categories should be: troubleshooting, setup, maintenance, safety, specifications
 Importance levels: high, medium, low`
-          },
-          {
-            role: 'user',
-            content: `Generate 8-12 golden questions for this technical manual using the comprehensive summary below:
+        },
+        {
+          role: 'user',
+          content: `Generate 8-12 golden questions for this technical manual using the comprehensive summary below:
 
 ${summary.substring(0, 8000)}`
-          }
-        ],
-        temperature: 0.2,
-        max_tokens: 2000
-      }),
+        }
+      ],
+      [modelConfig.maxTokensParam]: 2000
+    };
+    
+    if (modelConfig.supportsTemperature) {
+      requestBody.temperature = 0.2;
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {

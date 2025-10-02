@@ -23,9 +23,11 @@ interface AIConfig {
 
 const AI_MODELS = {
   chat: [
-    { value: 'gpt-4o', label: 'GPT-4o (Latest)' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast)' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Legacy)' }
+    { value: 'gpt-5-2025-08-07', label: 'GPT-5 (Most Capable)' },
+    { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini (Fast & Efficient)' },
+    { value: 'gpt-5-nano-2025-08-07', label: 'GPT-5 Nano (Fastest)' },
+    { value: 'gpt-4o', label: 'GPT-4o (Legacy)' },
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)' }
   ],
   embeddings: [
     { value: 'text-embedding-3-small', label: 'Text Embedding 3 Small' },
@@ -194,7 +196,7 @@ export default function AIConfiguration() {
                   <div className="space-y-2">
                     <Label htmlFor="chat-model">Chat Model</Label>
                     <Select
-                      value={JSON.parse(getConfigValue('chat_model') || '"gpt-4o"')}
+                      value={JSON.parse(getConfigValue('chat_model') || '"gpt-5-2025-08-07"')}
                       onValueChange={(value) => handleConfigUpdate('chat_model', JSON.stringify(value))}
                     >
                       <SelectTrigger>

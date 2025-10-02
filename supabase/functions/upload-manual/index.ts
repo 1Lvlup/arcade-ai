@@ -88,15 +88,15 @@ serve(async (req) => {
       throw signedUrlError
     }
 
-    console.log('📡 Submitting to LlamaCloud with standard parsing mode (no vision model)...')
+    console.log('📡 Submitting to LlamaCloud with standard parsing mode...')
 
-    // ENHANCED STANDARD PARSING CONFIGURATION (no vision model)
+    // STANDARD PARSING CONFIGURATION (with image extraction)
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
     
-    // Standard document parsing with LLM (NO vision model)
-    formData.append('parse_mode', 'parse_document_with_llm')
+    // Standard document parsing (this mode DOES extract images)
+    // Note: Not using parse_mode parameter at all - default behavior includes image extraction
     
     // Enhanced parsing parameters for technical manuals
     formData.append('language', 'en')

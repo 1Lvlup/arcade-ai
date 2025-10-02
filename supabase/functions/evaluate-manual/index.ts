@@ -119,9 +119,8 @@ serve(async (req) => {
 
     const results = [];
 
-    // Get model config once for all questions
-    const modelConfig = await getModelConfig(supabase, profile.fec_tenant_id);
-    console.log(`🤖 Using model: ${modelConfig.model}`);
+    // Process each question using GPT-5
+    console.log(`🤖 Using model: gpt-5-2025-08-07`);
 
     // Process each question
     for (const q of questions as GoldenQuestion[]) {
@@ -174,18 +173,15 @@ Passages (verbatim from manual):
 ${passagesText.substring(0, 8000)}`
       };
 
-      const answerRequestBody: any = {
-        model: modelConfig.model,
+      const answerRequestBody = {
+        model: 'gpt-5-2025-08-07',
+        max_completion_tokens: 800,
         messages: [
           { role: 'system', content: answerPrompt.system },
           { role: 'user', content: answerPrompt.user }
         ],
-        response_format: { type: 'json_object' },
+        response_format: { type: 'json_object' }
       };
-      
-      if (modelConfig.supportsTemperature) {
-        answerRequestBody.temperature = 0.3;
-      }
 
       const answerResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -249,18 +245,15 @@ Assistant's answer JSON to grade:
 ${JSON.stringify(answer)}`
       };
 
-      const gradeRequestBody: any = {
-        model: modelConfig.model,
+      const gradeRequestBody = {
+        model: 'gpt-5-2025-08-07',
+        max_completion_tokens: 600,
         messages: [
           { role: 'system', content: gradePrompt.system },
           { role: 'user', content: gradePrompt.user }
         ],
-        response_format: { type: 'json_object' },
+        response_format: { type: 'json_object' }
       };
-      
-      if (modelConfig.supportsTemperature) {
-        gradeRequestBody.temperature = 0.1;
-      }
 
       const gradeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -304,8 +297,8 @@ ${JSON.stringify(answer)}`
               preview: p.content.substring(0, 200)
             }))
           },
-          answer_model: modelConfig.model,
-          grader_model: modelConfig.model
+          answer_model: 'gpt-5-2025-08-07',
+          grader_model: 'gpt-5-2025-08-07'
         });
 
       if (insertError) {

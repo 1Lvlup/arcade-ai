@@ -210,13 +210,14 @@ serve(async (req) => {
     console.log('📝 Analyzing content with AI...');
     
     // Get model config
-    const modelConfig = await getModelConfig(supabase, profile.fec_tenant_id);
-    console.log(`🤖 Using model: ${modelConfig.model}`);
+    const systemPrompt = await getSystemPrompt(supabase, profile.fec_tenant_id);
+    console.log(`🤖 Using model: gpt-5-2025-08-07`);
 
     // Generate golden questions using OpenAI
-    const requestBody: any = {
-      model: modelConfig.model,
+    const requestBody = {
+      model: 'gpt-5-2025-08-07',
       response_format: { type: "json_object" },
+      max_completion_tokens: 2000,
       messages: [
         {
           role: 'system',
@@ -253,13 +254,8 @@ Each question must include an explanation field.`
 
 ${summary.substring(0, 8000)}`
         }
-      ],
-      [modelConfig.maxTokensParam]: 2000
+      ]
     };
-    
-    if (modelConfig.supportsTemperature) {
-      requestBody.temperature = 0.2;
-    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

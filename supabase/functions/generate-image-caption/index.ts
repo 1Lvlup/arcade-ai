@@ -86,7 +86,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-5-2025-08-07',
         messages: [
           {
             role: 'system',
@@ -130,8 +130,7 @@ Please provide a detailed caption that would help technicians understand what th
             ]
           }
         ],
-        max_tokens: 500,
-        temperature: 0.3
+        max_completion_tokens: 500
       }),
     });
 

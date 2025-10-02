@@ -275,18 +275,12 @@ Provide a draft answer in structured JSON with fields:
     }
   ];
 
-  const modelConfig = await getModelConfig(tenant_id || '00000000-0000-0000-0000-000000000001');
-  
-  const requestBody: any = {
-    model: modelConfig.model,
+  const requestBody = {
+    model: 'gpt-5-2025-08-07',
     response_format: { type: "json_object" },
-    [modelConfig.maxTokensParam]: 900,
+    max_completion_tokens: 900,
     messages
   };
-  
-  if (modelConfig.supportsTemperature) {
-    requestBody.temperature = 0.2;
-  }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -354,18 +348,12 @@ ${JSON.stringify(draftJson, null, 2)}`
     }
   ];
 
-  const modelConfig = await getModelConfig(tenant_id || '00000000-0000-0000-0000-000000000001');
-  
-  const requestBody: any = {
-    model: modelConfig.model,
+  const requestBody = {
+    model: 'gpt-5-2025-08-07',
     response_format: { type: "json_object" },
-    [modelConfig.maxTokensParam]: 1200,
+    max_completion_tokens: 1200,
     messages
   };
-  
-  if (modelConfig.supportsTemperature) {
-    requestBody.temperature = 0.2;
-  }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -417,18 +405,14 @@ Review and correct if needed, maintaining the same JSON structure.`
     }
   ];
 
-  const modelConfig = await getModelConfig(tenant_id || '00000000-0000-0000-0000-000000000001');
+  const systemPrompt = await getSystemPrompt(tenant_id || '00000000-0000-0000-0000-000000000001');
   
-  const requestBody: any = {
-    model: modelConfig.model,
+  const requestBody = {
+    model: 'gpt-5-2025-08-07',
     response_format: { type: "json_object" },
-    [modelConfig.maxTokensParam]: 1200,
+    max_completion_tokens: 1200,
     messages
   };
-  
-  if (modelConfig.supportsTemperature) {
-    requestBody.temperature = 0.2;
-  }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",

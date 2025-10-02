@@ -159,7 +159,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "rerank-3",
+            model: "rerank-english-v3.0",
             query: query,
             documents: truncatedDocs,
             top_n: 10

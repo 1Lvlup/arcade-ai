@@ -177,15 +177,15 @@ serve(async (req) => {
     console.log("- charts count:", charts?.length || 0);
     console.log("- pages count:", pages?.length || 0);
     
-    // Log structure of received data
+    // Log structure of received data for debugging
     if (images && images.length > 0) {
-      console.log("📸 Images structure:", images[0]);
+      console.log("📸 First image full structure:", JSON.stringify(images[0], null, 2));
     }
     if (charts && charts.length > 0) {
-      console.log("📊 Charts structure:", charts[0]);
+      console.log("📊 First chart full structure:", JSON.stringify(charts[0], null, 2));
     }
     if (pages && pages.length > 0) {
-      console.log("📄 Pages structure:", Object.keys(pages[0]));
+      console.log("📄 First page structure:", JSON.stringify(pages[0], null, 2));
     }
     
     if (!markdown) {
@@ -336,15 +336,28 @@ serve(async (req) => {
         try {
           console.log(`🔄 Processing figure:`, JSON.stringify(figure, null, 2));
           
-          // Use the actual URL from LlamaCloud response
-          const imageUrl = figure.url || figure.image_url || figure;
-          const figureName = figure.name || figure.id || `figure_${figuresProcessed}`;
-          const pageNumber = figure.page || figure.page_number || null;
+          // LlamaCloud returns different formats - handle all cases
+          let imageUrl: string;
+          let figureName: string;
+          let pageNumber: number | null = null;
           
-          if (!imageUrl || typeof imageUrl !== 'string') {
-            console.error("❌ No valid image URL found for figure:", figure);
+          if (typeof figure === 'string') {
+            // If figure is just a string filename, construct CDN URL
+            figureName = figure;
+            // LlamaCloud CDN format: https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}/result/image/{filename}
+            imageUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
+          } else if (typeof figure === 'object') {
+            // If it's an object, extract properties
+            figureName = figure.name || figure.id || figure.filename || `figure_${figuresProcessed}`;
+            imageUrl = figure.url || figure.image_url || figure.path || 
+                      `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
+            pageNumber = figure.page || figure.page_number || null;
+          } else {
+            console.error("❌ Unknown figure format:", figure);
             continue;
           }
+          
+          console.log(`✅ Extracted image URL: ${imageUrl}`);
           
           const figureData = {
             manual_id: document.manual_id,

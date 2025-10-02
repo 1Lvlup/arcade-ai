@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Brain, CheckCircle2, AlertCircle, XCircle, Play, Eye, ChevronDown, ChevronUp, Download, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Brain, CheckCircle2, AlertCircle, XCircle, Play, Eye, ChevronDown, ChevronUp, Download, FileJson, FileSpreadsheet, Lightbulb } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface GradeBreakdown {
@@ -141,6 +141,51 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
       title: 'Exported as CSV',
       description: 'Evaluation results downloaded successfully'
     });
+  };
+
+  const getRecommendations = (category: string, grade: string): string[] => {
+    if (grade === 'PASS') return [];
+    
+    const recommendations: Record<string, string[]> = {
+      citation_fidelity: [
+        'Ensure chunks have accurate page_start and page_end values',
+        'Check if retrieved chunks actually contain the answer',
+        'Review chunk size - smaller chunks (800-1000 chars) may improve citation accuracy',
+        'Verify page markers are preserved during manual parsing'
+      ],
+      specificity: [
+        'Chunks may be too vague - look for specific part numbers, values, measurements',
+        'Consider extracting technical terms and adding them to chunk metadata',
+        'Review if tables/specs are being captured properly during parsing',
+        'Check if keyword extraction in search is working correctly'
+      ],
+      procedure_completeness: [
+        'Procedures may be split across multiple chunks - increase chunk size or overlap',
+        'Review chunk boundaries - avoid breaking mid-procedure',
+        'Check if all procedural steps are being indexed',
+        'Consider increasing max_results in search to retrieve more context'
+      ],
+      tooling_context: [
+        'Tool/equipment mentions may not be indexed properly',
+        'Add tool names to expected_keywords in golden questions',
+        'Review if tools sections are being captured during parsing',
+        'Consider boosting chunks that mention tools/equipment'
+      ],
+      escalation_outcome: [
+        'Missing "next steps" or "when to contact support" sections',
+        'Review if troubleshooting escalation paths are in the manual',
+        'Check if conditional logic ("if this fails, try...") is preserved',
+        'Consider adding escalation guidance to system prompt'
+      ],
+      safety_accuracy: [
+        'Critical: Review if safety warnings are indexed correctly',
+        'Check if WARNING/CAUTION/DANGER labels are preserved',
+        'Verify electrical safety notices are not being filtered out',
+        'Consider creating dedicated chunks for safety information'
+      ]
+    };
+
+    return recommendations[category] || ['Review manual content for this category'];
   };
 
   const runEvaluation = async () => {
@@ -372,6 +417,35 @@ export function QualityEvaluation({ manualId }: QualityEvaluationProps) {
                           <div>
                             <div className="text-xs font-semibold text-muted-foreground mb-1">Rationale:</div>
                             <p className="text-sm text-muted-foreground italic">{result.rationale}</p>
+                          </div>
+                        )}
+
+                        {/* Recommendations for improvement */}
+                        {result.grade_breakdown && result.grade_overall !== 'PASS' && (
+                          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Lightbulb className="h-4 w-4 text-blue-500" />
+                              <div className="text-xs font-semibold text-blue-500">Recommendations to Improve Score:</div>
+                            </div>
+                            <div className="space-y-2">
+                              {Object.entries(result.grade_breakdown)
+                                .filter(([_, grade]) => grade !== 'PASS')
+                                .map(([category, grade]) => {
+                                  const recs = getRecommendations(category, grade as string);
+                                  return (
+                                    <div key={category} className="text-xs">
+                                      <div className="font-medium text-foreground capitalize mb-1">
+                                        {category.replace(/_/g, ' ')} ({grade}):
+                                      </div>
+                                      <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                                        {recs.map((rec, i) => (
+                                          <li key={i}>{rec}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  );
+                                })}
+                            </div>
                           </div>
                         )}
                         

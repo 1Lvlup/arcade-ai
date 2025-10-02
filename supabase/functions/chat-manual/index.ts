@@ -230,7 +230,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 }
 
 // STAGE 1: Generate draft answer using ONLY manual context
-async function generateDraftAnswer(query: string, chunks: any[]) {
+async function generateDraftAnswer(query: string, chunks: any[], tenant_id?: string) {
   // Format context with [pX] prefixes for easy citation
   const context = chunks.map((chunk: any, idx: number) => {
     const pagePrefix = chunk.page_start 
@@ -313,7 +313,7 @@ Provide a draft answer in structured JSON with fields:
 }
 
 // STAGE 2: Enhance draft with expert knowledge
-async function generateExpertAnswer(query: string, draftJson: any) {
+async function generateExpertAnswer(query: string, draftJson: any, tenant_id?: string) {
   console.log('🎓 [STAGE 2] Enhancing draft with expert knowledge...');
 
   const messages = [
@@ -393,7 +393,7 @@ ${JSON.stringify(draftJson, null, 2)}`
 }
 
 // STAGE 3: Lightweight reviewer for correctness and polish
-async function reviewAnswer(query: string, expertJson: any) {
+async function reviewAnswer(query: string, expertJson: any, tenant_id?: string) {
   console.log('🔍 [STAGE 3] Reviewing answer for correctness...');
 
   const messages = [
@@ -528,17 +528,17 @@ async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: s
 
   // Stage 1: Draft answer (manual only)
   console.log('📝 [RAG V2] Starting Stage 1: Draft Answer');
-  const draftAnswer = await generateDraftAnswer(query, chunks);
+  const draftAnswer = await generateDraftAnswer(query, chunks, tenant_id);
   console.log('✅ [RAG V2] Stage 1 complete, draft length:', JSON.stringify(draftAnswer).length);
   
   // Stage 2: Expert enhancement
   console.log('🔧 [RAG V2] Starting Stage 2: Expert Enhancement');
-  const expertAnswer = await generateExpertAnswer(query, draftAnswer);
+  const expertAnswer = await generateExpertAnswer(query, draftAnswer, tenant_id);
   console.log('✅ [RAG V2] Stage 2 complete, expert answer length:', JSON.stringify(expertAnswer).length);
   
   // Stage 3: Review
   console.log('🔍 [RAG V2] Starting Stage 3: Review');
-  const finalAnswer = await reviewAnswer(query, expertAnswer);
+  const finalAnswer = await reviewAnswer(query, expertAnswer, tenant_id);
   console.log('✅ [RAG V2] Stage 3 complete, final answer length:', JSON.stringify(finalAnswer).length);
 
   console.log('✅ [RAG V2] Pipeline complete\n');

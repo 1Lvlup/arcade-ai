@@ -106,7 +106,7 @@ serve(async (req) => {
     formData.append('high_res_ocr', 'true') // Captures tiny silkscreen text and faint headers
     formData.append('layout_aware', 'true') // Preserves section structure and callouts
     formData.append('extract_layout', 'true') // Preserves step numbers and alignment
-    formData.append('precise_bounding_box', 'true') // Tighter crops for better figure-caption pairing (extra cost)
+    formData.append('precise_bounding_box', 'false') // Keep content as text rather than extracting everything as images
     formData.append('preserve_very_small_text', 'true') // Keeps tiny pin labels
     formData.append('preserve_layout_alignment_across_pages', 'true') // Maintains alignment
     
@@ -114,7 +114,7 @@ serve(async (req) => {
     formData.append('save_images', 'true') // Save extracted images
     formData.append('extract_images', 'true') // Extract individual figures
     formData.append('extract_figures', 'true') // Extract embedded figures
-    formData.append('inline_images_in_markdown', 'true') // Include figures in markdown output
+    formData.append('inline_images_in_markdown', 'false') // Keep images separate, not inline, to preserve more text
     formData.append('disable_image_extraction', 'false') // Ensure image extraction is enabled
     
     // === TABLES ===

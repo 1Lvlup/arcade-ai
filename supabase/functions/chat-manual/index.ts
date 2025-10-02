@@ -26,13 +26,19 @@ async function getModelConfig(tenant_id: string) {
   
   let model = 'gpt-5-2025-08-07'; // Default
   if (config?.config_value) {
-    // Handle both JSON-stringified and plain values
-    try {
-      model = typeof config.config_value === 'string' 
-        ? JSON.parse(config.config_value) 
-        : config.config_value;
-    } catch {
-      model = config.config_value;
+    const value = config.config_value;
+    // If it's already a string and looks like a model name, use it directly
+    if (typeof value === 'string' && (value.startsWith('gpt-') || value.startsWith('claude-'))) {
+      model = value;
+    } else if (typeof value === 'string') {
+      // Try to parse JSON-stringified values
+      try {
+        model = JSON.parse(value);
+      } catch {
+        model = value;
+      }
+    } else {
+      model = value;
     }
   }
   

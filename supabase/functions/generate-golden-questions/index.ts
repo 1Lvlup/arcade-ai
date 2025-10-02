@@ -216,6 +216,7 @@ serve(async (req) => {
     // Generate golden questions using OpenAI
     const requestBody: any = {
       model: modelConfig.model,
+      response_format: { type: "json_object" },
       messages: [
         {
           role: 'system',
@@ -230,14 +231,16 @@ Golden Questions should be:
 
 Focus on questions that would save users time and provide immediate value. Categorize each question and assign importance level.
 
-Return your response as a JSON array with this structure:
-[
-  {
-    "question": "How do I reset the game when it freezes during gameplay?",
-    "category": "troubleshooting",
-    "importance": "high"
-  }
-]
+IMPORTANT: You must respond with valid JSON only. Return a JSON object with a "questions" array like this:
+{
+  "questions": [
+    {
+      "question": "How do I reset the game when it freezes during gameplay?",
+      "category": "troubleshooting",
+      "importance": "high"
+    }
+  ]
+}
 
 Categories should be: troubleshooting, setup, maintenance, safety, specifications
 Importance levels: high, medium, low`
@@ -278,13 +281,24 @@ ${summary.substring(0, 8000)}`
     try {
       let content = aiResponse.choices[0].message.content;
       
+      if (!content) {
+        throw new Error('Empty response from AI');
+      }
+      
       // Strip markdown code blocks if present
       content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       
-      questions = JSON.parse(content);
+      const parsed = JSON.parse(content);
+      
+      // Handle both array format and object with questions array
+      questions = Array.isArray(parsed) ? parsed : parsed.questions;
+      
+      if (!questions || !Array.isArray(questions)) {
+        throw new Error('Response does not contain a questions array');
+      }
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
-      console.error('Raw content:', aiResponse.choices[0].message.content);
+      console.error('Raw content:', aiResponse.choices[0]?.message?.content);
       throw new Error('Failed to parse AI response');
     }
 

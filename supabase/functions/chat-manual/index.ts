@@ -24,7 +24,18 @@ async function getModelConfig(tenant_id: string) {
     .eq('config_key', 'chat_model')
     .single();
   
-  const model = config?.config_value ? JSON.parse(config.config_value) : 'gpt-5-2025-08-07';
+  let model = 'gpt-5-2025-08-07'; // Default
+  if (config?.config_value) {
+    // Handle both JSON-stringified and plain values
+    try {
+      model = typeof config.config_value === 'string' 
+        ? JSON.parse(config.config_value) 
+        : config.config_value;
+    } catch {
+      model = config.config_value;
+    }
+  }
+  
   const isGpt5 = model.includes('gpt-5');
   
   return {

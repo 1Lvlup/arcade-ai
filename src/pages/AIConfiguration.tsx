@@ -135,9 +135,22 @@ export default function AIConfiguration() {
     URL.revokeObjectURL(url);
   };
 
-  const getConfigValue = (key: string) => {
+  const getConfigValue = (key: string, defaultValue: any = '') => {
     const config = aiConfigs?.find(c => c.config_key === key);
-    return config?.config_value || '';
+    if (!config) return defaultValue;
+    
+    // Handle both JSON-stringified values and plain values
+    const value = config.config_value;
+    if (typeof value === 'string') {
+      try {
+        // Try to parse as JSON first
+        return JSON.parse(value);
+      } catch {
+        // If parsing fails, return the raw string
+        return value;
+      }
+    }
+    return value || defaultValue;
   };
 
   if (isLoading) {
@@ -196,8 +209,8 @@ export default function AIConfiguration() {
                   <div className="space-y-2">
                     <Label htmlFor="chat-model">Chat Model</Label>
                     <Select
-                      value={JSON.parse(getConfigValue('chat_model') || '"gpt-5-2025-08-07"')}
-                      onValueChange={(value) => handleConfigUpdate('chat_model', JSON.stringify(value))}
+                      value={getConfigValue('chat_model', 'gpt-5-2025-08-07')}
+                      onValueChange={(value) => handleConfigUpdate('chat_model', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select chat model" />
@@ -215,8 +228,8 @@ export default function AIConfiguration() {
                   <div className="space-y-2">
                     <Label htmlFor="search-model">Embedding Model</Label>
                     <Select
-                      value={JSON.parse(getConfigValue('search_model') || '"text-embedding-3-small"')}
-                      onValueChange={(value) => handleConfigUpdate('search_model', JSON.stringify(value))}
+                      value={getConfigValue('search_model', 'text-embedding-3-small')}
+                      onValueChange={(value) => handleConfigUpdate('search_model', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select embedding model" />
@@ -265,8 +278,8 @@ export default function AIConfiguration() {
                   <Textarea
                     id="system-prompt"
                     className="min-h-[400px] font-mono text-sm"
-                    value={JSON.parse(getConfigValue('system_prompt') || '""')}
-                    onChange={(e) => handleConfigUpdate('system_prompt', JSON.stringify(e.target.value))}
+                    value={getConfigValue('system_prompt', '')}
+                    onChange={(e) => handleConfigUpdate('system_prompt', e.target.value)}
                   />
                 </div>
                 

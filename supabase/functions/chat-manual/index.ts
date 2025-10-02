@@ -422,12 +422,12 @@ async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: s
     };
   }
 
-  // Answerability gate: Require BOTH good base scores AND good rerank scores
+  // Answerability gate: Require at least ONE good score (rerank OR base)
   const maxRerankScore = Math.max(...chunks.map(c => c.rerank_score ?? 0));
   const maxBaseScore = Math.max(...chunks.map(c => c.score ?? 0));
-  const hasGoodRerank = maxRerankScore >= 0.50; // Cohere score must be decent
-  const hasGoodBase = maxBaseScore >= 0.40; // Vector score must be decent
-  const weak = (chunks.length < 3) || !hasGoodRerank || !hasGoodBase;
+  const hasGoodRerank = maxRerankScore >= 0.50; // Cohere score is decent
+  const hasGoodBase = maxBaseScore >= 0.40; // Vector score is decent
+  const weak = (chunks.length < 3) || (!hasGoodRerank && !hasGoodBase); // Weak only if BOTH scores are bad
   
   console.log(`📊 [RAG V2] Answerability check:`, {
     chunk_count: chunks.length,

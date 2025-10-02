@@ -70,20 +70,22 @@ export function ManualsList() {
 
       setManuals(data || []);
 
-      // Fetch chunk counts for all manuals
+      // Fetch chunk counts for all manuals using proper count queries
       if (data && data.length > 0) {
-        const { data: chunkData, error: chunkError } = await supabase
-          .from('chunks_text')
-          .select('manual_id')
-          .in('manual_id', data.map(m => m.manual_id));
-
-        if (!chunkError && chunkData) {
-          const counts = data.map(manual => ({
+        const countPromises = data.map(async (manual) => {
+          const { count, error } = await supabase
+            .from('chunks_text')
+            .select('*', { count: 'exact', head: true })
+            .eq('manual_id', manual.manual_id);
+          
+          return {
             manual_id: manual.manual_id,
-            count: chunkData.filter(chunk => chunk.manual_id === manual.manual_id).length
-          }));
-          setChunkCounts(counts);
-        }
+            count: error ? 0 : (count || 0)
+          };
+        });
+
+        const counts = await Promise.all(countPromises);
+        setChunkCounts(counts);
       }
     } catch (error) {
       console.error('Error fetching manuals:', error);

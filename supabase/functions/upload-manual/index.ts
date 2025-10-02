@@ -102,34 +102,47 @@ serve(async (req) => {
     formData.append('language', 'en')
     formData.append('disable_ocr', 'false')
     
-    // Custom instructions for arcade manual parsing
-    formData.append('parsing_instructions', `
-This is a technical troubleshooting manual for arcade games. 
-Extract all procedural steps, part numbers, error codes, and technical specifications clearly.
-Preserve table structure and ensure figure references are maintained.
-Focus on actionable troubleshooting information and setup procedures.
-Maintain the hierarchical structure of sections and subsections.
-`)
-
-    // Enhanced table and layout handling
-    formData.append('output_tables_as_html', 'true')
+    // === CORE LAYOUT & OCR ===
+    formData.append('high_res_ocr', 'true') // Captures tiny silkscreen text and faint headers
+    formData.append('layout_aware', 'true') // Preserves section structure and callouts
+    formData.append('extract_layout', 'true') // Preserves step numbers and alignment
+    formData.append('precise_bounding_box', 'true') // Tighter crops for better figure-caption pairing (extra cost)
+    formData.append('preserve_very_small_text', 'true') // Keeps tiny pin labels
+    formData.append('preserve_layout_alignment_across_pages', 'true') // Maintains alignment
+    
+    // === FIGURES & IMAGES ===
+    formData.append('save_images', 'true') // Save extracted images
+    formData.append('extract_images', 'true') // Extract individual figures
+    formData.append('extract_figures', 'true') // Extract embedded figures
+    formData.append('inline_images_in_markdown', 'true') // Include figures in markdown output
+    formData.append('disable_image_extraction', 'false') // Ensure image extraction is enabled
+    
+    // === TABLES ===
+    formData.append('extract_tables', 'true') // Extract all tables
+    formData.append('adaptive_long_table', 'true') // Handle long tables spanning pages
+    formData.append('merge_tables_across_pages', 'true') // Merge split tables
+    formData.append('merge_tables_across_pages_in_markdown', 'true') // Merge in markdown output
+    formData.append('outlined_table_extraction', 'true') // Good for pinouts/BOMs
+    formData.append('output_tables_as_html', 'true') // Render tables as HTML
+    
+    // === JOB BEHAVIOR / CACHING ===
+    formData.append('invalidate_cache', 'true') // Ensure fresh parsing (tune while optimizing)
+    formData.append('do_not_cache', 'false') // Allow caching once satisfied
+    formData.append('take_screenshot', 'true') // Create page-level PNG audit trail
+    formData.append('split_by_page', 'false') // Keep document structure intact
+    formData.append('include_page_breaks', 'true') // Preserve pagination
+    formData.append('fast_mode', 'false') // Thorough processing
+    
+    // === PAGE SEPARATORS ===
     formData.append('hide_headers', 'true') 
     formData.append('hide_footers', 'true')
     formData.append('page_separator', '\n\n<!-- Page {pageNumber} Start -->\n\n')
-    formData.append('preserve_layout_alignment_across_pages', 'true')
-    formData.append('merge_tables_across_pages', 'true')
-    formData.append('take_screenshot', 'true')
-    formData.append('preserve_very_small_text', 'true')
     
-    // CRITICAL: Space Invaders proven working settings - LlamaCloud API parameters
-    formData.append('extract_images', 'true')  // ✅ Working: extracts individual figures 
-    formData.append('extract_figures', 'true') // ✅ Working: extracts embedded figures
-    formData.append('take_screenshot', 'true') // ✅ Working: creates page screenshots 
-    formData.append('split_by_page', 'false')  // ✅ Working: keeps document structure
-    formData.append('include_page_breaks', 'true') // ✅ Working: preserves pagination
-    formData.append('fast_mode', 'false')      // ✅ Working: thorough processing
-
-    // Custom formatting for technical content
+    // === PROMPTS ===
+    // User prompt for per-document hints
+    formData.append('user_prompt', `This is an arcade service manual. Prioritize troubleshooting procedures, wiring diagrams, DIP switch tables, error code lists, and technical specifications. Avoid marketing copy. Focus on actionable repair and maintenance information.`)
+    
+    // System prompt append for formatting rules (safer than system_prompt)
     formData.append('system_prompt_append', `
 When formatting technical manuals:
 - Clearly mark troubleshooting sections with ## headers
@@ -137,6 +150,8 @@ When formatting technical manuals:
 - Format step-by-step procedures as numbered lists
 - Maintain figure and table references
 - Use consistent formatting for error codes and symptoms
+- Preserve all wiring diagrams, pinouts, and DIP switch settings
+- Keep tiny silkscreen labels (BAT1, F1, J12, etc.) intact
 `)
     
     // Webhook for processing results

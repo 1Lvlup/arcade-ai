@@ -86,10 +86,12 @@ serve(async (req) => {
     console.log('👁️ Analyzing image with GPT-4 Vision...');
 
     // Use GPT-4o Vision to analyze the image
+    const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
+        'OpenAI-Project': openaiProjectId,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

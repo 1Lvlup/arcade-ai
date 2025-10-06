@@ -109,23 +109,16 @@ export function ManualImages({ manualId }: ManualImagesProps) {
 
       if (error) throw error;
 
-      // Update the figure with the new caption
-      const { error: updateError } = await supabase
-        .from('figures')
-        .update({ 
-          caption_text: data.caption,
-          vision_text: data.vision_analysis 
-        })
-        .eq('id', figure.id);
-
-      if (updateError) throw updateError;
-
+      // Edge function already updated the database, just show success
       toast({
         title: 'Caption generated',
         description: 'AI caption has been generated and saved',
       });
       
-      fetchFigures(); // Refresh the list
+      // Wait a moment for database update to propagate, then refresh
+      setTimeout(() => {
+        fetchFigures();
+      }, 500);
     } catch (error) {
       console.error('Error generating caption:', error);
       toast({

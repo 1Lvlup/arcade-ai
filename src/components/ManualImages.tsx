@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Image, Eye, Edit, Save, X, RefreshCw, Sparkles, Wand2 } from 'lucide-react';
+import { Image, Eye, Edit, Save, X, RefreshCw, Sparkles, Wand2, Trash2 } from 'lucide-react';
 
 interface Figure {
   id: string;
@@ -168,6 +168,35 @@ export function ManualImages({ manualId }: ManualImagesProps) {
     setCaptionText('');
   };
 
+  const deleteFigure = async (figureId: string) => {
+    if (!confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('figures')
+        .delete()
+        .eq('id', figureId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Image deleted',
+        description: 'The image has been removed from this manual',
+      });
+      
+      fetchFigures(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting figure:', error);
+      toast({
+        title: 'Error deleting image',
+        description: 'Failed to delete the image. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card className="border-border bg-card">
@@ -238,6 +267,17 @@ export function ManualImages({ manualId }: ManualImagesProps) {
                           Page {figure.page_number}
                         </Badge>
                       )}
+                    </div>
+                    <div className="absolute top-2 left-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteFigure(figure.id)}
+                        title="Delete this image"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
 

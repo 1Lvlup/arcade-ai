@@ -95,25 +95,28 @@ serve(async (req) => {
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
     
-    // Use LLM parsing
-    formData.append('parse_mode', 'parse_document_with_llm')
+    // Use Agent-based parsing with GPT-5
+    formData.append('parse_mode', 'parse_page_with_agent')
+    formData.append('model', 'openai-gpt-5')
     
     // Enhanced parsing parameters for technical manuals
     formData.append('language', 'en')
     formData.append('disable_ocr', 'false')
     
     // === CORE LAYOUT & OCR ===
-    formData.append('high_res_ocr', 'false') // Disabled - causing too many false positives
+    formData.append('high_res_ocr', 'true') // High resolution OCR
     formData.append('layout_aware', 'true') // Preserves section structure and callouts
     formData.append('extract_layout', 'true') // Preserves step numbers and alignment
     formData.append('precise_bounding_box', 'false') // Keep content as text
     formData.append('preserve_very_small_text', 'true') // Keeps tiny pin labels
     formData.append('preserve_layout_alignment_across_pages', 'true') // Maintains alignment
+    formData.append('ignore_document_elements_for_layout_detection', 'true') // Use visual model for layout
     
-    // === FIGURES & IMAGES === (Balanced extraction)
+    // === FIGURES & IMAGES ===
     formData.append('save_images', 'true') // Save extracted images
     formData.append('extract_images', 'true') // Extract images from document
     formData.append('extract_figures', 'true') // Extract diagrams and schematics
+    formData.append('extract_charts', 'true') // Extract charts
     formData.append('inline_images_in_markdown', 'true') // Include image references in markdown
     formData.append('disable_image_extraction', 'false') // Allow extraction
     
@@ -126,17 +129,18 @@ serve(async (req) => {
     formData.append('output_tables_as_html', 'true') // Render tables as HTML
     
     // === JOB BEHAVIOR / CACHING ===
-    formData.append('invalidate_cache', 'true') // Ensure fresh parsing (tune while optimizing)
-    formData.append('do_not_cache', 'false') // Allow caching once satisfied
-    formData.append('take_screenshot', 'true') // Create page-level PNG audit trail
+    formData.append('invalidate_cache', 'true') // Ensure fresh parsing
+    formData.append('do_not_cache', 'true') // Don't cache
+    formData.append('take_screenshot', 'true') // Force page screenshots
     formData.append('split_by_page', 'false') // Keep document structure intact
     formData.append('include_page_breaks', 'true') // Preserve pagination
     formData.append('fast_mode', 'false') // Thorough processing
+    formData.append('replace_failed_page_mode', 'raw_text') // Fallback to raw text if page fails
     
     // === PAGE SEPARATORS ===
     formData.append('hide_headers', 'true') 
     formData.append('hide_footers', 'true')
-    formData.append('page_separator', '\n\n<!-- Page {pageNumber} Start -->\n\n')
+    formData.append('page_separator', '\r\n\r\n<!-- Page {pageNumber} Start -->\r\n\r\n')
     
     // === PROMPTS ===
     // System prompt append for formatting rules
@@ -216,14 +220,14 @@ Output:
       success: true, 
       job_id: llamaData.id,
       manual_id,
-      parsing_mode: 'llm',
+      parsing_mode: 'agent_gpt5',
       features: [
-        'LLM-based parsing',
-        'Advanced language model analysis',
-        'Advanced table extraction as HTML',
-        'Figure extraction (vision-based)',
-        'Layout preservation across pages',
-        'Hierarchical chunking strategies'
+        'Agent-based parsing with GPT-5',
+        'High-resolution OCR',
+        'Advanced chart & figure extraction',
+        'Layout-aware parsing',
+        'Table merging across pages',
+        'Screenshot capture per page'
       ]
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

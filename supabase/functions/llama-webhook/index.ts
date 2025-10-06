@@ -392,184 +392,200 @@ serve(async (req) => {
         })
         .eq('job_id', jobId);
 
-      for (const figure of allFigures) {
-        try {
-          console.log(`🔄 Processing figure:`, JSON.stringify(figure, null, 2));
-          
-          let figureName: string;
-          let pageNumber: number | null = null;
-          let llamaCloudUrl: string;
-          
-          // Figure is now an object with {name, page, type}
-          if (typeof figure === 'object' && figure.name) {
-            figureName = figure.name;
-            pageNumber = figure.page || null;
+      // Process ALL images in parallel batches - download, upload, store metadata
+      const batchSize = 10;
+      const insertedFigureIds: { id: string, figureName: string, storagePath: string }[] = [];
+      
+      for (let i = 0; i < allFigures.length; i += batchSize) {
+        const batch = allFigures.slice(i, i + batchSize);
+        
+        const batchResults = await Promise.all(batch.map(async (figure) => {
+          try {
+            console.log(`🔄 Processing figure:`, JSON.stringify(figure, null, 2));
             
-            // Skip if filename suggests it's a background or decorative element
-            if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
-              console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
-              continue;
+            let figureName: string;
+            let pageNumber: number | null = null;
+            let llamaCloudUrl: string;
+            
+            // Figure is now an object with {name, page, type}
+            if (typeof figure === 'object' && figure.name) {
+              figureName = figure.name;
+              pageNumber = figure.page || null;
+              
+              // Skip if filename suggests it's a background or decorative element
+              if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
+                console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
+                return null;
+              }
+              
+              // Construct proper LlamaCloud image URL using the API key
+              llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
+            } else if (typeof figure === 'string') {
+              // Fallback for string format
+              figureName = figure;
+              if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
+                console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
+                return null;
+              }
+              llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
+            } else {
+              console.error("❌ Unknown figure format:", figure);
+              return null;
             }
             
-            // Construct proper LlamaCloud image URL using the API key
-            llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
-          } else if (typeof figure === 'string') {
-            // Fallback for string format
-            figureName = figure;
-            if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
-              console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
-              continue;
-            }
-            llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
-          } else {
-            console.error("❌ Unknown figure format:", figure);
-            continue;
-          }
-          
-          console.log(`📥 Downloading image from LlamaCloud: ${llamaCloudUrl}`);
-          
-          // Download image from LlamaCloud with auth
-          const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
-          const imageResponse = await fetch(llamaCloudUrl, {
-            headers: {
-              'Authorization': `Bearer ${llamaApiKey}`
-            }
-          });
-          
-          if (!imageResponse.ok) {
-            console.error(`❌ Failed to download image from LlamaCloud: ${imageResponse.status}`, await imageResponse.text());
-            continue;
-          }
-          
-          const imageBlob = await imageResponse.blob();
-          const imageArrayBuffer = await imageBlob.arrayBuffer();
-          
-          // Determine content type
-          const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
-          
-          // Create storage path: {manual_id}/figures/{figure_name}
-          const storagePath = `${document.manual_id}/figures/${figureName}`;
-          
-          console.log(`📤 Uploading to Supabase storage: ${storagePath}`);
-          
-          // Upload to Supabase storage
-          const { error: uploadError } = await supabase.storage
-            .from('postparse')
-            .upload(storagePath, imageArrayBuffer, {
-              contentType,
-              upsert: true
+            console.log(`📥 Downloading image from LlamaCloud: ${llamaCloudUrl}`);
+            
+            // Download image from LlamaCloud with auth
+            const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
+            const imageResponse = await fetch(llamaCloudUrl, {
+              headers: {
+                'Authorization': `Bearer ${llamaApiKey}`
+              }
             });
-          
-          if (uploadError) {
-            console.error(`❌ Failed to upload to storage:`, uploadError);
-            continue;
+            
+            if (!imageResponse.ok) {
+              console.error(`❌ Failed to download image from LlamaCloud: ${imageResponse.status}`, await imageResponse.text());
+              return null;
+            }
+            
+            const imageBlob = await imageResponse.blob();
+            const imageArrayBuffer = await imageBlob.arrayBuffer();
+            
+            // Determine content type
+            const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+            
+            // Create storage path: {manual_id}/figures/{figure_name}
+            const storagePath = `${document.manual_id}/figures/${figureName}`;
+            
+            console.log(`📤 Uploading to Supabase storage: ${storagePath}`);
+            
+            // Upload to Supabase storage
+            const { error: uploadError } = await supabase.storage
+              .from('postparse')
+              .upload(storagePath, imageArrayBuffer, {
+                contentType,
+                upsert: true
+              });
+            
+            if (uploadError) {
+              console.error(`❌ Failed to upload to storage:`, uploadError);
+              return null;
+            }
+            
+            console.log(`✅ Image stored successfully: ${storagePath}`);
+            
+            const figureData = {
+              manual_id: document.manual_id,
+              figure_id: figureName,
+              storage_path: storagePath,
+              page_number: pageNumber,
+              bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
+              llama_asset_name: figureName,
+              fec_tenant_id: document.fec_tenant_id
+            };
+            
+            console.log("📸 Storing figure metadata:", figureData);
+            
+            const { data: insertedFigure, error: figureError } = await supabase
+              .from('figures')
+              .insert(figureData)
+              .select()
+              .single();
+              
+            if (figureError) {
+              console.error("❌ Error storing figure:", figureError);
+              return null;
+            } else {
+              figuresProcessed++;
+              console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
+              return { id: insertedFigure.id, figureName, storagePath };
+            }
+          } catch (error) {
+            console.error("❌ Error processing figure:", error);
+            return null;
           }
-          
-          console.log(`✅ Image stored successfully: ${storagePath}`);
-          
-          const figureData = {
-            manual_id: document.manual_id,
-            figure_id: figureName,
-            storage_path: storagePath,
-            page_number: pageNumber,
-            bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
-            llama_asset_name: figureName,
-            fec_tenant_id: document.fec_tenant_id
-          };
-          
-          console.log("📸 Storing figure:", figureData);
-          
-          const { data: insertedFigure, error: figureError } = await supabase
-            .from('figures')
-            .insert(figureData)
-            .select()
-            .single();
+        }));
+        
+        // Collect successful inserts for caption generation
+        insertedFigureIds.push(...batchResults.filter(r => r !== null));
+      }
+      
+      console.log(`✅ All ${figuresProcessed} images stored, starting background caption generation...`);
+      
+      // Generate captions in background (fire-and-forget)
+      EdgeRuntime.waitUntil((async () => {
+        for (const figureInfo of insertedFigureIds) {
+          try {
+            console.log(`🤖 Generating AI caption for: ${figureInfo.figureName}`);
             
-          if (figureError) {
-            console.error("❌ Error storing figure:", figureError);
-          } else {
-            figuresProcessed++;
-            console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
+            // Get public URL for the image
+            const { data: publicUrlData } = supabase.storage
+              .from('postparse')
+              .getPublicUrl(figureInfo.storagePath);
             
-            // Automatically generate AI caption
-            try {
-              console.log(`🤖 Generating AI caption for figure: ${figureName}`);
-              
-              // Get public URL for the image
-              const { data: publicUrlData } = supabase.storage
-                .from('postparse')
-                .getPublicUrl(storagePath);
-              
-              const imagePublicUrl = publicUrlData.publicUrl;
-              
-              // Call GPT-5 Vision for caption generation
-              const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${openaiApiKey}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  model: 'gpt-5-2025-08-07',
-                  messages: [
-                    {
-                      role: 'system',
-                      content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Create detailed, accurate captions for images from technical manuals focusing on components, connections, troubleshooting value, and maintenance procedures.'
-                    },
-                    {
-                      role: 'user',
-                      content: [
-                        {
-                          type: 'text',
-                          text: `Analyze this image from an arcade game manual and provide a detailed technical caption.
+            const imagePublicUrl = publicUrlData.publicUrl;
+            
+            // Call GPT-5 Vision for caption generation
+            const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openaiApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'gpt-5-2025-08-07',
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Create detailed, accurate captions for images from technical manuals focusing on components, connections, troubleshooting value, and maintenance procedures.'
+                  },
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: `Analyze this image from an arcade game manual and provide a detailed technical caption.
 
 Manual: ${document.title}
-Figure ID: ${figureName}
-Page: ${pageNumber || 'Unknown'}
+Figure ID: ${figureInfo.figureName}
 
 Provide a caption that helps technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
-                        },
-                        {
-                          type: 'image_url',
-                          image_url: {
-                            url: imagePublicUrl
-                          }
+                      },
+                      {
+                        type: 'image_url',
+                        image_url: {
+                          url: imagePublicUrl
                         }
-                      ]
-                    }
-                  ],
-                  max_completion_tokens: 500
-                }),
-              });
+                      }
+                    ]
+                  }
+                ],
+                max_completion_tokens: 500
+              }),
+            });
+            
+            if (visionResponse.ok) {
+              const aiResponse = await visionResponse.json();
+              const caption = aiResponse.choices[0].message.content;
               
-              if (visionResponse.ok) {
-                const aiResponse = await visionResponse.json();
-                const caption = aiResponse.choices[0].message.content;
-                
-                // Queue caption update asynchronously
-                supabase
-                  .from('figures')
-                  .update({ 
-                    caption_text: caption,
-                    vision_text: caption 
-                  })
-                  .eq('id', insertedFigure.id)
-                  .then(() => console.log(`✅ Caption saved: ${figureName}`))
-                  .catch((err) => console.error(`❌ Caption save error:`, err));
-                
-                console.log(`✅ AI caption generated for ${figureName}`);
-              } else {
-                console.error(`❌ Vision API error for ${figureName}:`, visionResponse.status);
-              }
-            } catch (captionError) {
-              console.error(`❌ Error generating caption for ${figureName}:`, captionError);
-              // Continue processing even if caption generation fails
+              await supabase
+                .from('figures')
+                .update({ 
+                  caption_text: caption,
+                  vision_text: caption 
+                })
+                .eq('id', figureInfo.id);
+              
+              console.log(`✅ Caption saved for ${figureInfo.figureName}`);
+            } else {
+              console.error(`❌ Vision API error for ${figureInfo.figureName}:`, visionResponse.status);
             }
+          } catch (captionError) {
+            console.error(`❌ Error generating caption:`, captionError);
           }
-        } catch (error) {
-          console.error("❌ Error processing figure:", error);
         }
-      }
+        console.log(`🎉 Background caption generation complete for ${insertedFigureIds.length} images`);
+      })());
     }
 
     // STEP 6: Final status update

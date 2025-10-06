@@ -28,12 +28,19 @@ serve(async (req) => {
       throw new Error('Figure ID, storage path, and manual ID are required');
     }
     
-    // Get public URL from storage path
-    const { data: publicUrlData } = supabase.storage
+    // Download the image from storage
+    const { data: imageData, error: downloadError } = await supabase.storage
       .from('postparse')
-      .getPublicUrl(storage_path);
+      .download(storage_path);
     
-    const image_url = publicUrlData.publicUrl;
+    if (downloadError || !imageData) {
+      throw new Error(`Failed to download image: ${downloadError?.message}`);
+    }
+
+    // Convert blob to base64
+    const arrayBuffer = await imageData.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const image_url = `data:image/png;base64,${base64}`;
 
     // Get user context for RLS
     const authHeader = req.headers.get('authorization');

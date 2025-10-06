@@ -159,7 +159,7 @@ Please provide a detailed caption that would help technicians understand what th
             ]
           }
         ],
-        max_completion_tokens: 500
+        max_completion_tokens: 2000  // Increased to allow for reasoning tokens + actual output
       }),
     });
 

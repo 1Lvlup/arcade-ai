@@ -35,6 +35,43 @@ export function ManualImages({ manualId }: ManualImagesProps) {
 
   useEffect(() => {
     fetchFigures();
+    
+    // Set up real-time subscription for caption updates
+    const channel = supabase
+      .channel('figures-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'figures',
+          filter: `manual_id=eq.${manualId}`
+        },
+        (payload) => {
+          console.log('Figure updated:', payload);
+          // Update the specific figure in the list
+          setFigures(prev => prev.map(fig => 
+            fig.id === payload.new.id ? { ...fig, ...payload.new } : fig
+          ));
+        }
+      )
+      .subscribe();
+
+    // Also poll every 10 seconds for the first 5 minutes to catch any updates
+    const pollInterval = setInterval(() => {
+      fetchFigures();
+    }, 10000);
+
+    // Clean up after 5 minutes
+    const cleanupTimeout = setTimeout(() => {
+      clearInterval(pollInterval);
+    }, 300000);
+
+    return () => {
+      channel.unsubscribe();
+      clearInterval(pollInterval);
+      clearTimeout(cleanupTimeout);
+    };
   }, [manualId]);
 
   const fetchFigures = async () => {
@@ -160,11 +197,27 @@ export function ManualImages({ manualId }: ManualImagesProps) {
   return (
     <Card className="border-green-200">
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2 text-green-900">
-          <Image className="h-6 w-6" />
-          <span>Manual Images</span>
-          <Badge variant="secondary">{figures.length}</Badge>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2 text-green-900">
+            <Image className="h-6 w-6" />
+            <span>Manual Images</span>
+            <Badge variant="secondary">{figures.length}</Badge>
+          </CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={fetchFigures}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
+        {figures.some(f => !f.caption_text) && (
+          <p className="text-sm text-muted-foreground mt-2">
+            🤖 AI captions are being generated in the background. They'll appear automatically when ready.
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         {figures.length === 0 ? (

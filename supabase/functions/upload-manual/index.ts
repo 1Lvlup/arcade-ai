@@ -88,15 +88,15 @@ serve(async (req) => {
       throw signedUrlError
     }
 
-    console.log('📡 Submitting to LlamaCloud with AI Agent parsing (Sonnet 3.7)...')
+    console.log('📡 Submitting to LlamaCloud with LLM parsing...')
 
-    // AI AGENT PARSING WITH SONNET 3.7
+    // LLM PARSING
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     formData.append('result_type', 'markdown')
     
-    // Use AI Agent parsing with Sonnet 3.7 vision model
-    formData.append('parse_mode', 'parse_document_with_agent')
+    // Use LLM parsing
+    formData.append('parse_mode', 'parse_document_with_llm')
     
     // Enhanced parsing parameters for technical manuals
     formData.append('language', 'en')
@@ -198,7 +198,7 @@ When formatting technical manuals:
         manual_id,
         status: 'processing',
         stage: 'ai_agent_parsing',
-        current_task: 'AI Agent parsing with Sonnet 3.7 vision model',
+        current_task: 'LLM parsing with advanced language model',
         fec_tenant_id: profile.fec_tenant_id,
         progress_percent: 0
       })
@@ -207,16 +207,16 @@ When formatting technical manuals:
       console.error('Error creating processing status:', statusError)
     }
 
-    console.log('🎉 Document uploaded with AI Agent parsing (Sonnet 3.7)')
+    console.log('🎉 Document uploaded with LLM parsing')
 
     return new Response(JSON.stringify({ 
       success: true, 
       job_id: llamaData.id,
       manual_id,
-      parsing_mode: 'ai_agent',
+      parsing_mode: 'llm',
       features: [
-        'AI Agent parsing with Sonnet 3.7',
-        'Advanced vision model analysis',
+        'LLM-based parsing',
+        'Advanced language model analysis',
         'Advanced table extraction as HTML',
         'Figure extraction (vision-based)',
         'Layout preservation across pages',

@@ -453,7 +453,7 @@ serve(async (req) => {
           console.log(`📤 Uploading to Supabase storage: ${storagePath}`);
           
           // Upload to Supabase storage
-          const { error: uploadError } = await supabaseClient.storage
+          const { error: uploadError } = await supabase.storage
             .from('postparse')
             .upload(storagePath, imageArrayBuffer, {
               contentType,

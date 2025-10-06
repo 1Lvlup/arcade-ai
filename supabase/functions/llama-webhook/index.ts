@@ -332,11 +332,17 @@ serve(async (req) => {
         if (jobResultResponse.ok) {
           const jobResult = await jobResultResponse.json();
           console.log('✅ Got job result from API');
+          console.log('📋 Job result keys:', Object.keys(jobResult));
+          console.log('📋 Full job result structure:', JSON.stringify(jobResult, null, 2).substring(0, 2000));
           
           // Extract image names from pages
           if (jobResult.pages && Array.isArray(jobResult.pages)) {
+            console.log(`📄 Found ${jobResult.pages.length} pages`);
             const imageNames: string[] = [];
             for (const page of jobResult.pages) {
+              console.log('📄 Page keys:', Object.keys(page));
+              console.log('📄 Page images:', page.images);
+              console.log('📄 Page charts:', page.charts);
               if (page.images && Array.isArray(page.images)) {
                 imageNames.push(...page.images);
               }
@@ -346,6 +352,8 @@ serve(async (req) => {
             }
             allFigures = imageNames;
             console.log(`📸 Found ${allFigures.length} images from API`);
+          } else {
+            console.log('⚠️ No pages array found in job result');
           }
         } else {
           console.error('❌ Failed to fetch job result from API:', jobResultResponse.status);

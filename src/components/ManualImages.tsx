@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +32,7 @@ export function ManualImages({ manualId }: ManualImagesProps) {
   const [editingFigure, setEditingFigure] = useState<string | null>(null);
   const [captionText, setCaptionText] = useState('');
   const [generatingCaption, setGeneratingCaption] = useState<string | null>(null);
+  const [selectedFigures, setSelectedFigures] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -186,7 +188,7 @@ export function ManualImages({ manualId }: ManualImagesProps) {
         description: 'The image has been removed from this manual',
       });
       
-      fetchFigures(); // Refresh the list
+      fetchFigures();
     } catch (error) {
       console.error('Error deleting figure:', error);
       toast({
@@ -194,6 +196,58 @@ export function ManualImages({ manualId }: ManualImagesProps) {
         description: 'Failed to delete the image. Please try again.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const deleteSelectedFigures = async () => {
+    if (selectedFigures.size === 0) return;
+
+    if (!confirm(`Are you sure you want to delete ${selectedFigures.size} image(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('figures')
+        .delete()
+        .in('id', Array.from(selectedFigures));
+
+      if (error) throw error;
+
+      toast({
+        title: 'Images deleted',
+        description: `${selectedFigures.size} image(s) have been removed`,
+      });
+      
+      setSelectedFigures(new Set());
+      fetchFigures();
+    } catch (error) {
+      console.error('Error deleting figures:', error);
+      toast({
+        title: 'Error deleting images',
+        description: 'Failed to delete the images. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const toggleFigureSelection = (figureId: string) => {
+    setSelectedFigures(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(figureId)) {
+        newSet.delete(figureId);
+      } else {
+        newSet.add(figureId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllFigures = () => {
+    if (selectedFigures.size === figures.length) {
+      setSelectedFigures(new Set());
+    } else {
+      setSelectedFigures(new Set(figures.map(f => f.id)));
     }
   };
 
@@ -225,16 +279,50 @@ export function ManualImages({ manualId }: ManualImagesProps) {
             <span>Manual Images</span>
             <Badge variant="secondary">{figures.length}</Badge>
           </CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={fetchFigures}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            {selectedFigures.size > 0 && (
+              <>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={deleteSelectedFigures}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete {selectedFigures.size} Selected
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedFigures(new Set())}
+                >
+                  Clear Selection
+                </Button>
+              </>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={fetchFigures}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
+        {figures.length > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            <Checkbox
+              checked={selectedFigures.size === figures.length && figures.length > 0}
+              onCheckedChange={selectAllFigures}
+              id="select-all"
+            />
+            <label htmlFor="select-all" className="text-sm text-muted-foreground cursor-pointer">
+              Select all
+            </label>
+          </div>
+        )}
         {figures.some(f => !f.caption_text) && (
           <p className="text-sm text-muted-foreground mt-2">
             🤖 AI captions are being generated in the background. They'll appear automatically when ready.
@@ -268,7 +356,13 @@ export function ManualImages({ manualId }: ManualImagesProps) {
                         </Badge>
                       )}
                     </div>
-                    <div className="absolute top-2 left-2">
+                    <div className="absolute top-2 left-2 flex items-center gap-2">
+                      <div className="bg-white rounded p-1 shadow">
+                        <Checkbox
+                          checked={selectedFigures.has(figure.id)}
+                          onCheckedChange={() => toggleFigureSelection(figure.id)}
+                        />
+                      </div>
                       <Button
                         variant="destructive"
                         size="sm"

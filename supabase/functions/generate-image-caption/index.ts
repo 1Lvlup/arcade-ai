@@ -189,10 +189,26 @@ Please provide a detailed caption that would help technicians understand what th
 
     console.log('📝 Generated caption:', caption.substring(0, 100) + '...');
 
+    // Update the figure in the database
+    const { error: updateError } = await supabase
+      .from('figures')
+      .update({
+        caption_text: caption,
+        vision_text: caption
+      })
+      .eq('id', figure_id);
+
+    if (updateError) {
+      console.error('❌ Failed to update figure:', updateError);
+      throw new Error(`Failed to save caption: ${updateError.message}`);
+    }
+
+    console.log('✅ Caption saved to database');
+
     return new Response(JSON.stringify({ 
       success: true, 
       caption,
-      vision_analysis: caption, // Store full analysis in vision_text field
+      vision_analysis: caption,
       figure_id,
       manual_id
     }), {

@@ -546,14 +546,16 @@ Provide a caption that helps technicians understand what they're looking at and 
                 const aiResponse = await visionResponse.json();
                 const caption = aiResponse.choices[0].message.content;
                 
-                // Update figure with AI-generated caption
-                await supabase
+                // Queue caption update asynchronously
+                supabase
                   .from('figures')
                   .update({ 
                     caption_text: caption,
                     vision_text: caption 
                   })
-                  .eq('id', insertedFigure.id);
+                  .eq('id', insertedFigure.id)
+                  .then(() => console.log(`✅ Caption saved: ${figureName}`))
+                  .catch((err) => console.error(`❌ Caption save error:`, err));
                 
                 console.log(`✅ AI caption generated for ${figureName}`);
               } else {

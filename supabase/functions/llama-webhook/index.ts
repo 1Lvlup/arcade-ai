@@ -314,9 +314,46 @@ serve(async (req) => {
         .eq('job_id', jobId);
     }
 
-    // STEP 5: Process images and figures
+    // STEP 5: Fetch images from LlamaCloud API if not in webhook
     let figuresProcessed = 0;
-    const allFigures = [...(images || []), ...(charts || [])];
+    let allFigures = [...(images || []), ...(charts || [])];
+    
+    // If no images in webhook, fetch from API
+    if (allFigures.length === 0) {
+      console.log('📡 No images in webhook, fetching from LlamaCloud API...');
+      try {
+        const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
+        const jobResultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/json`, {
+          headers: {
+            'Authorization': `Bearer ${llamaApiKey}`
+          }
+        });
+        
+        if (jobResultResponse.ok) {
+          const jobResult = await jobResultResponse.json();
+          console.log('✅ Got job result from API');
+          
+          // Extract image names from pages
+          if (jobResult.pages && Array.isArray(jobResult.pages)) {
+            const imageNames: string[] = [];
+            for (const page of jobResult.pages) {
+              if (page.images && Array.isArray(page.images)) {
+                imageNames.push(...page.images);
+              }
+              if (page.charts && Array.isArray(page.charts)) {
+                imageNames.push(...page.charts);
+              }
+            }
+            allFigures = imageNames;
+            console.log(`📸 Found ${allFigures.length} images from API`);
+          }
+        } else {
+          console.error('❌ Failed to fetch job result from API:', jobResultResponse.status);
+        }
+      } catch (fetchError) {
+        console.error('❌ Error fetching images from API:', fetchError);
+      }
+    }
     
     if (allFigures.length > 0) {
       console.log(`🖼️ Processing ${allFigures.length} figures...`);

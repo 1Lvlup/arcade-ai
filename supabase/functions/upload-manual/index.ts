@@ -139,20 +139,23 @@ serve(async (req) => {
     formData.append('page_separator', '\n\n<!-- Page {pageNumber} Start -->\n\n')
     
     // === PROMPTS ===
-    // User prompt for per-document hints
-    formData.append('user_prompt', `This is an arcade service manual. Prioritize troubleshooting procedures, wiring diagrams, DIP switch tables, error code lists, and technical specifications. Avoid marketing copy. Focus on actionable repair and maintenance information.`)
+    // System prompt append for formatting rules
+    formData.append('system_prompt_append', `You are parsing a technical arcade game manual for downstream retrieval. Output clean, human-readable markdown per page — no decorative noise.
+Rules:
+- Skip purely decorative cover/title pages unless they contain unique technical info.
+- Remove repeated headers/footers, page numbers, watermarks.
+- Keep headings, menu labels, units, codes (E01, SW5, AA6166), wire colors, and part numbers EXACTLY.
+- Merge hyphenated line breaks; keep numbered steps intact; render tables as readable markdown.
+- Preserve page order and start each page with "### Page {n}".
+- Do not invent content or captions; omit unreadable text.`)
     
-    // System prompt append for formatting rules (safer than system_prompt)
-    formData.append('system_prompt_append', `
-When formatting technical manuals:
-- Clearly mark troubleshooting sections with ## headers
-- Preserve part numbers and model numbers exactly
-- Format step-by-step procedures as numbered lists
-- Maintain figure and table references
-- Use consistent formatting for error codes and symptoms
-- Preserve all wiring diagrams, pinouts, and DIP switch settings
-- Keep tiny silkscreen labels (BAT1, F1, J12, etc.) intact
-`)
+    // User prompt for per-document hints
+    formData.append('user_prompt', `Goal: produce clean per-page markdown for arcade manuals, easy to chunk later.
+Output:
+- One continuous markdown doc split by "### Page {n}" (1-based pages).
+- Headings merged with first body (no title-only blocks).
+- Tables converted to markdown; parameter names/values verbatim.
+- Leave images out; if the page names a figure, keep the text name only.`)
     
     // Webhook for processing results
     formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)

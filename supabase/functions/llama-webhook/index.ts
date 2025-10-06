@@ -415,15 +415,90 @@ serve(async (req) => {
           
           console.log("📸 Storing figure:", figureData);
           
-          const { error: figureError } = await supabase
+          const { data: insertedFigure, error: figureError } = await supabase
             .from('figures')
-            .insert(figureData);
+            .insert(figureData)
+            .select()
+            .single();
             
           if (figureError) {
             console.error("❌ Error storing figure:", figureError);
           } else {
             figuresProcessed++;
             console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
+            
+            // Automatically generate AI caption
+            try {
+              console.log(`🤖 Generating AI caption for figure: ${figureName}`);
+              
+              // Get public URL for the image
+              const { data: publicUrlData } = supabase.storage
+                .from('postparse')
+                .getPublicUrl(storagePath);
+              
+              const imagePublicUrl = publicUrlData.publicUrl;
+              
+              // Call GPT-5 Vision for caption generation
+              const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${openaiApiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'gpt-5-2025-08-07',
+                  messages: [
+                    {
+                      role: 'system',
+                      content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Create detailed, accurate captions for images from technical manuals focusing on components, connections, troubleshooting value, and maintenance procedures.'
+                    },
+                    {
+                      role: 'user',
+                      content: [
+                        {
+                          type: 'text',
+                          text: `Analyze this image from an arcade game manual and provide a detailed technical caption.
+
+Manual: ${document.title}
+Figure ID: ${figureName}
+Page: ${pageNumber || 'Unknown'}
+
+Provide a caption that helps technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
+                        },
+                        {
+                          type: 'image_url',
+                          image_url: {
+                            url: imagePublicUrl
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  max_completion_tokens: 500
+                }),
+              });
+              
+              if (visionResponse.ok) {
+                const aiResponse = await visionResponse.json();
+                const caption = aiResponse.choices[0].message.content;
+                
+                // Update figure with AI-generated caption
+                await supabase
+                  .from('figures')
+                  .update({ 
+                    caption_text: caption,
+                    vision_text: caption 
+                  })
+                  .eq('id', insertedFigure.id);
+                
+                console.log(`✅ AI caption generated for ${figureName}`);
+              } else {
+                console.error(`❌ Vision API error for ${figureName}:`, visionResponse.status);
+              }
+            } catch (captionError) {
+              console.error(`❌ Error generating caption for ${figureName}:`, captionError);
+              // Continue processing even if caption generation fails
+            }
           }
         } catch (error) {
           console.error("❌ Error processing figure:", error);

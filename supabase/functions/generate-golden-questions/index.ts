@@ -208,10 +208,6 @@ serve(async (req) => {
     const summary = buildStructuredSummary(manual, chunks, figures || []);
     
     console.log('📝 Analyzing content with AI...');
-    
-    // Get model config
-    const systemPrompt = await getSystemPrompt(supabase, profile.fec_tenant_id);
-    console.log(`🤖 Using model: gpt-5-2025-08-07`);
 
     // Generate golden questions using OpenAI
     const requestBody = {
@@ -257,10 +253,12 @@ ${summary.substring(0, 8000)}`
       ]
     };
 
+    const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
+        'OpenAI-Project': openaiProjectId,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),

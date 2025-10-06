@@ -119,36 +119,28 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert technical documentation analyst specializing in arcade game manuals. Your task is to create detailed, accurate captions for images from technical manuals.
-
-For each image, provide:
-1. A clear, descriptive caption that explains what the image shows
-2. Technical analysis focusing on components, connections, or procedures visible
-3. Context about how this image relates to troubleshooting or maintenance
+            content: `You are a technical documentation specialist. Create brief, accurate captions for arcade manual images.
 
 Your captions should be:
-- Technically accurate and specific
-- Helpful for troubleshooting purposes
-- Clear and professional
-- Focused on actionable information
+- CONCISE (2-3 sentences maximum)
+- Describe only what's actually visible
+- Technically accurate but brief
+- Focus on the primary purpose
 
-If the image shows electronic components, wiring, or mechanical parts, be specific about what's visible and how it relates to the arcade system.`
+Avoid lengthy explanations or troubleshooting guides - just describe what the image shows.`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Analyze this image from an arcade game manual and provide a detailed technical caption.
+                text: `Provide a concise caption for this image from "${manual.title}".
 
-CONTEXT:
-- Manual: ${manual.title} (${manual.source_filename})
-- Figure ID: ${figure.figure_id}
+Context:
 - Page: ${figure.page_number || 'Unknown'}
-${figure.ocr_text ? `- Text in image: ${figure.ocr_text}` : ''}
-${figure.keywords ? `- Keywords: ${figure.keywords.join(', ')}` : ''}
+${figure.ocr_text ? `- Text visible: ${figure.ocr_text}` : ''}
 
-Please provide a detailed caption that would help technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
+Keep the caption brief (2-3 sentences) - just describe what's shown and its main purpose.`
               },
               {
                 type: 'image_url',

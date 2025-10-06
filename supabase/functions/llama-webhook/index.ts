@@ -379,6 +379,7 @@ serve(async (req) => {
     
     if (allFigures.length > 0) {
       console.log(`🖼️ Processing ${allFigures.length} figures...`);
+      console.log(`📋 First few figures:`, JSON.stringify(allFigures.slice(0, 3), null, 2));
       
       await supabase
         .from('processing_status')

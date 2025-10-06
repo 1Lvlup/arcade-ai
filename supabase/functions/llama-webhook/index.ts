@@ -337,7 +337,7 @@ serve(async (req) => {
           console.log(`🔄 Processing figure:`, JSON.stringify(figure, null, 2));
           
           // LlamaCloud returns different formats - handle all cases
-          let imageUrl: string;
+          let llamaCloudUrl: string;
           let figureName: string;
           let pageNumber: number | null = null;
           
@@ -349,7 +349,7 @@ serve(async (req) => {
               console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
               continue;
             }
-            imageUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
+            llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
           } else if (typeof figure === 'object') {
             // If it's an object, extract properties
             figureName = figure.name || figure.id || figure.filename || `figure_${figuresProcessed}`;
@@ -360,7 +360,7 @@ serve(async (req) => {
               continue;
             }
             
-            imageUrl = figure.url || figure.image_url || figure.path || 
+            llamaCloudUrl = figure.url || figure.image_url || figure.path || 
                       `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
             pageNumber = figure.page || figure.page_number || null;
           } else {
@@ -368,12 +368,45 @@ serve(async (req) => {
             continue;
           }
           
-          console.log(`✅ Extracted image URL: ${imageUrl}`);
+          console.log(`📥 Downloading image from LlamaCloud: ${llamaCloudUrl}`);
+          
+          // Download image from LlamaCloud
+          const imageResponse = await fetch(llamaCloudUrl);
+          if (!imageResponse.ok) {
+            console.error(`❌ Failed to download image from LlamaCloud: ${imageResponse.status}`);
+            continue;
+          }
+          
+          const imageBlob = await imageResponse.blob();
+          const imageArrayBuffer = await imageBlob.arrayBuffer();
+          
+          // Determine content type
+          const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+          
+          // Create storage path: {manual_id}/figures/{figure_name}
+          const storagePath = `${document.manual_id}/figures/${figureName}`;
+          
+          console.log(`📤 Uploading to Supabase storage: ${storagePath}`);
+          
+          // Upload to Supabase storage
+          const { error: uploadError } = await supabaseClient.storage
+            .from('postparse')
+            .upload(storagePath, imageArrayBuffer, {
+              contentType,
+              upsert: true
+            });
+          
+          if (uploadError) {
+            console.error(`❌ Failed to upload to storage:`, uploadError);
+            continue;
+          }
+          
+          console.log(`✅ Image stored successfully: ${storagePath}`);
           
           const figureData = {
             manual_id: document.manual_id,
             figure_id: figureName,
-            image_url: imageUrl,
+            storage_path: storagePath,
             page_number: pageNumber,
             bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
             llama_asset_name: figureName,

@@ -21,12 +21,19 @@ serve(async (req) => {
       auth: { persistSession: false }
     });
 
-    const { figure_id, image_url, manual_id } = await req.json();
+    const { figure_id, storage_path, manual_id } = await req.json();
     console.log('🖼️ Generating caption for figure:', figure_id);
 
-    if (!figure_id || !image_url || !manual_id) {
-      throw new Error('Figure ID, image URL, and manual ID are required');
+    if (!figure_id || !storage_path || !manual_id) {
+      throw new Error('Figure ID, storage path, and manual ID are required');
     }
+    
+    // Get public URL from storage path
+    const { data: publicUrlData } = supabase.storage
+      .from('postparse')
+      .getPublicUrl(storage_path);
+    
+    const image_url = publicUrlData.publicUrl;
 
     // Get user context for RLS
     const authHeader = req.headers.get('authorization');

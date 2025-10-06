@@ -208,13 +208,13 @@ export type Database = {
           fec_tenant_id: string
           figure_id: string | null
           id: string
-          image_url: string
           job_id: string | null
           keywords: string[] | null
           llama_asset_name: string | null
           manual_id: string
           ocr_text: string | null
           page_number: number | null
+          storage_path: string | null
           vision_text: string | null
         }
         Insert: {
@@ -226,13 +226,13 @@ export type Database = {
           fec_tenant_id?: string
           figure_id?: string | null
           id?: string
-          image_url: string
           job_id?: string | null
           keywords?: string[] | null
           llama_asset_name?: string | null
           manual_id: string
           ocr_text?: string | null
           page_number?: number | null
+          storage_path?: string | null
           vision_text?: string | null
         }
         Update: {
@@ -244,13 +244,13 @@ export type Database = {
           fec_tenant_id?: string
           figure_id?: string | null
           id?: string
-          image_url?: string
           job_id?: string | null
           keywords?: string[] | null
           llama_asset_name?: string | null
           manual_id?: string
           ocr_text?: string | null
           page_number?: number | null
+          storage_path?: string | null
           vision_text?: string | null
         }
         Relationships: [

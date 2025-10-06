@@ -12,7 +12,7 @@ import { Image, Eye, Edit, Save, X, RefreshCw, Sparkles, Wand2 } from 'lucide-re
 interface Figure {
   id: string;
   figure_id: string;
-  image_url: string;
+  storage_path: string;
   caption_text: string | null;
   ocr_text: string | null;
   vision_text: string | null;
@@ -65,7 +65,7 @@ export function ManualImages({ manualId }: ManualImagesProps) {
       const { data, error } = await supabase.functions.invoke('generate-image-caption', {
         body: { 
           figure_id: figure.id,
-          image_url: figure.image_url,
+          storage_path: figure.storage_path,
           manual_id: manualId 
         }
       });
@@ -182,7 +182,7 @@ export function ManualImages({ manualId }: ManualImagesProps) {
                 <CardContent className="p-4">
                   <div className="relative mb-4">
                     <img 
-                      src={figure.image_url} 
+                      src={`${supabase.storage.from('postparse').getPublicUrl(figure.storage_path).data.publicUrl}`}
                       alt={figure.caption_text || 'Manual figure'}
                       className="w-full h-48 object-cover rounded-lg border border-green-200"
                     />
@@ -304,7 +304,7 @@ export function ManualImages({ manualId }: ManualImagesProps) {
                         </DialogHeader>
                         <div className="flex justify-center">
                           <img 
-                            src={figure.image_url} 
+                            src={`${supabase.storage.from('postparse').getPublicUrl(figure.storage_path).data.publicUrl}`}
                             alt={figure.caption_text || 'Manual figure'}
                             className="max-w-full max-h-[70vh] object-contain rounded-lg"
                           />

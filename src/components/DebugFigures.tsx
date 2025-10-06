@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 interface DebugResult {
   figure_id: string;
   database_id: string;
-  image_url: string;
+  storage_path: string;
   current_caption: string | null;
   current_ocr: string | null;
   image_accessible: boolean;
@@ -134,9 +134,9 @@ export function DebugFigures({ manual_id }: DebugFiguresProps) {
                       <strong>Current Caption:</strong> {debug.current_caption || "NULL"}
                     </div>
                     <div className="col-span-2">
-                      <strong>Image URL:</strong> 
+                      <strong>Storage Path:</strong> 
                       <div className="text-muted-foreground break-all">
-                        {debug.image_url}
+                        {debug.storage_path}
                       </div>
                     </div>
                   </div>

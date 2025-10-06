@@ -121,7 +121,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: data?.response ?? 'Sorry - I could not generate a response.',
+        content: data?.answer ?? 'Sorry - I could not generate a response.',
         timestamp: new Date()
       };
 

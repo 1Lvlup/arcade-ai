@@ -76,7 +76,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
 
       const assistantMessage: Message = { 
         role: 'assistant', 
-        content: data.response || 'Sorry, I could not generate a response.',
+        content: data.answer || 'Sorry, I could not generate a response.',
         grading: data.grading,
         metadata: data.metadata,
         context_seen: data.context_seen

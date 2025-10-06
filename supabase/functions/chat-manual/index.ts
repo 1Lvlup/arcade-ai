@@ -66,7 +66,7 @@ function tokenBoost(text: string): number {
 function applyMMR(results: any[], lambda = 0.7, targetCount = 10): any[] {
   if (results.length <= targetCount) return results;
 
-  const selected = [results[0]]; // Start with highest scoring result
+  const selected = [results[0]];
   const remaining = results.slice(1);
 
   while (selected.length < targetCount && remaining.length > 0) {
@@ -77,7 +77,6 @@ function applyMMR(results: any[], lambda = 0.7, targetCount = 10): any[] {
       const candidate = remaining[i];
       const relevanceScore = (candidate.score || 0) + tokenBoost(candidate.content);
 
-      // Calculate diversity (1 - max similarity to selected items)
       let maxSimilarity = 0;
       for (const sel of selected) {
         const similarity = textSimilarity(candidate.content, sel.content);
@@ -85,7 +84,6 @@ function applyMMR(results: any[], lambda = 0.7, targetCount = 10): any[] {
       }
       const diversityScore = 1 - maxSimilarity;
 
-      // MMR formula: λ * relevance + (1-λ) * diversity
       const mmrScore = lambda * relevanceScore + (1 - lambda) * diversityScore;
 
       if (mmrScore > bestScore) {
@@ -139,7 +137,6 @@ async function createEmbedding(text: string) {
 async function searchChunks(query: string, manual_id?: string, tenant_id?: string) {
   const startTime = Date.now();
   
-  // Extract keywords and enhance query
   const keywords = keywordLine(query);
   const hybridQuery = keywords ? `${query}\nKeywords: ${keywords}` : query;
   
@@ -151,9 +148,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   const queryEmbedding = await createEmbedding(hybridQuery);
   console.log('✅ Created query embedding');
 
-  // Strategy 1: Vector search - retrieve top 60 for reranking
-  // Tuning: top_k_raw = 60, will rerank to top 10
-  // Min score gate: 0.30 (tunable to 0.30-0.35 based on telemetry)
+  // Vector search - retrieve top 60 for reranking
   const { data: vectorResults, error: vectorError } = await supabase.rpc('match_chunks_improved', {
     query_embedding: queryEmbedding,
     top_k: 60,
@@ -168,13 +163,12 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 
   console.log(`📊 Vector search found ${vectorResults?.length || 0} results`);
 
-  // Use vector results as candidates for reranking
   const candidates = vectorResults || [];
   const strategy = candidates.length > 0 ? 'vector' : 'none';
 
   console.log(`✅ Using ${strategy} search strategy with ${candidates.length} candidates`);
 
-  // Apply Cohere Rerank if we have candidates
+  // Apply Cohere Rerank
   let finalResults = [];
   if (candidates.length > 0) {
     try {
@@ -184,7 +178,6 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
         finalResults = candidates.slice(0, 10);
       } else {
         console.log('🔄 Reranking with Cohere...');
-        // Truncate documents to ~1500 chars to stay within API limits
         const truncatedDocs = candidates.map(c => 
           c.content.length > 1500 ? c.content.slice(0, 1500) : c.content
         );
@@ -229,318 +222,165 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   return { results: finalResults, strategy };
 }
 
-// STAGE 1: Generate draft answer using ONLY manual context
-async function generateDraftAnswer(query: string, chunks: any[], tenant_id?: string) {
-  // Format context with [pX] prefixes for easy citation
-  const context = chunks.map((chunk: any, idx: number) => {
-    const pagePrefix = chunk.page_start 
-      ? `[p${chunk.page_start}${chunk.page_end && chunk.page_end !== chunk.page_start ? `-${chunk.page_end}` : ''}]`
-      : '[p?]';
-    const menuPath = chunk.menu_path ? ` ${chunk.menu_path}` : '';
-    
-    return `${pagePrefix}${menuPath}\n${chunk.content}`;
-  }).join('\n\n---\n\n');
+// ─────────────────────────────────────────────────────────────────────────
+// 🎯 SINGLE STAGE: GPT-5 Thinking (Expert Voice)
+// ─────────────────────────────────────────────────────────────────────────
+async function generateAnswer(
+  query: string,
+  chunks: any[]
+): Promise<string> {
+  // Build context from chunks
+  const contextBlocks = chunks.map((c, i) => {
+    const pageInfo = c.page_start 
+      ? (c.page_end && c.page_end !== c.page_start 
+          ? `[p${c.page_start}-${c.page_end}]` 
+          : `[p${c.page_start}]`)
+      : '[page unknown]';
+    return `[${i + 1}] ${pageInfo} ${c.content}`;
+  }).join('\n\n');
 
-  console.log('📝 [STAGE 1] Formatted context with', chunks.length, 'chunks');
-  console.log('📄 Context preview:', context.substring(0, 200) + '...');
+  const systemPrompt = `You are GPT-5 Thinking, the user's pinnacle-level sidekick. You read intent and sentiment, adapt to the user's expertise, and answer like a seasoned field engineer who also sees the business chessboard. You are clever, warm, and decisive—never robotic.
 
-  const messages = [
-    {
-      role: "system",
-      content: `You are a senior arcade technician. Using ONLY the provided manual content below,
-create a structured draft answer. Include citations (page numbers/figures) where you use information.
-If the answer is not in the manual, say so clearly in the draft.
-Do not guess or add information beyond the manual in this stage.
+OPERATING PRINCIPLES
+- Human first: infer experience level from phrasing and past turns; match depth and pace. Skip 101-level explanations unless explicitly requested.
+- Beyond the manual: use provided context/snippets as grounding, but give the high-leverage path (shortcuts, failure modes, common gotchas, decision points). Add practical heuristics and triage logic.
+- No verbatim citation dumps or page-callouts. Speak naturally. If precision matters (voltages, DIP positions, part numbers), state the value cleanly and confidently; if uncertain, say "likely" and offer a quick check.
+- Minimal questions: only ask when a single answer changes the plan (e.g., board revision or power rail reading). Otherwise proceed with the most probable branch and note alternatives.
+- Calm truthfulness: if something isn't in context, say so briefly and state the smallest piece of info you need to continue.
+- Style: start with the answer, then why, then the shortest path to resolution. Keep it conversational, focused, and useful.
 
-CRITICAL RULES:
-- NO generic fallbacks like "check cables" or "call a technician"
-- Safety warnings ONLY if they appear in the manual context
-- If manual doesn't cover it, leave fields empty or state "not in manual"
-- Do not invent safety boilerplate
+OUTPUT SHAPE (flexible, not rigid)
+- Answer (2–6 sentences): the decisive take.
+- Fast Path (numbered): 3–7 steps prioritizing highest success/lowest effort first.
+- If-then branches: when a reading or observation forks the path, include one-line "If X → do Y" rules.
+- Optional: "Why this works" (1–2 lines) to teach just enough without slowing the user down.
+- Keep totals tight; no fluff; no chain-of-thought.`;
 
-MANUAL CONTEXT:
-${context}`
-    },
-    {
-      role: "user",
-      content: `Question: ${query}
-Provide a draft answer in structured JSON with fields:
-{
-  "summary": string,
-  "steps": [ { "step": string, "expected": string } ],
-  "why": [string],
-  "safety": [string],
-  "sources": [ { "page": number, "note": string } ]
-}`
-    }
-  ];
+  const userPrompt = `User: ${query}
 
-  const requestBody = {
-    model: 'gpt-5-2025-08-07',
-    response_format: { type: "json_object" },
-    max_completion_tokens: 900,
-    messages
-  };
+Context (use as grounding, not a script):
+${contextBlocks}
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { 
-      Authorization: `Bearer ${openaiApiKey}`, 
-      "Content-Type": "application/json",
+Task: Give a decisive, human answer in the style described in the System Prompt. Assume the user knows the basics; don't restate obvious menu navigation unless it is the fix. Prefer the highest-signal checks first. If a single fact would change the plan, ask just that one question; otherwise proceed.
+
+Format: 
+- Answer
+- Fast Path (numbered)
+- If-then branches (optional)
+- Why this works (optional)`;
+
+  console.log('🤖 Generating answer with GPT-5 Thinking...');
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
       ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({
+      model: 'gpt-5-2025-08-07',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.4,
+      max_completion_tokens: 350,
+    }),
   });
-  
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('❌ [STAGE 1] Draft generation failed:', response.status, errorText);
-    throw new Error(`Draft generation failed: ${response.status}`);
+    const error = await response.text();
+    console.error('❌ OpenAI error:', error);
+    throw new Error(`OpenAI API error: ${response.status}`);
   }
-  
+
   const data = await response.json();
-  const draftJson = JSON.parse(data.choices[0].message.content);
+  const answerText = data.choices[0].message.content;
+
+  console.log('✅ Answer generated');
   
-  console.log('✅ [STAGE 1] Draft answer generated:', JSON.stringify(draftJson).substring(0, 200) + '...');
-  
-  return draftJson;
+  return answerText;
 }
 
-// STAGE 2: Enhance draft with expert knowledge
-async function generateExpertAnswer(query: string, draftJson: any, tenant_id?: string) {
-  console.log('🎓 [STAGE 2] Enhancing draft with expert knowledge...');
-
-  const messages = [
-    {
-      role: "system",
-      content: `You are a master arcade technician mentor. You have:
-- The user's question
-- A structured draft answer from the manual
-- Your own expert knowledge of similar machines and common failures
-
-Tasks:
-1) Review the draft for accuracy against the manual.
-2) If the manual contains enough info, polish it into a clear, conversational answer.
-3) If the manual lacks detail, add your own expert reasoning and best-practice troubleshooting steps beyond the manual (clearly labeled as "Expert Advice").
-4) Do not hallucinate specifics about this exact model if unsupported; give generalized best practices or non-destructive tests a pro would run.
-5) Always cite the manual where applicable, and clearly separate "manual" vs "expert advice."
-6) Make the answer concise, supportive, and actionable.
-
-FORBIDDEN FALLBACKS:
-- NO generic "check cables / call a technician" templates
-- NO safety boilerplate disconnected from manual or actual diagnostic context
-- The ONLY allowed fallback is explicit expert advice for non-destructive diagnostic tests when manual is silent
-
-Return STRICT JSON:
-{
-  "summary": string,
-  "steps": [ { "step": string, "expected": string, "source": "manual"|"expert" } ],
-  "expert_advice": [string],
-  "safety": [string],
-  "sources": [ { "page": number, "note": string } ]
-}`
-    },
-    {
-      role: "user",
-      content: `Question: ${query}
-Manual-based draft answer:
-${JSON.stringify(draftJson, null, 2)}`
-    }
-  ];
-
-  const requestBody = {
-    model: 'gpt-5-2025-08-07',
-    response_format: { type: "json_object" },
-    max_completion_tokens: 1200,
-    messages
-  };
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { 
-      Authorization: `Bearer ${openaiApiKey}`, 
-      "Content-Type": "application/json",
-      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
-    },
-    body: JSON.stringify(requestBody),
-  });
+// ─────────────────────────────────────────────────────────────────────────
+// 🚀 SIMPLIFIED RAG PIPELINE (Retrieval + Single GPT-5 Call)
+// ─────────────────────────────────────────────────────────────────────────
+async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: string) {
+  console.log('\n🚀 [RAG V3] Starting simplified pipeline...\n');
   
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('❌ [STAGE 2] Expert enhancement failed:', response.status, errorText);
-    console.log('⚠️ Falling back to draft answer');
-    return draftJson; // Fallback to draft if enhancement fails
-  }
-  
-  const data = await response.json();
-  const expertJson = JSON.parse(data.choices[0].message.content);
-  
-  console.log('✅ [STAGE 2] Expert answer generated:', JSON.stringify(expertJson).substring(0, 200) + '...');
-  
-  return expertJson;
-}
-
-// STAGE 3: Lightweight reviewer for correctness and polish
-async function reviewAnswer(query: string, expertJson: any, tenant_id?: string) {
-  console.log('🔍 [STAGE 3] Reviewing answer for correctness...');
-
-  const messages = [
-    {
-      role: "system",
-      content: `You are a strict reviewer. Ensure:
-- All manual facts are accurate and cited.
-- Expert advice is clearly labeled as "expert".
-- Steps are atomic and actionable (one action per step).
-- No hallucinations about page numbers or labels.
-Return corrected JSON only.`
-    },
-    {
-      role: "user",
-      content: `Question: ${query}
-
-Answer to review:
-${JSON.stringify(expertJson, null, 2)}
-
-Review and correct if needed, maintaining the same JSON structure.`
-    }
-  ];
-
-  const systemPrompt = await getSystemPrompt(tenant_id || '00000000-0000-0000-0000-000000000001');
-  
-  const requestBody = {
-    model: 'gpt-5-2025-08-07',
-    response_format: { type: "json_object" },
-    max_completion_tokens: 1200,
-    messages
-  };
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { 
-      Authorization: `Bearer ${openaiApiKey}`, 
-      "Content-Type": "application/json",
-      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
-    },
-    body: JSON.stringify(requestBody),
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('❌ [STAGE 3] Review failed:', response.status, errorText);
-    console.log('⚠️ Falling back to expert answer without review');
-    return expertJson; // Fallback to expert answer if review fails
-  }
-  
-  const data = await response.json();
-  const reviewedJson = JSON.parse(data.choices[0].message.content);
-  
-  console.log('✅ [STAGE 3] Answer reviewed and polished');
-  
-  return reviewedJson;
-}
-
-// ============================================================
-// UNIFIED RAG PIPELINE V2
-// ============================================================
-// Single entry point for the 3-stage RAG pipeline:
-// 1. Retrieve chunks (with Cohere reranking)
-// 2. Generate draft answer (manual-only)
-// 3. Enhance with expert knowledge
-// 4. Review for correctness
-async function runRagPipelineV2(query: string, manual_id?: string, tenant_id?: string) {
-  console.log('\n🚀 [RAG V2] Starting unified pipeline...\n');
-  
-  // Stage 0: Retrieve and rerank chunks
+  // ──────────────────────────────────────────────────────────────────────
+  // STAGE 0: Retrieval + Reranking (Cohere)
+  // ──────────────────────────────────────────────────────────────────────
+  console.log('🔎 STAGE 0: Hybrid search + reranking...');
   const { results: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
-  
-  console.log(`📚 [RAG V2] Retrieved ${chunks.length} chunks using ${strategy} strategy`);
-  
-  if (chunks.length === 0) {
+  console.log(`📊 Retrieved ${chunks.length} chunks after reranking`);
+
+  if (!chunks || chunks.length === 0) {
+    console.log('⚠️ No chunks found');
     return {
-      response: "I couldn't find any relevant information in the manual for your question.",
+      answer: "I couldn't find relevant information in the manual for that question. Could you rephrase or provide more context?",
       sources: [],
       strategy: 'none',
-      pipeline_version: 'v2'
+      pipeline_version: 'v3'
     };
   }
 
-  // Answerability gate: Require at least ONE good score (rerank OR base)
+  // Apply answerability gate
   const maxRerankScore = Math.max(...chunks.map(c => c.rerank_score ?? 0));
   const maxBaseScore = Math.max(...chunks.map(c => c.score ?? 0));
-  const hasGoodRerank = maxRerankScore >= 0.50; // Cohere score is decent
-  const hasGoodBase = maxBaseScore >= 0.40; // Vector score is decent
-  const weak = (chunks.length < 3) || (!hasGoodRerank && !hasGoodBase); // Weak only if BOTH scores are bad
-  
-  console.log(`📊 [RAG V2] Answerability check:`, {
+  const hasGoodRerank = maxRerankScore >= 0.45;
+  const hasGoodBase = maxBaseScore >= 0.35;
+  const weak = (chunks.length < 3) || (!hasGoodRerank && !hasGoodBase);
+
+  console.log(`📊 Answerability check:`, {
     chunk_count: chunks.length,
-    max_rerank_score: maxRerankScore.toFixed(3),
-    max_base_score: maxBaseScore.toFixed(3),
-    has_good_rerank: hasGoodRerank,
-    has_good_base: hasGoodBase,
+    max_rerank: maxRerankScore.toFixed(3),
+    max_base: maxBaseScore.toFixed(3),
     is_weak: weak
   });
-  
+
   if (weak) {
-    console.log('⚠️ [RAG V2] Low answerability - returning early');
-    const reason = chunks.length < 3 
-      ? `only ${chunks.length} chunks found`
-      : !hasGoodRerank 
-        ? `low rerank scores (max: ${maxRerankScore.toFixed(2)})`
-        : `low base scores (max: ${maxBaseScore.toFixed(2)})`;
-    
+    console.log('⚠️ Answerability gate failed');
     return {
-      response: {
-        summary: `I couldn't find relevant information in the manual to answer this question. The search ${reason}, which suggests this topic may not be covered in the manual.`,
-        steps: [],
-        why: [],
-        expert_advice: [`This specific issue may not be documented in this manual. Consider checking if you're looking at the correct manual for your equipment.`],
-        safety: [],
-        sources: []
-      },
-      sources: chunks.map((chunk: any) => ({
-        manual_id: chunk.manual_id,
-        content: chunk.content.substring(0, 200) + "...",
-        page_start: chunk.page_start,
-        page_end: chunk.page_end,
-        score: chunk.score,
-        rerank_score: chunk.rerank_score
+      answer: "I don't have enough relevant information in the manual to answer that confidently. Can you rephrase or narrow the question?",
+      sources: chunks.slice(0, 3).map((c: any) => ({
+        page_start: c.page_start,
+        page_end: c.page_end,
+        content: c.content.substring(0, 200),
+        score: c.score
       })),
       strategy,
-      pipeline_version: 'v2'
+      pipeline_version: 'v3',
+      gate_reason: 'insufficient_quality'
     };
   }
 
-  // Stage 1: Draft answer (manual only)
-  console.log('📝 [RAG V2] Starting Stage 1: Draft Answer');
-  const draftAnswer = await generateDraftAnswer(query, chunks, tenant_id);
-  console.log('✅ [RAG V2] Stage 1 complete, draft length:', JSON.stringify(draftAnswer).length);
-  
-  // Stage 2: Expert enhancement
-  console.log('🔧 [RAG V2] Starting Stage 2: Expert Enhancement');
-  const expertAnswer = await generateExpertAnswer(query, draftAnswer, tenant_id);
-  console.log('✅ [RAG V2] Stage 2 complete, expert answer length:', JSON.stringify(expertAnswer).length);
-  
-  // Stage 3: Review
-  console.log('🔍 [RAG V2] Starting Stage 3: Review');
-  const finalAnswer = await reviewAnswer(query, expertAnswer, tenant_id);
-  console.log('✅ [RAG V2] Stage 3 complete, final answer length:', JSON.stringify(finalAnswer).length);
+  // Take top chunks for context
+  const topChunks = chunks.slice(0, 10);
 
-  console.log('✅ [RAG V2] Pipeline complete\n');
+  // ──────────────────────────────────────────────────────────────────────
+  // STAGE 1: Single GPT-5 Thinking Call
+  // ──────────────────────────────────────────────────────────────────────
+  console.log('🎯 STAGE 1: Generating answer with GPT-5 Thinking...');
+  const answer = await generateAnswer(query, topChunks);
+
+  console.log('✅ [RAG V3] Pipeline complete\n');
 
   return {
-    response: finalAnswer,
-    sources: chunks.map((chunk: any) => ({
-      manual_id: chunk.manual_id,
-      content: chunk.content.substring(0, 200) + "...",
-      page_start: chunk.page_start,
-      page_end: chunk.page_end,
-      menu_path: chunk.menu_path,
-      score: chunk.score,
-      rerank_score: chunk.rerank_score
+    answer,
+    sources: topChunks.map((c: any) => ({
+      manual_id: c.manual_id,
+      content: c.content.substring(0, 200) + "...",
+      page_start: c.page_start,
+      page_end: c.page_end,
+      menu_path: c.menu_path,
+      score: c.score,
+      rerank_score: c.rerank_score
     })),
     strategy,
-    chunks,
-    pipeline_version: 'v2'
+    chunks: topChunks,
+    pipeline_version: 'v3'
   };
 }
 
@@ -562,7 +402,7 @@ serve(async (req) => {
     console.log("Manual ID:", manual_id || "All manuals");
     console.log("=================================\n");
 
-    // Extract tenant from auth header if available
+    // Extract tenant from auth header
     const authHeader = req.headers.get('authorization');
     let tenant_id: string | undefined;
     
@@ -585,16 +425,16 @@ serve(async (req) => {
       }
     }
 
-    // Run V2 Pipeline
-    console.log('🚀 Using RAG Pipeline V2\n');
+    // Run V3 Pipeline (simplified single-stage)
+    console.log('🚀 Using RAG Pipeline V3 (Single-Stage)\n');
     
-    const result = await runRagPipelineV2(query, manual_id, tenant_id);
+    const result = await runRagPipelineV3(query, manual_id, tenant_id);
     
-    const { response: finalAnswer, sources, strategy, chunks } = result;
+    const { answer, sources, strategy, chunks } = result;
 
     // Build metadata
     const metadata = {
-      pipeline_version: 'v2',
+      pipeline_version: 'v3',
       manual_id: manual_id || "all_manuals",
       embedding_model: "text-embedding-3-small",
       retrieval_strategy: strategy,
@@ -611,7 +451,7 @@ serve(async (req) => {
     }).join('\n\n---\n\n') || '';
 
     return new Response(JSON.stringify({ 
-      response: finalAnswer,
+      answer,
       sources,
       strategy,
       metadata,

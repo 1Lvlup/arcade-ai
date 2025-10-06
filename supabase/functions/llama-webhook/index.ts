@@ -526,10 +526,12 @@ serve(async (req) => {
             const imagePublicUrl = publicUrlData.publicUrl;
             
             // Call GPT-5 Vision for caption generation
+            const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
             const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${openaiApiKey}`,
+                'OpenAI-Project': openaiProjectId,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({

@@ -205,7 +205,7 @@ Output:
         manual_id,
         status: 'processing',
         stage: 'ai_agent_parsing',
-        current_task: 'LLM parsing with advanced language model',
+        current_task: 'GPT-5 agent parsing with vision analysis',
         fec_tenant_id: profile.fec_tenant_id,
         progress_percent: 0
       })

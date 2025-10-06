@@ -335,22 +335,36 @@ serve(async (req) => {
           console.log('📋 Job result keys:', Object.keys(jobResult));
           console.log('📋 Full job result structure:', JSON.stringify(jobResult, null, 2).substring(0, 2000));
           
-          // Extract image names from pages
+          // Extract image objects from pages
           if (jobResult.pages && Array.isArray(jobResult.pages)) {
             console.log(`📄 Found ${jobResult.pages.length} pages`);
-            const imageNames: string[] = [];
+            const imageObjects: any[] = [];
             for (const page of jobResult.pages) {
               console.log('📄 Page keys:', Object.keys(page));
               console.log('📄 Page images:', page.images);
               console.log('📄 Page charts:', page.charts);
+              
+              // Images are objects with {name, height, width, x, y, etc.}
               if (page.images && Array.isArray(page.images)) {
-                imageNames.push(...page.images);
+                for (const img of page.images) {
+                  imageObjects.push({
+                    name: img.name,
+                    page: page.page,
+                    type: 'image'
+                  });
+                }
               }
               if (page.charts && Array.isArray(page.charts)) {
-                imageNames.push(...page.charts);
+                for (const chart of page.charts) {
+                  imageObjects.push({
+                    name: chart.name,
+                    page: page.page,
+                    type: 'chart'
+                  });
+                }
               }
             }
-            allFigures = imageNames;
+            allFigures = imageObjects;
             console.log(`📸 Found ${allFigures.length} images from API`);
           } else {
             console.log('⚠️ No pages array found in job result');
@@ -381,33 +395,31 @@ serve(async (req) => {
         try {
           console.log(`🔄 Processing figure:`, JSON.stringify(figure, null, 2));
           
-          // LlamaCloud returns different formats - handle all cases
-          let llamaCloudUrl: string;
           let figureName: string;
           let pageNumber: number | null = null;
+          let llamaCloudUrl: string;
           
-          if (typeof figure === 'string') {
-            // If figure is just a string filename, construct CDN URL
-            figureName = figure;
+          // Figure is now an object with {name, page, type}
+          if (typeof figure === 'object' && figure.name) {
+            figureName = figure.name;
+            pageNumber = figure.page || null;
+            
             // Skip if filename suggests it's a background or decorative element
+            if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
+              console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
+              continue;
+            }
+            
+            // Construct proper LlamaCloud image URL using the API key
+            llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
+          } else if (typeof figure === 'string') {
+            // Fallback for string format
+            figureName = figure;
             if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
               console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
               continue;
             }
             llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
-          } else if (typeof figure === 'object') {
-            // If it's an object, extract properties
-            figureName = figure.name || figure.id || figure.filename || `figure_${figuresProcessed}`;
-            
-            // Skip if filename suggests it's a background or decorative element
-            if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
-              console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
-              continue;
-            }
-            
-            llamaCloudUrl = figure.url || figure.image_url || figure.path || 
-                      `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
-            pageNumber = figure.page || figure.page_number || null;
           } else {
             console.error("❌ Unknown figure format:", figure);
             continue;
@@ -415,10 +427,16 @@ serve(async (req) => {
           
           console.log(`📥 Downloading image from LlamaCloud: ${llamaCloudUrl}`);
           
-          // Download image from LlamaCloud
-          const imageResponse = await fetch(llamaCloudUrl);
+          // Download image from LlamaCloud with auth
+          const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
+          const imageResponse = await fetch(llamaCloudUrl, {
+            headers: {
+              'Authorization': `Bearer ${llamaApiKey}`
+            }
+          });
+          
           if (!imageResponse.ok) {
-            console.error(`❌ Failed to download image from LlamaCloud: ${imageResponse.status}`);
+            console.error(`❌ Failed to download image from LlamaCloud: ${imageResponse.status}`, await imageResponse.text());
             continue;
           }
           

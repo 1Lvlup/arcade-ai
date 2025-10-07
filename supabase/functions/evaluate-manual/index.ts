@@ -124,10 +124,14 @@ serve(async (req) => {
 
     // Process each question
     for (const q of questions as GoldenQuestion[]) {
-      console.log(`\n🤔 Question: ${q.question}`);
+      console.log(`\n${'='.repeat(80)}`);
+      console.log(`🔍 Question ${results.length + 1}/${questions.length}`);
+      console.log(`📝 "${q.question}"`);
+      console.log(`📚 Category: ${q.category} | Importance: ${q.importance}`);
+      console.log(`${'='.repeat(80)}\n`);
 
       // Step 1: Search for relevant passages using existing search-manuals-robust function
-      console.log(`🔍 Searching for: "${q.question}"`);
+      console.log(`🔍 Searching for relevant passages...`);
       const searchResponse = await fetch(`${supabaseUrl}/functions/v1/search-manuals-robust`, {
         method: 'POST',
         headers: {
@@ -151,7 +155,19 @@ serve(async (req) => {
       const searchData = await searchResponse.json();
       const passages = searchData.results || [];
 
-      console.log(`📚 Found ${passages.length} relevant passages`);
+      console.log(`\n📚 Retrieved ${passages.length} passages from search`);
+      
+      // Log passage quality
+      const withPages = passages.filter(p => p.page_start && p.page_end).length;
+      const avgScore = passages.reduce((sum, p) => sum + (p.score || 0), 0) / passages.length;
+      
+      console.log(`   ✓ Passages with page numbers: ${withPages}/${passages.length}`);
+      console.log(`   ✓ Average relevance score: ${avgScore.toFixed(3)}`);
+      console.log(`   ✓ Score range: ${Math.min(...passages.map(p => p.score || 0)).toFixed(3)} - ${Math.max(...passages.map(p => p.score || 0)).toFixed(3)}`);
+      
+      if (withPages < passages.length) {
+        console.log(`   ⚠️  WARNING: ${passages.length - withPages} passages missing page numbers!`);
+      }
 
       // Step 2: Generate answer using RAG
       const passagesText = passages
@@ -202,7 +218,11 @@ ${passagesText.substring(0, 8000)}`
 
       const answerData = await answerResponse.json();
       const answer = JSON.parse(answerData.choices[0].message.content);
-      console.log(`✍️ Generated answer (${answer.coverage} coverage)`);
+      console.log(`\n✍️ Answer generated successfully`);
+      console.log(`   Coverage: ${answer.coverage}`);
+      console.log(`   Citations: ${answer.citations?.length || 0}`);
+      console.log(`   Evidence pages: ${answer.evidence_pages?.length || 0} pages`);
+      console.log(`   Answer length: ${answer.answer?.length || 0} chars`);
 
       // Step 3: Grade the answer with strict technical rubric
       const gradePrompt = {
@@ -270,14 +290,25 @@ ${JSON.stringify(answer)}`
       });
 
       if (!gradeResponse.ok) {
-        console.error('Grading failed');
+        const gradeError = await gradeResponse.text();
+        console.log(`\n❌ Grading failed for question: "${q.question}"`);
+        console.error(`Grading error details:`, {
+          status: gradeResponse.status,
+          statusText: gradeResponse.statusText,
+          error: gradeError
+        });
         continue;
       }
 
       const gradeData = await gradeResponse.json();
       const grade = JSON.parse(gradeData.choices[0].message.content);
       
-      console.log(`📊 Score: ${grade.score}`);
+      console.log(`\n📊 Grade: ${grade.overall}`);
+      console.log(`   Breakdown: citation=${grade.score.citation_fidelity}, specificity=${grade.score.specificity}`);
+      console.log(`   Rationale: ${grade.rationale?.substring(0, 100)}...`);
+      if (grade.missing_keywords?.length > 0) {
+        console.log(`   ⚠️  Missing keywords: ${grade.missing_keywords.join(', ')}`);
+      }
 
       // Store evaluation result with V2 structured data
       const { error: insertError } = await supabase

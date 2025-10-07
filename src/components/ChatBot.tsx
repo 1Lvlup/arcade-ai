@@ -120,16 +120,23 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       });
 
       console.log('📥 Response from chat-manual:', { data, error });
+      console.log('📥 Full data object:', JSON.stringify(data, null, 2));
+      console.log('📥 Answer field:', data?.answer);
 
       if (error) {
         console.error('❌ chat-manual error:', error);
         throw new Error(error.message || JSON.stringify(error));
       }
 
+      if (!data || !data.answer) {
+        console.error('❌ No answer in response. Full data:', data);
+        throw new Error('No answer received from AI');
+      }
+
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: data?.answer ?? 'Sorry - I could not generate a response.',
+        content: data.answer,
         timestamp: new Date()
       };
 

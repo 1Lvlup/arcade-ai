@@ -7,11 +7,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
 const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
 const CHAT_MODEL = Deno.env.get("CHAT_MODEL") ?? "gpt-5-2025-08-07";
+
+// Validate required environment variables
+if (!supabaseUrl) throw new Error("Missing SUPABASE_URL");
+if (!supabaseServiceKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+if (!openaiApiKey) throw new Error("Missing OPENAI_API_KEY");
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -127,7 +132,9 @@ async function createEmbedding(text: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI embedding failed: ${response.status}`);
+    const errorText = await response.text();
+    console.error("❌ OpenAI embedding error:", response.status, errorText);
+    throw new Error(`OpenAI embedding failed: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -388,6 +395,25 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Health check endpoint
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        status: "ok",
+        function: "chat-manual",
+        version: "v3",
+        environment: {
+          has_openai_key: !!openaiApiKey,
+          has_cohere_key: !!Deno.env.get("COHERE_API_KEY"),
+          has_supabase_url: !!supabaseUrl,
+        }
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     const { query, manual_id } = await req.json();
 
@@ -468,11 +494,15 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("❌ CHAT ERROR:", error);
+    console.error("Error type:", typeof error);
+    console.error("Error name:", error instanceof Error ? error.name : "unknown");
+    console.error("Error message:", error instanceof Error ? error.message : JSON.stringify(error));
     console.error("Stack:", error instanceof Error ? error.stack : "No stack trace");
 
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : String(error),
+        details: error instanceof Error ? error.stack : undefined,
         sources: [],
         strategy: "error",
       }),

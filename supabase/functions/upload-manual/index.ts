@@ -143,18 +143,14 @@ serve(async (req) => {
     formData.append('system_prompt_append', systemPromptAppend)
     formData.append('user_prompt', '')
     
-    // Webhook configuration with headers and events (must be an array)
-    const webhookConfig = JSON.stringify([{
-      webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
-      webhook_headers: {
-        'x-signature': webhookSecret,
-        'content-type': 'application/json'
-      },
-      webhook_events: ['parse.success', 'parse.error']
-    }]);
-    formData.append('webhook_configurations', webhookConfig);
+    // Webhook configuration (v1 API format - separate fields, not array)
+    formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`);
+    formData.append('webhook_events', JSON.stringify(['parse.success', 'parse.error']));
+    formData.append('webhook_headers', JSON.stringify({
+      'x-signature': webhookSecret
+    }));
 
-    const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/parsing/upload', {
+    const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/v1/parsing/upload', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${llamacloudApiKey}`,

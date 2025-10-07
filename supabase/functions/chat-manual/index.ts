@@ -317,7 +317,7 @@ Provide a clear answer using the manual content above.`;
   console.log("📦 OpenAI response usage:", data.usage);
   
   const answerText = isGpt5(model)
-    ? (data.output_text ?? data.choices?.[0]?.message?.content ?? "")
+    ? (data.output?.[1]?.content?.[0]?.text ?? data.output_text ?? data.choices?.[0]?.message?.content ?? "")
     : (data.choices?.[0]?.message?.content ?? "");
   
   if (!answerText || answerText.trim() === "") {

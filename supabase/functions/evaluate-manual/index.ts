@@ -119,8 +119,8 @@ serve(async (req) => {
 
     const results = [];
 
-    // Process each question using GPT-5
-    console.log(`🤖 Using model: gpt-5`);
+    // Process each question using GPT-4.1 for answers, Claude Opus 4 for grading
+    console.log(`🤖 Using models: gpt-4.1 (answers) + claude-opus-4 (grading)`);
 
     // Process each question
     for (const q of questions as GoldenQuestion[]) {
@@ -174,8 +174,9 @@ ${passagesText.substring(0, 8000)}`
       };
 
       const answerRequestBody = {
-        model: 'gpt-5',
-        max_completion_tokens: 800,
+        model: 'gpt-4.1',
+        max_tokens: 1200,
+        temperature: 0.2,
         messages: [
           { role: 'system', content: answerPrompt.system },
           { role: 'user', content: answerPrompt.user }
@@ -248,8 +249,9 @@ ${JSON.stringify(answer)}`
       };
 
       const gradeRequestBody = {
-        model: 'gpt-5',
-        max_completion_tokens: 600,
+        model: 'claude-opus-4',
+        max_tokens: 800,
+        temperature: 0,
         messages: [
           { role: 'system', content: gradePrompt.system },
           { role: 'user', content: gradePrompt.user }
@@ -300,8 +302,8 @@ ${JSON.stringify(answer)}`
               preview: p.content.substring(0, 200)
             }))
           },
-          answer_model: 'gpt-5',
-          grader_model: 'gpt-5'
+          answer_model: 'gpt-4.1',
+          grader_model: 'claude-opus-4'
         });
 
       if (insertError) {

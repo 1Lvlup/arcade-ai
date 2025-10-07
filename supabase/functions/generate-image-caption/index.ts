@@ -122,7 +122,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5',
+        model: 'gpt-4.1',
         messages: [
           {
             role: 'system',
@@ -158,7 +158,8 @@ Keep the caption brief (2-3 sentences) - just describe what's shown and its main
             ]
           }
         ],
-        max_completion_tokens: 8000  // GPT-5 uses reasoning tokens + output tokens
+        max_tokens: 300,
+        temperature: 0.3
       }),
     });
 

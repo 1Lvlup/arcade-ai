@@ -10,6 +10,7 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
+const webhookSecret = Deno.env.get("LLAMACLOUD_WEBHOOK_SECRET") || "your-secret-verification-token";
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -199,6 +200,16 @@ serve(async (req) => {
   }
 
   try {
+    // Verify webhook signature
+    const signature = req.headers.get('x-signature');
+    if (signature !== webhookSecret) {
+      console.error("❌ Invalid webhook signature");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     console.log("🔄 Webhook called - Starting processing");
     
     const body = await req.json();

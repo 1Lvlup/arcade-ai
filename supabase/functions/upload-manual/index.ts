@@ -10,6 +10,7 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const llamacloudApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!
+const webhookSecret = Deno.env.get('LLAMACLOUD_WEBHOOK_SECRET') || 'your-secret-verification-token'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -146,7 +147,7 @@ serve(async (req) => {
     const webhookConfig = JSON.stringify([{
       webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
       webhook_headers: {
-        'x-signature': 'your-secret-verification-token',
+        'x-signature': webhookSecret,
         'content-type': 'application/json'
       },
       webhook_events: ['parse.success', 'parse.error']

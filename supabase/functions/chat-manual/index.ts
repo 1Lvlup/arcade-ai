@@ -336,9 +336,16 @@ Format:
   }
 
   const data = await response.json();
-  const answerText = data.choices[0].message.content;
+  console.log("📦 OpenAI full response:", JSON.stringify(data, null, 2));
+  
+  const answerText = data.choices?.[0]?.message?.content;
+  
+  if (!answerText || answerText.trim() === "") {
+    console.error("❌ Empty answer from GPT-5. Full response:", JSON.stringify(data, null, 2));
+    throw new Error("GPT-5 returned an empty response");
+  }
 
-  console.log("✅ Answer generated");
+  console.log("✅ Answer generated:", answerText.substring(0, 100) + "...");
 
   return answerText;
 }

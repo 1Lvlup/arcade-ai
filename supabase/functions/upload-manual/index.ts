@@ -97,13 +97,14 @@ serve(async (req) => {
     formData.append('file_name', displayName) // Use the user's entered title
     formData.append('result_type', 'markdown')
     
-    // Use simpler working mode first
-    formData.append('parse_mode', 'parse_page_with_lvm')
+    // Parse Document with LLM mode (cleaner output, fewer junk images)
+    formData.append('parse_mode', 'parse_document_with_llm')
     
-    // Pages & Markers
-    formData.append('target_pages', '2-200')
-    formData.append('page_prefix', '### Page {n}')
-    formData.append('page_separator', '\n\n---\n\n')
+    // Pages & Markers (HTML comments for webhook regex)
+    formData.append('target_pages', '2-')
+    formData.append('page_prefix', '<!-- Page {page} Start -->')
+    formData.append('page_suffix', '<!-- Page {page} End -->')
+    formData.append('page_separator', '')
     
     // OCR / Layout
     formData.append('language', 'en')

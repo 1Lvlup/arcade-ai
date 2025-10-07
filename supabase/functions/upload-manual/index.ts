@@ -142,9 +142,16 @@ serve(async (req) => {
     const systemPromptAppend = `You are parsing a technical arcade game manual for downstream retrieval. Output clean per-page markdown only. Skip decorative noise. Remove repeated headers/footers and watermarks. Keep headings/labels/units/codes/part numbers EXACTLY. Merge hyphenated line breaks. Keep numbered steps intact. Convert tables to readable markdown. Do not inline images. Deduplicate exact repeats. Do not invent content.`
     formData.append('system_prompt_append', systemPromptAppend)
     formData.append('user_prompt', '')
-    
-    // Simple webhook URL (v1 API standard)
-    formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)
+    // Webhook configuration with headers and events
+    const webhookConfig = JSON.stringify({
+      webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
+      webhook_headers: {
+        'x-signature': webhookSecret,
+        'content-type': 'application/json'
+      },
+      webhook_events: ['parse.success', 'parse.error']
+    });
+    formData.append('webhook_configurations', webhookConfig);
 
     const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/parsing/upload', {
       method: 'POST',

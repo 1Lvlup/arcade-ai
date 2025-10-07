@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -186,7 +187,10 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
         finalResults = candidates.slice(0, 10);
       } else {
         console.log("🔄 Reranking with Cohere...");
-        const truncatedDocs = candidates.map((c) => (c.content.length > 1500 ? c.content.slice(0, 1500) : c.content));
+        const truncatedDocs = candidates.map((c) => {
+          const s = typeof c.content === "string" ? c.content : JSON.stringify(c.content ?? "");
+          return s.length > 1500 ? s.slice(0, 1500) : s;
+        });
 
         const cohereRes = await fetch("https://api.cohere.ai/v1/rerank", {
           method: "POST",
@@ -229,9 +233,13 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 🎯 SINGLE STAGE: GPT-5 Thinking (Expert Voice)
+// 🎯 SINGLE STAGE: Model-Aware Answer Generation
 // ─────────────────────────────────────────────────────────────────────────
-async function generateAnswer(query: string, chunks: any[]): Promise<string> {
+function isGpt5(model: string): boolean {
+  return model.includes("gpt-5");
+}
+
+async function generateAnswer(query: string, chunks: any[], model: string): Promise<string> {
   // Build context from chunks
   const contextBlocks = chunks
     .map((c, i) => {
@@ -267,39 +275,56 @@ ${contextBlocks}
 
 Provide a clear answer using the manual content above.`;
 
-  console.log("🤖 Generating answer with GPT-5 Thinking...");
+  console.log(`🤖 Generating answer with model: ${model}`);
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const url = isGpt5(model)
+    ? "https://api.openai.com/v1/responses"
+    : "https://api.openai.com/v1/chat/completions";
+
+  const body: any = isGpt5(model)
+    ? {
+        model,
+        input: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_completion_tokens: 2000,
+      }
+    : {
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 2000,
+      };
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${openaiApiKey}`,
       "Content-Type": "application/json",
       ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
     },
-    body: JSON.stringify({
-      model: "gpt-5-2025-08-07",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      max_completion_tokens: 2000,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    console.error("❌ OpenAI error:", error);
-    throw new Error(`OpenAI API error: ${response.status}`);
+    console.error("❌ OpenAI error:", response.status, error);
+    throw new Error(`OpenAI API error: ${response.status} - ${error}`);
   }
 
   const data = await response.json();
-  console.log("📦 OpenAI full response:", JSON.stringify(data, null, 2));
+  console.log("📦 OpenAI response usage:", data.usage);
   
-  const answerText = data.choices?.[0]?.message?.content;
+  const answerText = isGpt5(model)
+    ? (data.output_text ?? data.choices?.[0]?.message?.content ?? "")
+    : (data.choices?.[0]?.message?.content ?? "");
   
   if (!answerText || answerText.trim() === "") {
-    console.error("❌ Empty answer from GPT-5. Full response:", JSON.stringify(data, null, 2));
-    throw new Error("GPT-5 returned an empty response");
+    console.error("❌ Empty answer from model. Response:", JSON.stringify(data, null, 2));
+    throw new Error("Model returned an empty response");
   }
 
   console.log("✅ Answer generated:", answerText.substring(0, 100) + "...");
@@ -308,9 +333,9 @@ Provide a clear answer using the manual content above.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 🚀 SIMPLIFIED RAG PIPELINE (Retrieval + Single GPT-5 Call)
+// 🚀 SIMPLIFIED RAG PIPELINE (Retrieval + Model Call)
 // ─────────────────────────────────────────────────────────────────────────
-async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: string) {
+async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: string, model?: string) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
   // ──────────────────────────────────────────────────────────────────────
@@ -366,10 +391,10 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
   const topChunks = chunks.slice(0, 10);
 
   // ──────────────────────────────────────────────────────────────────────
-  // STAGE 1: Single GPT-5 Thinking Call
+  // STAGE 1: Model Call
   // ──────────────────────────────────────────────────────────────────────
-  console.log("🎯 STAGE 1: Generating answer with GPT-5 Thinking...");
-  const answer = await generateAnswer(query, topChunks);
+  console.log(`🎯 STAGE 1: Generating answer with model: ${model || CHAT_MODEL}`);
+  const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL);
 
   console.log("✅ [RAG V3] Pipeline complete\n");
 
@@ -452,10 +477,22 @@ serve(async (req) => {
       }
     }
 
-    // Run V3 Pipeline (simplified single-stage)
-    console.log("🚀 Using RAG Pipeline V3 (Single-Stage)\n");
+    // Get model configuration for tenant
+    let model = CHAT_MODEL;
+    if (tenant_id) {
+      try {
+        const cfg = await getModelConfig(tenant_id);
+        model = cfg.model || model;
+        console.log(`📝 Using configured model: ${model}`);
+      } catch (e) {
+        console.warn("⚠️ Failed to get model config, using default:", e);
+      }
+    }
 
-    const result = await runRagPipelineV3(query, manual_id, tenant_id);
+    // Run V3 Pipeline
+    console.log("🚀 Using RAG Pipeline V3\n");
+
+    const result = await runRagPipelineV3(query, manual_id, tenant_id, model);
 
     const { answer, sources, strategy, chunks } = result;
 

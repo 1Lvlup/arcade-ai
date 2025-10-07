@@ -333,7 +333,12 @@
   .glitch-text {
     position: relative;
     animation: glitch 3s infinite ease-in-out;
-    opacity: 0.4;
+    color: hsl(0 0% 100%);
+    text-shadow: 
+      0 0 20px hsl(205 100% 65% / 0.8),
+      0 0 40px hsl(205 100% 65% / 0.6),
+      0 0 60px hsl(205 100% 65% / 0.4),
+      0 0 80px hsl(205 100% 65% / 0.2);
   }
   
   .glitch-text::before,
@@ -349,15 +354,19 @@
   
   .glitch-text::before {
     animation: glitch-clip 4s infinite;
-    color: hsl(var(--primary));
+    color: hsl(0 0% 100%);
     transform: translate(-2px, 0);
-    text-shadow: 2px 0 hsl(var(--destructive) / 0.5);
+    text-shadow: 
+      2px 0 hsl(205 100% 65% / 0.7),
+      0 0 20px hsl(205 100% 65% / 0.5);
   }
   
   .glitch-text::after {
     animation: glitch-clip 3s infinite reverse;
-    color: hsl(var(--accent));
+    color: hsl(0 0% 100%);
     transform: translate(2px, 0);
-    text-shadow: -2px 0 hsl(var(--destructive) / 0.3);
+    text-shadow: 
+      -2px 0 hsl(205 100% 65% / 0.7),
+      0 0 20px hsl(205 100% 65% / 0.5);
   }
 }

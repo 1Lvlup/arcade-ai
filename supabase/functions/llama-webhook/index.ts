@@ -633,6 +633,7 @@ serve(async (req) => {
               },
               body: JSON.stringify({
                 model: 'gpt-4.1',
+                max_tokens: 1000,
                 temperature: 0.7,
                 messages: [
                   {

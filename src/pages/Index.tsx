@@ -143,7 +143,7 @@ const Index = () => {
                   alt="" 
                   className="absolute inset-0 w-full h-full object-contain opacity-20 -z-10 scale-150"
                 />
-                <span className="glitch-text font-normal text-8xl md:text-9xl lg:text-[10rem] text-primary" data-text="LEVEL UP">
+                <span className="glitch-text font-tech font-black text-8xl md:text-9xl lg:text-[10rem] text-primary" data-text="LEVEL UP">
                   LEVEL UP
                 </span>
               </h1>

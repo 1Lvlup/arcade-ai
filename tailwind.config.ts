@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        'sans': ['N27', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        'display': ['Belrom', 'N27', 'Inter', 'sans-serif'],
-        'premium': ['Belrom', 'N27', 'Inter', 'sans-serif'],
+        'sans': ['Space Grotesk', 'system-ui', '-apple-system', 'sans-serif'],
+        'display': ['Orbitron', 'Space Grotesk', 'sans-serif'],
+        'tech': ['Orbitron', 'sans-serif'],
+        'mono': ['JetBrains Mono', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

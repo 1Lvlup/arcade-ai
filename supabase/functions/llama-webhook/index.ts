@@ -205,10 +205,48 @@ serve(async (req) => {
     console.log("📋 Parsed body keys:", Object.keys(body));
     console.log("📋 Full body:", JSON.stringify(body, null, 2));
     
+    // Handle LlamaCloud event notifications (event_type structure)
+    if (body.event_type === 'parse.success' && body.data?.job_id) {
+      console.log("📬 Received parse.success event, fetching job result from API...");
+      const jobId = body.data.job_id;
+      
+      try {
+        const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
+        const jobResultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/markdown`, {
+          headers: {
+            'Authorization': `Bearer ${llamaApiKey}`
+          }
+        });
+        
+        if (!jobResultResponse.ok) {
+          throw new Error(`Failed to fetch job result: ${jobResultResponse.status}`);
+        }
+        
+        const jobResult = await jobResultResponse.json();
+        console.log("✅ Successfully fetched job result from API");
+        
+        // Replace body with the actual job result data
+        Object.assign(body, {
+          jobId: jobId,
+          md: jobResult.markdown,
+          json: jobResult.json,
+          images: jobResult.images || [],
+          charts: jobResult.charts || [],
+          pages: jobResult.pages || []
+        });
+      } catch (fetchError) {
+        console.error("❌ Failed to fetch job result:", fetchError);
+        return new Response(JSON.stringify({ error: "Failed to fetch job result from LlamaCloud" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+    
     // Check if this is an ERROR event
-    if (body.event === 'parse.error' || body.status === 'ERROR') {
+    if (body.event === 'parse.error' || body.event_type === 'parse.error' || body.status === 'ERROR') {
       console.log("❌ LlamaCloud parsing failed");
-      const { jobId } = body;
+      const jobId = body.jobId || body.data?.job_id;
       
       const { data: document } = await supabase
         .from('documents')

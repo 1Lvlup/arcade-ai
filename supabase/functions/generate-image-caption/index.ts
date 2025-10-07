@@ -158,7 +158,7 @@ Keep the caption brief (2-3 sentences) - just describe what's shown and its main
             ]
           }
         ],
-        max_completion_tokens: 3000  // Increased for GPT-5 reasoning + output
+        max_completion_tokens: 8000  // GPT-5 uses reasoning tokens + output tokens
       }),
     });
 

@@ -209,14 +209,13 @@ serve(async (req) => {
       success: true, 
       job_id: llamaData.id,
       manual_id,
-      parsing_mode: 'agent_gpt5',
+      parsing_mode: 'parse_document_with_llm',
       features: [
-        'Agent-based parsing with GPT-5',
+        'Document-level LLM parsing',
         'High-resolution OCR',
-        'Advanced chart & figure extraction',
+        'Image extraction with filtering',
         'Layout-aware parsing',
-        'Table merging across pages',
-        'Screenshot capture per page'
+        'Table merging across pages'
       ]
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

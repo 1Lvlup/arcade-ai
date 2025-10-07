@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildCitationsAndImages } from "../_shared/rag.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,7 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
+const CHAT_MODEL = Deno.env.get("CHAT_MODEL") || 'gpt-5';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -322,7 +324,7 @@ Format:
       ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
     },
     body: JSON.stringify({
-      model: 'gpt-5',
+      model: CHAT_MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
@@ -474,6 +476,10 @@ serve(async (req) => {
     
     const { answer, sources, strategy, chunks } = result;
 
+    // Build citations + thumbnails from the chunk UUIDs used
+    const usedChunkIds = (chunks ?? []).map((c: any) => c.id).filter(Boolean);
+    const { citations, thumbnails } = await buildCitationsAndImages(supabase, usedChunkIds);
+
     // Build metadata
     const metadata = {
       pipeline_version: 'v3',
@@ -494,6 +500,8 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       answer,
+      citations,
+      thumbnails,
       sources,
       strategy,
       metadata,

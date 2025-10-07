@@ -97,72 +97,50 @@ serve(async (req) => {
     formData.append('file_name', displayName) // Use the user's entered title
     formData.append('result_type', 'markdown')
     
-    // Use Agent-based parsing with GPT-5
-    formData.append('parse_mode', 'parse_page_with_agent')
-    formData.append('model', 'openai-gpt-5')
+    // Parse Document with LLM mode (cleaner output, fewer junk images)
+    formData.append('parse_mode', 'parse_document_with_llm')
+    formData.append('model', 'openai-gpt-4-1-mini')
     
-    // Enhanced parsing parameters for technical manuals
+    // Pages & Markers (HTML comments for webhook regex)
+    formData.append('target_pages', '2-')
+    formData.append('page_prefix', '<!-- Page {page} Start -->')
+    formData.append('page_suffix', '<!-- Page {page} End -->')
+    formData.append('page_separator', '')
+    
+    // OCR / Layout
     formData.append('language', 'en')
-    formData.append('disable_ocr', 'true') // Only extract copyable text
-    formData.append('target_pages', '2-200') // Skip first 2 pages (usually covers)
-    
-    // === CORE LAYOUT & OCR ===
-    formData.append('high_res_ocr', 'true') // High resolution OCR
-    formData.append('layout_aware', 'true') // Preserves section structure and callouts
-    formData.append('extract_layout', 'true') // Preserves step numbers and alignment
-    formData.append('precise_bounding_box', 'false') // Keep content as text
-    formData.append('preserve_very_small_text', 'true') // Keeps tiny pin labels
-    formData.append('preserve_layout_alignment_across_pages', 'true') // Maintains alignment
-    formData.append('ignore_document_elements_for_layout_detection', 'true') // Use visual model for layout
-    
-    // === FIGURES & IMAGES ===
-    formData.append('save_images', 'true') // Save extracted images
-    formData.append('extract_images', 'true') // Extract images from document
-    formData.append('extract_figures', 'true') // Extract diagrams and schematics
-    formData.append('extract_charts', 'true') // Extract charts
-    formData.append('inline_images_in_markdown', 'true') // Include image references in markdown
-    formData.append('disable_image_extraction', 'false') // Allow extraction
-    
-    // === TABLES ===
-    formData.append('extract_tables', 'true') // Extract all tables
-    formData.append('adaptive_long_table', 'true') // Handle long tables spanning pages
-    formData.append('merge_tables_across_pages', 'true') // Merge split tables
-    formData.append('merge_tables_across_pages_in_markdown', 'true') // Merge in markdown output
-    formData.append('outlined_table_extraction', 'true') // Good for pinouts/BOMs
-    formData.append('output_tables_as_html', 'true') // Render tables as HTML
-    
-    // === JOB BEHAVIOR / CACHING ===
-    formData.append('invalidate_cache', 'true') // Ensure fresh parsing
-    formData.append('do_not_cache', 'true') // Don't cache
-    formData.append('take_screenshot', 'true') // Force page screenshots
-    formData.append('split_by_page', 'false') // Keep document structure intact
-    formData.append('include_page_breaks', 'true') // Preserve pagination
-    formData.append('fast_mode', 'false') // Thorough processing
-    formData.append('replace_failed_page_mode', 'raw_text') // Fallback to raw text if page fails
-    formData.append('page_prefix', '### Page {n}') // Prefix each page with heading
-    
-    // === PAGE SEPARATORS ===
-    formData.append('hide_headers', 'true') 
+    formData.append('disable_ocr', 'false')
+    formData.append('high_res_ocr', 'true')
+    formData.append('extract_layout', 'true')
+    formData.append('preserve_very_small_text', 'true')
+    formData.append('remove_hidden_text', 'true')
+    formData.append('hide_headers', 'true')
     formData.append('hide_footers', 'true')
+    formData.append('html_remove_fixed_elements', 'true')
     
-    // === PROMPTS ===
-    // System prompt append for formatting rules
-    formData.append('system_prompt_append', `You are parsing a technical arcade game manual for downstream retrieval. Output per page — no decorative noise.
-Rules:
-- Skip purely decorative cover/title pages unless they contain unique technical info.
-- Remove repeated headers/footers, page numbers, watermarks.
-- Keep headings, menu labels, units, codes (E01, SW5, AA6166), wire colors, and part numbers EXACTLY.
-- Merge hyphenated line breaks; keep numbered steps intact; render tables as readable markdown.
-- Preserve page order and start each page with "### Page {n}".
-- Do not invent content or captions; omit unreadable text.`)
+    // Tables
+    formData.append('adaptive_long_table', 'true')
+    formData.append('outlined_table_extraction', 'true')
+    formData.append('compact_markdown_table', 'true')
+    formData.append('merge_tables_across_pages_in_markdown', 'true')
+    formData.append('output_tables_as_html', 'false')
     
-    // User prompt for per-document hints
-    formData.append('user_prompt', `Goal: produce clean data per-page for arcade manuals, easy to chunk later.
-Output:
-- for the document, split each page by "### Page {n}" (1-based pages).
-- Headings merged with first body (no title-only blocks).
-- Tables converted to markdown; parameter names/values verbatim.
-- Leave images out; if the page names a figure, keep the text name only.`)
+    // Images (keep useful figures, avoid full-page screenshots)
+    formData.append('save_images', 'true')
+    formData.append('inline_images_in_markdown', 'false')
+    formData.append('disable_image_extraction', 'false')
+    formData.append('take_screenshot', 'false')
+    
+    // Caching/behavior
+    formData.append('invalidate_cache', 'true')
+    formData.append('do_not_cache', 'true')
+    formData.append('fast_mode', 'false')
+    formData.append('replace_failed_page_mode', 'raw_text')
+    
+    // Minimal system prompt (no page headings)
+    const systemPromptAppend = `Output clean per-page markdown. Do NOT add page titles. Do NOT inline images. Deduplicate exact repeats. Preserve units/codes/part numbers exactly.`
+    formData.append('system_prompt_append', systemPromptAppend)
+    formData.append('user_prompt', '')
     
     // Webhook for processing results
     formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)

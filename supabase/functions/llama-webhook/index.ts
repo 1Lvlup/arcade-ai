@@ -13,6 +13,44 @@ const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// ─────────────────────────────────────────────────────────────
+// IMAGE FILTERING HELPERS
+// ─────────────────────────────────────────────────────────────
+
+function isWeirdAspect(w: number, h: number): boolean {
+  if (!w || !h) return false;
+  const r = w / h;
+  return r > 8 || r < 1/8;
+}
+
+function shouldKeepImage(meta: {
+  name?: string;
+  width?: number;
+  height?: number;
+  bbox?: { width?: number; height?: number };
+}): boolean {
+  const name = (meta.name || "").toLowerCase();
+
+  // Drop obvious ornaments/backgrounds
+  if (/(background|border|mask|frame|header|footer|shadow|separator|rule|page-\d+)/.test(name)) return false;
+  if (name.endsWith(".svg")) return false;
+
+  // Size heuristics
+  const w = meta.width ?? meta.bbox?.width ?? 0;
+  const h = meta.height ?? meta.bbox?.height ?? 0;
+
+  // Too small
+  if ((w && w < 100) || (h && h < 60)) return false;
+
+  // Too tiny area
+  if (w && h && (w * h) < 12000) return false;
+
+  // Weird aspect ratios
+  if (isWeirdAspect(w, h)) return false;
+
+  return true;
+}
+
 // Chunking strategy
 const CHUNK_STRATEGIES = {
   HIERARCHICAL: 'hierarchical'
@@ -335,37 +373,54 @@ serve(async (req) => {
           console.log('📋 Job result keys:', Object.keys(jobResult));
           console.log('📋 Full job result structure:', JSON.stringify(jobResult, null, 2).substring(0, 2000));
           
-          // Extract image objects from pages
+          // Extract image objects from pages (with filtering)
           if (jobResult.pages && Array.isArray(jobResult.pages)) {
             console.log(`📄 Found ${jobResult.pages.length} pages`);
             const imageObjects: any[] = [];
+            let totalRawImages = 0;
+            
             for (const page of jobResult.pages) {
               console.log('📄 Page keys:', Object.keys(page));
               console.log('📄 Page images:', page.images);
               console.log('📄 Page charts:', page.charts);
               
-              // Images are objects with {name, height, width, x, y, etc.}
+              // Process images with filtering
               if (page.images && Array.isArray(page.images)) {
                 for (const img of page.images) {
-                  imageObjects.push({
+                  totalRawImages++;
+                  const meta = {
                     name: img.name,
                     page: page.page,
-                    type: 'image'
-                  });
+                    type: 'image',
+                    width: img.width ?? img.w,
+                    height: img.height ?? img.h,
+                    bbox: img.bbox
+                  };
+                  if (shouldKeepImage(meta)) {
+                    imageObjects.push(meta);
+                  }
                 }
               }
+              // Process charts with filtering
               if (page.charts && Array.isArray(page.charts)) {
                 for (const chart of page.charts) {
-                  imageObjects.push({
+                  totalRawImages++;
+                  const meta = {
                     name: chart.name,
                     page: page.page,
-                    type: 'chart'
-                  });
+                    type: 'chart',
+                    width: chart.width ?? chart.w,
+                    height: chart.height ?? chart.h,
+                    bbox: chart.bbox
+                  };
+                  if (shouldKeepImage(meta)) {
+                    imageObjects.push(meta);
+                  }
                 }
               }
             }
             allFigures = imageObjects;
-            console.log(`📸 Found ${allFigures.length} images from API`);
+            console.log(`📸 Found ${allFigures.length} figures after filtering (from ${totalRawImages} total)`);
           } else {
             console.log('⚠️ No pages array found in job result');
           }
@@ -412,9 +467,15 @@ serve(async (req) => {
               figureName = figure.name;
               pageNumber = figure.page || null;
               
-              // Skip if filename suggests it's a background or decorative element
-              if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
-                console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
+              // Filter again before download (belt-and-suspenders)
+              const meta = {
+                name: figureName,
+                width: (figure as any).width,
+                height: (figure as any).height,
+                bbox: (figure as any).bbox
+              };
+              if (!shouldKeepImage(meta)) {
+                console.log(`⏭️ Skipping low-signal image: ${figureName}`);
                 return null;
               }
               
@@ -423,8 +484,14 @@ serve(async (req) => {
             } else if (typeof figure === 'string') {
               // Fallback for string format
               figureName = figure;
-              if (figureName.includes('background') || figureName.includes('page-') || figureName.includes('border')) {
-                console.log(`⏭️ Skipping likely decorative image: ${figureName}`);
+              const meta = {
+                name: figureName,
+                width: undefined,
+                height: undefined,
+                bbox: undefined
+              };
+              if (!shouldKeepImage(meta)) {
+                console.log(`⏭️ Skipping low-signal image: ${figureName}`);
                 return null;
               }
               llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;

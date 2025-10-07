@@ -183,8 +183,8 @@ serve(async (req) => {
         job_id: llamaData.id,
         manual_id,
         status: 'processing',
-        stage: 'document_llm_parsing',
-        current_task: 'LlamaCloud parsing document with LLM',
+        stage: 'agent_parsing',
+        current_task: 'LlamaCloud parsing with GPT-5 Agent',
         fec_tenant_id: profile.fec_tenant_id,
         progress_percent: 0
       })
@@ -199,13 +199,13 @@ serve(async (req) => {
       success: true, 
       job_id: llamaData.id,
       manual_id,
-      parsing_mode: 'parse_document_with_llm',
+      parsing_mode: 'parse_page_with_agent',
       features: [
-        'Document-level LLM parsing',
-        'High-resolution OCR',
-        'Image extraction with filtering',
-        'Layout-aware parsing',
-        'Table merging across pages'
+        'GPT-5 Agent per-page parsing',
+        'Precise bounding box extraction',
+        'Specialized image parsing',
+        'Inline image descriptions',
+        'Layout-aware processing'
       ]
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

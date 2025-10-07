@@ -151,7 +151,7 @@ serve(async (req) => {
         'x-signature': 'your-secret-verification-token',
         'content-type': 'application/json'
       },
-      webhook_events: ['parse.done', 'parse.failed']
+      webhook_events: ['parse.success', 'parse.error']
     }])
     formData.append('webhook_configurations', webhookConfig)
 

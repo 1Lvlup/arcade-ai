@@ -193,8 +193,8 @@ serve(async (req) => {
         job_id: llamaData.id,
         manual_id,
         status: 'processing',
-        stage: 'ai_agent_parsing',
-        current_task: 'GPT-5 agent parsing with vision analysis',
+        stage: 'document_llm_parsing',
+        current_task: 'LlamaCloud parsing document with LLM',
         fec_tenant_id: profile.fec_tenant_id,
         progress_percent: 0
       })

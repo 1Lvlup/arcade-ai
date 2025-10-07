@@ -102,7 +102,8 @@ serve(async (req) => {
     
     // Enhanced parsing parameters for technical manuals
     formData.append('language', 'en')
-    formData.append('disable_ocr', 'false')
+    formData.append('disable_ocr', 'true') // Only extract copyable text
+    formData.append('target_pages', '2-200') // Skip first 2 pages (usually covers)
     
     // === CORE LAYOUT & OCR ===
     formData.append('high_res_ocr', 'true') // High resolution OCR
@@ -137,15 +138,15 @@ serve(async (req) => {
     formData.append('include_page_breaks', 'true') // Preserve pagination
     formData.append('fast_mode', 'false') // Thorough processing
     formData.append('replace_failed_page_mode', 'raw_text') // Fallback to raw text if page fails
+    formData.append('page_prefix', '### Page {n}') // Prefix each page with heading
     
     // === PAGE SEPARATORS ===
     formData.append('hide_headers', 'true') 
     formData.append('hide_footers', 'true')
-    formData.append('page_separator', '\r\n\r\n<!-- Page {pageNumber} Start -->\r\n\r\n')
     
     // === PROMPTS ===
     // System prompt append for formatting rules
-    formData.append('system_prompt_append', `You are parsing a technical arcade game manual for downstream retrieval. Output clean, human-readable markdown per page — no decorative noise.
+    formData.append('system_prompt_append', `You are parsing a technical arcade game manual for downstream retrieval. Output per page — no decorative noise.
 Rules:
 - Skip purely decorative cover/title pages unless they contain unique technical info.
 - Remove repeated headers/footers, page numbers, watermarks.
@@ -155,9 +156,9 @@ Rules:
 - Do not invent content or captions; omit unreadable text.`)
     
     // User prompt for per-document hints
-    formData.append('user_prompt', `Goal: produce clean per-page markdown for arcade manuals, easy to chunk later.
+    formData.append('user_prompt', `Goal: produce clean data per-page for arcade manuals, easy to chunk later.
 Output:
-- One continuous markdown doc split by "### Page {n}" (1-based pages).
+- for the document, split each page by "### Page {n}" (1-based pages).
 - Headings merged with first body (no title-only blocks).
 - Tables converted to markdown; parameter names/values verbatim.
 - Leave images out; if the page names a figure, keep the text name only.`)

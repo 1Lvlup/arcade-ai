@@ -99,7 +99,6 @@ serve(async (req) => {
     
     // Use simpler working mode first
     formData.append('parse_mode', 'parse_page_with_lvm')
-    formData.append('model', 'openai-gpt-4-1-mini')
     
     // Pages & Markers
     formData.append('target_pages', '2-200')

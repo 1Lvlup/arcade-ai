@@ -58,14 +58,15 @@ serve(async (req) => {
       throw new Error('User message is required');
     }
 
-    // Use GPT-5 mini as default for this generic function
+    // Use GPT-4.1 mini as default for this generic function
     const requestPayload: any = {
-      model: 'gpt-5-mini',
+      model: 'gpt-4.1-mini',
       messages: [
         ...(system_prompt ? [{ role: 'system', content: system_prompt }] : []),
         { role: 'user', content: user_message }
       ],
-      max_completion_tokens: 1000,
+      max_tokens: 1000,
+      temperature: 0.7,
     };
 
     console.log('📤 [GENERATE] Calling OpenAI API:', {

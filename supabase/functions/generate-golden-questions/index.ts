@@ -211,9 +211,10 @@ serve(async (req) => {
 
     // Generate golden questions using OpenAI
     const requestBody = {
-      model: 'gpt-5',
+      model: 'gpt-4.1',
       response_format: { type: "json_object" },
-      max_completion_tokens: 16000, // GPT-5 uses reasoning tokens + output tokens
+      max_tokens: 16000,
+      temperature: 0.7,
       messages: [
         {
           role: 'system',

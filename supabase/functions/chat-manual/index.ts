@@ -117,9 +117,20 @@ function textSimilarity(text1: string, text2: string): number {
   return intersection.size / union.size;
 }
 
+// Helper function to fetch JSON and surface real errors
+async function fetchJsonOrThrow(url: string, init: RequestInit) {
+  const res = await fetch(url, init);
+  const text = await res.text();
+  if (!res.ok) {
+    console.error("❌ HTTP", res.status, url, "body:", text.slice(0, 2000));
+    throw new Error(`${url} -> ${res.status} ${text}`);
+  }
+  return JSON.parse(text);
+}
+
 // Create embedding for search
 async function createEmbedding(text: string) {
-  const response = await fetch("https://api.openai.com/v1/embeddings", {
+  return await fetchJsonOrThrow("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${openaiApiKey}`,
@@ -130,16 +141,7 @@ async function createEmbedding(text: string) {
       model: "text-embedding-3-small",
       input: text,
     }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("❌ OpenAI embedding error:", response.status, errorText);
-    throw new Error(`OpenAI embedding failed: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-  return data.data[0].embedding;
+  }).then(data => data.data[0].embedding);
 }
 
 // Search for relevant chunks using hybrid approach
@@ -187,7 +189,8 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
         finalResults = candidates.slice(0, 10);
       } else {
         console.log("🔄 Reranking with Cohere...");
-        const truncatedDocs = candidates.map((c) => {
+        // Guard against non-string content
+        const truncatedDocs = (candidates || []).map((c) => {
           const s = typeof c.content === "string" ? c.content : JSON.stringify(c.content ?? "");
           return s.length > 1500 ? s.slice(0, 1500) : s;
         });
@@ -288,7 +291,7 @@ Provide a clear answer using the manual content above.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_output_tokens: 2000,
+        max_completion_tokens: 2000,
       }
     : {
         model,
@@ -299,7 +302,10 @@ Provide a clear answer using the manual content above.`;
         max_tokens: 2000,
       };
 
-  const response = await fetch(url, {
+  console.log(`📤 Calling ${url} with model ${model}`);
+  console.log(`📝 Body preview:`, JSON.stringify(body).slice(0, 400));
+
+  const data = await fetchJsonOrThrow(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${openaiApiKey}`,
@@ -308,14 +314,6 @@ Provide a clear answer using the manual content above.`;
     },
     body: JSON.stringify(body),
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error("❌ OpenAI error:", response.status, error);
-    throw new Error(`OpenAI API error: ${response.status} - ${error}`);
-  }
-
-  const data = await response.json();
   console.log("📦 OpenAI response usage:", data.usage);
   
   const answerText = isGpt5(model)

@@ -93,6 +93,7 @@ serve(async (req) => {
     // LLM PARSING
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
+    formData.append('file_name', storagePath.split('/').pop() || title + '.pdf') // Add filename for LlamaCloud
     formData.append('result_type', 'markdown')
     
     // Use Agent-based parsing with GPT-5

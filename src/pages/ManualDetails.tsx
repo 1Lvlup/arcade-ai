@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SharedHeader } from '@/components/SharedHeader';
 import { SimpleChat } from '@/components/SimpleChat';
 import { ManualImages } from '@/components/ManualImages';
-import { FileText, Image as ImageIcon } from 'lucide-react';
+import { ManualQuestions } from '@/components/ManualQuestions';
+import { FileText, Image as ImageIcon, Brain } from 'lucide-react';
 
 export default function ManualDetails() {
   const { manualId } = useParams<{ manualId: string }>();
@@ -136,7 +137,7 @@ export default function ManualDetails() {
           
           {/* Tabbed Content */}
           <Tabs defaultValue="chunks" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="chunks" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Content Chunks
@@ -144,6 +145,10 @@ export default function ManualDetails() {
               <TabsTrigger value="images" className="flex items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
                 Figures ({figures?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger value="questions" className="flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                Golden Questions
               </TabsTrigger>
               <TabsTrigger value="chat" className="flex items-center gap-2">
                 🤖 AI Assistant
@@ -213,6 +218,10 @@ export default function ManualDetails() {
 
             <TabsContent value="images">
               {manualId && <ManualImages manualId={manualId} />}
+            </TabsContent>
+
+            <TabsContent value="questions">
+              {manualId && <ManualQuestions manualId={manualId} />}
             </TabsContent>
 
             <TabsContent value="chat">

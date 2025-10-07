@@ -288,7 +288,7 @@ Provide a clear answer using the manual content above.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_completion_tokens: 2000,
+        max_output_tokens: 2000,
       }
     : {
         model,

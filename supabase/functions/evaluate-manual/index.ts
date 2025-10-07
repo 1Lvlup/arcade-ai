@@ -119,8 +119,8 @@ serve(async (req) => {
 
     const results = [];
 
-    // Process each question using GPT-4.1 for answers, Claude Opus 4 for grading
-    console.log(`🤖 Using models: gpt-4.1 (answers) + claude-opus-4 (grading)`);
+    // Process each question using GPT-4.1 for both answers and grading
+    console.log(`🤖 Using models: gpt-4.1 (answers + grading)`);
 
     // Process each question
     for (const q of questions as GoldenQuestion[]) {
@@ -269,7 +269,7 @@ ${JSON.stringify(answer)}`
       };
 
       const gradeRequestBody = {
-        model: 'claude-opus-4',
+        model: 'gpt-4.1', // Use GPT-4.1 for grading (Claude not supported via OpenAI endpoint)
         max_tokens: 800,
         temperature: 0,
         messages: [
@@ -334,7 +334,7 @@ ${JSON.stringify(answer)}`
             }))
           },
           answer_model: 'gpt-4.1',
-          grader_model: 'claude-opus-4'
+          grader_model: 'gpt-4.1' // Updated to use GPT-4.1 for grading
         });
 
       if (insertError) {

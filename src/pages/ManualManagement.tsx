@@ -3,41 +3,11 @@ import { ManualsList } from '@/components/ManualsList';
 import { SharedHeader } from '@/components/SharedHeader';
 import FigureEnhancementManager from '@/components/FigureEnhancementManager';
 import { ChatBot } from '@/components/ChatBot';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
 const ManualManagement = () => {
-  const [isRetrying, setIsRetrying] = useState(false);
-
-  const handleManualRetry = async () => {
-    setIsRetrying(true);
-    try {
-      console.log('Manually retrying processing for virtual-rabbids-troubleshooting-guide');
-      
-      const { data, error } = await supabase.functions.invoke('retry-text-processing', {
-        body: {
-          manual_id: 'virtual-rabbids-troubleshooting-guide'
-        }
-      });
-
-      if (error) {
-        console.error('Retry error:', error);
-        toast.error('Failed to retry processing: ' + error.message);
-        return;
-      }
-
-      console.log('Retry response:', data);
-      toast.success('Processing triggered! Check back in a moment.');
-      
-    } catch (error) {
-      console.error('Manual retry error:', error);
-      toast.error('Failed to retry processing');
-    } finally {
-      setIsRetrying(false);
-    }
-  };
   return (
     <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Document Intelligence" showBackButton={true} />
@@ -59,34 +29,31 @@ const ManualManagement = () => {
           </div>
         </div>
 
-        {/* Chat Interface */}
+        {/* Tab Interface */}
         <div className="section-spacing">
-          <ChatBot />
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 section-spacing">
-          <div className="space-y-12">
-            <ManualUpload />
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+              <TabsTrigger value="upload" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Upload Manuals
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Chat with AI
+              </TabsTrigger>
+            </TabsList>
             
-            {/* Temporary manual retry button */}
-            <div className="premium-card p-8 rounded-3xl">
-              <h3 className="premium-text text-lg text-foreground mb-4">Manual Processing</h3>
-              <p className="caption-text text-muted-foreground mb-6">
-                If your upload is stuck processing, click to manually trigger text extraction.
-              </p>
-              <Button 
-                onClick={handleManualRetry}
-                disabled={isRetrying}
-                className="w-full primary-gradient hover-lift py-4"
-              >
-                {isRetrying ? 'Processing...' : 'Retry Text Processing'}
-              </Button>
-            </div>
-          </div>
-          
-          <div className="space-y-12">
-            <ManualsList />
-          </div>
+            <TabsContent value="upload" className="space-y-12">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <ManualUpload />
+                <ManualsList />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="chat">
+              <ChatBot />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div className="premium-card p-16 rounded-3xl section-spacing">

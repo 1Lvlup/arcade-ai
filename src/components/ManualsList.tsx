@@ -244,137 +244,137 @@ export function ManualsList() {
   }
 
   return (
-    <Card className="border-primary/20">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <FileText className="h-5 w-5 text-primary" />
-          <span>Your Manuals</span>
+    <Card className="border-primary/20 h-full">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <span>Your Manuals</span>
+          </div>
+          <Badge variant="secondary" className="ml-auto">
+            {manuals.length} total
+          </Badge>
         </CardTitle>
-        <CardDescription>
-          {manuals.length} manual{manuals.length !== 1 ? 's' : ''} available for troubleshooting
-        </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[600px] overflow-y-auto">
         {manuals.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-12 text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No manuals uploaded yet</p>
+            <p className="font-medium">No manuals uploaded yet</p>
             <p className="text-sm">Upload your first manual to get started</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {manuals.map((manual) => {
               const status = getProcessingStatus(manual);
               const StatusIcon = status.icon;
               return (
                 <div
                   key={manual.id}
-                  className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="group p-4 border border-border rounded-lg hover:border-primary/40 hover:bg-accent/50 transition-all"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-medium truncate">{manual.title}</h3>
-                      <Badge variant={status.variant} className="text-xs flex items-center space-x-1">
-                        <StatusIcon className={`h-3 w-3 ${status.color} ${status.status === 'processing' ? 'animate-pulse' : ''}`} />
-                        <span>{status.label}</span>
-                      </Badge>
-                    </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span className="truncate">{manual.source_filename}</span>
-                      <span className="flex items-center space-x-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-sm truncate">{manual.title}</h3>
+                        <Badge variant={status.variant} className="text-xs shrink-0 flex items-center gap-1">
+                          <StatusIcon className={`h-3 w-3 ${status.color} ${status.status === 'processing' ? 'animate-pulse' : ''}`} />
+                          <span>{status.label}</span>
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{manual.source_filename}</p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         <span>{formatDate(manual.created_at)}</span>
-                      </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Manual ID: {manual.manual_id}
-                      {manual.job_id && (
-                        <span className="ml-2">
-                          Job ID: {manual.job_id}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2 ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/manuals/${manual.manual_id}`)}
-                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                    {status.status === 'stalled' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={retryingManualId === manual.manual_id}
-                        onClick={() => retryProcessing(manual)}
-                        title="Retry stalled processing"
-                      >
-                        {retryingManualId === manual.manual_id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-1" />
-                        ) : (
-                          <RefreshCw className="h-4 w-4 mr-1" />
-                        )}
-                        Retry
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={status.status !== 'processed'}
-                      title={status.status !== 'processed' ? 'Manual still processing' : 'Search this manual'}
-                      onClick={() => {
-                        if (status.status === 'processed') {
-                          const searchParams = new URLSearchParams({
-                            manual_id: manual.manual_id,
-                            title: manual.title || manual.source_filename
-                          });
-                          window.open(`/?chat=true&${searchParams.toString()}`, '_blank');
-                        }
-                      }}
-                    >
-                      <Search className="h-4 w-4 mr-1" />
-                      Search
-                    </Button>
                     
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/manuals/${manual.manual_id}`)}
+                        className="h-8 px-3"
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        Details
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={status.status !== 'processed'}
+                        onClick={() => {
+                          if (status.status === 'processed') {
+                            const searchParams = new URLSearchParams({
+                              manual_id: manual.manual_id,
+                              title: manual.title || manual.source_filename
+                            });
+                            window.open(`/?chat=true&${searchParams.toString()}`, '_blank');
+                          }
+                        }}
+                        className="h-8 px-3"
+                      >
+                        <Search className="h-3.5 w-3.5 mr-1.5" />
+                        Search
+                      </Button>
+                      
+                      {status.status === 'stalled' && (
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          disabled={deletingManualId === manual.manual_id}
-                          title="Delete manual"
+                          disabled={retryingManualId === manual.manual_id}
+                          onClick={() => retryProcessing(manual)}
+                          className="h-8 px-3"
                         >
-                          {deletingManualId === manual.manual_id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-destructive" />
+                          {retryingManualId === manual.manual_id ? (
+                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary mr-1.5" />
                           ) : (
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                           )}
+                          Retry
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Manual</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{manual.title || manual.source_filename}"? 
-                            This will permanently remove the manual and all associated data including chunks and figures. 
-                            This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteManual(manual.manual_id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      )}
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={deletingManualId === manual.manual_id}
+                            className="h-8 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            Delete Manual
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            {deletingManualId === manual.manual_id ? (
+                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-destructive" />
+                            ) : (
+                              <>
+                                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                                Delete
+                              </>
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Manual</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{manual.title || manual.source_filename}"? 
+                              This will permanently remove the manual and all associated data including chunks and figures. 
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteManual(manual.manual_id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Manual
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               );

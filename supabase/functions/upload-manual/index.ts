@@ -98,50 +98,43 @@ serve(async (req) => {
     formData.append('file_name', displayName) // Use the user's entered title
     formData.append('result_type', 'markdown')
     
-    // Parse Document with LLM mode (cleaner output, fewer junk images)
-    formData.append('parse_mode', 'parse_document_with_llm')
+    // Parse with Agent mode and GPT-5
+    formData.append('parse_mode', 'parse_page_with_agent')
+    formData.append('model', 'openai-gpt-5')
     
-    // Pages & Markers (HTML comments for webhook regex)
-    formData.append('page_prefix', '<!-- Page {page} Start -->')
-    formData.append('page_suffix', '<!-- Page {page} End -->')
-    formData.append('page_separator', '')
+    // Pages & Markers
+    formData.append('page_prefix', '<!-- Page {pageNumber} Start -->')
+    formData.append('page_suffix', '<!-- Page {pageNumber} End -->')
+    formData.append('page_separator', '______________________________')
     
     // OCR / Layout
-    formData.append('language', 'en')
-    formData.append('disable_ocr', 'false')
-    formData.append('high_res_ocr', 'true')
+    formData.append('disable_ocr', 'true')
     formData.append('extract_layout', 'true')
-    formData.append('preserve_very_small_text', 'true')
-    formData.append('remove_hidden_text', 'false')
+    formData.append('preserve_layout_alignment_across_pages', 'true')
     formData.append('hide_headers', 'true')
     formData.append('hide_footers', 'true')
-    formData.append('html_remove_fixed_elements', 'true')
-    formData.append('html_remove_navigation_elements', 'true')
+    formData.append('ignore_document_elements_for_layout_detection', 'true')
     
     // Tables
     formData.append('adaptive_long_table', 'true')
     formData.append('outlined_table_extraction', 'true')
+    formData.append('output_tables_as_HTML', 'true')
     formData.append('compact_markdown_table', 'true')
-    formData.append('merge_tables_across_pages_in_markdown', 'true')
-    formData.append('output_tables_as_html', 'false')
     
-    // Images (keep useful figures, avoid full-page screenshots)
-    formData.append('save_images', 'true')
-    formData.append('inline_images_in_markdown', 'false')
-    formData.append('disable_image_extraction', 'false')
-    formData.append('take_screenshot', 'false')
-    formData.append('extract_charts', 'false')
+    // Images
+    formData.append('extract_charts', 'true')
+    formData.append('specialized_image_parsing', 'true')
+    formData.append('precise_bounding_box', 'true')
+    formData.append('inline_images_in_markdown', 'true')
     
     // Caching/behavior
     formData.append('invalidate_cache', 'true')
     formData.append('do_not_cache', 'true')
-    formData.append('fast_mode', 'false')
     formData.append('replace_failed_page_mode', 'raw_text')
     
     // Enhanced system prompt
-    const systemPromptAppend = `You are parsing a technical arcade game manual for downstream retrieval. Output clean per-page markdown only. Skip decorative noise. Remove repeated headers/footers and watermarks. Keep headings/labels/units/codes/part numbers EXACTLY. Merge hyphenated line breaks. Keep numbered steps intact. Convert tables to readable markdown. Do not inline images. Deduplicate exact repeats. Do not invent content.`
+    const systemPromptAppend = `Label EVERY picture as "Figure {N}" in chronological order PER PAGE. Output clean per-page markdown for downstream retrieval. Convert tables to markdown. Preserve units/codes/part numbers exactly. Clearly label each page with page number`
     formData.append('system_prompt_append', systemPromptAppend)
-    formData.append('user_prompt', '')
     
     // Webhook configuration (v1 API format - separate fields, not array)
     formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`);

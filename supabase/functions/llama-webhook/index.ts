@@ -205,6 +205,36 @@ serve(async (req) => {
     console.log("📋 Parsed body keys:", Object.keys(body));
     console.log("📋 Full body:", JSON.stringify(body, null, 2));
     
+    // Check if this is an ERROR event
+    if (body.event === 'parse.error' || body.status === 'ERROR') {
+      console.log("❌ LlamaCloud parsing failed");
+      const { jobId } = body;
+      
+      const { data: document } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('job_id', jobId)
+        .single();
+      
+      if (document) {
+        await supabase.rpc('set_tenant_context', { tenant_id: document.fec_tenant_id });
+        await supabase
+          .from('processing_status')
+          .update({
+            status: 'error',
+            stage: 'failed',
+            current_task: 'LlamaCloud parsing failed',
+            error_message: body.error || 'Unknown parsing error',
+            progress_percent: 0
+          })
+          .eq('job_id', jobId);
+      }
+      
+      return new Response(JSON.stringify({ success: true, handled: 'error' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     const { jobId, md: markdown, json: jsonData, images, charts, pages } = body;
     
     console.log("🔍 Job details:");

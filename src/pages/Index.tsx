@@ -143,7 +143,12 @@ const Index = () => {
                   alt="" 
                   className="absolute inset-0 w-full h-full object-contain opacity-20 -z-10 scale-150"
                 />
-                <span className="glitch-text relative z-10 font-normal text-8xl md:text-9xl lg:text-[10rem] text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" data-text="LEVEL UP">
+                {/* Glitch effect layer behind */}
+                <span className="glitch-text absolute inset-0 font-normal text-8xl md:text-9xl lg:text-[10rem] text-primary" data-text="LEVEL UP">
+                  LEVEL UP
+                </span>
+                {/* Solid readable text on top */}
+                <span className="relative z-10 font-normal text-8xl md:text-9xl lg:text-[10rem] text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   LEVEL UP
                 </span>
                 <span className="absolute inset-0 text-primary text-8xl md:text-9xl lg:text-[10rem] opacity-10 blur-xl scale-110 -z-10">

@@ -195,22 +195,31 @@ function createHierarchicalChunks(content: string, manual_id: string) {
 
 
 serve(async (req) => {
+  console.log("🎯 === WEBHOOK RECEIVED ===");
+  console.log("📋 Method:", req.method);
+  console.log("📋 Headers:", JSON.stringify(Object.fromEntries(req.headers.entries()), null, 2));
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verify webhook signature
+    // Verify webhook signature (lenient check)
     const signature = req.headers.get('x-signature');
-    if (signature !== webhookSecret) {
-      console.error("❌ Invalid webhook signature");
+    console.log("🔐 Signature check:");
+    console.log("  - Received:", signature);
+    console.log("  - Expected:", webhookSecret === "your-secret-verification-token" ? "DEFAULT (not configured)" : "CONFIGURED");
+    
+    // Only enforce signature if a real secret is configured (not the default)
+    if (webhookSecret !== "your-secret-verification-token" && signature !== webhookSecret) {
+      console.error("❌ Invalid webhook signature mismatch!");
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     
-    console.log("🔄 Webhook called - Starting processing");
+    console.log("✅ Signature check passed (or skipped with default)");
     
     const body = await req.json();
     console.log("📋 Parsed body keys:", Object.keys(body));

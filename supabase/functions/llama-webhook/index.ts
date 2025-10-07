@@ -223,27 +223,35 @@ serve(async (req) => {
       
       try {
         const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
-        const jobResultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/markdown`, {
-          headers: {
-            'Authorization': `Bearer ${llamaApiKey}`
-          }
-        });
         
-        if (!jobResultResponse.ok) {
-          throw new Error(`Failed to fetch job result: ${jobResultResponse.status}`);
+        // Fetch both markdown and JSON results
+        const [markdownResponse, jsonResponse] = await Promise.all([
+          fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/markdown`, {
+            headers: { 'Authorization': `Bearer ${llamaApiKey}` }
+          }),
+          fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/json`, {
+            headers: { 'Authorization': `Bearer ${llamaApiKey}` }
+          })
+        ]);
+        
+        if (!markdownResponse.ok || !jsonResponse.ok) {
+          throw new Error(`Failed to fetch job result: md=${markdownResponse.status}, json=${jsonResponse.status}`);
         }
         
-        const jobResult = await jobResultResponse.json();
-        console.log("✅ Successfully fetched job result from API");
+        const markdownResult = await markdownResponse.json();
+        const jsonResult = await jsonResponse.json();
+        console.log("✅ Successfully fetched job results from API");
+        console.log("📄 Markdown result keys:", Object.keys(markdownResult));
+        console.log("📄 JSON result keys:", Object.keys(jsonResult));
         
         // Replace body with the actual job result data
         Object.assign(body, {
           jobId: jobId,
-          md: jobResult.markdown,
-          json: jobResult.json,
-          images: jobResult.images || [],
-          charts: jobResult.charts || [],
-          pages: jobResult.pages || []
+          md: markdownResult.markdown,
+          json: jsonResult,
+          images: jsonResult.images || [],
+          charts: jsonResult.charts || [],
+          pages: jsonResult.pages || []
         });
       } catch (fetchError) {
         console.error("❌ Failed to fetch job result:", fetchError);

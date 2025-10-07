@@ -21,7 +21,7 @@ async function getModelConfig(supabase: any, tenant_id: string) {
     .eq('config_key', 'chat_model')
     .single();
   
-  let model = 'gpt-5-2025-08-07'; // Default
+  let model = 'gpt-5'; // Default
   if (config?.config_value) {
     const value = config.config_value;
     // If it's already a string and looks like a model name, use it directly
@@ -211,7 +211,7 @@ serve(async (req) => {
 
     // Generate golden questions using OpenAI
     const requestBody = {
-      model: 'gpt-5-2025-08-07',
+      model: 'gpt-5',
       response_format: { type: "json_object" },
       max_completion_tokens: 4000, // Increased for GPT-5 reasoning + output
       messages: [

@@ -24,7 +24,7 @@ async function getModelConfig(tenant_id: string) {
     .eq('config_key', 'chat_model')
     .single();
   
-  let model = 'gpt-5-2025-08-07'; // Default
+  let model = 'gpt-5'; // Default
   if (config?.config_value) {
     const value = config.config_value;
     // If it's already a string and looks like a model name, use it directly
@@ -322,7 +322,7 @@ Format:
       ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
     },
     body: JSON.stringify({
-      model: 'gpt-5-2025-08-07',
+      model: 'gpt-5',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }

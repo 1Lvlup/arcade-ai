@@ -60,7 +60,7 @@ serve(async (req) => {
 
     // Use GPT-5 mini as default for this generic function
     const requestPayload: any = {
-      model: 'gpt-5-mini-2025-08-07',
+      model: 'gpt-5-mini',
       messages: [
         ...(system_prompt ? [{ role: 'system', content: system_prompt }] : []),
         { role: 'user', content: user_message }

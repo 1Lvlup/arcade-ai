@@ -21,7 +21,7 @@ async function getModelConfig(supabase: any, tenant_id: string) {
     .eq('config_key', 'chat_model')
     .single();
   
-  let model = 'gpt-5-2025-08-07'; // Default
+  let model = 'gpt-5'; // Default
   if (config?.config_value) {
     const value = config.config_value;
     // If it's already a string and looks like a model name, use it directly
@@ -120,7 +120,7 @@ serve(async (req) => {
     const results = [];
 
     // Process each question using GPT-5
-    console.log(`🤖 Using model: gpt-5-2025-08-07`);
+    console.log(`🤖 Using model: gpt-5`);
 
     // Process each question
     for (const q of questions as GoldenQuestion[]) {
@@ -174,7 +174,7 @@ ${passagesText.substring(0, 8000)}`
       };
 
       const answerRequestBody = {
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-5',
         max_completion_tokens: 800,
         messages: [
           { role: 'system', content: answerPrompt.system },
@@ -248,7 +248,7 @@ ${JSON.stringify(answer)}`
       };
 
       const gradeRequestBody = {
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-5',
         max_completion_tokens: 600,
         messages: [
           { role: 'system', content: gradePrompt.system },
@@ -300,8 +300,8 @@ ${JSON.stringify(answer)}`
               preview: p.content.substring(0, 200)
             }))
           },
-          answer_model: 'gpt-5-2025-08-07',
-          grader_model: 'gpt-5-2025-08-07'
+          answer_model: 'gpt-5',
+          grader_model: 'gpt-5'
         });
 
       if (insertError) {

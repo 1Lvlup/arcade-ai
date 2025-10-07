@@ -190,7 +190,7 @@ ${passagesText.substring(0, 8000)}`
       };
 
       const answerRequestBody = {
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4.1',
         max_tokens: 1200,
         temperature: 0.2,
         messages: [
@@ -269,7 +269,7 @@ ${JSON.stringify(answer)}`
       };
 
       const gradeRequestBody = {
-        model: 'claude-opus-4-1-20250805',
+        model: 'claude-opus-4',
         max_tokens: 800,
         temperature: 0,
         messages: [

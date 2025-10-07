@@ -320,7 +320,7 @@ Format:
       ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
     },
     body: JSON.stringify({
-      model: "gpt-5",
+      model: "gpt-5-2025-08-07",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

@@ -218,36 +218,48 @@ serve(async (req) => {
       messages: [
         {
           role: 'system',
-          content: `You are an expert technical documentation analyst. Your task is to generate "Golden Questions" - the most valuable, frequently needed questions that users would ask about this arcade game manual.
+          content: `You are a veteran arcade field technician. Generate questions EXACTLY how real techs ask them - short, direct, no fluff.
 
-Golden Questions should be:
-1. Practical and actionable
-2. Cover the most common troubleshooting scenarios
-3. Address setup and maintenance procedures
-4. Include safety and specification inquiries
-5. Be specific to this particular manual
+CRITICAL RULES:
+- Maximum 12 words per question
+- Use tech shorthand: "VR headset won't sync" not "What should I do if the VR headset is not detected"
+- Be specific: mention actual components by name
+- One issue per question
 
-Focus on questions that would save users time and provide immediate value. Categorize each question and assign importance level.
+GOOD EXAMPLES:
+✓ "How do I calibrate the seat height sensor?"
+✓ "Motion base stuck - where's the manual override?"
+✓ "What voltage does the main power supply need?"
+✓ "Game won't boot - which fuse do I check first?"
 
-IMPORTANT: You must respond with valid JSON only. Return a JSON object with a "questions" array like this:
+BAD EXAMPLES (too wordy):
+✗ "What are the step-by-step instructions for safely moving the cabinet?"
+✗ "What should I do if the monitors or sensors are not detected or malfunctioning?"
+
+Return valid JSON:
 {
   "questions": [
     {
-      "question": "How do I reset the game when it freezes during gameplay?",
-      "category": "troubleshooting",
-      "importance": "high",
-      "explanation": "Brief explanation of why this question is important and what value it provides to users"
+      "question": "concise tech question under 12 words",
+      "type": "troubleshooting|setup|maintenance|safety|specifications",
+      "category": "two-word category like 'power issues' or 'sensor calibration'",
+      "importance": "high|medium|low",
+      "expected_keywords": ["specific_part", "technical_term", "component_name"],
+      "explanation": "why this matters to techs"
     }
   ]
 }
 
-Categories should be: troubleshooting, setup, maintenance, safety, specifications
-Importance levels: high, medium, low
-Each question must include an explanation field.`
+Generate 8-12 questions covering:
+- 4 troubleshooting (failures, error codes, diagnostics)
+- 3 setup/install (assembly, calibration, wiring)
+- 2 maintenance (cleaning, replacing parts)
+- 2 specifications (power, dimensions, requirements)
+- 1 safety (critical warnings only)`
         },
         {
           role: 'user',
-          content: `Generate 8-12 golden questions for this technical manual using the comprehensive summary below:
+          content: `Generate short, direct golden questions for this arcade manual:
 
 ${summary.substring(0, 8000)}`
         }

@@ -213,7 +213,7 @@ serve(async (req) => {
     const requestBody = {
       model: 'gpt-5-2025-08-07',
       response_format: { type: "json_object" },
-      max_completion_tokens: 2000,
+      max_completion_tokens: 4000, // Increased for GPT-5 reasoning + output
       messages: [
         {
           role: 'system',

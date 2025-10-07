@@ -37,9 +37,16 @@ serve(async (req) => {
       throw new Error(`Failed to download image: ${downloadError?.message}`);
     }
 
-    // Convert blob to base64
+    // Convert blob to base64 in chunks to avoid stack overflow
     const arrayBuffer = await imageData.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const bytes = new Uint8Array(arrayBuffer);
+    const chunkSize = 8192;
+    let base64 = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, i + chunkSize);
+      base64 += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    base64 = btoa(base64);
     const image_url = `data:image/png;base64,${base64}`;
     
     console.log(`📦 Image size: ${arrayBuffer.byteLength} bytes, base64 length: ${base64.length}`);
@@ -151,7 +158,7 @@ Keep the caption brief (2-3 sentences) - just describe what's shown and its main
             ]
           }
         ],
-        max_completion_tokens: 2000  // Increased to allow for reasoning tokens + actual output
+        max_completion_tokens: 3000  // Increased for GPT-5 reasoning + output
       }),
     });
 

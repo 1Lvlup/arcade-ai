@@ -113,10 +113,11 @@ serve(async (req) => {
     formData.append('high_res_ocr', 'true')
     formData.append('extract_layout', 'true')
     formData.append('preserve_very_small_text', 'true')
-    formData.append('remove_hidden_text', 'true')
+    formData.append('remove_hidden_text', 'false')
     formData.append('hide_headers', 'true')
     formData.append('hide_footers', 'true')
     formData.append('html_remove_fixed_elements', 'true')
+    formData.append('html_remove_navigation_elements', 'true')
     
     // Tables
     formData.append('adaptive_long_table', 'true')
@@ -130,6 +131,7 @@ serve(async (req) => {
     formData.append('inline_images_in_markdown', 'false')
     formData.append('disable_image_extraction', 'false')
     formData.append('take_screenshot', 'false')
+    formData.append('extract_charts', 'false')
     
     // Caching/behavior
     formData.append('invalidate_cache', 'true')
@@ -137,13 +139,21 @@ serve(async (req) => {
     formData.append('fast_mode', 'false')
     formData.append('replace_failed_page_mode', 'raw_text')
     
-    // Minimal system prompt (no page headings)
-    const systemPromptAppend = `Output clean per-page markdown. Do NOT add page titles. Do NOT inline images. Deduplicate exact repeats. Preserve units/codes/part numbers exactly.`
+    // Enhanced system prompt
+    const systemPromptAppend = `You are parsing a technical arcade game manual for downstream retrieval. Output clean per-page markdown only. Skip decorative noise. Remove repeated headers/footers and watermarks. Keep headings/labels/units/codes/part numbers EXACTLY. Merge hyphenated line breaks. Keep numbered steps intact. Convert tables to readable markdown. Do not inline images. Deduplicate exact repeats. Do not invent content.`
     formData.append('system_prompt_append', systemPromptAppend)
     formData.append('user_prompt', '')
     
-    // Webhook for processing results
-    formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`)
+    // Webhook with verification headers
+    const webhookConfig = JSON.stringify([{
+      webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
+      webhook_headers: {
+        'x-signature': 'your-secret-verification-token',
+        'content-type': 'application/json'
+      },
+      webhook_events: ['parse.done', 'parse.failed']
+    }])
+    formData.append('webhook_configurations', webhookConfig)
 
     const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/parsing/upload', {
       method: 'POST',

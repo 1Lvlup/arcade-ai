@@ -107,6 +107,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     setIsLoading(true);
 
     try {
+      console.log('📤 Sending message to chat-manual:', { 
+        query: inputValue.trim(), 
+        manual_id: selectedManualId 
+      });
+
       const { data, error } = await supabase.functions.invoke('chat-manual', {
         body: {
           query: inputValue.trim(),
@@ -114,7 +119,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         },
       });
 
+      console.log('📥 Response from chat-manual:', { data, error });
+
       if (error) {
+        console.error('❌ chat-manual error:', error);
         throw new Error(error.message || JSON.stringify(error));
       }
 
@@ -125,18 +133,19 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         timestamp: new Date()
       };
 
+      console.log('✅ Bot message created:', botMessage);
       setMessages(prev => [...prev, botMessage]);
     } catch (err: any) {
-      console.error('chat-manual failed:', err);
+      console.error('❌ chat-manual failed:', err);
       toast({
         title: 'Error',
-        description: 'Failed to process your question. Please try again.',
+        description: err.message || 'Failed to process your question. Please try again.',
         variant: 'destructive',
       });
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: 'I hit an error talking to the assistant. Please try again.',
+        content: `Error: ${err.message || 'I hit an error talking to the assistant. Please try again.'}`,
         timestamp: new Date()
       }]);
     } finally {

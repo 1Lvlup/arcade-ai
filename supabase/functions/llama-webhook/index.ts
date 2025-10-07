@@ -715,8 +715,9 @@ serve(async (req) => {
 
 Manual: ${document.title}
 Figure ID: ${figureInfo.figureName}
+Page: ${figureInfo.page_number || 'Unknown'}
 
-Provide a caption that helps technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
+Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed by a detailed technical description that helps technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
                       },
                       {
                         type: 'image_url',

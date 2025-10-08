@@ -243,6 +243,66 @@ function isGpt5(model: string): boolean {
   return model.includes("gpt-5");
 }
 
+async function callModelRobust({ model, system, user }: { model: string; system: string; user: string }) {
+  const isG5 = /(^|-)gpt-5/.test(model);
+
+  // First attempt: Responses API (GPT-5 expected)
+  if (isG5) {
+    try {
+      const url = "https://api.openai.com/v1/responses";
+      const body = {
+        model,
+        input: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        max_completion_tokens: 2000,
+      };
+      const data = await fetchJsonOrThrow(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiApiKey}`,
+          "Content-Type": "application/json",
+          ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
+        },
+        body: JSON.stringify(body),
+      });
+      const text =
+        data.output_text ?? data.choices?.[0]?.message?.content ?? data.output?.[1]?.content?.[0]?.text ?? "";
+      if (typeof text === "string" && text.trim()) return text;
+      throw new Error("Empty output from Responses API");
+    } catch (e: any) {
+      console.error("⚠️ Responses API failed, will retry with Chat API:", e?.message || e);
+      // fall through to chat retry
+    }
+  }
+
+  // Fallback attempt: Chat Completions (works for all chat models)
+  {
+    const url = "https://api.openai.com/v1/chat/completions";
+    const body = {
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      max_tokens: 2000,
+    };
+    const data = await fetchJsonOrThrow(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json",
+        ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
+      },
+      body: JSON.stringify(body),
+    });
+    const text = data.choices?.[0]?.message?.content ?? "";
+    if (typeof text === "string" && text.trim()) return text;
+    throw new Error("Empty output from Chat API");
+  }
+}
+
 async function generateAnswer(query: string, chunks: any[], model: string): Promise<string> {
   // Build context from chunks
   const contextBlocks = chunks

@@ -53,7 +53,7 @@ async function getModelConfig(tenant_id: string) {
 
   return {
     model,
-    maxTokensParam: isGpt5 ? "max_output_tokens" : "max_tokens",
+    maxTokensParam: isGpt5 ? "max_completion_tokens" : "max_tokens",
     supportsTemperature: !isGpt5,
   };
 }
@@ -144,22 +144,6 @@ async function createEmbedding(text: string) {
   }).then((data) => data.data[0].embedding);
 }
 
-function normalizeQuery(q: string) {
-  return q.replace(/[’‘]/g, "'").replace(/\s+/g, " ").trim();
-}
-
-function expandQuery(q: string) {
-  const n = normalizeQuery(q);
-  // seed rule for the “balls won’t come out / stuck” case
-  const ballRule =
-    /balls?.*?(won(?:'|’)?t|wont|do(?:'|’)?nt|dont).*?(come\s*out|dispense|release)|balls?.*?(stuck|jam)/i;
-  if (ballRule.test(n)) {
-    const syn = ["ball gate", "ball release", "gate motor", "gate open sensor", "gate closed sensor", "ball diverter"];
-    return `${n}\nSynonyms: ${syn.join(", ")}`;
-  }
-  return n;
-}
-
 // Search for relevant chunks using hybrid approach
 async function searchChunks(query: string, manual_id?: string, tenant_id?: string) {
   const startTime = Date.now();
@@ -191,7 +175,31 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 
   console.log(`📊 Vector search found ${vectorResults?.length || 0} results`);
 
-  const candidates = vectorResults || [];
+  function normalizeRow(r: any) {
+    const t =
+      typeof r.content === "string"
+        ? r.content
+        : typeof r.chunk_text === "string"
+          ? r.chunk_text
+          : typeof r.text === "string"
+            ? r.text
+            : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
+    return { ...r, content: t };
+  }
+
+  function normalizeRow(r: any) {
+    const t =
+      typeof r.content === "string"
+        ? r.content
+        : typeof r.chunk_text === "string"
+          ? r.chunk_text
+          : typeof r.text === "string"
+            ? r.text
+            : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
+    return { ...r, content: t };
+  }
+
+  const candidates = (vectorResults || []).map(normalizeRow);
   const strategy = candidates.length > 0 ? "vector" : "none";
 
   console.log(`✅ Using ${strategy} search strategy with ${candidates.length} candidates`);
@@ -312,7 +320,7 @@ Provide a clear answer using the manual content above.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_output_tokens: 2000,
+        max_completion_tokens: 2000,
       }
     : {
         model,

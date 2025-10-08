@@ -148,9 +148,8 @@ async function createEmbedding(text: string) {
 async function searchChunks(query: string, manual_id?: string, tenant_id?: string) {
   const startTime = Date.now();
 
-  const expanded = expandQuery(query);
-  const keywords = keywordLine(expanded);
-  const hybridQuery = keywords ? `${expanded}\nKeywords: ${keywords}` : expanded;
+  const keywords = keywordLine(query);
+  const hybridQuery = keywords ? `${query}\nKeywords: ${keywords}` : query;
 
   console.log("🔍 Starting hybrid search for query:", query.substring(0, 100));
   if (keywords) {

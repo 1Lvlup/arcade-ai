@@ -53,7 +53,7 @@ async function getModelConfig(tenant_id: string) {
 
   return {
     model,
-    maxTokensParam: isGpt5 ? "max_completion_tokens" : "max_tokens",
+    maxTokensParam: isGpt5 ? "max_output_tokens" : "max_tokens",
     supportsTemperature: !isGpt5,
   };
 }
@@ -175,31 +175,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 
   console.log(`📊 Vector search found ${vectorResults?.length || 0} results`);
 
-  function normalizeRow(r: any) {
-    const t =
-      typeof r.content === "string"
-        ? r.content
-        : typeof r.chunk_text === "string"
-          ? r.chunk_text
-          : typeof r.text === "string"
-            ? r.text
-            : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
-    return { ...r, content: t };
-  }
-
-  function normalizeRow(r: any) {
-    const t =
-      typeof r.content === "string"
-        ? r.content
-        : typeof r.chunk_text === "string"
-          ? r.chunk_text
-          : typeof r.text === "string"
-            ? r.text
-            : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
-    return { ...r, content: t };
-  }
-
-  const candidates = (vectorResults || []).map(normalizeRow);
+  const candidates = vectorResults || [];
   const strategy = candidates.length > 0 ? "vector" : "none";
 
   console.log(`✅ Using ${strategy} search strategy with ${candidates.length} candidates`);

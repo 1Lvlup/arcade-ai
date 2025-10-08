@@ -141,7 +141,7 @@ async function createEmbedding(text: string) {
       model: "text-embedding-3-small",
       input: text,
     }),
-  }).then((data) => data.data[0].embedding);
+  }).then(data => data.data[0].embedding);
 }
 
 // Search for relevant chunks using hybrid approach
@@ -275,7 +275,7 @@ Format
 
 **Why:** <one-line rationale>
 
-**Citations:** p<X>, p<Y>, p<Z>`;
+**Citations:** p<X>, p<Y>, p<Z>;
 
   const userPrompt = `Question: ${query}
 
@@ -286,25 +286,27 @@ Provide a clear answer using the manual content above.`;
 
   console.log(`🤖 Generating answer with model: ${model}`);
 
-  const url = isGpt5(model) ? "https://api.openai.com/v1/responses" : "https://api.openai.com/v1/chat/completions";
+const url = isGpt5(model)
+  ? "https://api.openai.com/v1/responses"
+  : "https://api.openai.com/v1/chat/completions";
 
-  const body: any = isGpt5(model)
-    ? {
-        model,
-        input: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_output_tokens: 16000,
-      }
-    : {
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: 2000,
-      };
+const body: any = isGpt5(model)
+  ? {
+      model,
+      input: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 2000
+    }
+  : {
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 2000,
+    };
 
   console.log(`📤 Calling ${url} with model ${model}`);
   console.log(`📝 Body preview:`, JSON.stringify(body).slice(0, 400));
@@ -319,11 +321,11 @@ Provide a clear answer using the manual content above.`;
     body: JSON.stringify(body),
   });
   console.log("📦 OpenAI response usage:", data.usage);
-
+  
   const answerText = isGpt5(model)
     ? (data.output?.[1]?.content?.[0]?.text ?? data.output_text ?? data.choices?.[0]?.message?.content ?? "")
     : (data.choices?.[0]?.message?.content ?? "");
-
+  
   if (!answerText || answerText.trim() === "") {
     console.error("❌ Empty answer from model. Response:", JSON.stringify(data, null, 2));
     throw new Error("Model returned an empty response");
@@ -433,11 +435,11 @@ serve(async (req) => {
           has_openai_key: !!openaiApiKey,
           has_cohere_key: !!Deno.env.get("COHERE_API_KEY"),
           has_supabase_url: !!supabaseUrl,
-        },
+        }
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      }
     );
   }
 

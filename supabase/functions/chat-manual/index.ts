@@ -347,7 +347,7 @@ Provide a clear answer using the manual content above.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_output_tokens: 2000, // ✅ correct for /responses
+        max_output_tokens: 8000, // Increased for reasoning + answer
       }
     : {
         model,

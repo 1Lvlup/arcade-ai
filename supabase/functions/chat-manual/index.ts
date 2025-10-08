@@ -53,7 +53,7 @@ async function getModelConfig(tenant_id: string) {
 
   return {
     model,
-    maxTokensParam: isGpt5 ? "max_completion_tokens" : "max_tokens",
+    maxTokensParam: isGpt5 ? "max_output_tokens" : "max_tokens",
     supportsTemperature: !isGpt5,
   };
 }
@@ -144,59 +144,39 @@ async function createEmbedding(text: string) {
   }).then((data) => data.data[0].embedding);
 }
 
-/// ─────────────────────────────────────────────────────────────────────────
-// Search for relevant chunks using hybrid approach (self-contained version)
-// ─────────────────────────────────────────────────────────────────────────
+function normalizeQuery(q: string) {
+  return q.replace(/[’‘]/g, "'").replace(/\s+/g, " ").trim();
+}
+
+function expandQuery(q: string) {
+  const n = normalizeQuery(q);
+  // seed rule for the “balls won’t come out / stuck” case
+  const ballRule =
+    /balls?.*?(won(?:'|’)?t|wont|do(?:'|’)?nt|dont).*?(come\s*out|dispense|release)|balls?.*?(stuck|jam)/i;
+  if (ballRule.test(n)) {
+    const syn = ["ball gate", "ball release", "gate motor", "gate open sensor", "gate closed sensor", "ball diverter"];
+    return `${n}\nSynonyms: ${syn.join(", ")}`;
+  }
+  return n;
+}
+
+// Search for relevant chunks using hybrid approach
 async function searchChunks(query: string, manual_id?: string, tenant_id?: string) {
   const startTime = Date.now();
 
-  // --- local helpers (scoped to this function) ---
-  function normalizeRow(r: any) {
-    const t =
-      typeof r.content === "string"
-        ? r.content
-        : typeof r.chunk_text === "string"
-          ? r.chunk_text
-          : typeof r.text === "string"
-            ? r.text
-            : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
-    return { ...r, content: t };
-  }
-  function normalizeQuery(q: string) {
-    return q.replace(/[’‘]/g, "'").replace(/\s+/g, " ").trim();
-  }
-  function expandQuery(q: string) {
-    const n = normalizeQuery(q);
-    // seed rule for “balls won’t come out / stuck”
-    const ballRule =
-      /balls?.*?(won(?:'|’)?t|wont|do(?:'|’)?nt|dont).*?(come\s*out|dispense|release)|balls?.*?(stuck|jam)/i;
-    if (ballRule.test(n)) {
-      const syn = [
-        "ball gate",
-        "ball release",
-        "gate motor",
-        "gate open sensor",
-        "gate closed sensor",
-        "ball diverter",
-      ];
-      return `${n}\nSynonyms: ${syn.join(", ")}`;
-    }
-    return n;
-  }
-
-  // --- build hybrid query (synonyms + keywords) ---
   const expanded = expandQuery(query);
   const keywords = keywordLine(expanded);
   const hybridQuery = keywords ? `${expanded}\nKeywords: ${keywords}` : expanded;
 
   console.log("🔍 Starting hybrid search for query:", query.substring(0, 100));
-  if (keywords) console.log("🔑 Extracted keywords:", keywords);
+  if (keywords) {
+    console.log("🔑 Extracted keywords:", keywords);
+  }
 
-  // --- embedding for retrieval ---
   const queryEmbedding = await createEmbedding(hybridQuery);
   console.log("✅ Created query embedding");
 
-  // --- vector search via RPC ---
+  // Vector search - retrieve top 60 for reranking
   const { data: vectorResults, error: vectorError } = await supabase.rpc("match_chunks_improved", {
     query_embedding: queryEmbedding,
     top_k: 60,
@@ -204,15 +184,20 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
     manual: manual_id,
     tenant_id: tenant_id,
   });
-  if (vectorError) console.error("❌ Vector search error:", vectorError);
 
-  const candidates = (vectorResults || []).map(normalizeRow);
-  console.log(`📊 Vector search found ${candidates.length} results`);
+  if (vectorError) {
+    console.error("❌ Vector search error:", vectorError);
+  }
 
+  console.log(`📊 Vector search found ${vectorResults?.length || 0} results`);
+
+  const candidates = vectorResults || [];
   const strategy = candidates.length > 0 ? "vector" : "none";
 
-  // --- Cohere Rerank (single, safe block) ---
-  let finalResults: any[] = [];
+  console.log(`✅ Using ${strategy} search strategy with ${candidates.length} candidates`);
+
+  // Apply Cohere Rerank
+  let finalResults = [];
   if (candidates.length > 0) {
     try {
       const cohereApiKey = Deno.env.get("COHERE_API_KEY");
@@ -221,7 +206,8 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
         finalResults = candidates.slice(0, 10);
       } else {
         console.log("🔄 Reranking with Cohere...");
-        const truncatedDocs = candidates.map((c) => {
+        // Guard against non-string content
+        const truncatedDocs = (candidates || []).map((c) => {
           const s = typeof c.content === "string" ? c.content : JSON.stringify(c.content ?? "");
           return s.length > 1500 ? s.slice(0, 1500) : s;
         });
@@ -234,39 +220,23 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
           },
           body: JSON.stringify({
             model: "rerank-english-v3.0",
-            query: expanded ?? query,
+            query: query,
             documents: truncatedDocs,
-            top_n: Math.min(10, truncatedDocs.length),
+            top_n: 10,
           }),
         });
 
         if (!cohereRes.ok) {
           const errorText = await cohereRes.text();
-          console.error("❌ Cohere rerank failed:", cohereRes.status, errorText.slice(0, 500));
+          console.error("❌ Cohere rerank failed:", cohereRes.status, errorText);
           finalResults = candidates.slice(0, 10);
         } else {
           const rerank = await cohereRes.json();
-          finalResults = (rerank.results || [])
-            .filter((r: any) => Number.isInteger(r.index) && candidates[r.index])
-            .map((r: any) => ({
-              ...candidates[r.index],
-              rerank_score: typeof r.relevance_score === "number" ? r.relevance_score : undefined,
-              original_score: candidates[r.index].score,
-            }));
-
-          // top up if Cohere returned fewer than requested
-          if (finalResults.length < 10) {
-            const seen = new Set(
-              finalResults.map((x) => x.id ?? `${x.page_start}:${x.page_end}:${x.content.slice(0, 40)}`),
-            );
-            for (const c of candidates) {
-              const key = c.id ?? `${c.page_start}:${c.page_end}:${c.content.slice(0, 40)}`;
-              if (!seen.has(key)) {
-                finalResults.push(c);
-                if (finalResults.length >= 10) break;
-              }
-            }
-          }
+          finalResults = rerank.results.map((r: any) => ({
+            ...candidates[r.index],
+            rerank_score: r.relevance_score,
+            original_score: candidates[r.index].score,
+          }));
           console.log(`✅ Reranked to top ${finalResults.length} results`);
         }
       }
@@ -342,7 +312,7 @@ Provide a clear answer using the manual content above.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_completion_tokens: 2000,
+        max_output_tokens: 2000,
       }
     : {
         model,

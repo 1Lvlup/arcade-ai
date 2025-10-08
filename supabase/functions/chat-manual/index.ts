@@ -141,7 +141,7 @@ async function createEmbedding(text: string) {
       model: "text-embedding-3-small",
       input: text,
     }),
-  }).then(data => data.data[0].embedding);
+  }).then((data) => data.data[0].embedding);
 }
 
 // Search for relevant chunks using hybrid approach
@@ -275,7 +275,7 @@ Format
 
 **Why:** <one-line rationale>
 
-**Citations:** p<X>, p<Y>, p<Z>;
+**Citations:** p<X>, p<Y>, p<Z>`;
 
   const userPrompt = `Question: ${query}
 
@@ -286,9 +286,7 @@ Provide a clear answer using the manual content above.`;
 
   console.log(`🤖 Generating answer with model: ${model}`);
 
-  const url = isGpt5(model)
-    ? "https://api.openai.com/v1/responses"
-    : "https://api.openai.com/v1/chat/completions";
+  const url = isGpt5(model) ? "https://api.openai.com/v1/responses" : "https://api.openai.com/v1/chat/completions";
 
   const body: any = isGpt5(model)
     ? {
@@ -297,7 +295,7 @@ Provide a clear answer using the manual content above.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_output_tokens: 16000,
+        max_completion_tokens: 2000,
       }
     : {
         model,
@@ -321,11 +319,11 @@ Provide a clear answer using the manual content above.`;
     body: JSON.stringify(body),
   });
   console.log("📦 OpenAI response usage:", data.usage);
-  
+
   const answerText = isGpt5(model)
-  ? (data.output_text ?? data.choices?.[0]?.message?.content ?? data.output?.[1]?.content?.[0]?.text ?? "")
-  : (data.choices?.[0]?.message?.content ?? "");
-  
+    ? (data.output_text ?? data.choices?.[0]?.message?.content ?? data.output?.[1]?.content?.[0]?.text ?? "")
+    : (data.choices?.[0]?.message?.content ?? "");
+
   if (!answerText || answerText.trim() === "") {
     console.error("❌ Empty answer from model. Response:", JSON.stringify(data, null, 2));
     throw new Error("Model returned an empty response");
@@ -341,7 +339,9 @@ Provide a clear answer using the manual content above.`;
 // ─────────────────────────────────────────────────────────────────────────
 function buildFallbackFor(query: string) {
   const q = query.toLowerCase();
-  const isNoBalls = /balls/.test(q) && (/(won|wont|don|dont)/.test(q) && /(come out|dispense|release)/.test(q) || /(stuck|jam)/.test(q));
+  const isNoBalls =
+    /balls/.test(q) &&
+    ((/(won|wont|don|dont)/.test(q) && /(come out|dispense|release)/.test(q)) || /(stuck|jam)/.test(q));
   if (isNoBalls) {
     return `**Subsystem:** Ball Gate
 
@@ -364,7 +364,6 @@ function buildFallbackFor(query: string) {
 **Why:** Most “no-action” faults are power/sensor/drive basics.`;
 }
 
-
 async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: string, model?: string) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
@@ -376,9 +375,15 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
   console.log(`📊 Retrieved ${chunks.length} chunks after reranking`);
 
   if (!chunks || chunks.length === 0) {
-  const fallback = buildFallbackFor(query);
-  return { answer: fallback, sources: [], strategy: "none", pipeline_version: "v3", gate_reason: "insufficient_manual_evidence" };
-}
+    const fallback = buildFallbackFor(query);
+    return {
+      answer: fallback,
+      sources: [],
+      strategy: "none",
+      pipeline_version: "v3",
+      gate_reason: "insufficient_manual_evidence",
+    };
+  }
 
   // Apply answerability gate
   const maxRerankScore = Math.max(...chunks.map((c) => c.rerank_score ?? 0));
@@ -394,21 +399,21 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
     is_weak: weak,
   });
 
- if (weak) {
-  const fallback = buildFallbackFor(query);
-  return {
-    answer: fallback,
-    sources: chunks.slice(0, 3).map((c: any) => ({
-      page_start: c.page_start,
-      page_end: c.page_end,
-      content: (c.content || "").substring(0, 200),
-      score: c.score,
-    })),
-    strategy,
-    pipeline_version: "v3",
-    gate_reason: "insufficient_quality",
-  };
-}
+  if (weak) {
+    const fallback = buildFallbackFor(query);
+    return {
+      answer: fallback,
+      sources: chunks.slice(0, 3).map((c: any) => ({
+        page_start: c.page_start,
+        page_end: c.page_end,
+        content: (c.content || "").substring(0, 200),
+        score: c.score,
+      })),
+      strategy,
+      pipeline_version: "v3",
+      gate_reason: "insufficient_quality",
+    };
+  }
 
   // Take top chunks for context
   const topChunks = chunks.slice(0, 10);
@@ -454,11 +459,11 @@ serve(async (req) => {
           has_openai_key: !!openaiApiKey,
           has_cohere_key: !!Deno.env.get("COHERE_API_KEY"),
           has_supabase_url: !!supabaseUrl,
-        }
+        },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 

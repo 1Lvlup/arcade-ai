@@ -1,3 +1,5 @@
+// supabase/functions/chat-manual/index.ts
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -6,6 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Cache-Control": "no-store",
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -21,7 +24,9 @@ if (!openaiApiKey) throw new Error("Missing OPENAI_API_KEY");
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Helper to get AI config and determine model parameters
+// ─────────────────────────────────────────────────────────────────────────
+// Config lookup per-tenant
+// ─────────────────────────────────────────────────────────────────────────
 async function getModelConfig(tenant_id: string) {
   await supabase.rpc("set_tenant_context", { tenant_id });
 
@@ -34,23 +39,22 @@ async function getModelConfig(tenant_id: string) {
   let model = "gpt-5"; // Default
   if (config?.config_value) {
     const value = config.config_value;
-    // If it's already a string and looks like a model name, use it directly
     if (typeof value === "string" && (value.startsWith("gpt-") || value.startsWith("claude-"))) {
       model = value;
     } else if (typeof value === "string") {
-      // Try to parse JSON-stringified values
       try {
         model = JSON.parse(value);
       } catch {
         model = value;
       }
     } else {
-      model = value;
+      // if stored as JSON
+      // deno-lint-ignore no-explicit-any
+      model = (value as any) ?? model;
     }
   }
 
   const isGpt5 = model.includes("gpt-5");
-
   return {
     model,
     maxTokensParam: isGpt5 ? "max_output_tokens" : "max_tokens",
@@ -58,66 +62,84 @@ async function getModelConfig(tenant_id: string) {
   };
 }
 
-// Extract technical keywords from query
+// ─────────────────────────────────────────────────────────────────────────
+// Query helpers: normalize + symptom expansion
+// ─────────────────────────────────────────────────────────────────────────
+function normalizeQuery(q: string) {
+  return q.replace(/[’‘]/g, "'").replace(/\s+/g, " ").trim();
+}
+
+function expandQuery(q: string) {
+  const n = normalizeQuery(q);
+  // seed rule for “balls won’t come out / stuck”
+  const ballRule =
+    /balls?.*?(won(?:'|’)?t|wont|do(?:'|’)?nt|dont).*?(come\s*out|dispense|release)|balls?.*?(stuck|jam)/i;
+  if (ballRule.test(n)) {
+    const syn = [
+      "ball gate",
+      "ball release",
+      "gate motor",
+      "gate open sensor",
+      "gate closed sensor",
+      "ball diverter",
+    ];
+    return `${n}\nSynonyms: ${syn.join(", ")}`;
+  }
+  return n;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Keyword helpers you already had
+// ─────────────────────────────────────────────────────────────────────────
 function keywordLine(q: string): string {
-  const toks = q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/gi) || [];
+  const toks =
+    q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/gi) || [];
   return [...new Set(toks)].join(" ");
 }
 
-// Token boost for exact technical term matches
 function tokenBoost(text: string): number {
   return /\b(CR-?2032|CMOS|BIOS|HDMI|J\d+|pin\s?\d+|[0-9]+V)\b/i.test(text) ? 0.15 : 0;
 }
 
-// Maximal Marginal Relevance for result diversity
 function applyMMR(results: any[], lambda = 0.7, targetCount = 10): any[] {
   if (results.length <= targetCount) return results;
-
   const selected = [results[0]];
   const remaining = results.slice(1);
-
   while (selected.length < targetCount && remaining.length > 0) {
     let bestIdx = 0;
     let bestScore = -1;
-
     for (let i = 0; i < remaining.length; i++) {
       const candidate = remaining[i];
       const relevanceScore = (candidate.score || 0) + tokenBoost(candidate.content);
-
       let maxSimilarity = 0;
       for (const sel of selected) {
         const similarity = textSimilarity(candidate.content, sel.content);
         maxSimilarity = Math.max(maxSimilarity, similarity);
       }
       const diversityScore = 1 - maxSimilarity;
-
       const mmrScore = lambda * relevanceScore + (1 - lambda) * diversityScore;
-
       if (mmrScore > bestScore) {
         bestScore = mmrScore;
         bestIdx = i;
       }
     }
-
     selected.push(remaining[bestIdx]);
     remaining.splice(bestIdx, 1);
   }
-
   return selected;
 }
 
-// Simple text similarity using Jaccard similarity
 function textSimilarity(text1: string, text2: string): number {
   const words1 = new Set(text1.toLowerCase().split(/\s+/));
   const words2 = new Set(text2.toLowerCase().split(/\s+/));
-
   const intersection = new Set([...words1].filter((x) => words2.has(x)));
   const union = new Set([...words1, ...words2]);
-
   return intersection.size / union.size;
 }
 
-// Helper function to fetch JSON and surface real errors
+// ─────────────────────────────────────────────────────────────────────────
+// Fetch helper (logs HTTP body on non-2xx)
+// ─────────────────────────────────────────────────────────────────────────
 async function fetchJsonOrThrow(url: string, init: RequestInit) {
   const res = await fetch(url, init);
   const text = await res.text();
@@ -128,7 +150,9 @@ async function fetchJsonOrThrow(url: string, init: RequestInit) {
   return JSON.parse(text);
 }
 
-// Create embedding for search
+// ─────────────────────────────────────────────────────────────────────────
+// OpenAI Embedding
+// ─────────────────────────────────────────────────────────────────────────
 async function createEmbedding(text: string) {
   return await fetchJsonOrThrow("https://api.openai.com/v1/embeddings", {
     method: "POST",
@@ -144,22 +168,22 @@ async function createEmbedding(text: string) {
   }).then((data) => data.data[0].embedding);
 }
 
+// ─────────────────────────────────────────────────────────────────────────
 // Search for relevant chunks using hybrid approach
+// ─────────────────────────────────────────────────────────────────────────
 async function searchChunks(query: string, manual_id?: string, tenant_id?: string) {
   const startTime = Date.now();
 
-  const keywords = keywordLine(query);
-  const hybridQuery = keywords ? `${query}\nKeywords: ${keywords}` : query;
+  const expanded = expandQuery(query);
+  const keywords = keywordLine(expanded);
+  const hybridQuery = keywords ? `${expanded}\nKeywords: ${keywords}` : expanded;
 
-  console.log("🔍 Starting hybrid search for query:", query.substring(0, 100));
-  if (keywords) {
-    console.log("🔑 Extracted keywords:", keywords);
-  }
+  console.log("🔍 Starting hybrid search:", query.substring(0, 120));
+  if (keywords) console.log("🔑 Keywords:", keywords);
 
   const queryEmbedding = await createEmbedding(hybridQuery);
   console.log("✅ Created query embedding");
 
-  // Vector search - retrieve top 60 for reranking
   const { data: vectorResults, error: vectorError } = await supabase.rpc("match_chunks_improved", {
     query_embedding: queryEmbedding,
     top_k: 60,
@@ -172,15 +196,26 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
     console.error("❌ Vector search error:", vectorError);
   }
 
-  console.log(`📊 Vector search found ${vectorResults?.length || 0} results`);
+  // normalize DB rows -> { content: string, ... }
+  function normalizeRow(r: any) {
+    const t =
+      typeof r.content === "string"
+        ? r.content
+        : typeof r.chunk_text === "string"
+        ? r.chunk_text
+        : typeof r.text === "string"
+        ? r.text
+        : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
+    return { ...r, content: t };
+  }
 
-  const candidates = vectorResults || [];
+  const candidates = (vectorResults || []).map(normalizeRow);
+  console.log(`📊 Vector search found ${candidates.length} results`);
+
   const strategy = candidates.length > 0 ? "vector" : "none";
 
-  console.log(`✅ Using ${strategy} search strategy with ${candidates.length} candidates`);
-
-  // Apply Cohere Rerank
-  let finalResults = [];
+  // Cohere rerank
+  let finalResults: any[] = [];
   if (candidates.length > 0) {
     try {
       const cohereApiKey = Deno.env.get("COHERE_API_KEY");
@@ -189,8 +224,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
         finalResults = candidates.slice(0, 10);
       } else {
         console.log("🔄 Reranking with Cohere...");
-        // Guard against non-string content
-        const truncatedDocs = (candidates || []).map((c) => {
+        const truncatedDocs = candidates.map((c) => {
           const s = typeof c.content === "string" ? c.content : JSON.stringify(c.content ?? "");
           return s.length > 1500 ? s.slice(0, 1500) : s;
         });
@@ -203,23 +237,40 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
           },
           body: JSON.stringify({
             model: "rerank-english-v3.0",
-            query: query,
+            query: expanded ?? query,
             documents: truncatedDocs,
-            top_n: 10,
+            top_n: Math.min(10, truncatedDocs.length),
           }),
         });
 
         if (!cohereRes.ok) {
           const errorText = await cohereRes.text();
-          console.error("❌ Cohere rerank failed:", cohereRes.status, errorText);
+          console.error("❌ Cohere rerank failed:", cohereRes.status, errorText.slice(0, 500));
           finalResults = candidates.slice(0, 10);
         } else {
           const rerank = await cohereRes.json();
-          finalResults = rerank.results.map((r: any) => ({
-            ...candidates[r.index],
-            rerank_score: r.relevance_score,
-            original_score: candidates[r.index].score,
-          }));
+          finalResults = (rerank.results || [])
+            .filter((r: any) => Number.isInteger(r.index) && candidates[r.index])
+            .map((r: any) => ({
+              ...candidates[r.index],
+              rerank_score: typeof r.relevance_score === "number" ? r.relevance_score : undefined,
+              original_score: candidates[r.index].score,
+            }));
+
+          if (finalResults.length < 10) {
+            const seen = new Set(
+              finalResults.map(
+                (x) => x.id ?? `${x.page_start}:${x.page_end}:${(x.content || "").slice(0, 40)}`
+              )
+            );
+            for (const c of candidates) {
+              const key = c.id ?? `${c.page_start}:${c.page_end}:${(c.content || "").slice(0, 40)}`;
+              if (!seen.has(key)) {
+                finalResults.push(c);
+                if (finalResults.length >= 10) break;
+              }
+            }
+          }
           console.log(`✅ Reranked to top ${finalResults.length} results`);
         }
       }
@@ -236,14 +287,13 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 🎯 SINGLE STAGE: Model-Aware Answer Generation
+// Model-aware answer generation
 // ─────────────────────────────────────────────────────────────────────────
 function isGpt5(model: string): boolean {
   return model.includes("gpt-5");
 }
 
 async function generateAnswer(query: string, chunks: any[], model: string): Promise<string> {
-  // Build context from chunks
   const contextBlocks = chunks
     .map((c, i) => {
       const pageInfo = c.page_start
@@ -286,7 +336,9 @@ Provide a clear answer using the manual content above.`;
 
   console.log(`🤖 Generating answer with model: ${model}`);
 
-  const url = isGpt5(model) ? "https://api.openai.com/v1/responses" : "https://api.openai.com/v1/chat/completions";
+  const url = isGpt5(model)
+    ? "https://api.openai.com/v1/responses"
+    : "https://api.openai.com/v1/chat/completions";
 
   const body: any = isGpt5(model)
     ? {
@@ -295,7 +347,7 @@ Provide a clear answer using the manual content above.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_output_tokens: 2000,
+        max_output_tokens: 2000, // ✅ correct for /responses
       }
     : {
         model,
@@ -318,10 +370,14 @@ Provide a clear answer using the manual content above.`;
     },
     body: JSON.stringify(body),
   });
+
   console.log("📦 OpenAI response usage:", data.usage);
 
   const answerText = isGpt5(model)
-    ? (data.output_text ?? data.choices?.[0]?.message?.content ?? data.output?.[1]?.content?.[0]?.text ?? "")
+    ? (data.output_text ??
+       data.choices?.[0]?.message?.content ??
+       data.output?.[1]?.content?.[0]?.text ??
+       "")
     : (data.choices?.[0]?.message?.content ?? "");
 
   if (!answerText || answerText.trim() === "") {
@@ -330,12 +386,11 @@ Provide a clear answer using the manual content above.`;
   }
 
   console.log("✅ Answer generated:", answerText.substring(0, 100) + "...");
-
   return answerText;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 🚀 SIMPLIFIED RAG PIPELINE (Retrieval + Model Call)
+// Fallback answer generator for weak/empty retrieval
 // ─────────────────────────────────────────────────────────────────────────
 function buildFallbackFor(query: string) {
   const q = query.toLowerCase();
@@ -364,13 +419,12 @@ function buildFallbackFor(query: string) {
 **Why:** Most “no-action” faults are power/sensor/drive basics.`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Pipeline
+// ─────────────────────────────────────────────────────────────────────────
 async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: string, model?: string) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
-  // ──────────────────────────────────────────────────────────────────────
-  // STAGE 0: Retrieval + Reranking (Cohere)
-  // ──────────────────────────────────────────────────────────────────────
-  console.log("🔎 STAGE 0: Hybrid search + reranking...");
   const { results: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
   console.log(`📊 Retrieved ${chunks.length} chunks after reranking`);
 
@@ -385,7 +439,6 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
     };
   }
 
-  // Apply answerability gate
   const maxRerankScore = Math.max(...chunks.map((c) => c.rerank_score ?? 0));
   const maxBaseScore = Math.max(...chunks.map((c) => c.score ?? 0));
   const hasGoodRerank = maxRerankScore >= 0.45;
@@ -415,12 +468,8 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
     };
   }
 
-  // Take top chunks for context
   const topChunks = chunks.slice(0, 10);
 
-  // ──────────────────────────────────────────────────────────────────────
-  // STAGE 1: Model Call
-  // ──────────────────────────────────────────────────────────────────────
   console.log(`🎯 STAGE 1: Generating answer with model: ${model || CHAT_MODEL}`);
   const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL);
 
@@ -443,12 +492,12 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Health check endpoint
   if (req.method === "GET") {
     return new Response(
       JSON.stringify({
@@ -461,18 +510,13 @@ serve(async (req) => {
           has_supabase_url: !!supabaseUrl,
         },
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 
   try {
     const { query, manual_id } = await req.json();
-
-    if (!query) {
-      throw new Error("Query is required");
-    }
+    if (!query) throw new Error("Query is required");
 
     console.log("\n=================================");
     console.log("🔍 NEW CHAT REQUEST");
@@ -505,7 +549,7 @@ serve(async (req) => {
       }
     }
 
-    // Get model configuration for tenant
+    // Get model configuration for tenant (if available)
     let model = CHAT_MODEL;
     if (tenant_id) {
       try {
@@ -517,14 +561,12 @@ serve(async (req) => {
       }
     }
 
-    // Run V3 Pipeline
+    // Run pipeline
     console.log("🚀 Using RAG Pipeline V3\n");
-
     const result = await runRagPipelineV3(query, manual_id, tenant_id, model);
 
     const { answer, sources, strategy, chunks } = result;
 
-    // Build metadata
     const metadata = {
       pipeline_version: "v3",
       manual_id: manual_id || "all_manuals",
@@ -553,9 +595,7 @@ serve(async (req) => {
         metadata,
         context_seen: contextSeen,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("❌ CHAT ERROR:", error);
@@ -571,10 +611,7 @@ serve(async (req) => {
         sources: [],
         strategy: "error",
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

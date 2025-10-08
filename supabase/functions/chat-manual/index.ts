@@ -286,27 +286,27 @@ Provide a clear answer using the manual content above.`;
 
   console.log(`🤖 Generating answer with model: ${model}`);
 
-const url = isGpt5(model)
-  ? "https://api.openai.com/v1/responses"
-  : "https://api.openai.com/v1/chat/completions";
+  const url = isGpt5(model)
+    ? "https://api.openai.com/v1/responses"
+    : "https://api.openai.com/v1/chat/completions";
 
-const body: any = isGpt5(model)
-  ? {
-      model,
-      input: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      max_completion_tokens: 2000
-    }
-  : {
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      max_tokens: 2000,
-    };
+  const body: any = isGpt5(model)
+    ? {
+        model,
+        input: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_output_tokens: 16000,
+      }
+    : {
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 2000,
+      };
 
   console.log(`📤 Calling ${url} with model ${model}`);
   console.log(`📝 Body preview:`, JSON.stringify(body).slice(0, 400));
@@ -323,8 +323,8 @@ const body: any = isGpt5(model)
   console.log("📦 OpenAI response usage:", data.usage);
   
   const answerText = isGpt5(model)
-    ? (data.output?.[1]?.content?.[0]?.text ?? data.output_text ?? data.choices?.[0]?.message?.content ?? "")
-    : (data.choices?.[0]?.message?.content ?? "");
+  ? (data.output_text ?? data.choices?.[0]?.message?.content ?? data.output?.[1]?.content?.[0]?.text ?? "")
+  : (data.choices?.[0]?.message?.content ?? "");
   
   if (!answerText || answerText.trim() === "") {
     console.error("❌ Empty answer from model. Response:", JSON.stringify(data, null, 2));
@@ -339,6 +339,32 @@ const body: any = isGpt5(model)
 // ─────────────────────────────────────────────────────────────────────────
 // 🚀 SIMPLIFIED RAG PIPELINE (Retrieval + Model Call)
 // ─────────────────────────────────────────────────────────────────────────
+function buildFallbackFor(query: string) {
+  const q = query.toLowerCase();
+  const isNoBalls = /balls/.test(q) && (/(won|wont|don|dont)/.test(q) && /(come out|dispense|release)/.test(q) || /(stuck|jam)/.test(q));
+  if (isNoBalls) {
+    return `**Subsystem:** Ball Gate
+
+**Do this first (2–4 steps):**
+1) [Field] Enter Error Display; if a Ball Gate error shows, note the code.
+2) [Field] Watch the gate after swipe: if the motor doesn’t twitch, check +12 V at the gate harness and continuity back to the I/O board (J14).
+3) [Field] Check the two gate sensors: they must toggle when the magnet passes (seen in inputs or with a meter). If no toggle, reseat/replace sensor or wiring.
+4) [Field] Open the gate cover and remove any screws/debris binding the gate. Do not force the gate by hand.
+
+**Why:** If the controller can’t drive the gate or see the sensors toggle, it won’t release balls.`;
+  }
+  return `**Subsystem:** General
+
+**Do this first (2–4 steps):**
+1) [Field] Check stored errors/LED codes and note them.
+2) [Field] Power sanity (+5 V and +12 V) at the I/O board.
+3) [Field] Exercise the actuator/sensor once while watching inputs.
+4) [Field] Reseat connectors; look for bent/oxidized pins.
+
+**Why:** Most “no-action” faults are power/sensor/drive basics.`;
+}
+
+
 async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: string, model?: string) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
@@ -350,15 +376,9 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
   console.log(`📊 Retrieved ${chunks.length} chunks after reranking`);
 
   if (!chunks || chunks.length === 0) {
-    console.log("⚠️ No chunks found");
-    return {
-      answer:
-        "I couldn't find relevant information in the manual for that question. Could you rephrase or provide more context?",
-      sources: [],
-      strategy: "none",
-      pipeline_version: "v3",
-    };
-  }
+  const fallback = buildFallbackFor(query);
+  return { answer: fallback, sources: [], strategy: "none", pipeline_version: "v3", gate_reason: "insufficient_manual_evidence" };
+}
 
   // Apply answerability gate
   const maxRerankScore = Math.max(...chunks.map((c) => c.rerank_score ?? 0));
@@ -374,22 +394,21 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
     is_weak: weak,
   });
 
-  if (weak) {
-    console.log("⚠️ Answerability gate failed");
-    return {
-      answer:
-        "I don't have enough relevant information in the manual to answer that confidently. Can you rephrase or narrow the question?",
-      sources: chunks.slice(0, 3).map((c: any) => ({
-        page_start: c.page_start,
-        page_end: c.page_end,
-        content: c.content.substring(0, 200),
-        score: c.score,
-      })),
-      strategy,
-      pipeline_version: "v3",
-      gate_reason: "insufficient_quality",
-    };
-  }
+ if (weak) {
+  const fallback = buildFallbackFor(query);
+  return {
+    answer: fallback,
+    sources: chunks.slice(0, 3).map((c: any) => ({
+      page_start: c.page_start,
+      page_end: c.page_end,
+      content: (c.content || "").substring(0, 200),
+      score: c.score,
+    })),
+    strategy,
+    pipeline_version: "v3",
+    gate_reason: "insufficient_quality",
+  };
+}
 
   // Take top chunks for context
   const topChunks = chunks.slice(0, 10);

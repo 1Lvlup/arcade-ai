@@ -7,8 +7,6 @@ import { Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, Shield, Bar
 import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
-import checkmateLogoImage from '@/assets/checkmate-logo.png';
-
 import { Link } from 'react-router-dom';
 const Index = () => {
   const {
@@ -137,16 +135,20 @@ const Index = () => {
               <div className="caption-text text-primary/80 text-lg tracking-wider uppercase">
                 Next-Generation AI Platform
               </div>
-              <div className="flex justify-center items-center">
-                <img 
-                  src={checkmateLogoImage} 
-                  alt="Level Up Logo" 
-                  className="w-full max-w-2xl h-auto object-contain drop-shadow-[0_0_40px_rgba(252,163,17,0.5)]"
-                  style={{
-                    filter: 'drop-shadow(0 0 60px rgba(252, 163, 17, 0.4)) drop-shadow(0 0 20px rgba(252, 163, 17, 0.6))'
-                  }}
-                />
-              </div>
+              <h1 
+                className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text"
+                data-text="LEVEL UP"
+                style={{
+                  textShadow: `
+                    0 0 20px hsl(189 94% 60% / 0.8),
+                    0 0 40px hsl(189 94% 60% / 0.6),
+                    0 0 60px hsl(189 94% 60% / 0.5),
+                    0 0 80px hsl(189 94% 60% / 0.4)
+                  `
+                }}
+              >
+                LEVEL UP
+              </h1>
             </div>
             <p className="body-text text-xl md:text-2xl text-muted-foreground max-w-5xl mx-auto leading-relaxed">
               Revolutionary AI platform specifically designed for arcade technicians and operators. 

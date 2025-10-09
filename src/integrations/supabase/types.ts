@@ -208,13 +208,18 @@ export type Database = {
           fec_tenant_id: string
           figure_id: string | null
           id: string
+          image_name: string | null
           job_id: string | null
           keywords: string[] | null
+          kind: string | null
           llama_asset_name: string | null
           manual_id: string
           ocr_text: string | null
+          page: number | null
           page_number: number | null
           storage_path: string | null
+          storage_url: string | null
+          version: string | null
           vision_text: string | null
         }
         Insert: {
@@ -226,13 +231,18 @@ export type Database = {
           fec_tenant_id?: string
           figure_id?: string | null
           id?: string
+          image_name?: string | null
           job_id?: string | null
           keywords?: string[] | null
+          kind?: string | null
           llama_asset_name?: string | null
           manual_id: string
           ocr_text?: string | null
+          page?: number | null
           page_number?: number | null
           storage_path?: string | null
+          storage_url?: string | null
+          version?: string | null
           vision_text?: string | null
         }
         Update: {
@@ -244,13 +254,18 @@ export type Database = {
           fec_tenant_id?: string
           figure_id?: string | null
           id?: string
+          image_name?: string | null
           job_id?: string | null
           keywords?: string[] | null
+          kind?: string | null
           llama_asset_name?: string | null
           manual_id?: string
           ocr_text?: string | null
+          page?: number | null
           page_number?: number | null
           storage_path?: string | null
+          storage_url?: string | null
+          version?: string | null
           vision_text?: string | null
         }
         Relationships: [
@@ -305,6 +320,36 @@ export type Database = {
           question?: string
           question_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      manual_pages: {
+        Row: {
+          canonical_page_id: string | null
+          headings: string[] | null
+          manual_id: string
+          page: number
+          section_path: string[] | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          canonical_page_id?: string | null
+          headings?: string[] | null
+          manual_id: string
+          page: number
+          section_path?: string[] | null
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          canonical_page_id?: string | null
+          headings?: string[] | null
+          manual_id?: string
+          page?: number
+          section_path?: string[] | null
+          updated_at?: string | null
+          version?: string
         }
         Relationships: []
       }
@@ -467,27 +512,77 @@ export type Database = {
           chunk_id: string
           content: string
           embedding: string
+          features: Json | null
           fec_tenant_id: string
           id: string
+          manual_id: string | null
           metadata: Json
+          page_end: number | null
+          page_start: number | null
+          section_path: string[] | null
+          version: string | null
         }
         Insert: {
           chunk_id: string
           content: string
           embedding: string
+          features?: Json | null
           fec_tenant_id?: string
           id?: string
+          manual_id?: string | null
           metadata: Json
+          page_end?: number | null
+          page_start?: number | null
+          section_path?: string[] | null
+          version?: string | null
         }
         Update: {
           chunk_id?: string
           content?: string
           embedding?: string
+          features?: Json | null
           fec_tenant_id?: string
           id?: string
+          manual_id?: string | null
           metadata?: Json
+          page_end?: number | null
+          page_start?: number | null
+          section_path?: string[] | null
+          version?: string | null
         }
         Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          fec_tenant_id: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          fec_tenant_id: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          fec_tenant_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_fec_tenant_id_fkey"
+            columns: ["fec_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "fec_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -501,6 +596,13 @@ export type Database = {
       get_current_user_fec_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       match_chunks: {
         Args: {
@@ -608,7 +710,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -735,6 +837,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user", "viewer"],
+    },
   },
 } as const

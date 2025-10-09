@@ -1,18 +1,50 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminRouteProps {
   children: ReactNode;
-  allowedEmails?: string[];
 }
 
-export function AdminRoute({ children, allowedEmails = ['jdupre@kingpinz.com'] }: AdminRouteProps) {
+export function AdminRoute({ children }: AdminRouteProps) {
   const { user, loading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [checkingRole, setCheckingRole] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    async function checkAdminRole() {
+      if (!user) {
+        setCheckingRole(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+
+        if (error) {
+          console.error('Error checking admin role:', error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(data);
+        }
+      } catch (err) {
+        console.error('Error checking admin role:', err);
+        setIsAdmin(false);
+      } finally {
+        setCheckingRole(false);
+      }
+    }
+
+    checkAdminRole();
+  }, [user]);
+
+  if (loading || checkingRole) {
     return (
       <div className="min-h-screen arcade-bg flex items-center justify-center">
         <Card className="border-primary/20">
@@ -29,7 +61,7 @@ export function AdminRoute({ children, allowedEmails = ['jdupre@kingpinz.com'] }
     return <Navigate to="/auth" replace />;
   }
 
-  if (!allowedEmails.includes(user.email || '')) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen arcade-bg flex items-center justify-center">
         <Card className="border-destructive/20 max-w-md">

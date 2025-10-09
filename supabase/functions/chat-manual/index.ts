@@ -327,13 +327,22 @@ Format
 
 **Citations:** p<X>, p<Y>, p<Z>`;
 
-  const userPrompt = `Question: ${query}
+  const styleHint = styleHintFromQuery(query);
+
+  let userPrompt = `Question: ${query}
 
 Manual content:
 ${contextBlocks}
 
 Provide a clear answer using the manual content above.`;
 
+  if (styleHint) {
+  userPrompt += `
+
+Style request:
+${styleHint}`;
+}
+  
   console.log(`🤖 Generating answer with model: ${model}`);
 
   const url = isGpt5(model) ? "https://api.openai.com/v1/responses" : "https://api.openai.com/v1/chat/completions";

@@ -85,7 +85,7 @@ function expandQuery(q: string) {
 function styleHintFromQuery(q: string): string {
   const s = q.toLowerCase();
   if (/(5th|fifth)\s+grader|explain.*like.*(5|five)th/.test(s)) {
-    return "Write for a 5th grader: short sentences, everyday words, no jargon. Define any technical term in one simple line.";
+    return "Write for a 5th grader: short sentences, everyday words, no jargon. Define any technical term in one simple line. Explain step by step";
   }
   return "";
 }
@@ -327,8 +327,6 @@ Format
 
 **Citations:** p<X>, p<Y>, p<Z>`;
 
-  const styleHint = styleHintFromQuery(query);
-
   let userPrompt = `Question: ${query}
 
 Manual content:
@@ -336,6 +334,8 @@ ${contextBlocks}
 
 Provide a clear answer using the manual content above.`;
 
+  const styleHint = styleHintFromQuery(query);
+  
   if (styleHint) {
   userPrompt += `
 

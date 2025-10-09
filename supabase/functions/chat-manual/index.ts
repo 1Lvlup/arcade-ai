@@ -75,14 +75,7 @@ function expandQuery(q: string) {
   const ballRule =
     /balls?.*?(won(?:'|’)?t|wont|do(?:'|’)?nt|dont).*?(come\s*out|dispense|release)|balls?.*?(stuck|jam)/i;
   if (ballRule.test(n)) {
-    const syn = [
-      "ball gate",
-      "ball release",
-      "gate motor",
-      "gate open sensor",
-      "gate closed sensor",
-      "ball diverter",
-    ];
+    const syn = ["ball gate", "ball release", "gate motor", "gate open sensor", "gate closed sensor", "ball diverter"];
     return `${n}\nSynonyms: ${syn.join(", ")}`;
   }
   return n;
@@ -92,8 +85,7 @@ function expandQuery(q: string) {
 // Keyword helpers you already had
 // ─────────────────────────────────────────────────────────────────────────
 function keywordLine(q: string): string {
-  const toks =
-    q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/gi) || [];
+  const toks = q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/gi) || [];
   return [...new Set(toks)].join(" ");
 }
 
@@ -202,10 +194,10 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
       typeof r.content === "string"
         ? r.content
         : typeof r.chunk_text === "string"
-        ? r.chunk_text
-        : typeof r.text === "string"
-        ? r.text
-        : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
+          ? r.chunk_text
+          : typeof r.text === "string"
+            ? r.text
+            : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
     return { ...r, content: t };
   }
 
@@ -259,9 +251,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 
           if (finalResults.length < 10) {
             const seen = new Set(
-              finalResults.map(
-                (x) => x.id ?? `${x.page_start}:${x.page_end}:${(x.content || "").slice(0, 40)}`
-              )
+              finalResults.map((x) => x.id ?? `${x.page_start}:${x.page_end}:${(x.content || "").slice(0, 40)}`),
             );
             for (const c of candidates) {
               const key = c.id ?? `${c.page_start}:${c.page_end}:${(c.content || "").slice(0, 40)}`;
@@ -336,9 +326,7 @@ Provide a clear answer using the manual content above.`;
 
   console.log(`🤖 Generating answer with model: ${model}`);
 
-  const url = isGpt5(model)
-    ? "https://api.openai.com/v1/responses"
-    : "https://api.openai.com/v1/chat/completions";
+  const url = isGpt5(model) ? "https://api.openai.com/v1/responses" : "https://api.openai.com/v1/chat/completions";
 
   const body: any = isGpt5(model)
     ? {
@@ -374,10 +362,7 @@ Provide a clear answer using the manual content above.`;
   console.log("📦 OpenAI response usage:", data.usage);
 
   const answerText = isGpt5(model)
-    ? (data.output_text ??
-       data.choices?.[0]?.message?.content ??
-       data.output?.[1]?.content?.[0]?.text ??
-       "")
+    ? (data.output_text ?? data.choices?.[0]?.message?.content ?? data.output?.[1]?.content?.[0]?.text ?? "")
     : (data.choices?.[0]?.message?.content ?? "");
 
   if (!answerText || answerText.trim() === "") {
@@ -453,19 +438,8 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
   });
 
   if (weak) {
-    const fallback = buildFallbackFor(query);
-    return {
-      answer: fallback,
-      sources: chunks.slice(0, 3).map((c: any) => ({
-        page_start: c.page_start,
-        page_end: c.page_end,
-        content: (c.content || "").substring(0, 200),
-        score: c.score,
-      })),
-      strategy,
-      pipeline_version: "v3",
-      gate_reason: "insufficient_quality",
-    };
+    console.log("⚠️ Weak evidence detected — proceeding with model anyway using available manual chunks.");
+    // No early return. We still call the model with topChunks so it must use whatever citations we have.
   }
 
   const topChunks = chunks.slice(0, 10);

@@ -117,10 +117,11 @@ serve(async (req) => {
 
     console.log(`📋 Evaluating ${questions.length} questions`);
 
-    const results = [];
+    // Get configured model
+    const modelConfig = await getModelConfig(supabase, profile.fec_tenant_id);
+    console.log(`🤖 Using configured model: ${modelConfig.model} (answers + grading)`);
 
-    // Process each question using GPT-4.1 for both answers and grading
-    console.log(`🤖 Using models: gpt-4.1 (answers + grading)`);
+    const results = [];
 
     // Process each question
     for (const q of questions as GoldenQuestion[]) {
@@ -189,16 +190,19 @@ Passages (verbatim from manual):
 ${passagesText.substring(0, 8000)}`
       };
 
-      const answerRequestBody = {
-        model: 'gpt-4.1',
-        max_tokens: 1200,
-        temperature: 0.2,
+      const answerRequestBody: any = {
+        model: modelConfig.model,
         messages: [
           { role: 'system', content: answerPrompt.system },
           { role: 'user', content: answerPrompt.user }
         ],
         response_format: { type: 'json_object' }
       };
+      
+      answerRequestBody[modelConfig.maxTokensParam] = 1200;
+      if (modelConfig.supportsTemperature) {
+        answerRequestBody.temperature = 0.2;
+      }
 
       const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
       const answerResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -268,16 +272,17 @@ Assistant's answer JSON to grade:
 ${JSON.stringify(answer)}`
       };
 
-      const gradeRequestBody = {
-        model: 'gpt-4.1', // Use GPT-4.1 for grading (Claude not supported via OpenAI endpoint)
-        max_tokens: 800,
-        temperature: 0,
+      const gradeRequestBody: any = {
+        model: modelConfig.model,
         messages: [
           { role: 'system', content: gradePrompt.system },
           { role: 'user', content: gradePrompt.user }
         ],
         response_format: { type: 'json_object' }
       };
+      
+      gradeRequestBody[modelConfig.maxTokensParam] = 800;
+      // No temperature for grading - we want deterministic results
 
       const gradeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -333,8 +338,8 @@ ${JSON.stringify(answer)}`
               preview: p.content.substring(0, 200)
             }))
           },
-          answer_model: 'gpt-4.1',
-          grader_model: 'gpt-4.1' // Updated to use GPT-4.1 for grading
+          answer_model: modelConfig.model,
+          grader_model: modelConfig.model
         });
 
       if (insertError) {

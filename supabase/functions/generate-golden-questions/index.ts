@@ -209,62 +209,84 @@ serve(async (req) => {
     
     console.log('📝 Analyzing content with AI...');
 
-    // Generate golden questions using OpenAI
-    const requestBody = {
-      model: 'gpt-4.1',
+    // Get configured model
+    const modelConfig = await getModelConfig(supabase, profile.fec_tenant_id);
+    console.log(`🤖 Using model: ${modelConfig.model}`);
+
+    // Generate golden questions using configured AI model
+    const requestBody: any = {
+      model: modelConfig.model,
       response_format: { type: "json_object" },
-      max_tokens: 16000,
-      temperature: 0.7,
       messages: [
         {
           role: 'system',
-          content: `You are a veteran arcade field technician. Generate questions EXACTLY how real techs ask them - short, direct, no fluff.
+          content: `You are an AI quality engineer testing RAG retrieval systems. Generate questions that will REVEAL WEAKNESSES in chunking and parsing.
 
-CRITICAL RULES:
+GOAL: Create questions that test if the manual was split well and can be searched effectively.
+
+STRATEGIC QUESTION TYPES:
+
+1. **Cross-Reference Tests** (3-4 questions)
+   - Require info from multiple sections (tests chunk boundaries)
+   - Example: "What tools needed for installing main power supply?"
+   - Expected keywords should span different sections
+
+2. **Specific Component Queries** (2-3 questions)  
+   - Target exact part numbers, voltages, dimensions
+   - Example: "What's the voltage spec for the 12V rail?"
+   - Tests if technical specs survived chunking
+
+3. **Procedural Step Tests** (2-3 questions)
+   - Multi-step processes (assembly, calibration, diagnostics)
+   - Example: "How do I calibrate ball sensors from factory reset?"
+   - Tests if procedures stayed intact across chunks
+
+4. **Figure/Diagram Tests** (1-2 questions)
+   - Reference diagrams, wiring charts, callouts
+   - Example: "Which connector is J7 on the main board?"
+   - Tests if figure captions were indexed properly
+
+5. **Error Code Lookups** (1-2 questions)
+   - Specific error codes and their solutions
+   - Example: "What does error code E12 mean?"
+   - Tests table parsing and keyword extraction
+
+QUALITY RULES:
 - Maximum 12 words per question
-- Use tech shorthand: "VR headset won't sync" not "What should I do if the VR headset is not detected"
-- Be specific: mention actual components by name
-- One issue per question
-
-GOOD EXAMPLES:
-✓ "How do I calibrate the seat height sensor?"
-✓ "Motion base stuck - where's the manual override?"
-✓ "What voltage does the main power supply need?"
-✓ "Game won't boot - which fuse do I check first?"
-
-BAD EXAMPLES (too wordy):
-✗ "What are the step-by-step instructions for safely moving the cabinet?"
-✗ "What should I do if the monitors or sensors are not detected or malfunctioning?"
+- Include 3-5 expected_keywords that MUST appear in a good answer
+- Mix high/medium importance (avoid all "high")
+- Be specific with component names, part numbers, values
 
 Return valid JSON:
 {
   "questions": [
     {
-      "question": "concise tech question under 12 words",
-      "type": "troubleshooting|setup|maintenance|safety|specifications",
-      "category": "two-word category like 'power issues' or 'sensor calibration'",
+      "question": "short, technical query under 12 words",
+      "type": "troubleshooting|setup|maintenance|specifications|safety",
+      "category": "two-word category",
       "importance": "high|medium|low",
-      "expected_keywords": ["specific_part", "technical_term", "component_name"],
-      "explanation": "why this matters to techs"
+      "expected_keywords": ["keyword1", "keyword2", "keyword3"],
+      "explanation": "what this tests about RAG quality"
     }
   ]
 }
 
-Generate 8-12 questions covering:
-- 4 troubleshooting (failures, error codes, diagnostics)
-- 3 setup/install (assembly, calibration, wiring)
-- 2 maintenance (cleaning, replacing parts)
-- 2 specifications (power, dimensions, requirements)
-- 1 safety (critical warnings only)`
+Generate 10-12 strategically designed test questions.`
         },
         {
           role: 'user',
-          content: `Generate short, direct golden questions for this arcade manual:
+          content: `Generate strategic test questions for this arcade manual that will reveal chunking/parsing quality issues:
 
 ${summary.substring(0, 8000)}`
         }
       ]
     };
+
+    // Add model-specific parameters
+    requestBody[modelConfig.maxTokensParam] = 16000;
+    if (modelConfig.supportsTemperature) {
+      requestBody.temperature = 0.7;
+    }
 
     const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

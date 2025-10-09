@@ -137,16 +137,16 @@ const Index = () => {
               <div className="caption-text text-primary/80 text-lg tracking-wider uppercase">
                 Next-Generation AI Platform
               </div>
-              <h1 className="display-heading leading-none relative">
+              <div className="flex justify-center items-center">
                 <img 
                   src={checkmateLogoImage} 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full object-contain opacity-20 -z-10 scale-150"
+                  alt="Level Up Logo" 
+                  className="w-full max-w-2xl h-auto object-contain drop-shadow-[0_0_40px_rgba(252,163,17,0.5)]"
+                  style={{
+                    filter: 'drop-shadow(0 0 60px rgba(252, 163, 17, 0.4)) drop-shadow(0 0 20px rgba(252, 163, 17, 0.6))'
+                  }}
                 />
-                <span className="glitch-text font-tech font-black text-8xl md:text-9xl lg:text-[10rem] text-primary" data-text="LEVEL UP">
-                  LEVEL UP
-                </span>
-              </h1>
+              </div>
             </div>
             <p className="body-text text-xl md:text-2xl text-muted-foreground max-w-5xl mx-auto leading-relaxed">
               Revolutionary AI platform specifically designed for arcade technicians and operators. 

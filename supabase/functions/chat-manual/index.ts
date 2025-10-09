@@ -563,6 +563,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        error: null,
         answer,
         sources,
         strategy,

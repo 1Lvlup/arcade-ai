@@ -207,7 +207,7 @@ const Index = () => {
         {/* Performance Stats Section */}
         <section className="py-24">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Platform Performance</h2>
+            <h2 className="text-4xl md:text-5xl font-tech font-bold text-foreground mb-4">Platform Performance</h2>
             <p className="text-xl text-muted-foreground">Industry-leading metrics that power your arcade operations</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -238,7 +238,7 @@ const Index = () => {
             <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
               Core Features
             </div>
-            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8">
+            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-8">
               Arcade AI Solutions
             </h2>
             <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
@@ -265,7 +265,7 @@ const Index = () => {
                     </div>
                   </div>
                   <div className="space-y-6">
-                    <h3 className="text-2xl font-bold text-primary">{feature.title}</h3>
+                    <h3 className="text-2xl font-tech font-bold text-primary">{feature.title}</h3>
                     <p className="text-muted-foreground leading-relaxed text-base">
                       {feature.description}
                     </p>
@@ -297,7 +297,7 @@ const Index = () => {
             <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
               Advanced Capabilities
             </div>
-            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8">
+            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-8">
               Professional Features
             </h2>
             <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
@@ -315,7 +315,7 @@ const Index = () => {
                       {capability.icon}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-foreground">{capability.title}</h3>
+                  <h3 className="text-2xl font-tech font-bold text-foreground">{capability.title}</h3>
                   <p className="text-muted-foreground leading-relaxed text-base">
                     {capability.description}
                   </p>
@@ -331,7 +331,7 @@ const Index = () => {
             <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
               Get Started Today
             </div>
-            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8">
+            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-8">
               Ready to Transform Your Arcade Operations?
             </h2>
             <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">

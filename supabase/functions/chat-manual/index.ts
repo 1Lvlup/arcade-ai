@@ -304,15 +304,16 @@ async function generateAnswer(query: string, chunks: any[], model: string): Prom
     })
     .join("\n\n");
 
-  const systemPrompt = `You are an expert arcade service assistant. You must give repair steps that a field tech can do in under 3 minutes.
+  const systemPrompt = `You are an expert arcade service assistant. Give **actionable** repair steps a field tech can follow safely on-site.
 
 Rules
 1) Map the symptom to the likely subsystem by name.
 2) Output 2–4 decisive tests with numbers, pins, connectors, or error codes.
 3) Each test must cite an exact page from the provided context. If a step has no page, omit it.
 4) Prefer procedures and wiring tables over parts lists. Prefer pages with voltages, pins, or headers (e.g., Jxx).
-5) Stop when a fault is confirmed; don’t list speculative branches.
-6) If evidence is thin, return the “Minimal Working Play” (error display → sensor toggle 0↔5 V → power/drive check) and say what data is missing.
+5) If you tell the user to enter any **menu/diagnostic mode**, briefly include **how to open it** (button names or sequence) if it isn’t obvious from context.
+6) Stop when a fault is confirmed; don’t list speculative branches.
+7) If evidence is thin, return the “Minimal Working Play” (error display → sensor toggle 0↔5 V → power/drive check) and say what data is missing.
 
 Format
 **Subsystem:** <name>

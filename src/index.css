@@ -5,14 +5,14 @@
 
 @layer base {
   :root {
-    /* Brand colors - Dark theme */
-    --background: 0 0% 0%;          /* #000000 Pure black */
-    --foreground: 23 98% 54%;       /* Orange text by default */
+    /* Brand colors - Redesigned */
+    --background: 0 0% 9%;          /* #181818 Dark gray background */
+    --foreground: 23 98% 54%;       /* #fd6c14 Orange text */
     
-    --card: 0 0% 9%;                /* #181818 Dark gray cards */
+    --card: 0 0% 0%;                /* Black cards */
     --card-foreground: 23 98% 54%;  /* Orange text on cards */
     
-    --popover: 0 0% 9%;
+    --popover: 0 0% 0%;
     --popover-foreground: 23 98% 54%;
     
     --primary: 23 98% 54%;          /* #fd6c14 Brand orange */
@@ -21,7 +21,7 @@
     --secondary: 0 81% 16%;         /* #4c0808 Dark red */
     --secondary-foreground: 23 98% 54%;
     
-    --muted: 0 0% 15%;
+    --muted: 0 0% 6%;
     --muted-foreground: 23 98% 60%;
     
     --accent: 297 100% 85%;         /* #FBB2FF Pink accent */
@@ -31,7 +31,7 @@
     --destructive-foreground: 0 0% 95%;
     
     --border: 297 100% 85%;         /* Pink borders */
-    --input: 0 0% 9%;
+    --input: 0 0% 0%;
     --ring: 297 100% 85%;           /* Pink ring */
     
     --radius: 0.75rem;
@@ -43,35 +43,44 @@
     --brand-dark-gray: 0 0% 9%;     /* #181818 */
     --brand-black: 0 0% 0%;         /* #000000 */
     
-    /* Hexagon background pattern */
-    --hexagon-bg: url("data:image/svg+xml,%3Csvg width='100' height='87' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 0l25 14.43v28.87L25 57.73 0 43.3V14.43z' fill='none' stroke='%23fd6c14' stroke-opacity='0.05' stroke-width='1'/%3E%3C/svg%3E");
+    /* Geometric pattern with pink glowing lines */
+    --geometric-bg: 
+      linear-gradient(90deg, transparent 48%, hsl(297 100% 85% / 0.15) 49%, hsl(297 100% 85% / 0.15) 51%, transparent 52%),
+      linear-gradient(0deg, transparent 48%, hsl(297 100% 85% / 0.15) 49%, hsl(297 100% 85% / 0.15) 51%, transparent 52%),
+      linear-gradient(45deg, transparent 48%, hsl(297 100% 85% / 0.1) 49%, hsl(297 100% 85% / 0.1) 51%, transparent 52%),
+      linear-gradient(-45deg, transparent 48%, hsl(297 100% 85% / 0.1) 49%, hsl(297 100% 85% / 0.1) 51%, transparent 52%),
+      hsl(0 0% 9%);
+    --geometric-bg-size: 100px 100px;
     
     /* Brand shadows and glows */
     --shadow-orange: 0 0 25px hsl(23 98% 54% / 0.4);
     --shadow-orange-strong: 0 0 40px hsl(23 98% 54% / 0.6);
     --glow-orange: 0 0 20px hsl(23 98% 54% / 0.5);
-    --glow-tech: 0 0 30px hsl(23 98% 54% / 0.3);
+    --glow-pink: 0 0 30px hsl(297 100% 85% / 0.4);
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(23 98% 54%), hsl(0 81% 16%));
+    --gradient-tech: linear-gradient(135deg, hsl(23 98% 60%), hsl(0 81% 20%));
   }
 
   .dark {
-    /* Same brand colors for dark mode consistency */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 98%;
+    --background: 0 0% 9%;
+    --foreground: 23 98% 54%;
     
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 0%;
+    --card-foreground: 23 98% 54%;
     
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 23 98% 54%;
     
     --primary: 23 98% 54%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
     
     --secondary: 0 81% 16%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary-foreground: 23 98% 54%;
     
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 0 0% 6%;
+    --muted-foreground: 23 98% 60%;
     
     --accent: 297 100% 85%;
     --accent-foreground: 0 0% 0%;
@@ -79,9 +88,9 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 23 50% 20%;
-    --input: 0 0% 15%;
-    --ring: 23 98% 54%;
+    --border: 297 100% 85%;
+    --input: 0 0% 0%;
+    --ring: 297 100% 85%;
   }
 }
 
@@ -93,8 +102,25 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Space Grotesk', sans-serif;
-    background-image: var(--hexagon-bg);
+    background: var(--geometric-bg);
+    background-size: var(--geometric-bg-size);
     background-attachment: fixed;
+    position: relative;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 30%, hsl(0 0% 0% / 0.4) 0%, transparent 30%),
+      radial-gradient(circle at 80% 70%, hsl(0 0% 0% / 0.3) 0%, transparent 25%),
+      radial-gradient(circle at 50% 50%, hsl(0 0% 0% / 0.2) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
   }
 }
 
@@ -131,21 +157,21 @@
   
   .mesh-gradient {
     background: 
-      radial-gradient(circle at 20% 80%, hsl(23 98% 54% / 0.12) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, hsl(297 100% 85% / 0.12) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, hsl(23 98% 54% / 0.08) 0%, transparent 50%),
-      hsl(0 0% 0%);
+      radial-gradient(circle at 20% 80%, hsl(23 98% 54% / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(0 81% 16% / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, hsl(297 100% 85% / 0.05) 0%, transparent 50%),
+      hsl(0 0% 9%);
   }
   
   .stat-card {
-    background: hsl(0 0% 9%);
-    border: 2px solid hsl(297 100% 85% / 0.3);
+    background: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 81% 8%));
+    border: 2px solid hsl(297 100% 85% / 0.4);
     backdrop-filter: blur(12px);
     position: relative;
     box-shadow: 
-      0 0 20px hsl(297 100% 85% / 0.3),
+      0 0 20px hsl(297 100% 85% / 0.4),
       0 0 40px hsl(297 100% 85% / 0.2),
-      inset 0 1px 0 hsl(297 100% 85% / 0.1);
+      inset 0 0 30px hsl(23 98% 54% / 0.1);
   }
   
   .hover-glow {
@@ -169,13 +195,13 @@
   }
   
   .premium-card {
-    background: hsl(0 0% 9%);
-    border: 1px solid hsl(297 100% 85% / 0.3);
+    background: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 81% 8%));
+    border: 1px solid hsl(297 100% 85% / 0.4);
     position: relative;
     box-shadow: 
-      0 0 20px hsl(297 100% 85% / 0.25),
+      0 0 20px hsl(297 100% 85% / 0.3),
       0 0 40px hsl(297 100% 85% / 0.15),
-      inset 0 1px 0 hsl(297 100% 85% / 0.1);
+      inset 0 0 30px hsl(23 98% 54% / 0.08);
   }
   
   .gradient-tech {
@@ -201,22 +227,21 @@
   
   .tech-card {
     @apply rounded-xl backdrop-blur-sm;
-    background: hsl(0 0% 9%);
-    border: 1px solid hsl(297 100% 85% / 0.3);
+    background: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 81% 8%));
+    border: 1px solid hsl(297 100% 85% / 0.4);
     position: relative;
     box-shadow: 
       0 0 20px hsl(297 100% 85% / 0.3),
       0 0 40px hsl(297 100% 85% / 0.2),
-      inset 0 1px 0 hsl(297 100% 85% / 0.1);
+      inset 0 0 30px hsl(23 98% 54% / 0.1);
   }
   
   .tech-card:hover {
-    border-color: hsl(297 100% 85% / 0.5);
+    border-color: hsl(297 100% 85% / 0.6);
     box-shadow: 
-      0 0 25px hsl(297 100% 85% / 0.5),
-      0 0 50px hsl(297 100% 85% / 0.3),
-      0 0 75px hsl(297 100% 85% / 0.2),
-      inset 0 1px 0 hsl(297 100% 85% / 0.2);
+      0 0 30px hsl(297 100% 85% / 0.5),
+      0 0 60px hsl(297 100% 85% / 0.3),
+      inset 0 0 40px hsl(23 98% 54% / 0.15);
   }
   
   .nav-tech {
@@ -225,17 +250,18 @@
   }
   
   .btn-tech {
-    background: linear-gradient(135deg, hsl(23 98% 54%) 0%, hsl(23 98% 64%) 100%);
+    background: linear-gradient(135deg, hsl(23 98% 54%) 0%, hsl(0 81% 16%) 100%);
     border: 1px solid hsl(23 98% 54%);
     color: hsl(0 0% 0%);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
     transition: all 0.3s ease;
+    box-shadow: 0 0 20px hsl(23 98% 54% / 0.3);
   }
   
   .btn-tech:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px hsl(23 98% 54% / 0.4);
+    box-shadow: 0 10px 25px hsl(23 98% 54% / 0.5);
   }
   
   .btn-tech-outline {
@@ -248,8 +274,9 @@
   }
   
   .btn-tech-outline:hover {
-    background: hsl(23 98% 54% / 0.1);
+    background: linear-gradient(135deg, hsl(23 98% 54% / 0.1), hsl(0 81% 16% / 0.1));
     transform: translateY(-2px);
+    box-shadow: 0 0 20px hsl(297 100% 85% / 0.3);
   }
   
   /* Custom scrollbar for tech theme */

@@ -5,83 +5,85 @@
 
 @layer base {
   :root {
-    /* Modern dark theme with black background and flipped blues */
-    --background: 0 0% 0%;          /* Pure black background */
+    /* Brand colors - Dark theme */
+    --background: 0 0% 0%;          /* #000000 Pure black */
     --foreground: 0 0% 95%;         /* Clean white text */
     
-    --card: 0 0% 0%;                /* Pure black for cards */
+    --card: 0 0% 9%;                /* #181818 Dark gray cards */
     --card-foreground: 0 0% 95%;
     
-    --popover: 215 25% 8%;
+    --popover: 0 0% 9%;
     --popover-foreground: 0 0% 95%;
     
-    --primary: 205 100% 65%;        /* Light electric blue (flipped) */
-    --primary-foreground: 0 0% 0%;
+    --primary: 23 98% 54%;          /* #fd6c14 Brand orange */
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 205 100% 45%;      /* Darker blue (flipped) */
+    --secondary: 0 81% 16%;         /* #4c0808 Dark red */
     --secondary-foreground: 0 0% 95%;
     
-    --muted: 215 20% 15%;           /* Muted dark */
+    --muted: 0 0% 15%;
     --muted-foreground: 0 0% 70%;
     
-    --accent: 205 100% 65%;         /* Light blue for accents */
+    --accent: 297 100% 85%;         /* #FBB2FF Pink accent */
     --accent-foreground: 0 0% 0%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 95%;
     
-    --border: 215 15% 20%;          /* Subtle border */
-    --input: 215 20% 10%;           /* Very dark input background */
-    --ring: 205 100% 65%;           /* Light blue ring */
+    --border: 0 0% 15%;
+    --input: 0 0% 9%;
+    --ring: 23 98% 54%;             /* Orange ring */
     
     --radius: 0.75rem;
     
-    /* Tech theme colors - flipped */
-    --blue-bright: 205 100% 65%;    /* Light electric blue */
-    --blue-electric: 205 100% 55%;  /* Medium electric blue */
-    --gunmetal-dark: 0 0% 0%;       /* Pure black */
-    --white-clean: 0 0% 100%;       /* Pure white */
+    /* Brand color tokens */
+    --brand-orange: 23 98% 54%;     /* #fd6c14 */
+    --brand-dark-red: 0 81% 16%;    /* #4c0808 */
+    --brand-pink: 297 100% 85%;     /* #FBB2FF */
+    --brand-dark-gray: 0 0% 9%;     /* #181818 */
+    --brand-black: 0 0% 0%;         /* #000000 */
     
-    /* Professional gradients - flipped */
-    --gradient-primary: linear-gradient(135deg, hsl(205 100% 65%), hsl(205 100% 75%));
-    --gradient-tech: linear-gradient(135deg, hsl(0 0% 0%), hsl(215 20% 5%));
-    --gradient-electric: linear-gradient(45deg, hsl(205 100% 65% / 0.1), hsl(205 100% 75% / 0.2));
+    /* Brand gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(23 98% 54%), hsl(297 100% 85%));
+    --gradient-tech: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 81% 16%));
+    --gradient-electric: linear-gradient(45deg, hsl(23 98% 54% / 0.2), hsl(297 100% 85% / 0.2));
     
-    /* Enhanced shadows and glows */
-    --shadow-orange: 0 0 25px hsl(25 100% 50% / 0.3);
-    --shadow-orange-strong: 0 0 40px hsl(25 100% 50% / 0.5);
-    --glow-orange: 0 0 20px hsl(25 100% 50% / 0.4);
-    --glow-tech: 0 0 30px hsl(25 100% 50% / 0.2);
+    /* Brand shadows and glows */
+    --shadow-orange: 0 0 25px hsl(23 98% 54% / 0.4);
+    --shadow-orange-strong: 0 0 40px hsl(23 98% 54% / 0.6);
+    --glow-orange: 0 0 20px hsl(23 98% 54% / 0.5);
+    --glow-tech: 0 0 30px hsl(23 98% 54% / 0.3);
   }
 
   .dark {
-    --background: 240 15% 6%;
+    /* Same brand colors for dark mode consistency */
+    --background: 0 0% 0%;
     --foreground: 0 0% 98%;
     
-    --card: 240 12% 8%;
+    --card: 0 0% 9%;
     --card-foreground: 0 0% 98%;
     
-    --popover: 240 12% 8%;
+    --popover: 0 0% 9%;
     --popover-foreground: 0 0% 98%;
     
-    --primary: 205 100% 60%;
+    --primary: 23 98% 54%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 205 100% 45%;
+    --secondary: 0 81% 16%;
     --secondary-foreground: 0 0% 98%;
     
-    --muted: 240 8% 12%;
+    --muted: 0 0% 12%;
     --muted-foreground: 0 0% 60%;
     
-    --accent: 205 100% 70%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 297 100% 85%;
+    --accent-foreground: 0 0% 0%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 205 30% 20%;
-    --input: 240 8% 15%;
-    --ring: 205 100% 55%;
+    --border: 23 50% 20%;
+    --input: 0 0% 15%;
+    --ring: 23 98% 54%;
   }
 }
 
@@ -129,21 +131,21 @@
   
   .mesh-gradient {
     background: 
-      radial-gradient(circle at 20% 80%, hsl(205 100% 55% / 0.12) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, hsl(205 100% 65% / 0.12) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, hsl(205 100% 55% / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 20% 80%, hsl(23 98% 54% / 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(297 100% 85% / 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, hsl(23 98% 54% / 0.08) 0%, transparent 50%),
       hsl(0 0% 0%);
   }
   
   .stat-card {
-    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(220 11% 8%) 100%);
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(0 81% 16%) 100%);
     border: 2px solid hsl(var(--primary) / 0.2);
     backdrop-filter: blur(12px);
     position: relative;
     box-shadow: 
-      0 0 30px hsl(205 100% 65% / 0.4),
-      0 0 60px hsl(205 100% 65% / 0.3),
-      0 0 90px hsl(205 100% 65% / 0.2);
+      0 0 30px hsl(23 98% 54% / 0.4),
+      0 0 60px hsl(23 98% 54% / 0.3),
+      0 0 90px hsl(23 98% 54% / 0.2);
   }
   
   .hover-glow {
@@ -165,13 +167,13 @@
   }
   
   .premium-card {
-    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(220 11% 8%) 100%);
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(0 81% 16%) 100%);
     border: 1px solid hsl(var(--border) / 0.5);
     position: relative;
     box-shadow: 
-      0 0 30px hsl(205 100% 65% / 0.4),
-      0 0 60px hsl(205 100% 65% / 0.3),
-      0 0 90px hsl(205 100% 65% / 0.2);
+      0 0 30px hsl(23 98% 54% / 0.4),
+      0 0 60px hsl(23 98% 54% / 0.3),
+      0 0 90px hsl(23 98% 54% / 0.2);
   }
   
   .gradient-tech {
@@ -197,9 +199,9 @@
     background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
     position: relative;
     box-shadow: 
-      0 0 30px hsl(205 100% 65% / 0.4),
-      0 0 60px hsl(205 100% 65% / 0.3),
-      0 0 90px hsl(205 100% 65% / 0.2),
+      0 0 30px hsl(23 98% 54% / 0.4),
+      0 0 60px hsl(23 98% 54% / 0.3),
+      0 0 90px hsl(23 98% 54% / 0.2),
       0 4px 20px hsl(var(--primary) / 0.1),
       inset 0 1px 0 hsl(var(--primary) / 0.1);
   }
@@ -207,9 +209,9 @@
   .tech-card:hover {
     @apply border-primary/40;
     box-shadow: 
-      0 0 40px hsl(205 100% 65% / 0.5),
-      0 0 80px hsl(205 100% 65% / 0.4),
-      0 0 120px hsl(205 100% 65% / 0.3),
+      0 0 40px hsl(23 98% 54% / 0.5),
+      0 0 80px hsl(23 98% 54% / 0.4),
+      0 0 120px hsl(23 98% 54% / 0.3),
       0 8px 32px hsl(var(--primary) / 0.2),
       inset 0 1px 0 hsl(var(--primary) / 0.2);
   }
@@ -220,8 +222,8 @@
   }
   
   .btn-tech {
-    background: linear-gradient(135deg, hsl(205 100% 65%) 0%, hsl(205 100% 75%) 100%);
-    border: 1px solid hsl(205 100% 65%);
+    background: linear-gradient(135deg, hsl(23 98% 54%) 0%, hsl(23 98% 64%) 100%);
+    border: 1px solid hsl(23 98% 54%);
     color: hsl(0 0% 0%);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
@@ -230,20 +232,20 @@
   
   .btn-tech:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px hsl(205 100% 65% / 0.3);
+    box-shadow: 0 10px 25px hsl(23 98% 54% / 0.4);
   }
   
   .btn-tech-outline {
     background: transparent;
-    border: 2px solid hsl(205 100% 65%);
-    color: hsl(205 100% 65%);
+    border: 2px solid hsl(23 98% 54%);
+    color: hsl(23 98% 54%);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 500;
     transition: all 0.3s ease;
   }
   
   .btn-tech-outline:hover {
-    background: hsl(205 100% 65% / 0.1);
+    background: hsl(23 98% 54% / 0.1);
     transform: translateY(-2px);
   }
   
@@ -351,10 +353,10 @@
     position: relative;
     color: hsl(0 0% 100%);
     text-shadow: 
-      0 0 20px hsl(205 100% 65% / 0.8),
-      0 0 40px hsl(205 100% 65% / 0.6),
-      0 0 60px hsl(205 100% 65% / 0.4),
-      0 0 80px hsl(205 100% 65% / 0.2);
+      0 0 20px hsl(23 98% 54% / 0.8),
+      0 0 40px hsl(23 98% 54% / 0.6),
+      0 0 60px hsl(23 98% 54% / 0.4),
+      0 0 80px hsl(23 98% 54% / 0.2);
   }
   
   .glitch-text::before,
@@ -374,8 +376,8 @@
     color: hsl(0 0% 100%);
     transform: translate(-8px, -6px);
     text-shadow: 
-      2px 0 hsl(205 100% 65% / 0.5),
-      0 0 20px hsl(205 100% 65% / 0.3);
+      2px 0 hsl(297 100% 85% / 0.5),
+      0 0 20px hsl(23 98% 54% / 0.3);
   }
   
   .glitch-text::after {
@@ -383,7 +385,7 @@
     color: hsl(0 0% 100%);
     transform: translate(8px, 6px);
     text-shadow: 
-      -2px 0 hsl(205 100% 65% / 0.5),
-      0 0 20px hsl(205 100% 65% / 0.3);
+      -2px 0 hsl(297 100% 85% / 0.5),
+      0 0 20px hsl(23 98% 54% / 0.3);
   }
 }

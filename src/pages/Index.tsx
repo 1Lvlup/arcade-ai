@@ -132,7 +132,7 @@ const Index = () => {
         <section className="text-center py-24">
           <div className="space-y-16">
             <div className="space-y-12">
-              <div className="caption-text text-primary/80 text-lg tracking-wider uppercase">
+              <div className="caption-text text-primary/80 text-sm tracking-widest uppercase font-mono">
                 Next-Generation AI Platform
               </div>
               <h1 
@@ -150,7 +150,7 @@ const Index = () => {
                 LEVEL UP
               </h1>
             </div>
-            <p className="body-text text-xl md:text-2xl text-muted-foreground max-w-5xl mx-auto leading-relaxed">
+            <p className="body-text text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto leading-relaxed font-body">
               Revolutionary AI platform specifically designed for arcade technicians and operators. 
               Transform complex technical manuals into instant, intelligent assistance.
             </p>
@@ -209,8 +209,8 @@ const Index = () => {
         {/* Performance Stats Section */}
         <section className="py-24">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-tech font-bold text-foreground mb-4">Platform Performance</h2>
-            <p className="text-xl text-muted-foreground">Industry-leading metrics that power your arcade operations</p>
+            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-4 tracking-wider">Platform Performance</h2>
+            <p className="text-xl text-muted-foreground font-body">Industry-leading metrics that power your arcade operations</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
@@ -237,13 +237,13 @@ const Index = () => {
         {/* Core Features */}
         <section className="py-24">
           <div className="text-center mb-20">
-            <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
+            <div className="caption-text text-primary/80 mb-6 text-sm tracking-widest uppercase font-mono">
               Core Features
             </div>
-            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-8">
+            <h2 className="text-5xl md:text-7xl font-tech font-black text-foreground mb-8 tracking-wider">
               Arcade AI Solutions
             </h2>
-            <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed font-body">
               Purpose-built AI tools designed specifically for arcade technicians, operators, 
               and enthusiasts to solve complex technical challenges instantly.
             </p>
@@ -267,8 +267,8 @@ const Index = () => {
                     </div>
                   </div>
                   <div className="space-y-6">
-                    <h3 className="text-2xl font-tech font-bold text-primary">{feature.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed text-base">
+                    <h3 className="text-2xl font-tech font-bold text-primary tracking-wide">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed text-base font-body">
                       {feature.description}
                     </p>
                   </div>
@@ -296,13 +296,13 @@ const Index = () => {
         {/* Capabilities Grid */}
         <section className="py-24">
           <div className="text-center mb-20">
-            <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
+            <div className="caption-text text-primary/80 mb-6 text-sm tracking-widest uppercase font-mono">
               Advanced Capabilities
             </div>
-            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-8">
+            <h2 className="text-5xl md:text-7xl font-tech font-black text-foreground mb-8 tracking-wider">
               Professional Features
             </h2>
-            <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed font-body">
               Enterprise-grade capabilities designed to meet the demanding requirements 
               of professional arcade operations and technical support teams.
             </p>
@@ -317,8 +317,8 @@ const Index = () => {
                       {capability.icon}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-tech font-bold text-foreground">{capability.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed text-base">
+                  <h3 className="text-2xl font-tech font-bold text-foreground tracking-wide">{capability.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed text-base font-body">
                     {capability.description}
                   </p>
                 </div>
@@ -330,13 +330,13 @@ const Index = () => {
         {/* CTA Section */}
         <section className="text-center py-24">
           <div className="mb-16">
-            <div className="caption-text text-primary/80 mb-6 text-lg tracking-wider uppercase">
+            <div className="caption-text text-primary/80 mb-6 text-sm tracking-widest uppercase font-mono">
               Get Started Today
             </div>
-            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-8">
+            <h2 className="text-5xl md:text-7xl font-tech font-black text-foreground mb-8 tracking-wider">
               Ready to Transform Your Arcade Operations?
             </h2>
-            <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed font-body">
               Join arcade professionals who've already revolutionized their technical support 
               and troubleshooting processes with our AI-powered platform.
             </p>

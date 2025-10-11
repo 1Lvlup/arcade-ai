@@ -29,28 +29,50 @@ function textOf(x: Snip) {
   return (x.content ?? x.text ?? "").toString();
 }
 
-function collapseSpacedLetters(s: string) {
-  const before = s;
-  s = s.replace(/(?:\b[A-Za-z]\b[ \t_-]*){3,}\b[A-Za-z]\b/gm, m => m.replace(/[ \t_-]/g, ""));
-  s = s.replace(/(?:\b[A-Za-z]\b[\s\r\n]*){3,}\b[A-Za-z]\b/gm, m => m.replace(/[\s\r\n]/g, ""));
-  s = s.replace(/\b([A-Za-z])\s+(?=[A-Za-z]\b)/g, "$1");
-  if (before !== s) {
-    console.log("collapseSpacedLetters BEFORE:", before.slice(0, 200));
-    console.log("collapseSpacedLetters AFTER:", s.slice(0, 200));
+function hasSpacedLetterJunk(s: string) {
+  // only trigger if we really see runs like "H Y P E R" etc.
+  return /(?:\b[A-Za-z]\b[\s_\-]*){3,}\b[A-Za-z]\b/.test(s);
+}
+
+function joinSingleLetterRuns(text: string) {
+  const toks = String(text || "").split(/\s+/);
+  const out: string[] = [];
+  let run: string[] = [];
+  const flush = () => { run.length >= 3 ? out.push(run.join("")) : out.push(...run); run = []; };
+  for (const t of toks) {
+    if (/^[A-Za-z]$/.test(t)) run.push(t);
+    else { if (run.length) flush(); out.push(t); }
   }
-  return s;
+  if (run.length) flush();
+  return out.join(" ");
 }
 
 function normalizeGist(raw: string) {
-  const original = String(raw ?? "");
-  let s = original;
-  console.log("normalizeGist INPUT (first 200 chars):", s.slice(0, 200));
-  s = s.replace(/[\r\n]+/g, " ").replace(/[_•·●▪︎◦]+/g, " ").replace(/<[^>]{0,500}>/g, " ").replace(/\s{2,}/g, " ");
-  s = collapseSpacedLetters(s);
-  // Only strip page/p/n/rev when followed by numbers/codes, not when part of normal text
-  s = s.replace(/\b(?:page|p\/n|rev)\s*[:#]?\s*[A-Za-z0-9\-\/\.]{2,}/gi, " ");
-  console.log("normalizeGist OUTPUT (first 200 chars):", s.slice(0, 200));
-  return s.trim();
+  let s = String(raw ?? "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/[_•·●▪︎◦]+/g, " ")
+    .replace(/<[^>]{0,500}>/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  // only do aggressive fixes if the junk pattern actually exists
+  if (hasSpacedLetterJunk(s)) {
+    s = joinSingleLetterRuns(s);
+    s = s.replace(/(?:\b[A-Za-z]\b[ \t_\-]*){3,}\b[A-Za-z]\b/gm, m => m.replace(/[ \t_\-]/g, ""));
+    s = s.replace(/(?:\b[A-Za-z]\b[\s\r\n]*){3,}\b[A-Za-z]\b/gm, m => m.replace(/[\s\r\n]/g, ""));
+  }
+
+  // ⚠️ PRECISION FIX: only strip explicit references like "Page 5", "P/N: 400048006", "Rev E"
+  s = s.replace(/\bpage\s+\d{1,4}\b/gi, " ");
+  s = s.replace(/\b(?:p\/n|pn)\s*[:#-]?\s*[A-Z0-9][A-Z0-9\-\.]{1,}\b/gi, " ");
+  s = s.replace(/\brev\s*[:#-]?\s*[A-Z0-9][A-Z0-9\-\.]{0,}\b/gi, " ");
+
+  // safety: if content is still mostly single letters, let caller drop it
+  const tokens = s.split(/\s+/);
+  const singleFrac = tokens.length ? tokens.filter(t => t.length === 1).length / tokens.length : 0;
+  if (singleFrac > 0.35) return "";
+
+  return s.replace(/\s{2,}/g, " ").trim();
 }
 
 function topSection(x: Snip) {
@@ -68,19 +90,17 @@ function clusterSections(results: Snip[]) {
     .sort((a, b) => b[1].length - a[1].length) // biggest first
     .slice(0, 8)
     .map(([title, arr]) => {
-      // NORMALIZE EACH CHUNK'S TEXT FIRST, then join
-      const normalizedTexts = arr
-        .map((x) => normalizeGist(x.content ?? x.text ?? ""))
-        .filter(t => t && t.length > 20);
+      const joined = arr
+        .map((x) => (x.content ?? x.text ?? ""))
+        .filter(t => t && t.length > 20)
+        .join(" ");
       
-      const joined = normalizedTexts.join(" ");
-      const gist = joined.slice(0, 900);
-      const tokens = gist.split(/\s+/);
-      const singleFrac = tokens.length ? tokens.filter(t => t.length === 1).length / tokens.length : 0;
+      console.log("normalizeGist INPUT:", joined.slice(0, 200));
+      const gist = normalizeGist(joined).slice(0, 900);
+      console.log("normalizeGist OUTPUT:", gist.slice(0, 200));
       
-      // drop sections that cleaned to almost nothing or look like cover/TOC
-      if (gist.length < 120 || singleFrac > 0.30 || /installation manual\s+cover|table of contents/i.test(gist)) {
-        return null as any;
+      if (!gist || gist.length < 120 || /table of contents|installation manual\s+cover/i.test(gist)) {
+        return null as any; // skip junk sections
       }
       
       const citations = arr.slice(0, 3).map((x) => ({

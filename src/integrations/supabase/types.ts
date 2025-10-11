@@ -697,7 +697,7 @@ export type Database = {
         Row: {
           created_at: string
           error: string | null
-          fec_tenant_id: string
+          fec_tenant_id: string | null
           id: string
           payload: Json | null
           result: Json | null
@@ -707,7 +707,7 @@ export type Database = {
         Insert: {
           created_at?: string
           error?: string | null
-          fec_tenant_id?: string
+          fec_tenant_id?: string | null
           id?: string
           payload?: Json | null
           result?: Json | null
@@ -717,7 +717,7 @@ export type Database = {
         Update: {
           created_at?: string
           error?: string | null
-          fec_tenant_id?: string
+          fec_tenant_id?: string | null
           id?: string
           payload?: Json | null
           result?: Json | null

@@ -33,20 +33,21 @@ function normalizeGist(raw: string) {
   if (!raw) return "";
   let s = String(raw);
 
-  // collapse newlines & weird bullets
+  // STEP 1: collapse all newlines and weird chars INCLUDING # symbols
   s = s.replace(/[\r\n]+/g, " ")
-       .replace(/[_•·●▪︎◦]+/g, " ")
+       .replace(/[_•·●▪︎◦#]+/g, " ")         // include # and other junk symbols
        .replace(/<[^>]{0,500}>/g, " ")
        .replace(/\s{2,}/g, " ");
 
-  // collapse spaced ALL-CAPS or lower-case runs like "H Y P E R  B O W L I N G"
-  s = s.replace(/\b(?:[A-Z]\s*){3,}[A-Z]\b/gm, (m) => m.replace(/\s+/g, "")); // ALL CAPS
-  s = s.replace(/\b(?:[a-z]\s*){3,}[a-z]\b/gm, (m) => m.replace(/\s+/g, "")); // lower
+  // STEP 2: Now collapse spaced letters (simpler pattern that works after junk removed)
+  // Match sequences like "H Y P E R" or "h y p e r" and remove spaces
+  s = s.replace(/\b([A-Z])(\s+[A-Z])+\b/g, (match) => match.replace(/\s+/g, ""));
+  s = s.replace(/\b([a-z])(\s+[a-z])+\b/g, (match) => match.replace(/\s+/g, ""));
 
-  // collapse single letters separated by spaces inside words (handles extra noisy cases)
-  s = s.replace(/(\b[A-Za-z])(?:\s+)(?=[A-Za-z]\b)/g, "$1");
+  // STEP 3: Clean up any remaining multi-spaces
+  s = s.replace(/\s{2,}/g, " ");
 
-  // strip obvious cover/TOC noise tokens
+  // STEP 4: strip obvious noise tokens
   s = s.replace(/\b(?:page|p\/n|rev)\s*[:#]?\s*[A-Za-z0-9\-\/\.]+/gi, " ");
 
   return s.trim();

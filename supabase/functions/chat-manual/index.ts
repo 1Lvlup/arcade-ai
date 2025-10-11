@@ -3,6 +3,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { computeSignals, shapeMessages } from "../_shared/answerStyle.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +19,8 @@ const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
 const CHAT_MODEL = Deno.env.get("CHAT_MODEL") ?? "gpt-5-2025-08-07";
 // tone: "conversational" | "structured"
 const ANSWER_STYLE = Deno.env.get("ANSWER_STYLE") ?? "conversational";
+// Feature flag for advanced answer style V2
+const USE_ANSWER_STYLE_V2 = (Deno.env.get("ANSWER_STYLE_V2") ?? "0") === "1";
 
 // Validate required environment variables
 if (!supabaseUrl) throw new Error("Missing SUPABASE_URL");
@@ -455,41 +458,81 @@ Format
 
 **Citations:** p<X>, p<Y>, p<Z>`;
 
-async function generateAnswer(query: string, chunks: any[], model: string, opts?: { retrievalWeak?: boolean }): Promise<string> {
-  const contextBlocks = chunks
-    .map((c, i) => {
+async function generateAnswer(
+  query: string, 
+  chunks: any[], 
+  model: string, 
+  opts?: { 
+    retrievalWeak?: boolean;
+    signals?: { topScore: number; avgTop3: number; strongHits: number };
+    existingWeak?: boolean;
+  }
+): Promise<string> {
+  let systemPrompt: string;
+  let userPrompt: string;
+
+  // Use Answer Style V2 if enabled
+  if (USE_ANSWER_STYLE_V2 && opts?.signals) {
+    const snippets = chunks.map((c, i) => {
       const cleaned = normalizeGist(c.content);
       const pageInfo = c.page_start
-        ? (c.page_end && c.page_end !== c.page_start ? `[p${c.page_start}-${c.page_end}]` : `[p${c.page_start}]`)
-        : "[page unknown]";
-      return `[${i + 1}] ${pageInfo} ${cleaned}`;
-    })
-    .join("\n\n");
+        ? (c.page_end && c.page_end !== c.page_start ? `p${c.page_start}-${c.page_end}` : `p${c.page_start}`)
+        : "page unknown";
+      return {
+        title: `Chunk ${i + 1}`,
+        excerpt: cleaned,
+        cite: pageInfo
+      };
+    });
 
-  const systemPrompt = ANSWER_STYLE === "conversational"
-    ? SYSTEM_PROMPT_CONVERSATIONAL
-    : SYSTEM_PROMPT_STRUCTURED;
+    const shaped = shapeMessages(query, snippets, {
+      existingWeak: opts.existingWeak ?? false,
+      topScore: opts.signals.topScore,
+      avgTop3: opts.signals.avgTop3,
+      strongHits: opts.signals.strongHits
+    });
 
-  let userPrompt = `Question: ${query}
+    systemPrompt = shaped.system;
+    userPrompt = shaped.user;
+
+    console.log(`📊 [Answer Style V2] Weak: ${shaped.isWeak}, Top: ${opts.signals.topScore.toFixed(3)}, Avg3: ${opts.signals.avgTop3.toFixed(3)}, Strong: ${opts.signals.strongHits}`);
+  } else {
+    // Original behavior
+    const contextBlocks = chunks
+      .map((c, i) => {
+        const cleaned = normalizeGist(c.content);
+        const pageInfo = c.page_start
+          ? (c.page_end && c.page_end !== c.page_start ? `[p${c.page_start}-${c.page_end}]` : `[p${c.page_start}]`)
+          : "[page unknown]";
+        return `[${i + 1}] ${pageInfo} ${cleaned}`;
+      })
+      .join("\n\n");
+
+    systemPrompt = ANSWER_STYLE === "conversational"
+      ? SYSTEM_PROMPT_CONVERSATIONAL
+      : SYSTEM_PROMPT_STRUCTURED;
+
+    userPrompt = `Question: ${query}
 
 Manual content:
 ${contextBlocks}
 
 Provide a clear answer using the manual content above.`;
 
-  const styleHint = styleHintFromQuery(query);
-  
-  if (styleHint) {
-  userPrompt += `
+    const styleHint = styleHintFromQuery(query);
+    
+    if (styleHint) {
+      userPrompt += `
 
 Style request:
 ${styleHint}`;
-}
+    }
 
-  if (opts?.retrievalWeak) {
-    userPrompt += `
+    if (opts?.retrievalWeak) {
+      userPrompt += `
 
 (Notes for the assistant: Retrieval was thin. Still answer decisively using "field-tested play". Be clear when specs are missing with "spec not captured". Keep tone confident and helpful.)`;
+    }
   }
   
   console.log(`🤖 Generating answer with model: ${model}`);
@@ -638,7 +681,15 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
 
   console.log(`🎯 STAGE 1: Generating answer with model: ${model || CHAT_MODEL}`);
   const retrievalWeak = weak || topChunks.length < 2;
-  const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL, { retrievalWeak });
+  
+  // Compute signals for Answer Style V2
+  const signals = computeSignals(chunks.map(c => ({ score: c.rerank_score ?? c.score ?? 0 })));
+  
+  const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL, { 
+    retrievalWeak,
+    signals,
+    existingWeak: weak
+  });
 
   // 2) Precision guard: reject vague cites
   const usedPages = (answer.match(/p\d+/gi) || []).map(s => s.toLowerCase());

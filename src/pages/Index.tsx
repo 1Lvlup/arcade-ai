@@ -215,64 +215,70 @@ const Index = () => {
 
         {/* Testimonials & ROI Section */}
         <section className="py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
-            {/* Left Side - Revenue Stats */}
-            <div className="stat-card p-10 rounded-3xl hover-lift">
-              <div className="space-y-6">
-                <div className="p-4 rounded-full bg-primary/10 inline-flex">
-                  <TrendingUp className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-3xl font-tech font-bold text-primary">$2,400/week</h3>
-                <p className="text-lg text-muted-foreground font-body">
-                  Average revenue per top-performing arcade game
-                </p>
-                <div className="pt-4 border-t border-primary/20">
-                  <div className="text-sm text-muted-foreground">
-                    Peak performers can earn up to <span className="text-primary font-semibold">$3,500+/week</span>
+          <div className="premium-card p-12 rounded-3xl relative">
+            {/* Connecting lines */}
+            <div className="absolute top-1/2 left-[33%] w-[10%] h-0.5 bg-gradient-to-r from-primary/50 to-primary/30 hidden lg:block"></div>
+            <div className="absolute top-1/2 right-[33%] w-[10%] h-0.5 bg-gradient-to-l from-primary/50 to-primary/30 hidden lg:block"></div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center relative">
+              {/* Left Side - Revenue Stats */}
+              <div className="stat-card p-10 rounded-2xl hover-lift">
+                <div className="space-y-6">
+                  <div className="p-4 rounded-full bg-primary/10 inline-flex">
+                    <TrendingUp className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-3xl font-tech font-bold text-primary">$2,400/week</h3>
+                  <p className="text-lg text-muted-foreground font-body">
+                    Average revenue per top-performing arcade game
+                  </p>
+                  <div className="pt-4 border-t border-primary/20">
+                    <div className="text-sm text-muted-foreground">
+                      Peak performers can earn up to <span className="text-primary font-semibold">$3,500+/week</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Center - Scrolling Testimonials */}
-            <div className="tech-card p-8 rounded-3xl overflow-hidden relative">
-              <div className="space-y-6 animate-fade-in">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Users className="h-6 w-6 text-primary" />
+              {/* Center - Scrolling Testimonials */}
+              <div className="tech-card p-8 rounded-2xl overflow-hidden relative z-10">
+                <div className="space-y-6 animate-fade-in">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground">Mike Rodriguez</div>
+                      <div className="text-sm text-muted-foreground">Arcade Operations Manager</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-foreground">Mike Rodriguez</div>
-                    <div className="text-sm text-muted-foreground">Arcade Operations Manager</div>
+                  <p className="text-muted-foreground leading-relaxed italic">
+                    "Before Level Up, our average game downtime was 8-12 days. Now we fix issues in under 2 hours. That is literally saving us thousands per incident."
+                  </p>
+                  <div className="flex gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="text-primary">★</div>
+                    ))}
                   </div>
-                </div>
-                <p className="text-muted-foreground leading-relaxed italic">
-                  "Before Level Up, our average game downtime was 8-12 days. Now we fix issues in under 2 hours. That is literally saving us thousands per incident."
-                </p>
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="text-primary">★</div>
-                  ))}
                 </div>
               </div>
-            </div>
 
-            {/* Right Side - Cost of Downtime */}
-            <div className="stat-card p-10 rounded-3xl hover-lift">
-              <div className="space-y-6">
-                <div className="p-4 rounded-full bg-destructive/10 inline-flex">
-                  <Clock className="h-8 w-8 text-destructive" />
-                </div>
-                <h3 className="text-3xl font-tech font-bold text-destructive">-$4,800</h3>
-                <p className="text-lg text-muted-foreground font-body">
-                  Lost revenue from just 2 weeks of game downtime
-                </p>
-                <div className="pt-4 border-t border-primary/20">
-                  <div className="text-sm text-primary font-semibold">
-                    With Level Up: Fixed in hours, not weeks
+              {/* Right Side - Cost of Downtime */}
+              <div className="stat-card p-10 rounded-2xl hover-lift">
+                <div className="space-y-6">
+                  <div className="p-4 rounded-full bg-destructive/10 inline-flex">
+                    <Clock className="h-8 w-8 text-destructive" />
                   </div>
-                  <div className="text-sm text-muted-foreground mt-2">
-                    Save up to <span className="text-primary font-semibold">$4,500+ per incident</span>
+                  <h3 className="text-3xl font-tech font-bold text-destructive">-$4,800</h3>
+                  <p className="text-lg text-muted-foreground font-body">
+                    Lost revenue from just 2 weeks of game downtime
+                  </p>
+                  <div className="pt-4 border-t border-primary/20">
+                    <div className="text-sm text-primary font-semibold">
+                      With Level Up: Fixed in hours, not weeks
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-2">
+                      Save up to <span className="text-primary font-semibold">$4,500+ per incident</span>
+                    </div>
                   </div>
                 </div>
               </div>

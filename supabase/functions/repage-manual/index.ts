@@ -150,10 +150,12 @@ serve(async (req) => {
       }
     );
   } catch (e) {
+    console.error('Repage error:', e);
+    const errorMessage = e instanceof Error ? e.message : String(e);
     return new Response(
       JSON.stringify({
         ok: false,
-        error: String(e)
+        error: errorMessage
       }),
       {
         status: 400,

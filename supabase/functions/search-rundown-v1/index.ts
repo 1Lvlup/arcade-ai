@@ -29,27 +29,18 @@ function textOf(x: Snip) {
   return (x.content ?? x.text ?? "").toString();
 }
 
+function collapseSpacedLetters(s: string) {
+  s = s.replace(/(?:\b[A-Za-z]\b[ \t_-]*){3,}\b[A-Za-z]\b/gm, m => m.replace(/[ \t_-]/g, ""));
+  s = s.replace(/(?:\b[A-Za-z]\b[\s\r\n]*){3,}\b[A-Za-z]\b/gm, m => m.replace(/[\s\r\n]/g, ""));
+  s = s.replace(/\b([A-Za-z])\s+(?=[A-Za-z]\b)/g, "$1");
+  return s;
+}
+
 function normalizeGist(raw: string) {
-  if (!raw) return "";
-  let s = String(raw);
-
-  // STEP 1: collapse all newlines and weird chars INCLUDING # symbols
-  s = s.replace(/[\r\n]+/g, " ")
-       .replace(/[_•·●▪︎◦#]+/g, " ")         // include # and other junk symbols
-       .replace(/<[^>]{0,500}>/g, " ")
-       .replace(/\s{2,}/g, " ");
-
-  // STEP 2: Now collapse spaced letters (simpler pattern that works after junk removed)
-  // Match sequences like "H Y P E R" or "h y p e r" and remove spaces
-  s = s.replace(/\b([A-Z])(\s+[A-Z])+\b/g, (match) => match.replace(/\s+/g, ""));
-  s = s.replace(/\b([a-z])(\s+[a-z])+\b/g, (match) => match.replace(/\s+/g, ""));
-
-  // STEP 3: Clean up any remaining multi-spaces
-  s = s.replace(/\s{2,}/g, " ");
-
-  // STEP 4: strip obvious noise tokens
+  let s = String(raw ?? "");
+  s = s.replace(/[\r\n]+/g, " ").replace(/[_•·●▪︎◦]+/g, " ").replace(/<[^>]{0,500}>/g, " ").replace(/\s{2,}/g, " ");
+  s = collapseSpacedLetters(s);
   s = s.replace(/\b(?:page|p\/n|rev)\s*[:#]?\s*[A-Za-z0-9\-\/\.]+/gi, " ");
-
   return s.trim();
 }
 
@@ -68,12 +59,13 @@ function clusterSections(results: Snip[]) {
     .sort((a, b) => b[1].length - a[1].length) // biggest first
     .slice(0, 8)
     .map(([title, arr]) => {
-      const gist = normalizeGist(
-        arr.map((x) => (x.content ?? x.text ?? "")).filter(t => t && t.length > 20).join(" ")
-      ).slice(0, 900);
+      const joined = arr.map((x) => (x.content ?? x.text ?? "")).filter(t => t && t.length > 20).join(" ");
+      const gist = normalizeGist(joined).slice(0, 900);
+      const tokens = gist.split(/\s+/);
+      const singleFrac = tokens.length ? tokens.filter(t => t.length === 1).length / tokens.length : 0;
       
       // drop sections that cleaned to almost nothing or look like cover/TOC
-      if (gist.length < 120 || /installation manual\s+cover|table of contents/i.test(gist)) {
+      if (gist.length < 120 || singleFrac > 0.30 || /installation manual\s+cover|table of contents/i.test(gist)) {
         return null as any;
       }
       

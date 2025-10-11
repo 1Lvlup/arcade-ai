@@ -209,6 +209,7 @@ export type Database = {
           figure_id: string | null
           id: string
           image_name: string | null
+          is_visible: boolean | null
           job_id: string | null
           keywords: string[] | null
           kind: string | null
@@ -232,6 +233,7 @@ export type Database = {
           figure_id?: string | null
           id?: string
           image_name?: string | null
+          is_visible?: boolean | null
           job_id?: string | null
           keywords?: string[] | null
           kind?: string | null
@@ -255,6 +257,7 @@ export type Database = {
           figure_id?: string | null
           id?: string
           image_name?: string | null
+          is_visible?: boolean | null
           job_id?: string | null
           keywords?: string[] | null
           kind?: string | null

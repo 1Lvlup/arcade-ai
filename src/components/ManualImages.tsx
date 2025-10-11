@@ -170,62 +170,62 @@ export function ManualImages({ manualId }: ManualImagesProps) {
     setCaptionText('');
   };
 
-  const deleteFigure = async (figureId: string) => {
-    if (!confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
+  const hideFigure = async (figureId: string) => {
+    if (!confirm('Hide this image? (OCR data will be preserved for search)')) {
       return;
     }
 
     try {
       const { error } = await supabase
         .from('figures')
-        .delete()
+        .update({ is_visible: false })
         .eq('id', figureId);
 
       if (error) throw error;
 
       toast({
-        title: 'Image deleted',
-        description: 'The image has been removed from this manual',
+        title: 'Image hidden',
+        description: 'The image has been hidden from view (OCR data preserved)',
       });
       
       fetchFigures();
     } catch (error) {
-      console.error('Error deleting figure:', error);
+      console.error('Error hiding figure:', error);
       toast({
-        title: 'Error deleting image',
-        description: 'Failed to delete the image. Please try again.',
+        title: 'Error hiding image',
+        description: 'Failed to hide the image. Please try again.',
         variant: 'destructive',
       });
     }
   };
 
-  const deleteSelectedFigures = async () => {
+  const hideSelectedFigures = async () => {
     if (selectedFigures.size === 0) return;
 
-    if (!confirm(`Are you sure you want to delete ${selectedFigures.size} image(s)? This action cannot be undone.`)) {
+    if (!confirm(`Hide ${selectedFigures.size} image(s)? You can show them again later. OCR data will be preserved.`)) {
       return;
     }
 
     try {
       const { error } = await supabase
         .from('figures')
-        .delete()
+        .update({ is_visible: false })
         .in('id', Array.from(selectedFigures));
 
       if (error) throw error;
 
       toast({
-        title: 'Images deleted',
-        description: `${selectedFigures.size} image(s) have been removed`,
+        title: 'Images hidden',
+        description: `${selectedFigures.size} image(s) have been hidden (OCR data preserved)`,
       });
       
       setSelectedFigures(new Set());
       fetchFigures();
     } catch (error) {
-      console.error('Error deleting figures:', error);
+      console.error('Error hiding figures:', error);
       toast({
-        title: 'Error deleting images',
-        description: 'Failed to delete the images. Please try again.',
+        title: 'Error hiding images',
+        description: 'Failed to hide the images. Please try again.',
         variant: 'destructive',
       });
     }
@@ -283,13 +283,13 @@ export function ManualImages({ manualId }: ManualImagesProps) {
             {selectedFigures.size > 0 && (
               <>
                 <Button
-                  variant="destructive"
+                  variant="outline"
                   size="sm"
-                  onClick={deleteSelectedFigures}
+                  onClick={hideSelectedFigures}
                   className="flex items-center gap-2"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete {selectedFigures.size} Selected
+                  Hide {selectedFigures.size} Selected
                 </Button>
                 <Button
                   variant="outline"
@@ -364,10 +364,10 @@ export function ManualImages({ manualId }: ManualImagesProps) {
                         />
                       </div>
                       <Button
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
-                        onClick={() => deleteFigure(figure.id)}
-                        title="Delete this image"
+                        onClick={() => hideFigure(figure.id)}
+                        title="Hide this image (preserves OCR data)"
                         className="h-8 w-8 p-0"
                       >
                         <Trash2 className="h-4 w-4" />

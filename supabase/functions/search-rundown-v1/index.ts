@@ -59,8 +59,13 @@ function clusterSections(results: Snip[]) {
     .sort((a, b) => b[1].length - a[1].length) // biggest first
     .slice(0, 8)
     .map(([title, arr]) => {
-      const joined = arr.map((x) => (x.content ?? x.text ?? "")).filter(t => t && t.length > 20).join(" ");
-      const gist = normalizeGist(joined).slice(0, 900);
+      // NORMALIZE EACH CHUNK'S TEXT FIRST, then join
+      const normalizedTexts = arr
+        .map((x) => normalizeGist(x.content ?? x.text ?? ""))
+        .filter(t => t && t.length > 20);
+      
+      const joined = normalizedTexts.join(" ");
+      const gist = joined.slice(0, 900);
       const tokens = gist.split(/\s+/);
       const singleFrac = tokens.length ? tokens.filter(t => t.length === 1).length / tokens.length : 0;
       

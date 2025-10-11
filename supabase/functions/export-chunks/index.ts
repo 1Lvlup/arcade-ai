@@ -52,9 +52,8 @@ Deno.serve(async (req) => {
         id: chunk.id,
         page_start: chunk.page_start,
         page_end: chunk.page_end,
-        section_path: chunk.section_path,
-        text: chunk.text,
-        features: chunk.features,
+        menu_path: chunk.menu_path,
+        content: chunk.content,
         created_at: chunk.created_at,
       })) || []
     };

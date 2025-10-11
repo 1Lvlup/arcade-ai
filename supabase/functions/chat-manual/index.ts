@@ -145,6 +145,32 @@ function textSimilarity(text1: string, text2: string): number {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Spec/connector bias helpers
+// ─────────────────────────────────────────────────────────────────────────
+function looksSpecy(t: string) {
+  const s = (t || "").toLowerCase();
+  return /(?:\b[0-9]+(?:\.[0-9]+)?\s*(v|vac|vdc|ma|ohm|Ω|amp|a)\b|\bj\d{1,3}\b|\bpin\s*\d+\b|\bfuse\s*f?\d+\b)/i.test(s);
+}
+
+function boostSpecCandidates(rows: any[], query: string) {
+  const specIntent = /\b(spec|voltage|power|pin|connector|header|fuse|ohm|current|ma|vdc|vac)\b/i.test(query);
+  if (!specIntent) return rows;
+  // prefer rows with numbers/units/connectors on top
+  return [...rows].sort((a, b) => {
+    const A = looksSpecy(a.content) ? 1 : 0;
+    const B = looksSpecy(b.content) ? 1 : 0;
+    if (A !== B) return B - A;
+    return (b.rerank_score ?? b.score ?? 0) - (a.rerank_score ?? a.score ?? 0);
+  });
+}
+
+function expandIfWeak(query: string) {
+  // smart expansion for power/spec hunts
+  return `${query} power OR voltage OR VDC OR VAC OR connector OR header OR J1 OR J2 OR fuse OR pin OR ohm`;
+}
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Fetch helper (logs HTTP body on non-2xx)
 // ─────────────────────────────────────────────────────────────────────────
 async function fetchJsonOrThrow(url: string, init: RequestInit) {
@@ -219,19 +245,38 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   const candidates = (vectorResults || []).map(normalizeRow);
   console.log(`📊 Vector search found ${candidates.length} results`);
 
-  const strategy = candidates.length > 0 ? "vector" : "none";
+  // Apply spec bias
+  let candidatesBiased = boostSpecCandidates(candidates, query);
+
+  // Weak-evidence fallback: if almost none look "specy", requery with expansion
+  const specish = candidatesBiased.filter(r => looksSpecy(r.content)).length;
+  if (candidatesBiased.length < 3 || specish < 2) {
+    const expandedQ = expandIfWeak(query);
+    const qe = await createEmbedding(expandedQ);
+    const { data: vec2 } = await supabase.rpc("match_chunks_improved", {
+      query_embedding: qe, 
+      top_k: 60, 
+      min_score: 0.3, 
+      manual: manual_id, 
+      tenant_id
+    });
+    const more = (vec2 || []).map(normalizeRow);
+    candidatesBiased = boostSpecCandidates([...candidatesBiased, ...more], expandedQ);
+  }
+
+  const strategy = candidatesBiased.length > 0 ? "vector" : "none";
 
   // Cohere rerank
   let finalResults: any[] = [];
-  if (candidates.length > 0) {
+  if (candidatesBiased.length > 0) {
     try {
       const cohereApiKey = Deno.env.get("COHERE_API_KEY");
       if (!cohereApiKey) {
         console.warn("⚠️ COHERE_API_KEY not found, skipping rerank");
-        finalResults = candidates.slice(0, 10);
+        finalResults = candidatesBiased.slice(0, 10);
       } else {
         console.log("🔄 Reranking with Cohere...");
-        const truncatedDocs = candidates.map((c) => {
+        const truncatedDocs = candidatesBiased.map((c) => {
           const s = typeof c.content === "string" ? c.content : JSON.stringify(c.content ?? "");
           return s.length > 1500 ? s.slice(0, 1500) : s;
         });
@@ -257,18 +302,18 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
         } else {
           const rerank = await cohereRes.json();
           finalResults = (rerank.results || [])
-            .filter((r: any) => Number.isInteger(r.index) && candidates[r.index])
+            .filter((r: any) => Number.isInteger(r.index) && candidatesBiased[r.index])
             .map((r: any) => ({
-              ...candidates[r.index],
+              ...candidatesBiased[r.index],
               rerank_score: typeof r.relevance_score === "number" ? r.relevance_score : undefined,
-              original_score: candidates[r.index].score,
+              original_score: candidatesBiased[r.index].score,
             }));
 
           if (finalResults.length < 10) {
             const seen = new Set(
               finalResults.map((x) => x.id ?? `${x.page_start}:${x.page_end}:${(x.content || "").slice(0, 40)}`),
             );
-            for (const c of candidates) {
+            for (const c of candidatesBiased) {
               const key = c.id ?? `${c.page_start}:${c.page_end}:${(c.content || "").slice(0, 40)}`;
               if (!seen.has(key)) {
                 finalResults.push(c);
@@ -281,7 +326,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
       }
     } catch (error) {
       console.error("❌ Rerank error:", error);
-      finalResults = candidates.slice(0, 10);
+      finalResults = candidatesBiased.slice(0, 10);
     }
   }
 

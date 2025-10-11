@@ -47,7 +47,8 @@ function normalizeGist(raw: string) {
   console.log("normalizeGist INPUT (first 200 chars):", s.slice(0, 200));
   s = s.replace(/[\r\n]+/g, " ").replace(/[_•·●▪︎◦]+/g, " ").replace(/<[^>]{0,500}>/g, " ").replace(/\s{2,}/g, " ");
   s = collapseSpacedLetters(s);
-  s = s.replace(/\b(?:page|p\/n|rev)\s*[:#]?\s*[A-Za-z0-9\-\/\.]+/gi, " ");
+  // Only strip page/p/n/rev when followed by numbers/codes, not when part of normal text
+  s = s.replace(/\b(?:page|p\/n|rev)\s*[:#]?\s*[A-Za-z0-9\-\/\.]{2,}/gi, " ");
   console.log("normalizeGist OUTPUT (first 200 chars):", s.slice(0, 200));
   return s.trim();
 }

@@ -79,10 +79,28 @@ const ManualAdminEdit = () => {
   };
 
   const handleTitleChange = (title: string) => {
+    const slug = slugify(title);
+    
+    // Auto-generate common variations as aliases
+    const variations = new Set<string>();
+    if (title.trim()) {
+      variations.add(title.trim()); // Exact title
+      variations.add(title.toLowerCase()); // all lowercase
+      variations.add(title.toUpperCase()); // ALL UPPERCASE
+      variations.add(title.replace(/\s+/g, '')); // NoSpaces
+      variations.add(title.replace(/\s+/g, '').toLowerCase()); // nospaces lowercase
+      variations.add(slug); // slug-version
+    }
+    
+    const aliasArray = Array.from(variations);
+    const aliasSlugArray = aliasArray.map(a => slugify(a));
+    
     setFormData(prev => ({
       ...prev,
       canonical_title: title,
-      canonical_slug: slugify(title)
+      canonical_slug: slug,
+      aliases: aliasArray,
+      aliases_slugs: aliasSlugArray
     }));
   };
 

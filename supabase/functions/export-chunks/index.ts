@@ -26,9 +26,9 @@ Deno.serve(async (req) => {
 
     console.log('Exporting chunks for manual:', manualId);
 
-    // Fetch all chunks for this manual
+    // Fetch all chunks for this manual from chunks_text table
     const { data: chunks, error } = await supabase
-      .from('rag_chunks')
+      .from('chunks_text')
       .select('*')
       .eq('manual_id', manualId)
       .order('page_start', { ascending: true });

@@ -569,6 +569,26 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
 
   const topChunks = chunks.slice(0, 10);
 
+  // Quality check before answering
+  const pages = new Set(topChunks.map(c => c.page_start).filter(Boolean));
+  const hasRealPages = pages.size >= 2 && !pages.has(1); // ignore cover/TOC p1
+  const hasSpecTokens = topChunks.some(c => looksSpecy(c.content));
+
+  if (!hasRealPages && !hasSpecTokens) {
+    const q = query.toLowerCase();
+    const followup =
+      /opto|sensor|beam/.test(q) ? "A) Which sensor (entry/exit)? B) Which lane/board header? C) Do you have a multimeter on site?" :
+      /power|voltage|led|rail/.test(q) ? "A) Which rail (left/right)? B) Which board (motor/PSU)? C) Do you need pin/connector IDs or just voltages?" :
+      "A) Which subsystem? B) Which lane? C) Do you need wiring or steps?";
+    return {
+      answer: `No manual evidence found with exact specs/pages.\n\nFollow-up (choose one): ${followup}`,
+      sources: [],
+      strategy,
+      chunks: topChunks,
+      pipeline_version: "v3"
+    };
+  }
+
   console.log(`🎯 STAGE 1: Generating answer with model: ${model || CHAT_MODEL}`);
   const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL);
 

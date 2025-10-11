@@ -48,6 +48,112 @@ async function getModelConfig(supabase: any, tenant_id: string) {
   };
 }
 
+// Quality metrics calculation
+async function calculateQualityMetrics(supabase: any, manual_id: string) {
+  console.log(`🔍 Running quality metrics for manual: ${manual_id}`);
+  
+  const results: any = {
+    manual_id,
+    timestamp: new Date().toISOString(),
+    scores: {},
+    issues: [],
+    recommendations: []
+  };
+
+  try {
+    // 1. CHUNK QUALITY ANALYSIS
+    const { data: chunks } = await supabase
+      .from('chunks_text')
+      .select('*')
+      .eq('manual_id', manual_id);
+
+    if (!chunks || chunks.length === 0) {
+      results.issues.push("❌ No chunks found - processing may have failed");
+      return results;
+    }
+
+    // Chunk quality metrics
+    const avgChunkLength = chunks.reduce((sum: number, c: any) => sum + c.content.length, 0) / chunks.length;
+    const shortChunks = chunks.filter((c: any) => c.content.length < 100).length;
+    const longChunks = chunks.filter((c: any) => c.content.length > 2000).length;
+    const uniqueContent = new Set(chunks.map((c: any) => c.content.slice(0, 200))).size;
+
+    results.scores.chunk_quality = {
+      total_chunks: chunks.length,
+      avg_length: Math.round(avgChunkLength),
+      short_chunks: shortChunks,
+      long_chunks: longChunks,
+      uniqueness: Math.round((uniqueContent / chunks.length) * 100)
+    };
+
+    // 2. FIGURE QUALITY ANALYSIS
+    const { data: figures } = await supabase
+      .from('figures')
+      .select('*')
+      .eq('manual_id', manual_id);
+
+    let figureScore = 0;
+    if (figures && figures.length > 0) {
+      const enhancedFigures = figures.filter((f: any) => 
+        f.caption_text && f.caption_text.length > 50
+      ).length;
+      figureScore = Math.round((enhancedFigures / figures.length) * 100);
+
+      results.scores.figure_quality = {
+        total_figures: figures.length,
+        enhanced_descriptions: enhancedFigures,
+        enhancement_rate: figureScore
+      };
+    }
+
+    // 3. EMBEDDING QUALITY CHECK
+    const embeddings = chunks.filter((c: any) => c.embedding).length;
+    const embeddingRate = Math.round((embeddings / chunks.length) * 100);
+
+    results.scores.embedding_quality = {
+      embedded_chunks: embeddings,
+      embedding_rate: embeddingRate
+    };
+
+    // 4. OVERALL SCORE CALCULATION
+    const chunkScore = Math.min(100, Math.max(0, 100 - (shortChunks * 5) - (longChunks * 2)));
+    const overallScore = Math.round((chunkScore + figureScore + embeddingRate) / 3);
+    results.scores.overall = overallScore;
+
+    // 5. ISSUE DETECTION
+    if (shortChunks > chunks.length * 0.3) {
+      results.issues.push("⚠️ Too many short chunks - may indicate poor parsing");
+    }
+    if (embeddingRate < 95) {
+      results.issues.push("⚠️ Some chunks missing embeddings - search quality affected");
+    }
+    if (figureScore < 50) {
+      results.issues.push("⚠️ Low figure enhancement rate - vision processing may have failed");
+    }
+    if (avgChunkLength < 200) {
+      results.issues.push("⚠️ Average chunk length too short - context may be fragmented");
+    }
+
+    // 6. RECOMMENDATIONS
+    if (overallScore >= 85) {
+      results.recommendations.push("✅ Excellent quality! Manual ready for production use.");
+    } else if (overallScore >= 70) {
+      results.recommendations.push("👍 Good quality with minor issues. Consider re-uploading if critical.");
+    } else {
+      results.recommendations.push("🔄 Poor quality detected. Recommend re-uploading the manual.");
+    }
+
+    console.log(`✅ Quality metrics complete. Overall score: ${overallScore}%`);
+    return results;
+
+  } catch (error) {
+    console.error("Quality metrics error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    results.issues.push(`❌ Quality check failed: ${errorMessage}`);
+    return results;
+  }
+}
+
 interface GoldenQuestion {
   id: string;
   question: string;
@@ -100,7 +206,29 @@ serve(async (req) => {
 
     await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id });
 
-    // Get golden questions for this manual
+    // STEP 1: Run quality metrics first
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`📊 STEP 1: Data Quality Metrics`);
+    console.log(`${'='.repeat(80)}\n`);
+    
+    const qualityMetrics = await calculateQualityMetrics(supabase, manual_id);
+    
+    console.log(`\n📈 Quality Scores:`);
+    console.log(`   Overall: ${qualityMetrics.scores.overall}%`);
+    console.log(`   Chunks: ${qualityMetrics.scores.chunk_quality?.total_chunks} (avg ${qualityMetrics.scores.chunk_quality?.avg_length} chars)`);
+    console.log(`   Figures: ${qualityMetrics.scores.figure_quality?.enhancement_rate}% enhanced`);
+    console.log(`   Embeddings: ${qualityMetrics.scores.embedding_quality?.embedding_rate}% complete`);
+    
+    if (qualityMetrics.issues.length > 0) {
+      console.log(`\n⚠️  Issues found:`);
+      qualityMetrics.issues.forEach((issue: string) => console.log(`   ${issue}`));
+    }
+
+    // STEP 2: Get golden questions for this manual
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`📊 STEP 2: Answer Quality Evaluation`);
+    console.log(`${'='.repeat(80)}\n`);
+
     const { data: questions, error: questionsError } = await supabase
       .from('golden_questions')
       .select('*')
@@ -360,15 +488,17 @@ ${JSON.stringify(answer)}`
     const partial = results.filter(r => r.score === 'PARTIAL').length;
     const fail = results.filter(r => r.score === 'FAIL').length;
 
-    console.log(`\n✅ Evaluation complete:`);
-    console.log(`   PASS: ${pass}/${results.length}`);
-    console.log(`   PARTIAL: ${partial}/${results.length}`);
-    console.log(`   FAIL: ${fail}/${results.length}`);
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`✅ EVALUATION COMPLETE`);
+    console.log(`${'='.repeat(80)}\n`);
+    console.log(`📊 Data Quality: ${qualityMetrics.scores.overall}%`);
+    console.log(`📝 Answer Quality: PASS ${pass}/${results.length}, PARTIAL ${partial}/${results.length}, FAIL ${fail}/${results.length}`);
 
     return new Response(JSON.stringify({
       success: true,
       manual_id,
-      summary: {
+      quality_metrics: qualityMetrics,
+      answer_evaluation: {
         total: results.length,
         pass,
         partial,

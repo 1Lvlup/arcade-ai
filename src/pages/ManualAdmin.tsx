@@ -22,7 +22,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Edit, Eye, RefreshCw, Database, AlertCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Search, Plus, Edit, Eye, RefreshCw, Database, AlertCircle, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { QuickTestConsole } from '@/components/QuickTestConsole';
 
@@ -45,6 +59,17 @@ const ManualAdmin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [docTypeFilter, setDocTypeFilter] = useState<string>('all');
+  const [backfillDialog, setBackfillDialog] = useState<{
+    open: boolean;
+    manualId: string;
+    manualTitle: string;
+    dryRunResult: any;
+  }>({
+    open: false,
+    manualId: '',
+    manualTitle: '',
+    dryRunResult: null
+  });
 
   const { data: manuals, isLoading, refetch } = useQuery({
     queryKey: ['manual-metadata'],
@@ -59,27 +84,45 @@ const ManualAdmin = () => {
     }
   });
 
-  const handleBackfill = async (manualId: string, dryRun: boolean = true) => {
+  const handleBackfillPreview = async (manualId: string, manualTitle: string) => {
     try {
       const { data, error } = await supabase.rpc('admin_backfill_manual', {
         p_manual_id: manualId,
-        p_dry_run: dryRun
+        p_dry_run: true
+      });
+
+      if (error) throw error;
+
+      setBackfillDialog({
+        open: true,
+        manualId,
+        manualTitle,
+        dryRunResult: data
+      });
+    } catch (error: any) {
+      toast.error('Backfill Preview Failed', {
+        description: error.message
+      });
+    }
+  };
+
+  const handleBackfillRun = async () => {
+    const { manualId, manualTitle } = backfillDialog;
+    try {
+      const { data, error } = await supabase.rpc('admin_backfill_manual', {
+        p_manual_id: manualId,
+        p_dry_run: false
       });
 
       if (error) throw error;
 
       const result = data as any;
-      if (dryRun) {
-        const total = (result.would_update_chunks_text || 0) + (result.would_update_rag_chunks || 0);
-        toast.info('Dry Run Complete', {
-          description: `Would update ${total} chunks (chunks_text: ${result.would_update_chunks_text || 0}, rag_chunks: ${result.would_update_rag_chunks || 0}). Run without dry-run to apply.`
-        });
-      } else {
-        toast.success('Backfill Complete', {
-          description: `Updated ${result.total || 0} chunks (chunks_text: ${result.updated_chunks_text || 0}, rag_chunks: ${result.updated_rag_chunks || 0})`
-        });
-        refetch();
-      }
+      toast.success('Backfill Complete', {
+        description: `Updated ${result.total || 0} chunks for ${manualTitle}`
+      });
+      
+      setBackfillDialog({ open: false, manualId: '', manualTitle: '', dryRunResult: null });
+      refetch();
     } catch (error: any) {
       toast.error('Backfill Failed', {
         description: error.message
@@ -87,7 +130,7 @@ const ManualAdmin = () => {
     }
   };
 
-  const handleReindex = async (manualId: string) => {
+  const handleReindex = async (manualId: string, manualTitle: string) => {
     try {
       const { data, error } = await supabase.rpc('trigger_reindex', {
         p_manual_id: manualId
@@ -96,7 +139,7 @@ const ManualAdmin = () => {
       if (error) throw error;
 
       toast.success('Reindex Triggered', {
-        description: `Manual ${manualId} marked for reindexing.`
+        description: `${manualTitle} marked for reindexing. This rebuilds the search embeddings.`
       });
       refetch();
     } catch (error: any) {
@@ -231,30 +274,59 @@ const ManualAdmin = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/manual-admin/edit/${manual.manual_id}`)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleBackfill(manual.manual_id, true)}
-                          >
-                            <Database className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleReindex(manual.manual_id)}
-                            disabled={manual.requires_reindex}
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <TooltipProvider>
+                          <div className="flex justify-end gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/manual-admin/edit/${manual.manual_id}`)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit metadata</TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleBackfillPreview(manual.manual_id, manual.canonical_title)}
+                                >
+                                  <Database className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="max-w-xs">
+                                  <p className="font-semibold">Populate Metadata</p>
+                                  <p className="text-xs">Updates chunk metadata with game title, platform, etc.</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleReindex(manual.manual_id, manual.canonical_title)}
+                                  disabled={manual.requires_reindex}
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="max-w-xs">
+                                  <p className="font-semibold">Rebuild Search Index</p>
+                                  <p className="text-xs">Regenerates embeddings for semantic search</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TooltipProvider>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -267,6 +339,53 @@ const ManualAdmin = () => {
         <div className="mt-6">
           <QuickTestConsole />
         </div>
+
+        <Dialog open={backfillDialog.open} onOpenChange={(open) => 
+          setBackfillDialog({ ...backfillDialog, open })
+        }>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Populate Metadata for {backfillDialog.manualTitle}</DialogTitle>
+              <DialogDescription>
+                This will update chunk metadata with game title, platform, manufacturer, and other fields from manual_metadata.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {backfillDialog.dryRunResult && (
+              <div className="space-y-4">
+                <div className="rounded-lg bg-muted p-4">
+                  <h4 className="font-semibold mb-2">Preview:</h4>
+                  <div className="space-y-1 text-sm">
+                    <p>• Would update <strong>{backfillDialog.dryRunResult.would_update_chunks_text || 0}</strong> chunks in chunks_text</p>
+                    <p>• Would update <strong>{backfillDialog.dryRunResult.would_update_rag_chunks || 0}</strong> chunks in rag_chunks</p>
+                    <p className="font-semibold mt-2">Total: {backfillDialog.dryRunResult.would_update_total || 0} chunks</p>
+                  </div>
+                </div>
+                
+                {backfillDialog.dryRunResult.metadata_preview && (
+                  <div className="rounded-lg border p-4">
+                    <h4 className="font-semibold mb-2 text-sm">Metadata to be added:</h4>
+                    <pre className="text-xs bg-muted p-2 rounded overflow-auto">
+                      {JSON.stringify(backfillDialog.dryRunResult.metadata_preview, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => 
+                setBackfillDialog({ open: false, manualId: '', manualTitle: '', dryRunResult: null })
+              }>
+                Cancel
+              </Button>
+              <Button onClick={handleBackfillRun}>
+                <Play className="mr-2 h-4 w-4" />
+                Run Backfill
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

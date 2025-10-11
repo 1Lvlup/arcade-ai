@@ -690,6 +690,39 @@ export type Database = {
         }
         Relationships: []
       }
+      rpc_audit: {
+        Row: {
+          created_at: string
+          error: string | null
+          fec_tenant_id: string
+          id: string
+          payload: Json | null
+          result: Json | null
+          rpc_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          fec_tenant_id?: string
+          id?: string
+          payload?: Json | null
+          result?: Json | null
+          rpc_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          fec_tenant_id?: string
+          id?: string
+          payload?: Json | null
+          result?: Json | null
+          rpc_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -727,6 +760,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_backfill_manual: {
+        Args: { p_dry_run?: boolean; p_manual_id: string }
+        Returns: Json
+      }
+      admin_upsert_manual_metadata: {
+        Args: { p_metadata: Json }
+        Returns: {
+          out_canonical_slug: string
+          out_manual_id: string
+          out_status: string
+        }[]
+      }
       fn_backfill_for_manual: {
         Args: { p_manual_id: string }
         Returns: number
@@ -867,6 +912,10 @@ export type Database = {
       slugify: {
         Args: { input_text: string }
         Returns: string
+      }
+      trigger_reindex: {
+        Args: { p_manual_id: string }
+        Returns: Json
       }
       upsert_manual_metadata: {
         Args: { p_metadata: Json }

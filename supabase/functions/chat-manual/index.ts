@@ -244,8 +244,20 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   const candidates = (vectorResults || []).map(normalizeRow);
   console.log(`📊 Vector search found ${candidates.length} results`);
 
+  // 1) Scoring nudge: prefer specs/wiring; demote front-matter
+  function scoreNudge(c: any) {
+    const h = `${c.menu_path || ""} ${c.heading || ""} ${c.content || ""}`.toLowerCase();
+    let bonus = 0;
+    if (/(wiring|pinout|connector|i\/o|spec|voltage|power|fuse|header|schematic|troubleshooting)/.test(h)) bonus += 0.20;
+    if (/(cover|table of contents|front matter|copyright)/.test(h)) bonus -= 0.40;
+    return bonus;
+  }
+  const nudged = (candidates || []).map(c => ({ ...c, score: (c.score ?? 0) + scoreNudge(c) }));
+  nudged.sort((a,b)=> (b.rerank_score ?? b.score ?? 0) - (a.rerank_score ?? a.score ?? 0));
+  const finalCandidates = nudged;
+
   // Apply spec bias
-  let candidatesBiased = boostSpecCandidates(candidates, query);
+  let candidatesBiased = boostSpecCandidates(finalCandidates, query);
 
   // Weak-evidence fallback: if almost none look "specy", requery with expansion
   const specish = candidatesBiased.filter(r => looksSpecy(r.content)).length;

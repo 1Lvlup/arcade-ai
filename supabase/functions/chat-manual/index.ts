@@ -93,6 +93,12 @@ function styleHintFromQuery(q: string): string {
 // ─────────────────────────────────────────────────────────────────────────
 // Keyword helpers you already had
 // ─────────────────────────────────────────────────────────────────────────
+// ── Mode picker for Rundown vs Default ──
+function pickModeFromQuery(q: string): "rundown" | "default" {
+  const s = q.toLowerCase();
+  return /(overview|rundown|architecture|how does|what is|components)/i.test(s) ? "rundown" : "default";
+}
+
 function keywordLine(q: string): string {
   const toks = q.match(/\b(CR-?2032|CMOS|BIOS|HDMI|VGA|J\d+|pin\s?\d+|[0-9]+V|5V|12V|error\s?E-?\d+)\b/gi) || [];
   return [...new Set(toks)].join(" ");
@@ -516,6 +522,32 @@ serve(async (req) => {
     console.log("Query:", query);
     console.log("Manual ID:", manual_id || "All manuals");
     console.log("=================================\n");
+
+    // Check for Rundown Mode
+    const mode = pickModeFromQuery(query);
+    console.log("RUNDOWN MODE?", { mode, query });
+
+    if (mode === "rundown" && Deno.env.get("ENABLE_RUNDOWN") === "true") {
+      const r = await fetch(`${supabaseUrl}/functions/v1/search-rundown-v1`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseServiceKey}` },
+        body: JSON.stringify({ q: query, system: null, vendor: null, limit: 80 })
+      });
+      const data = await r.json();
+
+      const answer =
+        data?.ok
+          ? [`SUMMARY: ${data.summary}`, ...(data.sections || []).map((s: any) => `\n## ${s.title}\n${s.gist}`).join("\n")].join("\n")
+          : `Rundown unavailable: ${data?.error || "unknown error"}`;
+
+      return new Response(JSON.stringify({
+        answer,
+        sources: data?.sections?.flatMap((s: any) => s.citations || []) ?? [],
+        strategy: "rundown",
+        metadata: { pipeline_version: "v3", mode: "rundown" },
+        context_seen: ""
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // Extract tenant from auth header
     const authHeader = req.headers.get("authorization");

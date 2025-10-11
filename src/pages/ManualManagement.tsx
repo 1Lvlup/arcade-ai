@@ -1,11 +1,9 @@
 import { ManualUpload } from '@/components/ManualUpload';
 import { ManualsList } from '@/components/ManualsList';
 import { SharedHeader } from '@/components/SharedHeader';
-import FigureEnhancementManager from '@/components/FigureEnhancementManager';
 import { ChatBot } from '@/components/ChatBot';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, MessageSquare } from 'lucide-react';
-import { useState } from 'react';
 
 const ManualManagement = () => {
   return (
@@ -44,7 +42,7 @@ const ManualManagement = () => {
             </TabsList>
             
             <TabsContent value="upload" className="space-y-12">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
                 <ManualUpload />
                 <ManualsList />
               </div>
@@ -56,11 +54,8 @@ const ManualManagement = () => {
           </Tabs>
         </div>
 
-        <div className="section-spacing">
-          <FigureEnhancementManager />
-        </div>
-        
-        <div className="premium-card p-6 rounded-2xl section-spacing">
+
+        <div className="premium-card p-6 rounded-2xl section-spacing mt-24">
           <div className="text-center mb-4">
             <h3 className="premium-text text-lg text-foreground">
               Processing Pipeline

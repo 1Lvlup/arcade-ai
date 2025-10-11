@@ -35,6 +35,30 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
+    // Verify user is authenticated
+    const auth = req.headers.get("authorization")?.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(auth || "");
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Not authenticated" }),
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if user has admin role
+    const { data: hasAdminRole } = await supabase.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+
+    if (!hasAdminRole) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Admin access required" }),
+        { status: 403, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
     const { manual_id } = await req.json();
     if (!manual_id) throw new Error("manual_id required");
 

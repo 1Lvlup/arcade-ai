@@ -53,12 +53,7 @@ const Index = () => {
   };
   if (showChat) {
     return <div className="min-h-screen professional-bg">
-        <SharedHeader 
-          title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} 
-          showBackButton={true} 
-          backTo="/" 
-          onBackClick={handleBackToHome}
-        />
+        <SharedHeader title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} showBackButton={true} backTo="/" onBackClick={handleBackToHome} />
         <main className="container mx-auto px-4 py-8">
           <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />
         </main>
@@ -132,14 +127,11 @@ const Index = () => {
         <section className="text-center py-24">
           <div className="space-y-16">
             <div className="space-y-12">
-              <div className="caption-text text-primary/80 text-sm tracking-widest uppercase font-mono">
+              <div className="caption-text text-primary/80 text-sm tracking-widest uppercase font-mono rounded-lg">
                 Next-Generation AI Platform
               </div>
-              <h1 
-                className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text"
-                data-text="LEVEL UP"
-                style={{
-                  textShadow: `
+              <h1 className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text" data-text="LEVEL UP" style={{
+              textShadow: `
                     /* Enhanced glow layers */
                     0 0 10px hsl(189 94% 60% / 1),
                     0 0 20px hsl(189 94% 60% / 0.9),
@@ -160,9 +152,8 @@ const Index = () => {
                     /* Deep shadow */
                     8px 8px 20px rgba(0, 0, 0, 0.5)
                   `,
-                  WebkitTextStroke: '1px hsl(189 94% 60% / 0.3)'
-                }}
-              >
+              WebkitTextStroke: '1px hsl(189 94% 60% / 0.3)'
+            }}>
                 LEVEL UP
               </h1>
             </div>
@@ -229,8 +220,7 @@ const Index = () => {
             <p className="text-xl text-muted-foreground font-body">Industry-leading metrics that power your arcade operations</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center">
+            {stats.map((stat, index) => <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center">
                 <div className="flex flex-col items-center space-y-6">
                   <div className="p-4 rounded-full bg-primary/10">
                     <div className="text-primary">
@@ -245,8 +235,7 @@ const Index = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </section>
 
@@ -266,8 +255,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {coreFeatures.map((feature, index) => (
-              <div key={index} className="tech-card hover:border-primary/40 p-10 rounded-3xl transition-all duration-300 hover-lift">
+            {coreFeatures.map((feature, index) => <div key={index} className="tech-card hover:border-primary/40 p-10 rounded-3xl transition-all duration-300 hover-lift">
                 <div className="space-y-8">
                   <div className="flex items-start justify-between">
                     <div className="p-5 rounded-2xl bg-primary/10">
@@ -289,23 +277,18 @@ const Index = () => {
                     </p>
                   </div>
                   <div className="pt-6">
-                    {feature.onClick ? (
-                      <Button onClick={feature.onClick} className="w-full btn-tech py-4 text-lg font-semibold">
+                    {feature.onClick ? <Button onClick={feature.onClick} className="w-full btn-tech py-4 text-lg font-semibold">
                         Launch Assistant
                         <ArrowRight className="h-5 w-5 ml-2" />
-                      </Button>
-                    ) : (
-                      <Link to={feature.link!}>
+                      </Button> : <Link to={feature.link!}>
                         <Button variant="outline" className="w-full btn-tech-outline py-4 text-lg font-semibold">
                           Access Platform
                           <ArrowRight className="h-5 w-5 ml-2" />
                         </Button>
-                      </Link>
-                    )}
+                      </Link>}
                   </div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </section>
 
@@ -325,8 +308,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {capabilities.map((capability, index) => (
-              <div key={index} className="premium-card hover-lift p-10 rounded-3xl">
+            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl">
                 <div className="space-y-8">
                   <div className="p-5 rounded-2xl bg-primary/10 inline-flex">
                     <div className="text-primary">
@@ -338,8 +320,7 @@ const Index = () => {
                     {capability.description}
                   </p>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </section>
 

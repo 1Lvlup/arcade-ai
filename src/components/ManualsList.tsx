@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Calendar, Search, Activity, Database, Eye, Trash2, RefreshCw } from 'lucide-react';
+import { FileText, Calendar, Search, Activity, Database, Eye, Trash2, RefreshCw, ListOrdered } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Manual {
@@ -29,6 +29,7 @@ export function ManualsList() {
   const [chunkCounts, setChunkCounts] = useState<ChunkCount[]>([]);
   const [deletingManualId, setDeletingManualId] = useState<string | null>(null);
   const [retryingManualId, setRetryingManualId] = useState<string | null>(null);
+  const [repagingManualId, setRepagingManualId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -146,6 +147,43 @@ export function ManualsList() {
       });
     } finally {
       setRetryingManualId(null);
+    }
+  };
+
+  const repageManual = async (manual: Manual) => {
+    setRepagingManualId(manual.manual_id);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('repage-manual', {
+        body: { manual_id: manual.manual_id }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.ok) {
+        toast({
+          title: 'Repaging complete',
+          description: `Successfully repaged ${data.repaged} chunks`,
+        });
+        fetchManuals();
+      } else {
+        toast({
+          title: 'Repaging failed',
+          description: data?.error || 'Failed to repage manual',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error repaging manual:', error);
+      toast({
+        title: 'Error repaging manual',
+        description: 'Failed to repage manual. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRepagingManualId(null);
     }
   };
 
@@ -333,6 +371,23 @@ export function ManualsList() {
                             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                           )}
                           Retry
+                        </Button>
+                      )}
+                      
+                      {status.status === 'processed' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={repagingManualId === manual.manual_id}
+                          onClick={() => repageManual(manual)}
+                          className="h-8 px-3"
+                        >
+                          {repagingManualId === manual.manual_id ? (
+                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary mr-1.5" />
+                          ) : (
+                            <ListOrdered className="h-3.5 w-3.5 mr-1.5" />
+                          )}
+                          Repage
                         </Button>
                       )}
                       

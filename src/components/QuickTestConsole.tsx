@@ -26,7 +26,7 @@ interface RetrievalHit {
 
 export const QuickTestConsole = () => {
   const [manuals, setManuals] = useState<Manual[]>([]);
-  const [selectedManual, setSelectedManual] = useState<string>('');
+  const [selectedManual, setSelectedManual] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<RetrievalHit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,7 +67,7 @@ export const QuickTestConsole = () => {
         query_embedding: embeddingData.embedding,
         top_k: 5,
         min_score: 0.3,
-        manual: selectedManual || null,
+        manual: selectedManual === 'all' ? null : selectedManual,
         tenant_id: null
       });
 
@@ -105,7 +105,7 @@ export const QuickTestConsole = () => {
                 <SelectValue placeholder="All Manuals" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Manuals</SelectItem>
+                <SelectItem value="all">All Manuals</SelectItem>
                 {manuals.map(manual => (
                   <SelectItem key={manual.manual_id} value={manual.manual_id}>
                     {manual.canonical_title}

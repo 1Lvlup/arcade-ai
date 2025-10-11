@@ -140,11 +140,27 @@ const Index = () => {
                 data-text="LEVEL UP"
                 style={{
                   textShadow: `
-                    0 0 20px hsl(189 94% 60% / 0.8),
-                    0 0 40px hsl(189 94% 60% / 0.6),
-                    0 0 60px hsl(189 94% 60% / 0.5),
-                    0 0 80px hsl(189 94% 60% / 0.4)
-                  `
+                    /* Enhanced glow layers */
+                    0 0 10px hsl(189 94% 60% / 1),
+                    0 0 20px hsl(189 94% 60% / 0.9),
+                    0 0 40px hsl(189 94% 60% / 0.8),
+                    0 0 60px hsl(189 94% 60% / 0.7),
+                    0 0 80px hsl(189 94% 60% / 0.6),
+                    0 0 100px hsl(189 94% 60% / 0.5),
+                    /* 3D bevel effect - light top-left */
+                    -2px -2px 0 hsl(189 94% 80%),
+                    -3px -3px 0 hsl(189 94% 75%),
+                    -4px -4px 0 hsl(189 94% 70%),
+                    /* 3D depth - dark bottom-right */
+                    2px 2px 0 hsl(189 94% 30%),
+                    3px 3px 0 hsl(189 94% 25%),
+                    4px 4px 0 hsl(189 94% 20%),
+                    5px 5px 0 hsl(189 94% 15%),
+                    6px 6px 0 hsl(189 94% 10%),
+                    /* Deep shadow */
+                    8px 8px 20px rgba(0, 0, 0, 0.5)
+                  `,
+                  WebkitTextStroke: '1px hsl(189 94% 60% / 0.3)'
                 }}
               >
                 LEVEL UP

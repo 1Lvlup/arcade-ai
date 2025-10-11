@@ -70,12 +70,13 @@ const ManualAdmin = () => {
 
       const result = data as any;
       if (dryRun) {
+        const total = (result.would_update_chunks_text || 0) + (result.would_update_rag_chunks || 0);
         toast.info('Dry Run Complete', {
-          description: `Would update ${result.would_update} chunks. Click "Confirm" to proceed.`
+          description: `Would update ${total} chunks (chunks_text: ${result.would_update_chunks_text || 0}, rag_chunks: ${result.would_update_rag_chunks || 0}). Run without dry-run to apply.`
         });
       } else {
         toast.success('Backfill Complete', {
-          description: `Updated ${result.updated_count} chunks with metadata.`
+          description: `Updated ${result.total || 0} chunks (chunks_text: ${result.updated_chunks_text || 0}, rag_chunks: ${result.updated_rag_chunks || 0})`
         });
         refetch();
       }

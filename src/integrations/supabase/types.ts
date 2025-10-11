@@ -81,6 +81,7 @@ export type Database = {
           id: string
           manual_id: string
           menu_path: string | null
+          metadata: Json | null
           page_end: number | null
           page_start: number | null
         }
@@ -93,6 +94,7 @@ export type Database = {
           id?: string
           manual_id: string
           menu_path?: string | null
+          metadata?: Json | null
           page_end?: number | null
           page_start?: number | null
         }
@@ -105,6 +107,7 @@ export type Database = {
           id?: string
           manual_id?: string
           menu_path?: string | null
+          metadata?: Json | null
           page_end?: number | null
           page_start?: number | null
         }
@@ -775,6 +778,10 @@ export type Database = {
       fn_backfill_for_manual: {
         Args: { p_manual_id: string }
         Returns: number
+      }
+      fn_backfill_for_manual_any: {
+        Args: { p_manual_id: string }
+        Returns: Json
       }
       get_current_tenant_context: {
         Args: Record<PropertyKey, never>

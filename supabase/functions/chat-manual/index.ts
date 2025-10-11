@@ -16,6 +16,8 @@ const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
 const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
 const CHAT_MODEL = Deno.env.get("CHAT_MODEL") ?? "gpt-5-2025-08-07";
+// tone: "conversational" | "structured"
+const ANSWER_STYLE = Deno.env.get("ANSWER_STYLE") ?? "conversational";
 
 // Validate required environment variables
 if (!supabaseUrl) throw new Error("Missing SUPABASE_URL");
@@ -411,27 +413,35 @@ function isGpt5(model: string): boolean {
   return model.includes("gpt-5");
 }
 
-async function generateAnswer(query: string, chunks: any[], model: string): Promise<string> {
-  const contextBlocks = chunks
-    .map((c, i) => {
-      const cleaned = normalizeGist(c.content);
-      const pageInfo = c.page_start
-        ? (c.page_end && c.page_end !== c.page_start ? `[p${c.page_start}-${c.page_end}]` : `[p${c.page_start}]`)
-        : "[page unknown]";
-      return `[${i + 1}] ${pageInfo} ${cleaned}`;
-    })
-    .join("\n\n");
+const SYSTEM_PROMPT_CONVERSATIONAL = `
+You are "Dream Technician Assistant," a friendly, insanely competent arcade/bowling tech coach.
+Talk like a trusted coworker: short, warm sentences; answer first, then a brief why, then 3–5 quick bullets.
+Weave citations inline like (Manual p. 12) when you use a source.
 
-  const systemPrompt = `You are an expert arcade service assistant. Give **actionable** repair steps a field tech can follow safely on-site.
+Rules
+- Be confident and encouraging. If evidence is thin, say so, then give a best next move ("field-tested play").
+- Never invent exact numbers, part numbers, pins, or connector IDs. If a spec wasn't retrieved, say "spec not captured" and give a practical alternative.
+- Prefer plain verbs ("unplug, reseat, measure") and concrete HOW (menu path, connector ID, pin labels, etc.).
+- Mention power-off whenever measuring resistance or moving parts.
+
+Soft shape (don't force headings):
+• Answer (1–3 sentences).  
+• Why (one-liner "fault triangulation").  
+• Do now: 3–5 bullets with concrete actions.  
+• If results don't match: one pivot step.  
+• Citations: inline where used; if none, add "No manual hits; best-practice guidance."
+`;
+
+const SYSTEM_PROMPT_STRUCTURED = `You are an expert arcade service assistant. Give **actionable** repair steps a field tech can follow safely on-site.
 
 Rules
 1) Map the symptom to the likely subsystem by name.
 2) Output 2–4 decisive tests with numbers, pins, connectors, or error codes.
 3) Each test must cite an exact page from the provided context. If a step has no page, omit it.
 4) Prefer procedures and wiring tables over parts lists. Prefer pages with voltages, pins, or headers (e.g., Jxx).
-5) If you tell the user to enter any **menu/diagnostic mode**, briefly include **how to open it** (button names or sequence) if it isn’t obvious from context.
-6) Stop when a fault is confirmed; don’t list speculative branches.
-7) If evidence is thin, return the “Minimal Working Play” (error display → sensor toggle 0↔5 V → power/drive check) and say what data is missing.
+5) If you tell the user to enter any **menu/diagnostic mode**, briefly include **how to open it** (button names or sequence) if it isn't obvious from context.
+6) Stop when a fault is confirmed; don't list speculative branches.
+7) If evidence is thin, return the "Minimal Working Play" (error display → sensor toggle 0↔5 V → power/drive check) and say what data is missing.
 
 Format
 **Subsystem:** <name>
@@ -444,6 +454,21 @@ Format
 **Why:** <one-line rationale>
 
 **Citations:** p<X>, p<Y>, p<Z>`;
+
+async function generateAnswer(query: string, chunks: any[], model: string, opts?: { retrievalWeak?: boolean }): Promise<string> {
+  const contextBlocks = chunks
+    .map((c, i) => {
+      const cleaned = normalizeGist(c.content);
+      const pageInfo = c.page_start
+        ? (c.page_end && c.page_end !== c.page_start ? `[p${c.page_start}-${c.page_end}]` : `[p${c.page_start}]`)
+        : "[page unknown]";
+      return `[${i + 1}] ${pageInfo} ${cleaned}`;
+    })
+    .join("\n\n");
+
+  const systemPrompt = ANSWER_STYLE === "conversational"
+    ? SYSTEM_PROMPT_CONVERSATIONAL
+    : SYSTEM_PROMPT_STRUCTURED;
 
   let userPrompt = `Question: ${query}
 
@@ -460,10 +485,18 @@ Provide a clear answer using the manual content above.`;
 Style request:
 ${styleHint}`;
 }
+
+  if (opts?.retrievalWeak) {
+    userPrompt += `
+
+(Notes for the assistant: Retrieval was thin. Still answer decisively using "field-tested play". Be clear when specs are missing with "spec not captured". Keep tone confident and helpful.)`;
+  }
   
   console.log(`🤖 Generating answer with model: ${model}`);
 
   const url = isGpt5(model) ? "https://api.openai.com/v1/responses" : "https://api.openai.com/v1/chat/completions";
+
+  const temperature = ANSWER_STYLE === "conversational" ? 0.4 : 0.1;
 
   const body: any = isGpt5(model)
     ? {
@@ -472,7 +505,8 @@ ${styleHint}`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_output_tokens: 8000, // Increased for reasoning + answer
+        max_output_tokens: 8000,
+        temperature,
       }
     : {
         model,
@@ -481,6 +515,7 @@ ${styleHint}`;
           { role: "user", content: userPrompt },
         ],
         max_tokens: 2000,
+        temperature,
       };
 
   console.log(`📤 Calling ${url} with model ${model}`);
@@ -602,7 +637,8 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
   }
 
   console.log(`🎯 STAGE 1: Generating answer with model: ${model || CHAT_MODEL}`);
-  const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL);
+  const retrievalWeak = weak || topChunks.length < 2;
+  const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL, { retrievalWeak });
 
   // 2) Precision guard: reject vague cites
   const usedPages = (answer.match(/p\d+/gi) || []).map(s => s.toLowerCase());

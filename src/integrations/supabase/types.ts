@@ -871,9 +871,9 @@ export type Database = {
       upsert_manual_metadata: {
         Args: { p_metadata: Json }
         Returns: {
-          result_canonical_slug: string
-          result_manual_id: string
-          result_status: string
+          out_canonical_slug: string
+          out_manual_id: string
+          out_status: string
         }[]
       }
     }

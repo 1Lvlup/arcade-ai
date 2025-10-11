@@ -341,6 +341,41 @@ export function ManualDetail() {
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Chat with Manual
               </Button>
+              <Button 
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const { data, error } = await supabase.functions.invoke('export-chunks', {
+                      body: { manualId: manual.manual_id }
+                    });
+                    if (error) throw error;
+                    
+                    // Create download
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `chunks-${manual.manual_id}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    toast({
+                      title: 'Chunks exported',
+                      description: `Exported ${data.total_chunks} chunks to JSON file`,
+                    });
+                  } catch (error) {
+                    console.error('Export error:', error);
+                    toast({
+                      title: 'Export failed',
+                      description: 'Failed to export chunks. Please try again.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Chunks
+              </Button>
             </div>
           </CardContent>
         </Card>

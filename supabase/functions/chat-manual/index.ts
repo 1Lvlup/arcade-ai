@@ -506,7 +506,7 @@ ${styleHint}`;
           { role: "user", content: userPrompt },
         ],
         max_output_tokens: 8000,
-        temperature,
+        // GPT-5 doesn't support temperature parameter
       }
     : {
         model,

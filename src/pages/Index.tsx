@@ -127,7 +127,7 @@ const Index = () => {
         <section className="text-center py-24">
           <div className="space-y-16">
             <div className="space-y-12">
-              <div className="caption-text text-primary/80 text-sm tracking-widest uppercase font-mono rounded-lg">
+              <div className="caption-text text-primary/80 text-base tracking-widest uppercase font-mono rounded-lg">
                 Next-Generation AI Platform
               </div>
               <h1 className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text" data-text="LEVEL UP" style={{

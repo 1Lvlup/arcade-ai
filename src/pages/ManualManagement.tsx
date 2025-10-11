@@ -56,6 +56,10 @@ const ManualManagement = () => {
           </Tabs>
         </div>
 
+        <div className="section-spacing">
+          <FigureEnhancementManager />
+        </div>
+        
         <div className="premium-card p-6 rounded-2xl section-spacing">
           <div className="text-center mb-4">
             <h3 className="premium-text text-lg text-foreground">
@@ -88,10 +92,6 @@ const ManualManagement = () => {
               <p className="caption-text text-xs text-muted-foreground">Intelligent Search</p>
             </div>
           </div>
-        </div>
-        
-        <div className="section-spacing">
-          <FigureEnhancementManager />
         </div>
         
       </main>

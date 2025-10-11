@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      chunk_repage_log: {
+        Row: {
+          chunk_id: string
+          created_at: string
+          id: string
+          manual_id: string
+          new_page_start: number | null
+          old_page_start: string | null
+        }
+        Insert: {
+          chunk_id: string
+          created_at?: string
+          id?: string
+          manual_id: string
+          new_page_start?: number | null
+          old_page_start?: string | null
+        }
+        Update: {
+          chunk_id?: string
+          created_at?: string
+          id?: string
+          manual_id?: string
+          new_page_start?: number | null
+          old_page_start?: string | null
+        }
+        Relationships: []
+      }
       chunks_text: {
         Row: {
           content: string
@@ -326,6 +353,114 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_metadata: {
+        Row: {
+          aliases: string[] | null
+          aliases_slugs: string[] | null
+          canonical_slug: string
+          canonical_title: string
+          checksum: string | null
+          created_at: string | null
+          doc_type: string | null
+          family: string | null
+          ingest_status: string | null
+          language: string | null
+          manual_id: string
+          manufacturer: string | null
+          model_number: string | null
+          notes: string | null
+          page_count: number | null
+          platform: string | null
+          quality_score: number | null
+          requires_reindex: boolean | null
+          source_path: string | null
+          tags: string[] | null
+          updated_at: string | null
+          upload_date: string | null
+          uploaded_by: string | null
+          version: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          aliases_slugs?: string[] | null
+          canonical_slug: string
+          canonical_title: string
+          checksum?: string | null
+          created_at?: string | null
+          doc_type?: string | null
+          family?: string | null
+          ingest_status?: string | null
+          language?: string | null
+          manual_id: string
+          manufacturer?: string | null
+          model_number?: string | null
+          notes?: string | null
+          page_count?: number | null
+          platform?: string | null
+          quality_score?: number | null
+          requires_reindex?: boolean | null
+          source_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          upload_date?: string | null
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          aliases_slugs?: string[] | null
+          canonical_slug?: string
+          canonical_title?: string
+          checksum?: string | null
+          created_at?: string | null
+          doc_type?: string | null
+          family?: string | null
+          ingest_status?: string | null
+          language?: string | null
+          manual_id?: string
+          manufacturer?: string | null
+          model_number?: string | null
+          notes?: string | null
+          page_count?: number | null
+          platform?: string | null
+          quality_score?: number | null
+          requires_reindex?: boolean | null
+          source_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          upload_date?: string | null
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      manual_page_map: {
+        Row: {
+          confidence: number
+          created_at: string
+          id: string
+          manual_id: string
+          new_page: number
+          old_page_hint: string | null
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          manual_id: string
+          new_page: number
+          old_page_hint?: string | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          manual_id?: string
+          new_page?: number
+          old_page_hint?: string | null
+        }
+        Relationships: []
+      }
       manual_pages: {
         Row: {
           canonical_page_id: string | null
@@ -592,6 +727,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      fn_backfill_for_manual: {
+        Args: { p_manual_id: string }
+        Returns: number
+      }
       get_current_tenant_context: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -599,6 +738,16 @@ export type Database = {
       get_current_user_fec_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_manuals_for_dropdown: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          canonical_slug: string
+          canonical_title: string
+          doc_type: string
+          manual_id: string
+          platform: string
+        }[]
       }
       has_role: {
         Args: {
@@ -673,6 +822,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      normalize_name: {
+        Args: { input_text: string }
+        Returns: string
+      }
       search_manual_content: {
         Args: {
           match_count?: number
@@ -709,6 +862,18 @@ export type Database = {
           menu_path: string
           page_end: number
           page_start: number
+        }[]
+      }
+      slugify: {
+        Args: { input_text: string }
+        Returns: string
+      }
+      upsert_manual_metadata: {
+        Args: { p_metadata: Json }
+        Returns: {
+          result_canonical_slug: string
+          result_manual_id: string
+          result_status: string
         }[]
       }
     }

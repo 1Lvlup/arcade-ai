@@ -12,6 +12,8 @@ import { ManualDetail } from "./pages/ManualDetail";
 import ManualDetails from "./pages/ManualDetails";
 import VisionBoard from "./pages/VisionBoard";
 import AIConfiguration from "./pages/AIConfiguration";
+import ManualAdmin from "./pages/ManualAdmin";
+import ManualAdminEdit from "./pages/ManualAdminEdit";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -52,6 +54,20 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <AIConfiguration />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/manual-admin" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <ManualAdmin />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/manual-admin/edit/:manualId" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <ManualAdminEdit />
                 </AdminRoute>
               </ProtectedRoute>
             } />

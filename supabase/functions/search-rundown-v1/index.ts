@@ -30,20 +30,25 @@ function textOf(x: Snip) {
 }
 
 function normalizeGist(raw: string) {
-  let s = (raw || "")
-    .replace(/[\r\n]+/g, " ")            // collapse newlines
-    .replace(/[_•·●▪︎◦]+/g, " ")         // bullets/underscores → space
-    .replace(/<[^>]{0,500}>/g, " ")      // strip HTML-ish tags
-    .replace(/\s{2,}/g, " ");            // multi-space → single
+  if (!raw) return "";
+  let s = String(raw);
 
-  // collapse spaced ALL-CAPS like "H Y P E R B O W L I N G"
-  s = s.replace(/\b(?:[A-Z]\s){3,}[A-Z]\b/g, (m) => m.replace(/\s/g, ""));
+  // collapse newlines & weird bullets
+  s = s.replace(/[\r\n]+/g, " ")
+       .replace(/[_•·●▪︎◦]+/g, " ")
+       .replace(/<[^>]{0,500}>/g, " ")
+       .replace(/\s{2,}/g, " ");
 
-  // collapse spaced lower-case runs
-  s = s.replace(/\b(?:[a-z]\s){3,}[a-z]\b/g, (m) => m.replace(/\s/g, ""));
+  // collapse spaced ALL-CAPS or lower-case runs like "H Y P E R  B O W L I N G"
+  s = s.replace(/\b(?:[A-Z]\s*){3,}[A-Z]\b/gm, (m) => m.replace(/\s+/g, "")); // ALL CAPS
+  s = s.replace(/\b(?:[a-z]\s*){3,}[a-z]\b/gm, (m) => m.replace(/\s+/g, "")); // lower
 
-  // trim noisy prefixes
-  s = s.replace(/\b(?:page|p\/n|rev)\s*[:#]?\s*\w+(\s|$)/gi, " ");
+  // collapse single letters separated by spaces inside words (handles extra noisy cases)
+  s = s.replace(/(\b[A-Za-z])(?:\s+)(?=[A-Za-z]\b)/g, "$1");
+
+  // strip obvious cover/TOC noise tokens
+  s = s.replace(/\b(?:page|p\/n|rev)\s*[:#]?\s*[A-Za-z0-9\-\/\.]+/gi, " ");
+
   return s.trim();
 }
 
@@ -62,17 +67,14 @@ function clusterSections(results: Snip[]) {
     .sort((a, b) => b[1].length - a[1].length) // biggest first
     .slice(0, 8)
     .map(([title, arr]) => {
+      const gist = normalizeGist(
+        arr.map((x) => (x.content ?? x.text ?? "")).filter(t => t && t.length > 20).join(" ")
+      ).slice(0, 900);
+      
       // drop sections that cleaned to almost nothing or look like cover/TOC
-      const cleaned = arr.map(textOf).map(normalizeGist).join(" ");
-      if (cleaned.length < 80 || /installation manual\s+cover|table of contents/i.test(cleaned)) {
+      if (gist.length < 120 || /installation manual\s+cover|table of contents/i.test(gist)) {
         return null as any;
       }
-
-      const gist = normalizeGist(
-        arr.map(textOf)
-           .filter(t => t && t.length > 20)
-           .join(" ")
-      ).slice(0, 900);
       
       const citations = arr.slice(0, 3).map((x) => ({
         manual_id: x.manual_id ?? x.doc_id ?? null,

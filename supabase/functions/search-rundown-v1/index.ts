@@ -57,15 +57,18 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
-    const { q, manual_id = null, system = null, vendor = null, limit = 80 } = await req.json();
+    // accept either q or query
+    const body = await req.json();
+    const qText = typeof body.query === "string" ? body.query : body.q;
+    const { manual_id = null, system = null, vendor = null, limit = 80 } = body;
 
-    if (!q || typeof q !== "string") {
-      return new Response(JSON.stringify({ ok: false, error: "Missing q" }), {
+    if (!qText) {
+      return new Response(JSON.stringify({ ok: false, error: "Missing query" }), {
         status: 400, headers: { ...cors, "Content-Type": "application/json" }
       });
     }
 
-    // Reuse your robust search (server-to-server with service key)
+    // Reuse robust search (uses `query`, not `q`)
     const robust = await fetch(ROBUST_URL, {
       method: "POST",
       headers: {
@@ -73,10 +76,12 @@ serve(async (req) => {
         "Authorization": `Bearer ${SERVICE_KEY}`,
         "apikey": SERVICE_KEY
       },
-      body: JSON.stringify({ q, manual_id, system, vendor, limit })
+      body: JSON.stringify({ query: qText, manual_id, system, vendor, limit })
     });
 
     const data = await robust.json();
+    console.log("rundown robust hits:", Array.isArray(data?.results) ? data.results.length : -1);
+    
     if (!robust.ok) {
       return new Response(JSON.stringify({ ok: false, error: data?.error || "robust search failed" }), {
         status: 500, headers: { ...cors, "Content-Type": "application/json" }

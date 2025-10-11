@@ -118,3 +118,6 @@ verify_jwt = true
 
 [functions.chat-manual]
 verify_jwt = false
+
+[functions.repage-manual]
+verify_jwt = true

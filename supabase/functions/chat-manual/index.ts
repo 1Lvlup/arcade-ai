@@ -168,7 +168,6 @@ function expandIfWeak(query: string) {
   // smart expansion for power/spec hunts
   return `${query} power OR voltage OR VDC OR VAC OR connector OR header OR J1 OR J2 OR fuse OR pin OR ohm`;
 }
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // Fetch helper (logs HTTP body on non-2xx)

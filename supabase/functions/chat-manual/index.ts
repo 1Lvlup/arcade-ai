@@ -360,9 +360,7 @@ async function generateAnswer(query: string, chunks: any[], model: string): Prom
     .map((c, i) => {
       const cleaned = normalizeGist(c.content);
       const pageInfo = c.page_start
-        ? c.page_end && c.page_end !== c.page_start
-          ? `[p${c.page_start}-${c.page_end}]`
-          : `[p${c.page_start}]`
+        ? (c.page_end && c.page_end !== c.page_start ? `[p${c.page_start}-${c.page_end}]` : `[p${c.page_start}]`)
         : "[page unknown]";
       return `[${i + 1}] ${pageInfo} ${cleaned}`;
     })

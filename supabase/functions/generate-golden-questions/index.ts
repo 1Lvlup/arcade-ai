@@ -21,7 +21,7 @@ async function getModelConfig(supabase: any, tenant_id: string) {
     .eq('config_key', 'chat_model')
     .single();
   
-  let model = 'gpt-5'; // Default
+  let model = 'gpt-5-2025-08-07'; // Default
   if (config?.config_value) {
     const value = config.config_value;
     // If it's already a string and looks like a model name, use it directly

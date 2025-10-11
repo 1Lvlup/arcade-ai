@@ -38,7 +38,7 @@ async function getModelConfig(tenant_id: string) {
     .eq("config_key", "chat_model")
     .single();
 
-  let model = "gpt-5"; // Default
+  let model = "gpt-5-2025-08-07"; // Default
   if (config?.config_value) {
     const value = config.config_value;
     if (typeof value === "string" && (value.startsWith("gpt-") || value.startsWith("claude-"))) {

@@ -531,7 +531,7 @@ serve(async (req) => {
       const r = await fetch(`${supabaseUrl}/functions/v1/search-rundown-v1`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseServiceKey}` },
-        body: JSON.stringify({ q: query, system: null, vendor: null, limit: 80 })
+        body: JSON.stringify({ q: query, manual_id: manual_id ?? null, system: null, vendor: null, limit: 80 })
       });
       const data = await r.json();
 

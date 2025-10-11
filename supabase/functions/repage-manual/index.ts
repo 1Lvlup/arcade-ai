@@ -64,10 +64,9 @@ serve(async (req) => {
 
     // 1) Pull existing chunks in PDF order (fall back to created_at)
     const { data: chunks, error } = await supabase
-      .from("manual_chunks")
-      .select("id, manual_id, page_start, content, order_index, created_at")
+      .from("chunks_text")
+      .select("id, manual_id, page_start, content, created_at")
       .eq("manual_id", manual_id)
-      .order("order_index", { ascending: true })
       .order("created_at", { ascending: true });
 
     if (error) throw error;
@@ -129,7 +128,7 @@ serve(async (req) => {
     // patch chunks
     for (const u of updates) {
       await supabase
-        .from("manual_chunks")
+        .from("chunks_text")
         .update({
           page_start: u.new_page,
           page_end: u.new_page

@@ -30,17 +30,25 @@ function textOf(x: Snip) {
 }
 
 function collapseSpacedLetters(s: string) {
+  const before = s;
   s = s.replace(/(?:\b[A-Za-z]\b[ \t_-]*){3,}\b[A-Za-z]\b/gm, m => m.replace(/[ \t_-]/g, ""));
   s = s.replace(/(?:\b[A-Za-z]\b[\s\r\n]*){3,}\b[A-Za-z]\b/gm, m => m.replace(/[\s\r\n]/g, ""));
   s = s.replace(/\b([A-Za-z])\s+(?=[A-Za-z]\b)/g, "$1");
+  if (before !== s) {
+    console.log("collapseSpacedLetters BEFORE:", before.slice(0, 200));
+    console.log("collapseSpacedLetters AFTER:", s.slice(0, 200));
+  }
   return s;
 }
 
 function normalizeGist(raw: string) {
-  let s = String(raw ?? "");
+  const original = String(raw ?? "");
+  let s = original;
+  console.log("normalizeGist INPUT (first 200 chars):", s.slice(0, 200));
   s = s.replace(/[\r\n]+/g, " ").replace(/[_•·●▪︎◦]+/g, " ").replace(/<[^>]{0,500}>/g, " ").replace(/\s{2,}/g, " ");
   s = collapseSpacedLetters(s);
   s = s.replace(/\b(?:page|p\/n|rev)\s*[:#]?\s*[A-Za-z0-9\-\/\.]+/gi, " ");
+  console.log("normalizeGist OUTPUT (first 200 chars):", s.slice(0, 200));
   return s.trim();
 }
 

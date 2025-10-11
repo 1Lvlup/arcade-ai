@@ -56,51 +56,36 @@ const ManualManagement = () => {
           </Tabs>
         </div>
 
-        <div className="premium-card p-16 rounded-3xl section-spacing">
-          <div className="text-center content-spacing">
-            <div className="caption-text text-primary/80 mb-6">
+        <div className="premium-card p-6 rounded-2xl section-spacing">
+          <div className="text-center mb-4">
+            <h3 className="premium-text text-lg text-foreground">
               Processing Pipeline
-            </div>
-            <h3 className="premium-text text-4xl text-foreground">
-              Enterprise Workflow
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div className="text-center space-y-6">
-              <div className="glass-card w-16 h-16 rounded-2xl flex items-center justify-center mx-auto">
-                <span className="premium-text text-2xl text-primary">1</span>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center space-y-2">
+              <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto">
+                <span className="premium-text text-sm text-primary">1</span>
               </div>
-              <div className="space-y-4">
-                <h4 className="premium-text text-lg text-foreground">Document Upload</h4>
-                <p className="caption-text text-muted-foreground">Secure file processing with enterprise-grade encryption</p>
-              </div>
+              <p className="caption-text text-xs text-muted-foreground">Upload</p>
             </div>
-            <div className="text-center space-y-6">
-              <div className="glass-card w-16 h-16 rounded-2xl flex items-center justify-center mx-auto">
-                <span className="premium-text text-2xl text-primary">2</span>
+            <div className="text-center space-y-2">
+              <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto">
+                <span className="premium-text text-sm text-primary">2</span>
               </div>
-              <div className="space-y-4">
-                <h4 className="premium-text text-lg text-foreground">AI Analysis</h4>
-                <p className="caption-text text-muted-foreground">Advanced OCR and intelligent content extraction</p>
-              </div>
+              <p className="caption-text text-xs text-muted-foreground">AI Analysis</p>
             </div>
-            <div className="text-center space-y-6">
-              <div className="glass-card w-16 h-16 rounded-2xl flex items-center justify-center mx-auto">
-                <span className="premium-text text-2xl text-primary">3</span>
+            <div className="text-center space-y-2">
+              <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto">
+                <span className="premium-text text-sm text-primary">3</span>
               </div>
-              <div className="space-y-4">
-                <h4 className="premium-text text-lg text-foreground">Semantic Processing</h4>
-                <p className="caption-text text-muted-foreground">Context-aware content structuring and categorization</p>
-              </div>
+              <p className="caption-text text-xs text-muted-foreground">Semantic Processing</p>
             </div>
-            <div className="text-center space-y-6">
-              <div className="glass-card w-16 h-16 rounded-2xl flex items-center justify-center mx-auto">
-                <span className="premium-text text-2xl text-primary">4</span>
+            <div className="text-center space-y-2">
+              <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto">
+                <span className="premium-text text-sm text-primary">4</span>
               </div>
-              <div className="space-y-4">
-                <h4 className="premium-text text-lg text-foreground">Intelligent Search</h4>
-                <p className="caption-text text-muted-foreground">Vector-powered retrieval with 99.9% accuracy</p>
-              </div>
+              <p className="caption-text text-xs text-muted-foreground">Intelligent Search</p>
             </div>
           </div>
         </div>

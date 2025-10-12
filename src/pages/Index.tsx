@@ -122,7 +122,7 @@ const Index = () => {
   return <div className="min-h-screen mesh-gradient">
       <SharedHeader title="IntelliCore" />
 
-      <main className="container mx-auto px-8 py-24">
+      <main className="container mx-auto px-8 py-24 max-w-[1600px]">
         {/* Hero Section */}
         <section className="text-center py-24">
           <div className="space-y-16">

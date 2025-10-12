@@ -133,15 +133,15 @@
   }
   
   .text-tech-xl {
-    @apply font-tech text-4xl font-bold tracking-wider;
+    @apply font-tech text-5xl md:text-6xl lg:text-7xl font-bold tracking-wider;
   }
   
   .text-tech-lg {
-    @apply font-tech text-2xl font-semibold tracking-wide;
+    @apply font-tech text-3xl md:text-4xl font-semibold tracking-wide;
   }
   
   .text-tech-base {
-    @apply font-tech text-lg font-medium tracking-wide;
+    @apply font-tech text-xl md:text-2xl font-medium tracking-wide;
   }
   
   /* Enhanced glows and effects */

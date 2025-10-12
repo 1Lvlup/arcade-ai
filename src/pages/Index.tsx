@@ -232,14 +232,17 @@ const Index = () => {
                   <div className="p-4 rounded-full bg-primary/10 inline-flex">
                     <TrendingUp className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-3xl font-tech font-bold text-primary">$350/week</h3>
-                  <p className="text-lg text-muted-foreground font-body">
+                  <h3 className="text-3xl font-tech font-bold text-primary">$350 / week</h3>
+                  <p className="text-base text-muted-foreground font-body">
                     Average revenue per arcade game
                   </p>
-                  <div className="pt-4 border-t border-primary/20">
-                    <div className="text-sm text-muted-foreground">
-                      One week with 3-4 games down = <span className="text-destructive font-semibold">-$1,200 lost</span>
-                    </div>
+                  <div className="pt-4 border-t border-primary/20 space-y-3">
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      When just 3–4 games are down, that's ≈ <span className="text-destructive font-semibold">$1,200 lost</span> in a single week.
+                    </p>
+                    <p className="text-base text-muted-foreground">
+                      Every hour a game sits idle, money bleeds away.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -273,17 +276,21 @@ const Index = () => {
                   <div className="p-4 rounded-full bg-destructive/10 inline-flex">
                     <Clock className="h-8 w-8 text-destructive" />
                   </div>
-                  <h3 className="text-3xl font-tech font-bold text-destructive">-$8,400</h3>
-                  <p className="text-lg text-muted-foreground font-body">
-                    But let's be honest: when a game is down and it's not an easy fix, it can stay down for 3-6 months
-                  </p>
-                  <div className="pt-4 border-t border-primary/20">
-                    <div className="text-sm text-primary font-semibold">
-                      With Level Up: Fixed in hours, not months
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-2">
-                      That's <span className="text-destructive font-semibold">$8,400 lost per game</span> over 6 months of downtime
-                    </div>
+                  <div className="space-y-4">
+                    <p className="text-base text-muted-foreground font-body leading-relaxed">
+                      Let's be real — when a machine's down and it's not an easy fix, it can stay offline for 3–6 months.
+                    </p>
+                    <p className="text-base text-muted-foreground font-body">
+                      That's <span className="text-destructive font-semibold text-2xl">$8,400 lost</span> per game.
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t border-primary/20 space-y-2">
+                    <p className="text-base text-primary font-semibold">
+                      With Level Up: issues are fixed in hours, not months.
+                    </p>
+                    <p className="text-base text-muted-foreground">
+                      Less downtime. More revenue. Happier guests.
+                    </p>
                   </div>
                 </div>
               </div>

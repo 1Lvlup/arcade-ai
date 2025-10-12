@@ -116,7 +116,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         body: {
           query: inputValue.trim(),
           manual_id: selectedManualId ?? null
-        },
+        }
       });
 
       console.log('📥 Response from chat-manual:', { data, error });

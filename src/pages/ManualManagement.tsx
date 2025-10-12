@@ -20,7 +20,7 @@ const ManualManagement = () => {
               Document<br />
               <span className="text-primary brand-glow">Intelligence</span>
             </h1>
-            <p className="body-text text-xl text-muted-foreground max-w-5xl mx-auto mt-16">
+            <p className="body-text text-2xl text-muted-foreground max-w-5xl mx-auto mt-16">
               Transform complex documents into actionable intelligence with our proprietary AI engine. 
               Experience unprecedented accuracy in extraction, analysis, and structured data creation.
             </p>

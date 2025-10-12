@@ -110,6 +110,16 @@ serve(async (req) => {
       console.error('Error deleting figures:', figuresError)
     }
 
+    console.log('Deleting manual_metadata...')
+    const { error: metadataError } = await supabase
+      .from('manual_metadata')
+      .delete()
+      .eq('manual_id', manual_id)
+
+    if (metadataError) {
+      console.error('Error deleting manual_metadata:', metadataError)
+    }
+
     console.log('Deleting document...')
     const { error: documentError } = await supabase
       .from('documents')

@@ -232,13 +232,13 @@ const Index = () => {
                   <div className="p-4 rounded-full bg-primary/10 inline-flex">
                     <TrendingUp className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-3xl font-tech font-bold text-primary">$2,400/week</h3>
+                  <h3 className="text-3xl font-tech font-bold text-primary">$350/week</h3>
                   <p className="text-lg text-muted-foreground font-body">
-                    Average revenue per top-performing arcade game
+                    Average revenue per arcade game
                   </p>
                   <div className="pt-4 border-t border-primary/20">
                     <div className="text-sm text-muted-foreground">
-                      Peak performers can earn up to <span className="text-primary font-semibold">$3,500+/week</span>
+                      One week with 3-4 games down = <span className="text-destructive font-semibold">-$1,200 lost</span>
                     </div>
                   </div>
                 </div>
@@ -273,16 +273,16 @@ const Index = () => {
                   <div className="p-4 rounded-full bg-destructive/10 inline-flex">
                     <Clock className="h-8 w-8 text-destructive" />
                   </div>
-                  <h3 className="text-3xl font-tech font-bold text-destructive">-$4,800</h3>
+                  <h3 className="text-3xl font-tech font-bold text-destructive">-$8,400</h3>
                   <p className="text-lg text-muted-foreground font-body">
-                    Lost revenue from just 2 weeks of game downtime
+                    But let's be honest: when a game is down and it's not an easy fix, it can stay down for 3-6 months
                   </p>
                   <div className="pt-4 border-t border-primary/20">
                     <div className="text-sm text-primary font-semibold">
-                      With Level Up: Fixed in hours, not weeks
+                      With Level Up: Fixed in hours, not months
                     </div>
                     <div className="text-sm text-muted-foreground mt-2">
-                      Save up to <span className="text-primary font-semibold">$4,500+ per incident</span>
+                      That's <span className="text-destructive font-semibold">$8,400 lost per game</span> over 6 months of downtime
                     </div>
                   </div>
                 </div>

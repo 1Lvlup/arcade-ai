@@ -71,6 +71,13 @@ const App = () => (
                 </AdminRoute>
               </ProtectedRoute>
             } />
+            <Route path="/manual-admin/new" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <ManualAdminEdit />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

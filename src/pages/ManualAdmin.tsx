@@ -84,6 +84,38 @@ const ManualAdmin = () => {
     }
   });
 
+  // Check metadata population status for each manual
+  const { data: metadataStatus } = useQuery({
+    queryKey: ['metadata-status', manuals?.map(m => m.manual_id)],
+    queryFn: async () => {
+      if (!manuals) return {};
+      
+      const statusMap: Record<string, { populated: boolean; count: number }> = {};
+      
+      await Promise.all(manuals.map(async (manual) => {
+        const { data: chunks } = await supabase
+          .from('chunks_text')
+          .select('metadata')
+          .eq('manual_id', manual.manual_id)
+          .limit(5);
+        
+        // Check if metadata is populated (has game_title)
+        const populated = chunks?.some(c => {
+          const metadata = c.metadata as any;
+          return metadata && typeof metadata === 'object' && metadata.game_title;
+        }) || false;
+        
+        statusMap[manual.manual_id] = {
+          populated,
+          count: chunks?.length || 0
+        };
+      }));
+      
+      return statusMap;
+    },
+    enabled: !!manuals
+  });
+
   const handleBackfillPreview = async (manualId: string, manualTitle: string) => {
     try {
       const { data, error } = await supabase.rpc('admin_backfill_manual', {
@@ -247,6 +279,7 @@ const ManualAdmin = () => {
                     <TableHead>Platform</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Metadata</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -272,6 +305,23 @@ const ManualAdmin = () => {
                         >
                           {manual.ingest_status || 'unknown'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {metadataStatus?.[manual.manual_id] ? (
+                          metadataStatus[manual.manual_id].populated ? (
+                            <Badge variant="default" className="bg-green-500/20 text-green-400 border-green-500/30">
+                              ✓ Populated
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                              ⚠ Not Populated
+                            </Badge>
+                          )
+                        ) : (
+                          <Badge variant="outline">
+                            Checking...
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <TooltipProvider>

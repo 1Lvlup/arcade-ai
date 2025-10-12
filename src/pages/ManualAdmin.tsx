@@ -36,7 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Search, Plus, Edit, Eye, RefreshCw, Database, AlertCircle, Play } from 'lucide-react';
+import { Search, Plus, Edit, Eye, RefreshCw, Database, AlertCircle, Play, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QuickTestConsole } from '@/components/QuickTestConsole';
 
@@ -176,6 +176,29 @@ const ManualAdmin = () => {
       refetch();
     } catch (error: any) {
       toast.error('Reindex Failed', {
+        description: error.message
+      });
+    }
+  };
+
+  const handleDelete = async (manualId: string, manualTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${manualTitle}"? This will remove all associated chunks, figures, and data. This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('delete-manual', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+
+      toast.success('Manual Deleted', {
+        description: `${manualTitle} and all associated data have been removed.`
+      });
+      refetch();
+    } catch (error: any) {
+      toast.error('Delete Failed', {
         description: error.message
       });
     }
@@ -374,6 +397,19 @@ const ManualAdmin = () => {
                                   <p className="text-xs">Regenerates embeddings for semantic search</p>
                                 </div>
                               </TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDelete(manual.manual_id, manual.canonical_title)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete manual and all data</TooltipContent>
                             </Tooltip>
                           </div>
                         </TooltipProvider>

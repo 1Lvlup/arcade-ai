@@ -298,63 +298,36 @@ serve(async (req) => {
         console.log(`   ⚠️  WARNING: ${passages.length - withPages} passages missing page numbers!`);
       }
 
-      // Step 2: Generate answer using RAG
-      const passagesText = passages
-        .map((p: any) => `[Page ${p.page_start}] ${p.content}`)
-        .join('\n\n---\n\n');
-
-      const answerPrompt = {
-        system: `You are Lead Arcade Technician. Answer using ONLY the provided passages from the arcade manual. If insufficient information is provided, say so and propose a short, safe diagnostic as a Working Theory.
-
-Return JSON with this exact structure:
-{
-  "answer": "your detailed answer here",
-  "citations": [{"page": number, "figure": "fig_id or null"}],
-  "coverage": "strong|medium|weak"
-}`,
-        user: `Question: ${q.question}
-
-Passages (verbatim from manual):
-${passagesText.substring(0, 8000)}`
-      };
-
-      const answerRequestBody: any = {
-        model: modelConfig.model,
-        messages: [
-          { role: 'system', content: answerPrompt.system },
-          { role: 'user', content: answerPrompt.user }
-        ],
-        response_format: { type: 'json_object' }
-      };
-      
-      answerRequestBody[modelConfig.maxTokensParam] = 1200;
-      if (modelConfig.supportsTemperature) {
-        answerRequestBody.temperature = 0.2;
-      }
-
-      const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
-      const answerResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Step 2: Generate answer using PRODUCTION answering AI (chat-manual)
+      console.log(`🤖 Calling production answering AI (chat-manual)...`);
+      const chatResponse = await fetch(`${supabaseUrl}/functions/v1/chat-manual`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'OpenAI-Project': openaiProjectId,
+          'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(answerRequestBody),
+        body: JSON.stringify({
+          message: q.question,
+          manual_id,
+          conversation_id: null // One-shot evaluation, no conversation
+        })
       });
 
-      if (!answerResponse.ok) {
-        console.error('Answer generation failed');
+      if (!chatResponse.ok) {
+        const errorText = await chatResponse.text();
+        console.error(`❌ Production answering failed (${chatResponse.status}):`, errorText);
+        console.error('Failed question:', q.question);
         continue;
       }
 
-      const answerData = await answerResponse.json();
-      const answer = JSON.parse(answerData.choices[0].message.content);
-      console.log(`\n✍️ Answer generated successfully`);
-      console.log(`   Coverage: ${answer.coverage}`);
-      console.log(`   Citations: ${answer.citations?.length || 0}`);
-      console.log(`   Evidence pages: ${answer.evidence_pages?.length || 0} pages`);
+      const chatData = await chatResponse.json();
+      const answer = chatData;
+      
+      console.log(`\n✍️ Answer generated via PRODUCTION AI`);
+      console.log(`   Model used: ${modelConfig.model}`);
       console.log(`   Answer length: ${answer.answer?.length || 0} chars`);
+      console.log(`   Citations: ${answer.citations?.length || 0}`);
+      console.log(`   Steps: ${answer.steps?.length || 0}`);
 
       // Step 3: Grade the answer with strict technical rubric
       const gradePrompt = {

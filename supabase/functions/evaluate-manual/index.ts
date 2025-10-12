@@ -11,42 +11,9 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
-// Helper to get AI config
-async function getModelConfig(supabase: any, tenant_id: string) {
-  await supabase.rpc('set_tenant_context', { tenant_id });
-  
-  const { data: config } = await supabase
-    .from('ai_config')
-    .select('config_value')
-    .eq('config_key', 'chat_model')
-    .single();
-  
-  let model = 'gpt-5-2025-08-07'; // Default
-  if (config?.config_value) {
-    const value = config.config_value;
-    // If it's already a string and looks like a model name, use it directly
-    if (typeof value === 'string' && (value.startsWith('gpt-') || value.startsWith('claude-'))) {
-      model = value;
-    } else if (typeof value === 'string') {
-      // Try to parse JSON-stringified values
-      try {
-        model = JSON.parse(value);
-      } catch {
-        model = value;
-      }
-    } else {
-      model = value;
-    }
-  }
-  
-  const isGpt5 = model.includes('gpt-5');
-  
-  return {
-    model,
-    maxTokensParam: isGpt5 ? 'max_completion_tokens' : 'max_tokens',
-    supportsTemperature: !isGpt5
-  };
-}
+// Fixed model configuration for grading
+const GRADER_MODEL = 'gpt-5-2025-08-07';
+const GRADER_MAX_TOKENS = 800;
 
 // Quality metrics calculation
 async function calculateQualityMetrics(supabase: any, manual_id: string) {
@@ -244,10 +211,7 @@ serve(async (req) => {
     }
 
     console.log(`📋 Evaluating ${questions.length} questions`);
-
-    // Get configured model
-    const modelConfig = await getModelConfig(supabase, profile.fec_tenant_id);
-    console.log(`🤖 Using configured model: ${modelConfig.model} (answers + grading)`);
+    console.log(`🤖 Using grading model: ${GRADER_MODEL}`);
 
     const results = [];
 
@@ -324,7 +288,6 @@ serve(async (req) => {
       const answer = chatData;
       
       console.log(`\n✍️ Answer generated via PRODUCTION AI`);
-      console.log(`   Model used: ${modelConfig.model}`);
       console.log(`   Answer length: ${answer.answer?.length || 0} chars`);
       console.log(`   Citations: ${answer.citations?.length || 0}`);
       console.log(`   Steps: ${answer.steps?.length || 0}`);
@@ -374,17 +337,16 @@ ${JSON.stringify(answer)}`
       };
 
       const gradeRequestBody: any = {
-        model: modelConfig.model,
+        model: GRADER_MODEL,
+        max_completion_tokens: GRADER_MAX_TOKENS,
         messages: [
           { role: 'system', content: gradePrompt.system },
           { role: 'user', content: gradePrompt.user }
         ],
         response_format: { type: 'json_object' }
       };
-      
-      gradeRequestBody[modelConfig.maxTokensParam] = 800;
-      // No temperature for grading - we want deterministic results
 
+      const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
       const gradeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -439,8 +401,8 @@ ${JSON.stringify(answer)}`
               preview: p.content.substring(0, 200)
             }))
           },
-          answer_model: modelConfig.model,
-          grader_model: modelConfig.model
+          answer_model: 'production-chat-manual',
+          grader_model: GRADER_MODEL
         });
 
       if (insertError) {

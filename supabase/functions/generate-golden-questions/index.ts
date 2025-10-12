@@ -11,42 +11,9 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
-// Helper to get AI config
-async function getModelConfig(supabase: any, tenant_id: string) {
-  await supabase.rpc('set_tenant_context', { tenant_id });
-  
-  const { data: config } = await supabase
-    .from('ai_config')
-    .select('config_value')
-    .eq('config_key', 'chat_model')
-    .single();
-  
-  let model = 'gpt-5-2025-08-07'; // Default
-  if (config?.config_value) {
-    const value = config.config_value;
-    // If it's already a string and looks like a model name, use it directly
-    if (typeof value === 'string' && (value.startsWith('gpt-') || value.startsWith('claude-'))) {
-      model = value;
-    } else if (typeof value === 'string') {
-      // Try to parse JSON-stringified values
-      try {
-        model = JSON.parse(value);
-      } catch {
-        model = value;
-      }
-    } else {
-      model = value;
-    }
-  }
-  
-  const isGpt5 = model.includes('gpt-5');
-  
-  return {
-    model,
-    maxTokensParam: isGpt5 ? 'max_completion_tokens' : 'max_tokens',
-    supportsTemperature: !isGpt5
-  };
-}
+// Fixed model configuration for golden question generation
+const QUESTION_MODEL = 'gpt-5-2025-08-07';
+const QUESTION_MAX_TOKENS = 16000;
 
 // Build structured summary from LlamaCloud parsed data
 function buildStructuredSummary(
@@ -208,14 +175,12 @@ serve(async (req) => {
     const summary = buildStructuredSummary(manual, chunks, figures || []);
     
     console.log('📝 Analyzing content with AI...');
+    console.log(`🤖 Using model: ${QUESTION_MODEL}`);
 
-    // Get configured model
-    const modelConfig = await getModelConfig(supabase, profile.fec_tenant_id);
-    console.log(`🤖 Using model: ${modelConfig.model}`);
-
-    // Generate golden questions using configured AI model
+    // Generate golden questions using GPT-5
     const requestBody: any = {
-      model: modelConfig.model,
+      model: QUESTION_MODEL,
+      max_completion_tokens: QUESTION_MAX_TOKENS,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -281,12 +246,6 @@ ${summary.substring(0, 8000)}`
         }
       ]
     };
-
-    // Add model-specific parameters
-    requestBody[modelConfig.maxTokensParam] = 16000;
-    if (modelConfig.supportsTemperature) {
-      requestBody.temperature = 0.7;
-    }
 
     const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

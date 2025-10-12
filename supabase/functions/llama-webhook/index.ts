@@ -448,6 +448,53 @@ serve(async (req) => {
         .eq('job_id', jobId);
     }
 
+    // STEP 4.5: Auto-create manual_metadata entry
+    console.log('📝 Creating manual_metadata entry...');
+    try {
+      const { data: existingMetadata } = await supabase
+        .from('manual_metadata')
+        .select('manual_id')
+        .eq('manual_id', manual_id)
+        .maybeSingle();
+      
+      if (!existingMetadata) {
+        // Extract basic info from title
+        const cleanTitle = document.title.replace(/\.pdf$/i, '').trim();
+        
+        const { error: metadataError } = await supabase.rpc('upsert_manual_metadata', {
+          p_metadata: {
+            manual_id: manual_id,
+            canonical_title: cleanTitle,
+            uploaded_by: 'llama_webhook',
+            ingest_status: 'ingested',
+            language: 'en'
+          }
+        });
+        
+        if (metadataError) {
+          console.error('❌ Failed to create manual_metadata:', metadataError);
+        } else {
+          console.log('✅ manual_metadata created');
+          
+          // Auto-backfill the metadata into chunks
+          console.log('🔄 Auto-backfilling metadata into chunks...');
+          const { data: backfillResult, error: backfillError } = await supabase.rpc('fn_backfill_for_manual_any', {
+            p_manual_id: manual_id
+          });
+          
+          if (backfillError) {
+            console.error('❌ Auto-backfill failed:', backfillError);
+          } else {
+            console.log('✅ Auto-backfill completed:', backfillResult);
+          }
+        }
+      } else {
+        console.log('ℹ️ manual_metadata already exists, skipping creation');
+      }
+    } catch (metadataErr) {
+      console.error('❌ Error in manual_metadata creation:', metadataErr);
+    }
+
     // STEP 5: Fetch images from LlamaCloud API if not in webhook
     let figuresProcessed = 0;
     let allFigures = [...(images || []), ...(charts || [])];

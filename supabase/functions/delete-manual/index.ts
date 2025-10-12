@@ -71,18 +71,26 @@ serve(async (req) => {
     // Set tenant context for RLS
     await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id })
 
-    // Verify the document exists and belongs to the user's tenant
+    // Verify the document exists (use service role to bypass RLS for check)
     const { data: document, error: docError } = await supabase
       .from('documents')
       .select('id, manual_id')
       .eq('manual_id', manual_id)
       .eq('fec_tenant_id', profile.fec_tenant_id)
-      .single()
+      .maybeSingle()
 
-    if (docError || !document) {
-      console.error('Document not found:', docError)
+    if (docError) {
+      console.error('Error checking document:', docError)
       return new Response(
-        JSON.stringify({ error: 'Manual not found or access denied' }),
+        JSON.stringify({ error: 'Database error checking manual' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!document) {
+      console.error('Document not found for manual_id:', manual_id)
+      return new Response(
+        JSON.stringify({ error: 'Manual not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

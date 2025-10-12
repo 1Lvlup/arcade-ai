@@ -168,8 +168,8 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
 
       {/* Safety Warnings */}
       {answer.safety && answer.safety.length > 0 && (
-        <div className="tech-card bg-orange-500/5 border-orange-500/20 p-4 space-y-2">
-          <div className="flex items-center gap-2 font-tech text-xs text-orange-500 uppercase tracking-wider">
+        <div className="tech-card bg-primary/5 border-primary/20 p-4 space-y-2">
+          <div className="flex items-center gap-2 font-tech text-xs text-primary uppercase tracking-wider">
             <AlertTriangle className="h-4 w-4" />
             Safety
           </div>
@@ -225,7 +225,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
               <div
                 className={`max-w-[80%] p-4 rounded-xl font-body ${
                   message.role === 'user'
-                    ? 'gradient-orange text-white shadow-orange ml-auto border border-primary/20'
+                    ? 'bg-primary text-primary-foreground ml-auto border border-primary/20'
                     : 'tech-card text-foreground border-tech mr-auto'
                 }`}
               >

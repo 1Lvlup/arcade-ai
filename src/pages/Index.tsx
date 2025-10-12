@@ -133,26 +133,26 @@ const Index = () => {
               <h1 className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text" data-text="LEVEL UP" style={{
               textShadow: `
                     /* Enhanced glow layers */
-                    0 0 10px hsl(25 95% 55% / 1),
-                    0 0 20px hsl(25 95% 55% / 0.9),
-                    0 0 40px hsl(25 95% 55% / 0.8),
-                    0 0 60px hsl(25 95% 55% / 0.7),
-                    0 0 80px hsl(25 95% 55% / 0.6),
-                    0 0 100px hsl(25 95% 55% / 0.5),
+                    0 0 10px hsl(185 85% 55% / 1),
+                    0 0 20px hsl(185 85% 55% / 0.9),
+                    0 0 40px hsl(185 85% 55% / 0.8),
+                    0 0 60px hsl(185 85% 55% / 0.7),
+                    0 0 80px hsl(185 85% 55% / 0.6),
+                    0 0 100px hsl(185 85% 55% / 0.5),
                     /* 3D bevel effect - light top-left */
-                    -2px -2px 0 hsl(25 95% 75%),
-                    -3px -3px 0 hsl(25 95% 70%),
-                    -4px -4px 0 hsl(25 95% 65%),
+                    -2px -2px 0 hsl(185 85% 75%),
+                    -3px -3px 0 hsl(185 85% 70%),
+                    -4px -4px 0 hsl(185 85% 65%),
                     /* 3D depth - dark bottom-right */
-                    2px 2px 0 hsl(25 95% 35%),
-                    3px 3px 0 hsl(25 95% 30%),
-                    4px 4px 0 hsl(25 95% 25%),
-                    5px 5px 0 hsl(25 95% 20%),
-                    6px 6px 0 hsl(25 95% 15%),
+                    2px 2px 0 hsl(185 85% 35%),
+                    3px 3px 0 hsl(185 85% 30%),
+                    4px 4px 0 hsl(185 85% 25%),
+                    5px 5px 0 hsl(185 85% 20%),
+                    6px 6px 0 hsl(185 85% 15%),
                     /* Deep shadow */
                     8px 8px 20px rgba(0, 0, 0, 0.5)
                   `,
-              WebkitTextStroke: '1px hsl(25 95% 55% / 0.3)'
+              WebkitTextStroke: '1px hsl(185 85% 55% / 0.3)'
             }}>
                 LEVEL UP
               </h1>

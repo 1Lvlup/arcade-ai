@@ -233,14 +233,14 @@ const Index = () => {
                     <TrendingUp className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-3xl font-tech font-bold text-primary">$350 / week</h3>
-                  <p className="text-base text-muted-foreground font-body">
+                  <p className="text-lg text-muted-foreground font-body">
                     Average revenue per arcade game
                   </p>
                   <div className="pt-4 border-t border-primary/20 space-y-3">
-                    <p className="text-base text-muted-foreground leading-relaxed">
+                    <p className="text-lg text-muted-foreground leading-relaxed">
                       When just 3–4 games are down, that's ≈ <span className="text-destructive font-semibold">$1,200 lost</span> in a single week.
                     </p>
-                    <p className="text-base text-muted-foreground">
+                    <p className="text-lg text-muted-foreground">
                       Every hour a game sits idle, money bleeds away.
                     </p>
                   </div>
@@ -255,16 +255,16 @@ const Index = () => {
                       <Users className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <div className="font-semibold text-foreground">Mike Rodriguez</div>
-                      <div className="text-sm text-muted-foreground">Arcade Operations Manager</div>
+                      <div className="font-semibold text-foreground text-lg">Mike Rodriguez</div>
+                      <div className="text-base text-muted-foreground">Arcade Operations Manager</div>
                     </div>
                   </div>
-                  <p className="text-muted-foreground leading-relaxed italic">
+                  <p className="text-muted-foreground leading-relaxed italic text-lg">
                     "Before Level Up, our average game downtime was 8-12 days. Now we fix issues in under 2 hours. That is literally saving us thousands per incident."
                   </p>
                   <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <div key={i} className="text-primary">★</div>
+                      <div key={i} className="text-primary text-xl">★</div>
                     ))}
                   </div>
                 </div>
@@ -277,18 +277,18 @@ const Index = () => {
                     <Clock className="h-8 w-8 text-destructive" />
                   </div>
                   <div className="space-y-4">
-                    <p className="text-base text-muted-foreground font-body leading-relaxed">
+                    <p className="text-lg text-muted-foreground font-body leading-relaxed">
                       Let's be real — when a machine's down and it's not an easy fix, it can stay offline for 3–6 months.
                     </p>
-                    <p className="text-base text-muted-foreground font-body">
+                    <p className="text-lg text-muted-foreground font-body">
                       That's <span className="text-destructive font-semibold text-2xl">$8,400 lost</span> per game.
                     </p>
                   </div>
                   <div className="pt-4 border-t border-primary/20 space-y-2">
-                    <p className="text-base text-primary font-semibold">
+                    <p className="text-lg text-primary font-semibold">
                       With Level Up: issues are fixed in hours, not months.
                     </p>
-                    <p className="text-base text-muted-foreground">
+                    <p className="text-lg text-muted-foreground">
                       Less downtime. More revenue. Happier guests.
                     </p>
                   </div>

@@ -122,7 +122,7 @@ const Index = () => {
   return <div className="min-h-screen mesh-gradient">
       <SharedHeader title="IntelliCore" />
 
-      <main className="container mx-auto px-8 py-24 max-w-[1600px]">
+      <main className="container mx-auto px-8 py-24 max-w-[2000px]">
         {/* Hero Section */}
         <section className="text-center py-24">
           <div className="space-y-16">
@@ -133,26 +133,31 @@ const Index = () => {
               <h1 className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text" data-text="LEVEL UP" style={{
               textShadow: `
                     /* Enhanced glow layers */
-                    0 0 10px hsl(185 85% 55% / 1),
-                    0 0 20px hsl(185 85% 55% / 0.9),
-                    0 0 40px hsl(185 85% 55% / 0.8),
-                    0 0 60px hsl(185 85% 55% / 0.7),
-                    0 0 80px hsl(185 85% 55% / 0.6),
-                    0 0 100px hsl(185 85% 55% / 0.5),
-                    /* 3D bevel effect - light top-left */
-                    -2px -2px 0 hsl(185 85% 75%),
-                    -3px -3px 0 hsl(185 85% 70%),
-                    -4px -4px 0 hsl(185 85% 65%),
-                    /* 3D depth - dark bottom-right */
-                    2px 2px 0 hsl(185 85% 35%),
-                    3px 3px 0 hsl(185 85% 30%),
-                    4px 4px 0 hsl(185 85% 25%),
-                    5px 5px 0 hsl(185 85% 20%),
-                    6px 6px 0 hsl(185 85% 15%),
+                    0 0 15px hsl(185 85% 55% / 1),
+                    0 0 30px hsl(185 85% 55% / 0.9),
+                    0 0 50px hsl(185 85% 55% / 0.8),
+                    0 0 70px hsl(185 85% 55% / 0.7),
+                    0 0 100px hsl(185 85% 55% / 0.6),
+                    0 0 130px hsl(185 85% 55% / 0.5),
+                    /* Dramatic 3D bevel effect - light top-left */
+                    -3px -3px 0 hsl(185 85% 80%),
+                    -6px -6px 0 hsl(185 85% 75%),
+                    -9px -9px 0 hsl(185 85% 70%),
+                    -12px -12px 0 hsl(185 85% 65%),
+                    -15px -15px 0 hsl(185 85% 60%),
+                    /* Dramatic 3D depth - dark bottom-right */
+                    3px 3px 0 hsl(185 85% 35%),
+                    6px 6px 0 hsl(185 85% 30%),
+                    9px 9px 0 hsl(185 85% 25%),
+                    12px 12px 0 hsl(185 85% 20%),
+                    15px 15px 0 hsl(185 85% 15%),
+                    18px 18px 0 hsl(185 85% 10%),
+                    21px 21px 0 hsl(185 85% 5%),
                     /* Deep shadow */
-                    8px 8px 20px rgba(0, 0, 0, 0.5)
+                    24px 24px 40px rgba(0, 0, 0, 0.7),
+                    30px 30px 60px rgba(0, 0, 0, 0.5)
                   `,
-              WebkitTextStroke: '1px hsl(185 85% 55% / 0.3)'
+              WebkitTextStroke: '2px hsl(185 85% 55% / 0.4)'
             }}>
                 LEVEL UP
               </h1>

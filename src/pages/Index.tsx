@@ -140,22 +140,22 @@ const Index = () => {
                     0 0 100px hsl(185 85% 55% / 0.6),
                     0 0 130px hsl(185 85% 55% / 0.5),
                     /* Dramatic 3D bevel effect - light top-left */
-                    -3px -3px 0 hsl(185 85% 80%),
-                    -6px -6px 0 hsl(185 85% 75%),
-                    -9px -9px 0 hsl(185 85% 70%),
-                    -12px -12px 0 hsl(185 85% 65%),
-                    -15px -15px 0 hsl(185 85% 60%),
+                    -3px -3px 0 rgba(255, 255, 255, 0.3),
+                    -6px -6px 0 rgba(255, 255, 255, 0.2),
+                    -9px -9px 0 rgba(255, 255, 255, 0.15),
+                    -12px -12px 0 rgba(255, 255, 255, 0.1),
+                    -15px -15px 0 rgba(255, 255, 255, 0.05),
                     /* Dramatic 3D depth - dark bottom-right */
-                    3px 3px 0 hsl(185 85% 35%),
-                    6px 6px 0 hsl(185 85% 30%),
-                    9px 9px 0 hsl(185 85% 25%),
-                    12px 12px 0 hsl(185 85% 20%),
-                    15px 15px 0 hsl(185 85% 15%),
-                    18px 18px 0 hsl(185 85% 10%),
-                    21px 21px 0 hsl(185 85% 5%),
+                    3px 3px 0 rgba(0, 0, 0, 0.5),
+                    6px 6px 0 rgba(0, 0, 0, 0.55),
+                    9px 9px 0 rgba(0, 0, 0, 0.6),
+                    12px 12px 0 rgba(0, 0, 0, 0.65),
+                    15px 15px 0 rgba(0, 0, 0, 0.7),
+                    18px 18px 0 rgba(0, 0, 0, 0.75),
+                    21px 21px 0 rgba(0, 0, 0, 0.8),
                     /* Deep shadow */
-                    24px 24px 40px rgba(0, 0, 0, 0.7),
-                    30px 30px 60px rgba(0, 0, 0, 0.5)
+                    24px 24px 40px rgba(0, 0, 0, 0.9),
+                    30px 30px 60px rgba(0, 0, 0, 0.7)
                   `,
               WebkitTextStroke: '2px hsl(185 85% 55% / 0.4)'
             }}>

@@ -452,8 +452,27 @@ serve(async (req) => {
           const embedding = await createEmbedding(chunk.content);
           console.log("✅ Embedding generated, length:", embedding?.length || 0);
           
-          // Store in database
+          // Store in database with enriched metadata
           console.log("💾 Inserting into database...");
+          
+          // Build enriched chunk-level metadata
+          const chunkMetadata = {
+            chunk_type: chunk.chunk_type || 'content',
+            chunk_strategy: chunk.strategy || 'hierarchical',
+            chunk_index: chunk.index,
+            chunk_length: chunk.content.length,
+            word_count: chunk.content.split(/\s+/).length,
+            has_tables: /[\|<].*[\|>]|^\s*\|/m.test(chunk.content),
+            has_lists: /^\s*[-*•]\s+/m.test(chunk.content) || /^\s*\d+\.\s+/m.test(chunk.content),
+            has_code_numbers: /\b\d{3,}\b|\b[A-Z]{2,}\d+\b/.test(chunk.content),
+            section_type: chunk.menu_path?.toLowerCase().includes('troubleshoot') ? 'troubleshooting' :
+                         chunk.menu_path?.toLowerCase().includes('parts') ? 'parts_list' :
+                         chunk.menu_path?.toLowerCase().includes('specification') ? 'specifications' :
+                         chunk.menu_path?.toLowerCase().includes('installation') ? 'installation' :
+                         chunk.menu_path?.toLowerCase().includes('maintenance') ? 'maintenance' :
+                         chunk.menu_path?.toLowerCase().includes('warranty') ? 'warranty' : 'general'
+          };
+          
           const insertData = {
             manual_id: chunk.manual_id,
             content: chunk.content,
@@ -461,7 +480,8 @@ serve(async (req) => {
             page_end: chunk.page_end,
             menu_path: chunk.menu_path,
             embedding: embedding,
-            fec_tenant_id: document.fec_tenant_id
+            fec_tenant_id: document.fec_tenant_id,
+            metadata: chunkMetadata
           };
           
           console.log("📝 Insert data:", JSON.stringify(insertData, null, 2));

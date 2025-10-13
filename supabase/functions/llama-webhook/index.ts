@@ -565,15 +565,32 @@ serve(async (req) => {
     const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
     console.log(`🎛️ KEEP_ALL_IMAGES override: ${keepAllImages}`);
     
-    // Convert storage files to figure objects
-    const allFigures = (storageFiles || []).map(file => ({
-      name: file.name,
-      page: null, // We'll extract from filename if possible
-      type: file.name.includes('chart') ? 'chart' : 'image',
-      width: undefined,
-      height: undefined,
-      storagePath: `${document.manual_id}/${file.name}`
-    }));
+    // Convert storage files to figure objects and merge with LlamaCloud metadata
+    const allFigures = (storageFiles || []).map(file => {
+      // Try to find matching image metadata from LlamaCloud JSON result
+      const llamaImage = images?.find((img: any) => {
+        const imgName = img.name || img.path?.split('/').pop() || '';
+        return imgName === file.name || imgName.includes(file.name) || file.name.includes(imgName);
+      });
+      
+      return {
+        name: file.name,
+        page: llamaImage?.page || null,
+        type: file.name.includes('chart') || llamaImage?.type === 'chart' ? 'chart' : 'image',
+        width: llamaImage?.width || llamaImage?.original_width,
+        height: llamaImage?.height || llamaImage?.original_height,
+        storagePath: `${document.manual_id}/${file.name}`,
+        // Capture ALL available LlamaCloud metadata
+        ocr_text: llamaImage?.ocr_text || llamaImage?.text || llamaImage?.ocr || null,
+        ocr_confidence: llamaImage?.ocr_confidence || llamaImage?.confidence || null,
+        vision_text: llamaImage?.vision_text || llamaImage?.description || null,
+        table_structures: llamaImage?.tables || llamaImage?.table_structures || null,
+        bbox: llamaImage?.bbox || llamaImage?.bounding_box || null,
+        callouts: llamaImage?.callouts || llamaImage?.annotations || null,
+        keywords: llamaImage?.keywords || llamaImage?.tags || null,
+        raw_metadata: llamaImage || null
+      };
+    });
     
     if (allFigures.length > 0) {
       console.log(`🖼️ Processing ${allFigures.length} figures...`);
@@ -630,11 +647,7 @@ serve(async (req) => {
             
             console.log(`✅ Image already in storage: postparse/${storagePath}`);
             
-            // C) Extract OCR and table structure data
-            const ocrText = (figure as any).ocr || (figure as any).ocr_text || null;
-            const ocrConfidence = (figure as any).ocr_confidence || (figure as any).confidence || null;
-            const tableStructures = (figure as any).table_structures || (figure as any).tables || null;
-            
+            // Extract ALL available OCR and metadata from LlamaCloud
             const figureData = {
               manual_id: document.manual_id,
               figure_id: figureName,
@@ -643,11 +656,14 @@ serve(async (req) => {
               bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
               llama_asset_name: figureName,
               fec_tenant_id: document.fec_tenant_id,
-              // C) New columns for enhanced metadata
-              raw_image_metadata: figure, // Full image object
-              ocr_text: ocrText,
-              ocr_confidence: ocrConfidence,
-              structured_json: tableStructures
+              // Store all available LlamaCloud metadata
+              raw_image_metadata: figure.raw_metadata || figure,
+              ocr_text: figure.ocr_text,
+              ocr_confidence: figure.ocr_confidence,
+              vision_text: figure.vision_text,
+              structured_json: figure.table_structures,
+              callouts_json: figure.callouts,
+              keywords: figure.keywords
             };
             
             console.log("📸 Storing figure metadata:", figureData);

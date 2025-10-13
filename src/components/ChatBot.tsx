@@ -116,7 +116,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         body: {
           query: inputValue.trim(),
           manual_id: selectedManualId ?? null
-        },
+        }
       });
 
       console.log('📥 Response from chat-manual:', { data, error });
@@ -241,8 +241,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
       {/* Safety Warnings */}
       {answer.safety && answer.safety.length > 0 && (
-        <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-3 space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-xs text-orange-500 uppercase tracking-wider">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
+          <div className="flex items-center gap-2 font-semibold text-xs text-primary uppercase tracking-wider">
             <AlertTriangle className="h-4 w-4" />
             Safety
           </div>

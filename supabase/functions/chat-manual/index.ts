@@ -691,21 +691,6 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
     existingWeak: weak
   });
 
-  // 2) Precision guard: reject vague cites
-  const usedPages = (answer.match(/p\d+/gi) || []).map(s => s.toLowerCase());
-  const hasOnlyP1 = usedPages.length > 0 && usedPages.every(p => p === "p1");
-  const hasConnectorId = /\b(J\d{1,3}|P\d{1,3}|CN\d{1,3})\b/i.test(answer);
-  if (hasOnlyP1 || !hasConnectorId) {
-    return {
-      answer: `No manual evidence found with exact page/connector IDs. Try re-asking with the specific subsystem (e.g., "Down The Clown target opto, I/O header map and voltages").`,
-      sources: [],
-      strategy: "insufficient_precision",
-      metadata: { reason: hasOnlyP1 ? "only_p1" : "missing_connector_id" },
-      chunks: topChunks,
-      pipeline_version: "v3"
-    };
-  }
-
   console.log("✅ [RAG V3] Pipeline complete\n");
 
   return {

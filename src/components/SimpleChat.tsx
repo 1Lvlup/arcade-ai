@@ -101,7 +101,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
   const renderStructuredAnswer = (answer: StructuredAnswer, index: number) => (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="text-sm leading-relaxed">
+      <div className="text-base leading-relaxed">
         {answer.summary}
       </div>
 
@@ -114,7 +114,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
               <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 space-y-1">
                 <div className="flex items-start gap-2">
-                  <span className="text-sm">{stepItem.step}</span>
+                  <span className="text-base">{stepItem.step}</span>
                   {stepItem.source && (
                     <Badge 
                       variant="outline" 
@@ -129,7 +129,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
                   )}
                 </div>
                 {stepItem.expected && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-sm text-muted-foreground">
                     Expected: {stepItem.expected}
                   </div>
                 )}
@@ -141,10 +141,10 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
 
       {/* Why Explanation */}
       {answer.why && answer.why.length > 0 && (
-        <div className="space-y-2">
-          <div className="font-tech text-xs text-primary uppercase tracking-wider">Why This Works</div>
+          <div className="space-y-2">
+          <div className="font-tech text-sm text-primary uppercase tracking-wider">Why This Works</div>
           {answer.why.map((reason, i) => (
-            <div key={i} className="text-sm text-muted-foreground pl-4 border-l-2 border-primary/20">
+            <div key={i} className="text-base text-muted-foreground pl-4 border-l-2 border-primary/20">
               {reason}
             </div>
           ))}
@@ -154,12 +154,12 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
       {/* Expert Advice / Pro Tips */}
       {answer.expert_advice && answer.expert_advice.length > 0 && (
         <div className="tech-card bg-blue-500/5 border-blue-500/20 p-4 space-y-2">
-          <div className="flex items-center gap-2 font-tech text-xs text-blue-500 uppercase tracking-wider">
+          <div className="flex items-center gap-2 font-tech text-sm text-blue-500 uppercase tracking-wider">
             <Lightbulb className="h-4 w-4" />
             Pro Tips
           </div>
           {answer.expert_advice.map((tip, i) => (
-            <div key={i} className="text-sm text-foreground">
+            <div key={i} className="text-base text-foreground">
               • {tip}
             </div>
           ))}
@@ -168,13 +168,13 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
 
       {/* Safety Warnings */}
       {answer.safety && answer.safety.length > 0 && (
-        <div className="tech-card bg-orange-500/5 border-orange-500/20 p-4 space-y-2">
-          <div className="flex items-center gap-2 font-tech text-xs text-orange-500 uppercase tracking-wider">
+        <div className="tech-card bg-primary/5 border-primary/20 p-4 space-y-2">
+          <div className="flex items-center gap-2 font-tech text-sm text-primary uppercase tracking-wider">
             <AlertTriangle className="h-4 w-4" />
             Safety
           </div>
           {answer.safety.map((warning, i) => (
-            <div key={i} className="text-sm text-foreground">
+            <div key={i} className="text-base text-foreground">
               ⚠️ {warning}
             </div>
           ))}
@@ -225,18 +225,18 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
               <div
                 className={`max-w-[80%] p-4 rounded-xl font-body ${
                   message.role === 'user'
-                    ? 'gradient-orange text-white shadow-orange ml-auto border border-primary/20'
+                    ? 'bg-primary text-primary-foreground ml-auto border border-primary/20'
                     : 'tech-card text-foreground border-tech mr-auto'
                 }`}
               >
                 {message.role === 'user' ? (
-                  <div className="text-sm leading-relaxed">
+                  <div className="text-base leading-relaxed">
                     {message.content as string}
                   </div>
                 ) : isStructuredAnswer(message.content) ? (
                   renderStructuredAnswer(message.content, index)
                 ) : (
-                  <div className="text-sm leading-relaxed">
+                  <div className="text-base leading-relaxed">
                     {message.content as string}
                   </div>
                 )}

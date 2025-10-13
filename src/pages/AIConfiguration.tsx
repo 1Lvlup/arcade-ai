@@ -190,11 +190,11 @@ export default function AIConfiguration() {
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
+            <h1 className="text-4xl font-bold flex items-center gap-2">
               <Settings className="h-8 w-8" />
               AI Configuration
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-lg">
               Manage your AI assistant's behavior, models, and search parameters
             </p>
           </div>
@@ -228,15 +228,15 @@ export default function AIConfiguration() {
           <TabsContent value="models" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>AI Models Configuration</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl">AI Models Configuration</CardTitle>
+                <CardDescription className="text-base">
                   Select which OpenAI models to use for different purposes
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="chat-model">Chat Model</Label>
+                    <Label htmlFor="chat-model" className="text-base">Chat Model</Label>
                     <Select
                       value={getConfigValue('chat_model', 'gpt-5-2025-08-07')}
                       onValueChange={(value) => handleConfigChange('chat_model', value)}
@@ -255,7 +255,7 @@ export default function AIConfiguration() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="search-model">Embedding Model</Label>
+                    <Label htmlFor="search-model" className="text-base">Embedding Model</Label>
                     <Select
                       value={getConfigValue('search_model', 'text-embedding-3-small')}
                       onValueChange={(value) => handleConfigChange('search_model', value)}
@@ -271,14 +271,14 @@ export default function AIConfiguration() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-base text-muted-foreground">
                       OpenAI embedding model for vector search (NOT LlamaCloud)
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="temperature">Response Temperature</Label>
+                  <Label htmlFor="temperature" className="text-base">Response Temperature</Label>
                   <Input
                     id="temperature"
                     type="number"
@@ -288,7 +288,7 @@ export default function AIConfiguration() {
                     value={getConfigValue('response_temperature')}
                     onChange={(e) => handleConfigChange('response_temperature', parseFloat(e.target.value))}
                   />
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     Controls randomness: 0 = focused, 2 = creative
                   </p>
                 </div>

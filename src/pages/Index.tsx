@@ -53,12 +53,7 @@ const Index = () => {
   };
   if (showChat) {
     return <div className="min-h-screen professional-bg">
-        <SharedHeader 
-          title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} 
-          showBackButton={true} 
-          backTo="/" 
-          onBackClick={handleBackToHome}
-        />
+        <SharedHeader title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} showBackButton={true} backTo="/" onBackClick={handleBackToHome} />
         <main className="container mx-auto px-4 py-8">
           <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />
         </main>
@@ -127,42 +122,43 @@ const Index = () => {
   return <div className="min-h-screen mesh-gradient">
       <SharedHeader title="IntelliCore" />
 
-      <main className="container mx-auto px-8 py-24">
+      <main className="container mx-auto px-8 py-24 max-w-[2000px]">
         {/* Hero Section */}
         <section className="text-center py-24">
           <div className="space-y-16">
             <div className="space-y-12">
-              <div className="caption-text text-primary/80 text-sm tracking-widest uppercase font-mono">
+              <div className="caption-text text-primary/80 text-base tracking-widest uppercase font-mono rounded-lg">
                 Next-Generation AI Platform
               </div>
-              <h1 
-                className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text"
-                data-text="LEVEL UP"
-                style={{
-                  textShadow: `
+              <h1 className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text" data-text="LEVEL UP" style={{
+              textShadow: `
                     /* Enhanced glow layers */
-                    0 0 10px hsl(189 94% 60% / 1),
-                    0 0 20px hsl(189 94% 60% / 0.9),
-                    0 0 40px hsl(189 94% 60% / 0.8),
-                    0 0 60px hsl(189 94% 60% / 0.7),
-                    0 0 80px hsl(189 94% 60% / 0.6),
-                    0 0 100px hsl(189 94% 60% / 0.5),
-                    /* 3D bevel effect - light top-left */
-                    -2px -2px 0 hsl(189 94% 80%),
-                    -3px -3px 0 hsl(189 94% 75%),
-                    -4px -4px 0 hsl(189 94% 70%),
-                    /* 3D depth - dark bottom-right */
-                    2px 2px 0 hsl(189 94% 30%),
-                    3px 3px 0 hsl(189 94% 25%),
-                    4px 4px 0 hsl(189 94% 20%),
-                    5px 5px 0 hsl(189 94% 15%),
-                    6px 6px 0 hsl(189 94% 10%),
+                    0 0 15px hsl(185 85% 55% / 1),
+                    0 0 30px hsl(185 85% 55% / 0.9),
+                    0 0 50px hsl(185 85% 55% / 0.8),
+                    0 0 70px hsl(185 85% 55% / 0.7),
+                    0 0 100px hsl(185 85% 55% / 0.6),
+                    0 0 130px hsl(185 85% 55% / 0.5),
+                    /* Dramatic 3D bevel effect - light top-left */
+                    -3px -3px 0 rgba(255, 255, 255, 0.3),
+                    -6px -6px 0 rgba(255, 255, 255, 0.2),
+                    -9px -9px 0 rgba(255, 255, 255, 0.15),
+                    -12px -12px 0 rgba(255, 255, 255, 0.1),
+                    -15px -15px 0 rgba(255, 255, 255, 0.05),
+                    /* Dramatic 3D depth - dark bottom-right */
+                    3px 3px 0 rgba(0, 0, 0, 0.5),
+                    6px 6px 0 rgba(0, 0, 0, 0.55),
+                    9px 9px 0 rgba(0, 0, 0, 0.6),
+                    12px 12px 0 rgba(0, 0, 0, 0.65),
+                    15px 15px 0 rgba(0, 0, 0, 0.7),
+                    18px 18px 0 rgba(0, 0, 0, 0.75),
+                    21px 21px 0 rgba(0, 0, 0, 0.8),
                     /* Deep shadow */
-                    8px 8px 20px rgba(0, 0, 0, 0.5)
+                    24px 24px 40px rgba(0, 0, 0, 0.9),
+                    30px 30px 60px rgba(0, 0, 0, 0.7)
                   `,
-                  WebkitTextStroke: '1px hsl(189 94% 60% / 0.3)'
-                }}
-              >
+              WebkitTextStroke: '2px hsl(185 85% 55% / 0.4)'
+            }}>
                 LEVEL UP
               </h1>
             </div>
@@ -222,6 +218,86 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Testimonials & ROI Section */}
+        <section className="py-24">
+          <div className="premium-card p-12 rounded-3xl relative">
+            {/* Connecting lines */}
+            <div className="absolute top-1/2 left-[33%] w-[10%] h-0.5 bg-gradient-to-r from-primary/50 to-primary/30 hidden lg:block"></div>
+            <div className="absolute top-1/2 right-[33%] w-[10%] h-0.5 bg-gradient-to-l from-primary/50 to-primary/30 hidden lg:block"></div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center relative">
+              {/* Left Side - Revenue Stats */}
+              <div className="stat-card p-10 rounded-2xl hover-lift">
+                <div className="space-y-6">
+                  <div className="p-4 rounded-full bg-primary/10 inline-flex">
+                    <TrendingUp className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-3xl font-tech font-bold text-primary">$350 / week</h3>
+                  <p className="text-lg text-muted-foreground font-body">
+                    Average revenue per arcade game
+                  </p>
+                  <div className="pt-4 border-t border-primary/20 space-y-3">
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      When just 3–4 games are down, that's ≈ <span className="text-destructive font-semibold">$1,200 lost</span> in a single week.
+                    </p>
+                    <p className="text-lg text-muted-foreground">
+                      Every hour a game sits idle, money bleeds away.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Center - Scrolling Testimonials */}
+              <div className="tech-card p-8 rounded-2xl overflow-hidden relative z-10">
+                <div className="space-y-6 animate-fade-in">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground text-lg">Mike Rodriguez</div>
+                      <div className="text-base text-muted-foreground">Arcade Operations Manager</div>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed italic text-lg">
+                    "Before Level Up, our average game downtime was 8-12 days. Now we fix issues in under 2 hours. That is literally saving us thousands per incident."
+                  </p>
+                  <div className="flex gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="text-primary text-xl">★</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side - Cost of Downtime */}
+              <div className="stat-card p-10 rounded-2xl hover-lift">
+                <div className="space-y-6">
+                  <div className="p-4 rounded-full bg-destructive/10 inline-flex">
+                    <Clock className="h-8 w-8 text-destructive" />
+                  </div>
+                  <div className="space-y-4">
+                    <p className="text-lg text-muted-foreground font-body leading-relaxed">
+                      Let's be real — when a machine's down and it's not an easy fix, it can stay offline for 3–6 months.
+                    </p>
+                    <p className="text-lg text-muted-foreground font-body">
+                      That's <span className="text-destructive font-semibold text-2xl">$8,400 lost</span> per game.
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t border-primary/20 space-y-2">
+                    <p className="text-lg text-primary font-semibold">
+                      With Level Up: issues are fixed in hours, not months.
+                    </p>
+                    <p className="text-lg text-muted-foreground">
+                      Less downtime. More revenue. Happier guests.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Performance Stats Section */}
         <section className="py-24">
           <div className="text-center mb-16">
@@ -229,8 +305,7 @@ const Index = () => {
             <p className="text-xl text-muted-foreground font-body">Industry-leading metrics that power your arcade operations</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center">
+            {stats.map((stat, index) => <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center">
                 <div className="flex flex-col items-center space-y-6">
                   <div className="p-4 rounded-full bg-primary/10">
                     <div className="text-primary">
@@ -245,8 +320,7 @@ const Index = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </section>
 
@@ -266,8 +340,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {coreFeatures.map((feature, index) => (
-              <div key={index} className="tech-card hover:border-primary/40 p-10 rounded-3xl transition-all duration-300 hover-lift">
+            {coreFeatures.map((feature, index) => <div key={index} className="tech-card hover:border-primary/40 p-10 rounded-3xl transition-all duration-300 hover-lift">
                 <div className="space-y-8">
                   <div className="flex items-start justify-between">
                     <div className="p-5 rounded-2xl bg-primary/10">
@@ -289,23 +362,18 @@ const Index = () => {
                     </p>
                   </div>
                   <div className="pt-6">
-                    {feature.onClick ? (
-                      <Button onClick={feature.onClick} className="w-full btn-tech py-4 text-lg font-semibold">
+                    {feature.onClick ? <Button onClick={feature.onClick} className="w-full btn-tech py-4 text-lg font-semibold">
                         Launch Assistant
                         <ArrowRight className="h-5 w-5 ml-2" />
-                      </Button>
-                    ) : (
-                      <Link to={feature.link!}>
+                      </Button> : <Link to={feature.link!}>
                         <Button variant="outline" className="w-full btn-tech-outline py-4 text-lg font-semibold">
                           Access Platform
                           <ArrowRight className="h-5 w-5 ml-2" />
                         </Button>
-                      </Link>
-                    )}
+                      </Link>}
                   </div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </section>
 
@@ -325,8 +393,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {capabilities.map((capability, index) => (
-              <div key={index} className="premium-card hover-lift p-10 rounded-3xl">
+            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl">
                 <div className="space-y-8">
                   <div className="p-5 rounded-2xl bg-primary/10 inline-flex">
                     <div className="text-primary">
@@ -338,8 +405,7 @@ const Index = () => {
                     {capability.description}
                   </p>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </section>
 

@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      chunk_repage_log: {
+        Row: {
+          chunk_id: string
+          created_at: string
+          id: string
+          manual_id: string
+          new_page_start: number | null
+          old_page_start: string | null
+        }
+        Insert: {
+          chunk_id: string
+          created_at?: string
+          id?: string
+          manual_id: string
+          new_page_start?: number | null
+          old_page_start?: string | null
+        }
+        Update: {
+          chunk_id?: string
+          created_at?: string
+          id?: string
+          manual_id?: string
+          new_page_start?: number | null
+          old_page_start?: string | null
+        }
+        Relationships: []
+      }
       chunks_text: {
         Row: {
           content: string
@@ -54,8 +81,10 @@ export type Database = {
           id: string
           manual_id: string
           menu_path: string | null
+          metadata: Json | null
           page_end: number | null
           page_start: number | null
+          text_confidence: number | null
         }
         Insert: {
           content: string
@@ -66,8 +95,10 @@ export type Database = {
           id?: string
           manual_id: string
           menu_path?: string | null
+          metadata?: Json | null
           page_end?: number | null
           page_start?: number | null
+          text_confidence?: number | null
         }
         Update: {
           content?: string
@@ -78,8 +109,10 @@ export type Database = {
           id?: string
           manual_id?: string
           menu_path?: string | null
+          metadata?: Json | null
           page_end?: number | null
           page_start?: number | null
+          text_confidence?: number | null
         }
         Relationships: [
           {
@@ -204,6 +237,8 @@ export type Database = {
           callouts_json: Json | null
           caption_text: string | null
           created_at: string | null
+          dropped: boolean | null
+          dropped_reason: string | null
           embedding_text: string | null
           fec_tenant_id: string
           figure_id: string | null
@@ -215,11 +250,14 @@ export type Database = {
           kind: string | null
           llama_asset_name: string | null
           manual_id: string
+          ocr_confidence: number | null
           ocr_text: string | null
           page: number | null
           page_number: number | null
+          raw_image_metadata: Json | null
           storage_path: string | null
           storage_url: string | null
+          structured_json: Json | null
           version: string | null
           vision_text: string | null
         }
@@ -228,6 +266,8 @@ export type Database = {
           callouts_json?: Json | null
           caption_text?: string | null
           created_at?: string | null
+          dropped?: boolean | null
+          dropped_reason?: string | null
           embedding_text?: string | null
           fec_tenant_id?: string
           figure_id?: string | null
@@ -239,11 +279,14 @@ export type Database = {
           kind?: string | null
           llama_asset_name?: string | null
           manual_id: string
+          ocr_confidence?: number | null
           ocr_text?: string | null
           page?: number | null
           page_number?: number | null
+          raw_image_metadata?: Json | null
           storage_path?: string | null
           storage_url?: string | null
+          structured_json?: Json | null
           version?: string | null
           vision_text?: string | null
         }
@@ -252,6 +295,8 @@ export type Database = {
           callouts_json?: Json | null
           caption_text?: string | null
           created_at?: string | null
+          dropped?: boolean | null
+          dropped_reason?: string | null
           embedding_text?: string | null
           fec_tenant_id?: string
           figure_id?: string | null
@@ -263,11 +308,14 @@ export type Database = {
           kind?: string | null
           llama_asset_name?: string | null
           manual_id?: string
+          ocr_confidence?: number | null
           ocr_text?: string | null
           page?: number | null
           page_number?: number | null
+          raw_image_metadata?: Json | null
           storage_path?: string | null
           storage_url?: string | null
+          structured_json?: Json | null
           version?: string | null
           vision_text?: string | null
         }
@@ -326,6 +374,114 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_metadata: {
+        Row: {
+          aliases: string[] | null
+          aliases_slugs: string[] | null
+          canonical_slug: string
+          canonical_title: string
+          checksum: string | null
+          created_at: string | null
+          doc_type: string | null
+          family: string | null
+          ingest_status: string | null
+          language: string | null
+          manual_id: string
+          manufacturer: string | null
+          model_number: string | null
+          notes: string | null
+          page_count: number | null
+          platform: string | null
+          quality_score: number | null
+          requires_reindex: boolean | null
+          source_path: string | null
+          tags: string[] | null
+          updated_at: string | null
+          upload_date: string | null
+          uploaded_by: string | null
+          version: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          aliases_slugs?: string[] | null
+          canonical_slug: string
+          canonical_title: string
+          checksum?: string | null
+          created_at?: string | null
+          doc_type?: string | null
+          family?: string | null
+          ingest_status?: string | null
+          language?: string | null
+          manual_id: string
+          manufacturer?: string | null
+          model_number?: string | null
+          notes?: string | null
+          page_count?: number | null
+          platform?: string | null
+          quality_score?: number | null
+          requires_reindex?: boolean | null
+          source_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          upload_date?: string | null
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          aliases_slugs?: string[] | null
+          canonical_slug?: string
+          canonical_title?: string
+          checksum?: string | null
+          created_at?: string | null
+          doc_type?: string | null
+          family?: string | null
+          ingest_status?: string | null
+          language?: string | null
+          manual_id?: string
+          manufacturer?: string | null
+          model_number?: string | null
+          notes?: string | null
+          page_count?: number | null
+          platform?: string | null
+          quality_score?: number | null
+          requires_reindex?: boolean | null
+          source_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          upload_date?: string | null
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      manual_page_map: {
+        Row: {
+          confidence: number
+          created_at: string
+          id: string
+          manual_id: string
+          new_page: number
+          old_page_hint: string | null
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          manual_id: string
+          new_page: number
+          old_page_hint?: string | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          manual_id?: string
+          new_page?: number
+          old_page_hint?: string | null
+        }
+        Relationships: []
+      }
       manual_pages: {
         Row: {
           canonical_page_id: string | null
@@ -368,11 +524,13 @@ export type Database = {
           job_id: string
           manual_id: string
           progress_percent: number | null
+          raw_payload: Json | null
           stage: string | null
           status: string
           total_chunks: number | null
           total_figures: number | null
           updated_at: string
+          webhook_headers: Json | null
         }
         Insert: {
           chunks_processed?: number | null
@@ -385,11 +543,13 @@ export type Database = {
           job_id: string
           manual_id: string
           progress_percent?: number | null
+          raw_payload?: Json | null
           stage?: string | null
           status?: string
           total_chunks?: number | null
           total_figures?: number | null
           updated_at?: string
+          webhook_headers?: Json | null
         }
         Update: {
           chunks_processed?: number | null
@@ -402,11 +562,13 @@ export type Database = {
           job_id?: string
           manual_id?: string
           progress_percent?: number | null
+          raw_payload?: Json | null
           stage?: string | null
           status?: string
           total_chunks?: number | null
           total_figures?: number | null
           updated_at?: string
+          webhook_headers?: Json | null
         }
         Relationships: []
       }
@@ -555,6 +717,39 @@ export type Database = {
         }
         Relationships: []
       }
+      rpc_audit: {
+        Row: {
+          created_at: string
+          error: string | null
+          fec_tenant_id: string | null
+          id: string
+          payload: Json | null
+          result: Json | null
+          rpc_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          fec_tenant_id?: string | null
+          id?: string
+          payload?: Json | null
+          result?: Json | null
+          rpc_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          fec_tenant_id?: string | null
+          id?: string
+          payload?: Json | null
+          result?: Json | null
+          rpc_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -592,6 +787,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_backfill_manual: {
+        Args: { p_dry_run?: boolean; p_manual_id: string }
+        Returns: Json
+      }
+      admin_upsert_manual_metadata: {
+        Args: { p_metadata: Json }
+        Returns: {
+          out_canonical_slug: string
+          out_manual_id: string
+          out_status: string
+        }[]
+      }
+      fn_backfill_for_manual: {
+        Args: { p_manual_id: string }
+        Returns: number
+      }
+      fn_backfill_for_manual_any: {
+        Args: { p_manual_id: string }
+        Returns: Json
+      }
       get_current_tenant_context: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -599,6 +814,16 @@ export type Database = {
       get_current_user_fec_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_manuals_for_dropdown: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          canonical_slug: string
+          canonical_title: string
+          doc_type: string
+          manual_id: string
+          platform: string
+        }[]
       }
       has_role: {
         Args: {
@@ -673,6 +898,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      normalize_name: {
+        Args: { input_text: string }
+        Returns: string
+      }
       search_manual_content: {
         Args: {
           match_count?: number
@@ -709,6 +938,22 @@ export type Database = {
           menu_path: string
           page_end: number
           page_start: number
+        }[]
+      }
+      slugify: {
+        Args: { input_text: string }
+        Returns: string
+      }
+      trigger_reindex: {
+        Args: { p_manual_id: string }
+        Returns: Json
+      }
+      upsert_manual_metadata: {
+        Args: { p_metadata: Json }
+        Returns: {
+          out_canonical_slug: string
+          out_manual_id: string
+          out_status: string
         }[]
       }
     }

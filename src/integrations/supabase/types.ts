@@ -895,7 +895,10 @@ export type Database = {
           content: string
           game_title: string
           id: number
+          manual_section: string
           similarity: number
+          source_file: string
+          subsection: string
         }[]
       }
       normalize_name: {

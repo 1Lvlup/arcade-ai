@@ -253,6 +253,18 @@ serve(async (req) => {
         console.log("📄 Markdown result keys:", Object.keys(markdownResult));
         console.log("📄 JSON result keys:", Object.keys(jsonResult));
         
+        // C) Persist raw payload and headers immediately
+        console.log('💾 Persisting raw payload and headers to processing_status...');
+        const webhookHeaders = Object.fromEntries(req.headers.entries());
+        await supabase
+          .from('processing_status')
+          .update({
+            raw_payload: jsonResult,
+            webhook_headers: webhookHeaders
+          })
+          .eq('job_id', jobId);
+        console.log('✅ Raw payload and headers saved');
+        
         // Replace body with the actual job result data
         Object.assign(body, {
           jobId: jobId,
@@ -539,18 +551,6 @@ serve(async (req) => {
           console.log('✅ Got job result from API');
           console.log('📋 Job result keys:', Object.keys(jobResult));
           console.log('📋 Full job result structure:', JSON.stringify(jobResult, null, 2).substring(0, 2000));
-          
-          // C) Persist raw payload and headers
-          console.log('💾 Persisting raw payload and headers to processing_status...');
-          const webhookHeaders = Object.fromEntries(req.headers.entries());
-          await supabase
-            .from('processing_status')
-            .update({
-              raw_payload: jobResult,
-              webhook_headers: webhookHeaders
-            })
-            .eq('job_id', jobId);
-          console.log('✅ Raw payload and headers saved');
           
           // C) Check KEEP_ALL_IMAGES override
           const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';

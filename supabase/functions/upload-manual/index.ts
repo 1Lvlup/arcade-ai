@@ -122,7 +122,8 @@ serve(async (req) => {
     formData.append('compact_markdown_table', 'true')
     formData.append('return_table_structures', 'true')
     
-    // Images
+    // Images - CRITICAL: Must set save_images=true to actually save them!
+    formData.append('save_images', 'true')
     formData.append('extract_charts', 'true')
     formData.append('specialized_image_parsing', 'true')
     formData.append('precise_bounding_box', 'true')

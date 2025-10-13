@@ -575,9 +575,10 @@ serve(async (req) => {
       for (let i = 0; i < images.length; i += batchSize) {
         const batch = images.slice(i, i + batchSize);
         
-      const batchResults = await Promise.all(batch.map(async (imageName: string, idx: number) => {
+        const batchResults = await Promise.all(batch.map(async (imageName: string, batchIdx: number) => {
           try {
-            console.log(`🔄 Processing image ${i + idx + 1}/${images.length}: ${imageName}`);
+            const imageIndex = i + batchIdx;
+            console.log(`🔄 Processing image ${imageIndex + 1}/${images.length}: ${imageName}`);
             
             // Extract page number from filename
             let pageNumber: number | null = null;

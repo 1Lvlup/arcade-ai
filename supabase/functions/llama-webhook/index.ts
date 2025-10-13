@@ -738,11 +738,11 @@ serve(async (req) => {
       
       console.log(`✅ All ${figuresProcessed} images stored, starting background caption generation...`);
       
-      // Generate captions in background (fire-and-forget)
+      // Generate captions and OCR in background (fire-and-forget)
       EdgeRuntime.waitUntil((async () => {
         for (const figureInfo of insertedFigureIds) {
           try {
-            console.log(`🤖 Generating AI caption for: ${figureInfo.figureName}`);
+            console.log(`🤖 Generating AI caption and OCR for: ${figureInfo.figureName}`);
             
             // Get public URL for the image
             const { data: publicUrlData } = supabase.storage
@@ -750,10 +750,10 @@ serve(async (req) => {
               .getPublicUrl(`${document.manual_id}/${figureInfo.figureName}`);
             
             const imagePublicUrl = publicUrlData.publicUrl;
+            const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
             
             // Call GPT-4.1 Vision for caption generation
-            const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
-            const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${openaiApiKey}`,
@@ -762,8 +762,7 @@ serve(async (req) => {
               },
               body: JSON.stringify({
                 model: 'gpt-4.1',
-                max_tokens: 1000,
-                temperature: 0.7,
+                max_completion_tokens: 500,
                 messages: [
                   {
                     role: 'system',
@@ -791,31 +790,87 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
                     ]
                   }
                 ],
-                max_completion_tokens: 500
               }),
             });
             
-            if (visionResponse.ok) {
-              const aiResponse = await visionResponse.json();
-              const caption = aiResponse.choices[0].message.content;
-              
+            // Call GPT-4.1 Vision for OCR text extraction
+            const ocrResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openaiApiKey}`,
+                'OpenAI-Project': openaiProjectId,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'gpt-4.1',
+                max_completion_tokens: 1000,
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'You are an OCR specialist. Extract ALL visible text from images with 100% accuracy. Preserve the exact text, formatting, labels, part numbers, model numbers, voltage ratings, warnings, and any other written content. Return ONLY the extracted text without any commentary or explanation.'
+                  },
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: 'Extract all visible text from this image. Include labels, part numbers, specifications, warnings, and any other text. Preserve the original formatting and organization as much as possible.'
+                      },
+                      {
+                        type: 'image_url',
+                        image_url: {
+                          url: imagePublicUrl
+                        }
+                      }
+                    ]
+                  }
+                ],
+              }),
+            });
+            
+            let caption = null;
+            let ocrText = null;
+            
+            if (captionResponse.ok) {
+              const captionData = await captionResponse.json();
+              caption = captionData.choices[0].message.content;
+              console.log(`✅ Caption generated for ${figureInfo.figureName}`);
+            } else {
+              console.error(`❌ Caption API error for ${figureInfo.figureName}:`, captionResponse.status);
+            }
+            
+            if (ocrResponse.ok) {
+              const ocrData = await ocrResponse.json();
+              ocrText = ocrData.choices[0].message.content;
+              console.log(`✅ OCR text extracted for ${figureInfo.figureName}`);
+            } else {
+              console.error(`❌ OCR API error for ${figureInfo.figureName}:`, ocrResponse.status);
+            }
+            
+            // Update figure with both caption and OCR text
+            const updateData: any = {};
+            if (caption) {
+              updateData.caption_text = caption;
+              updateData.vision_text = caption;
+            }
+            if (ocrText) {
+              updateData.ocr_text = ocrText;
+            }
+            
+            if (Object.keys(updateData).length > 0) {
               await supabase
                 .from('figures')
-                .update({ 
-                  caption_text: caption,
-                  vision_text: caption 
-                })
+                .update(updateData)
                 .eq('id', figureInfo.id);
               
-              console.log(`✅ Caption saved for ${figureInfo.figureName}`);
-            } else {
-              console.error(`❌ Vision API error for ${figureInfo.figureName}:`, visionResponse.status);
+              console.log(`✅ Updated ${figureInfo.figureName} with caption: ${!!caption}, OCR: ${!!ocrText}`);
             }
+            
           } catch (captionError) {
-            console.error(`❌ Error generating caption:`, captionError);
+            console.error(`❌ Error processing ${figureInfo.figureName}:`, captionError);
           }
         }
-        console.log(`🎉 Background caption generation complete for ${insertedFigureIds.length} images`);
+        console.log(`🎉 Background caption and OCR processing complete for ${insertedFigureIds.length} images`);
       })());
     }
 

@@ -37,7 +37,7 @@ export function ManualsList() {
     fetchManuals();
     
     // Set up realtime subscription for document updates
-    const channel = supabase
+    const documentsChannel = supabase
       .channel('documents-changes')
       .on(
         'postgres_changes',
@@ -53,8 +53,26 @@ export function ManualsList() {
       )
       .subscribe();
 
+    // Also listen to processing_status updates for chunk count changes
+    const statusChannel = supabase
+      .channel('processing-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'processing_status'
+        },
+        (payload) => {
+          console.log('Processing status update:', payload);
+          fetchManuals(); // Refresh when processing completes
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(documentsChannel);
+      supabase.removeChannel(statusChannel);
     };
   }, []);
 

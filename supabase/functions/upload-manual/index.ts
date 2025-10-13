@@ -108,7 +108,7 @@ serve(async (req) => {
     formData.append('page_separator', '______________________________')
     
     // OCR / Layout
-    formData.append('disable_ocr', 'true')
+    formData.append('disable_ocr', 'false')
     formData.append('extract_layout', 'true')
     formData.append('preserve_layout_alignment_across_pages', 'true')
     formData.append('hide_headers', 'true')
@@ -120,12 +120,16 @@ serve(async (req) => {
     formData.append('outlined_table_extraction', 'true')
     formData.append('output_tables_as_HTML', 'true')
     formData.append('compact_markdown_table', 'true')
+    formData.append('return_table_structures', 'true')
     
     // Images
     formData.append('extract_charts', 'true')
     formData.append('specialized_image_parsing', 'true')
     formData.append('precise_bounding_box', 'true')
     formData.append('inline_images_in_markdown', 'true')
+    formData.append('return_image_ocr', 'true')
+    formData.append('return_images', 'true')
+    formData.append('output_s3_path_prefix', `postparse/${manual_id}`)
     
     // Caching/behavior
     formData.append('invalidate_cache', 'true')

@@ -221,39 +221,58 @@ serve(async (req) => {
     
     console.log("✅ Signature check passed (or skipped with default)");
     
-    const body = await req.json();
-    console.log("📋 Parsed body keys:", Object.keys(body));
-    console.log("📋 Full body:", JSON.stringify(body, null, 2));
+    // Get event type from headers (LlamaCloud sends it here)
+    const eventType = req.headers.get('x-webhook-event-type');
+    const eventId = req.headers.get('x-webhook-event-id');
+    console.log("📬 Event type:", eventType);
+    console.log("📬 Event ID:", eventId);
     
-    // CRITICAL: Persist raw webhook immediately (before any processing/awaits)
-    // This is a best-effort audit record; must not interrupt the webhook flow
+    // Parse body - LlamaCloud sends a simple JSON object with job_id
+    const rawBody = await req.text();
+    console.log("📋 Raw body:", rawBody);
+    
+    let body: any;
     try {
-      const jobIdFromBody = body.jobId || body.data?.job_id || body.job_id;
-      
-      if (jobIdFromBody) {
-        console.log('💾 Persisting raw webhook payload and headers (best-effort)...');
-        const webhookHeaders = Object.fromEntries(req.headers.entries());
-        
-        // UPDATE existing row (created by upload-manual) instead of INSERT
-        await supabase
-          .from('processing_status')
-          .update({
-            raw_payload: body,
-            webhook_headers: webhookHeaders
-          })
-          .eq('job_id', jobIdFromBody);
-        
-        console.log('✅ Raw webhook saved to processing_status');
-      }
-    } catch (err) {
-      console.warn('⚠️ Persist raw payload failed (non-fatal):', err);
-      // Intentionally continue — persistence is useful for debug but must not stop ingestion
+      body = JSON.parse(rawBody);
+      console.log("📋 Parsed body:", JSON.stringify(body, null, 2));
+    } catch (e) {
+      console.error("❌ Failed to parse body:", e);
+      body = {};
     }
     
-    // Handle LlamaCloud event notifications (event_type structure)
-    if (body.event_type === 'parse.success' && body.data?.job_id) {
+    // Extract job_id from various possible locations
+    const jobId = body.job_id || body.jobId || body.data?.job_id || body.id;
+    console.log("🔑 Extracted job_id:", jobId);
+    
+    if (!jobId) {
+      console.error("❌ No job_id found in webhook");
+      return new Response(JSON.stringify({ error: "No job_id in webhook" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    // CRITICAL: Persist raw webhook immediately
+    try {
+      console.log('💾 Persisting raw webhook payload and headers...');
+      const webhookHeaders = Object.fromEntries(req.headers.entries());
+      
+      await supabase
+        .from('processing_status')
+        .update({
+          raw_payload: body,
+          webhook_headers: webhookHeaders
+        })
+        .eq('job_id', jobId);
+      
+      console.log('✅ Raw webhook saved to processing_status');
+    } catch (err) {
+      console.warn('⚠️ Persist raw payload failed (non-fatal):', err);
+    }
+    
+    // Handle LlamaCloud event notifications
+    if (eventType === 'parse.success') {
       console.log("📬 Received parse.success event, fetching job result from API...");
-      const jobId = body.data.job_id;
       
       try {
         const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
@@ -277,17 +296,16 @@ serve(async (req) => {
         console.log("✅ Successfully fetched job results from API");
         console.log("📄 Markdown result keys:", Object.keys(markdownResult));
         console.log("📄 JSON result keys:", Object.keys(jsonResult));
-        console.log('✅ Raw payload and headers saved');
         
         // Replace body with the actual job result data
-        Object.assign(body, {
-          jobId: jobId,
-          md: markdownResult.markdown,
-          json: jsonResult,
-          images: jsonResult.images || [],
-          charts: jsonResult.charts || [],
-          pages: jsonResult.pages || []
-        });
+        body.jobId = jobId;
+        body.md = markdownResult.markdown;
+        body.json = jsonResult;
+        body.images = jsonResult.images || [];
+        body.charts = jsonResult.charts || [];
+        body.pages = jsonResult.pages || [];
+        
+        console.log("📊 Final counts - images:", body.images.length, "charts:", body.charts.length);
       } catch (fetchError) {
         console.error("❌ Failed to fetch job result:", fetchError);
         return new Response(JSON.stringify({ error: "Failed to fetch job result from LlamaCloud" }), {
@@ -298,9 +316,8 @@ serve(async (req) => {
     }
     
     // Check if this is an ERROR event
-    if (body.event === 'parse.error' || body.event_type === 'parse.error' || body.status === 'ERROR') {
+    if (eventType === 'parse.error' || body.event === 'parse.error' || body.status === 'ERROR') {
       console.log("❌ LlamaCloud parsing failed");
-      const jobId = body.jobId || body.data?.job_id;
       
       const { data: document } = await supabase
         .from('documents')
@@ -327,7 +344,11 @@ serve(async (req) => {
       });
     }
     
-    const { jobId, md: markdown, json: jsonData, images, charts, pages } = body;
+    const markdown = body.md;
+    const jsonData = body.json;
+    const images = body.images || [];
+    const charts = body.charts || [];
+    const pages = body.pages || [];
     
     console.log("🔍 Job details:");
     console.log("- jobId:", jobId);

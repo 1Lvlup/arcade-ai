@@ -262,7 +262,7 @@ export function ManualDetail() {
                   <Database className="h-8 w-8" />
                   <span>{manual.title}</span>
                 </CardTitle>
-                <CardDescription className="text-primary-foreground/80 text-xl mt-2">
+                <CardDescription className="text-primary-foreground/80 text-lg mt-2">
                   {manual.source_filename}
                 </CardDescription>
               </div>
@@ -279,7 +279,7 @@ export function ManualDetail() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 rounded-full ${getStatusColor()}`}></div>
-                    <span className="font-semibold text-xl">{getStatusText()}</span>
+                    <span className="font-semibold text-lg">{getStatusText()}</span>
                   </div>
                   <Badge variant={processingStatus.status === 'completed' ? 'default' : 'secondary'}>
                     {processingStatus.progress_percent}% Complete
@@ -287,7 +287,7 @@ export function ManualDetail() {
                 </div>
                 <Progress value={processingStatus.progress_percent} className="h-3" />
                 {processingStatus.status === 'processing' && (
-                  <div className="mt-2 text-base text-muted-foreground">
+                  <div className="mt-2 text-sm text-muted-foreground">
                     {processingStatus.chunks_processed} / {processingStatus.total_chunks} chunks processed
                   </div>
                 )}
@@ -299,17 +299,17 @@ export function ManualDetail() {
               <div className="bg-card border border-primary/30 rounded-lg p-6 text-center">
                 <Database className="h-12 w-12 text-primary mx-auto mb-3" />
                 <div className="text-3xl font-bold text-foreground">{stats.chunks}</div>
-                <div className="text-muted-foreground font-medium text-lg">Text Chunks</div>
+                <div className="text-muted-foreground font-medium">Text Chunks</div>
               </div>
               <div className="bg-card border border-green-500/30 rounded-lg p-6 text-center">
                 <Image className="h-12 w-12 text-green-500 mx-auto mb-3" />
                 <div className="text-3xl font-bold text-foreground">{stats.figures}</div>
-                <div className="text-muted-foreground font-medium text-lg">Images</div>
+                <div className="text-muted-foreground font-medium">Images</div>
               </div>
               <div className="bg-card border border-purple-500/30 rounded-lg p-6 text-center">
                 <Brain className="h-12 w-12 text-purple-500 mx-auto mb-3" />
                 <div className="text-3xl font-bold text-foreground">{stats.questions}</div>
-                <div className="text-muted-foreground font-medium text-lg">Golden Questions</div>
+                <div className="text-muted-foreground font-medium">Golden Questions</div>
               </div>
             </div>
 
@@ -408,8 +408,8 @@ export function ManualDetail() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="font-semibold text-xl mb-3 text-foreground">Document Information</h3>
-                    <div className="space-y-2 text-muted-foreground text-base">
+                    <h3 className="font-semibold text-lg mb-3 text-foreground">Document Information</h3>
+                    <div className="space-y-2 text-muted-foreground">
                       <div><span className="font-medium text-foreground">Title:</span> {manual.title}</div>
                       <div><span className="font-medium text-foreground">Filename:</span> {manual.source_filename}</div>
                       <div><span className="font-medium text-foreground">Created:</span> {new Date(manual.created_at).toLocaleString()}</div>
@@ -417,8 +417,8 @@ export function ManualDetail() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-xl mb-3 text-foreground">Processing Details</h3>
-                    <div className="space-y-2 text-muted-foreground text-base">
+                    <h3 className="font-semibold text-lg mb-3 text-foreground">Processing Details</h3>
+                    <div className="space-y-2 text-muted-foreground">
                       <div><span className="font-medium text-foreground">Job ID:</span> {manual.job_id || 'N/A'}</div>
                       <div><span className="font-medium text-foreground">Status:</span> {processingStatus?.status || 'Unknown'}</div>
                       <div><span className="font-medium text-foreground">Stage:</span> {processingStatus?.stage || 'N/A'}</div>

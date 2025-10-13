@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Brain, LogOut, ArrowLeft, Settings, Database, Home } from 'lucide-react';
+import { Brain, LogOut, ArrowLeft, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface SharedHeaderProps {
@@ -45,18 +45,6 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
           <span className="text-sm text-muted-foreground font-medium">
             {user?.email}
           </span>
-          <Link to="/">
-            <Button variant="minimal" size="sm">
-              <Home className="h-4 w-4 mr-2" />
-              Home
-            </Button>
-          </Link>
-          <Link to="/manual-admin">
-            <Button variant="minimal" size="sm">
-              <Database className="h-4 w-4 mr-2" />
-              Manuals
-            </Button>
-          </Link>
           <Link to="/ai-config">
             <Button variant="minimal" size="sm">
               <Settings className="h-4 w-4 mr-2" />

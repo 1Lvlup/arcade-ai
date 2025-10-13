@@ -257,7 +257,7 @@ export function ManualsList() {
         label: 'Processing...', 
         variant: 'secondary' as const,
         icon: Activity,
-        color: 'text-primary'
+        color: 'text-orange-500'
       };
     }
   };

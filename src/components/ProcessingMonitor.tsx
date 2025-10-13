@@ -205,9 +205,9 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
     
     switch (jobStatus.status) {
       case 'PENDING':
-        return { icon: Clock, label: 'Queued', variant: 'secondary' as const, color: 'text-primary' };
+        return { icon: Clock, label: 'Queued', variant: 'secondary' as const, color: 'text-blue-500' };
       case 'PROCESSING':
-        return { icon: Activity, label: 'Processing', variant: 'default' as const, color: 'text-primary' };
+        return { icon: Activity, label: 'Processing', variant: 'default' as const, color: 'text-orange-500' };
       case 'SUCCESS':
         return jobStatus.chunks_created 
           ? { icon: CheckCircle, label: 'Completed', variant: 'default' as const, color: 'text-green-500' }
@@ -277,7 +277,7 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
                 size="sm"
                 onClick={retryProcessing}
                 disabled={loading}
-                className="text-primary border-primary/20 hover:bg-primary/10"
+                className="text-orange-600 border-orange-200 hover:bg-orange-50"
               >
                 Retry Processing
               </Button>

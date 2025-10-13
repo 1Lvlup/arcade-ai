@@ -86,7 +86,7 @@ function createHierarchicalChunks(content: string, manual_id: string) {
   
   let currentChunk = '';
   let currentSection = '';
-  let currentPage = 1; // Start at page 1 instead of null
+  let currentPage = null;
   let chunkIndex = 0;
   
   // Enhanced regex patterns for arcade manual structure
@@ -221,62 +221,14 @@ serve(async (req) => {
     
     console.log("✅ Signature check passed (or skipped with default)");
     
-    // Get event type from headers (LlamaCloud sends it here)
-    const eventType = req.headers.get('x-webhook-event-type');
-    const eventId = req.headers.get('x-webhook-event-id');
-    console.log("📬 Event type:", eventType);
-    console.log("📬 Event ID:", eventId);
+    const body = await req.json();
+    console.log("📋 Parsed body keys:", Object.keys(body));
+    console.log("📋 Full body:", JSON.stringify(body, null, 2));
     
-    // Parse body - use req.json() since content-type is application/json
-    let body: any;
-    try {
-      body = await req.json();
-      console.log("📋 Parsed body SUCCESS:", JSON.stringify(body, null, 2));
-    } catch (error) {
-      console.error("❌ Failed to parse JSON body:", error);
-      console.error("Request details - Content-Type:", req.headers.get("content-type"));
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    
-    // Extract job_id - try all possible locations
-    const jobId = body?.data?.job_id || body?.job_id || body?.jobId || body?.id;
-    console.log("🔑 Extracted job_id:", jobId);
-    console.log("🔍 Body keys available:", Object.keys(body || {}));
-    
-    if (!jobId) {
-      console.error("❌ No job_id found in webhook");
-      console.error("❌ Full body dump:", JSON.stringify(body, null, 2));
-      console.error("❌ Checked paths: data.job_id, job_id, jobId, id");
-      return new Response(JSON.stringify({ error: "No job_id in webhook" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    
-    // CRITICAL: Persist raw webhook immediately
-    try {
-      console.log('💾 Persisting raw webhook payload and headers...');
-      const webhookHeaders = Object.fromEntries(req.headers.entries());
-      
-      await supabase
-        .from('processing_status')
-        .update({
-          raw_payload: body,
-          webhook_headers: webhookHeaders
-        })
-        .eq('job_id', jobId);
-      
-      console.log('✅ Raw webhook saved to processing_status');
-    } catch (err) {
-      console.warn('⚠️ Persist raw payload failed (non-fatal):', err);
-    }
-    
-    // Handle LlamaCloud event notifications
-    if (eventType === 'parse.success') {
+    // Handle LlamaCloud event notifications (event_type structure)
+    if (body.event_type === 'parse.success' && body.data?.job_id) {
       console.log("📬 Received parse.success event, fetching job result from API...");
+      const jobId = body.data.job_id;
       
       try {
         const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
@@ -302,14 +254,14 @@ serve(async (req) => {
         console.log("📄 JSON result keys:", Object.keys(jsonResult));
         
         // Replace body with the actual job result data
-        body.jobId = jobId;
-        body.md = markdownResult.markdown;
-        body.json = jsonResult;
-        body.images = jsonResult.images || [];
-        body.charts = jsonResult.charts || [];
-        body.pages = jsonResult.pages || [];
-        
-        console.log("📊 Final counts - images:", body.images.length, "charts:", body.charts.length);
+        Object.assign(body, {
+          jobId: jobId,
+          md: markdownResult.markdown,
+          json: jsonResult,
+          images: jsonResult.images || [],
+          charts: jsonResult.charts || [],
+          pages: jsonResult.pages || []
+        });
       } catch (fetchError) {
         console.error("❌ Failed to fetch job result:", fetchError);
         return new Response(JSON.stringify({ error: "Failed to fetch job result from LlamaCloud" }), {
@@ -320,8 +272,9 @@ serve(async (req) => {
     }
     
     // Check if this is an ERROR event
-    if (eventType === 'parse.error' || body.event === 'parse.error' || body.status === 'ERROR') {
+    if (body.event === 'parse.error' || body.event_type === 'parse.error' || body.status === 'ERROR') {
       console.log("❌ LlamaCloud parsing failed");
+      const jobId = body.jobId || body.data?.job_id;
       
       const { data: document } = await supabase
         .from('documents')
@@ -348,11 +301,7 @@ serve(async (req) => {
       });
     }
     
-    const markdown = body.md;
-    const jsonData = body.json;
-    const images = body.images || [];
-    const charts = body.charts || [];
-    const pages = body.pages || [];
+    const { jobId, md: markdown, json: jsonData, images, charts, pages } = body;
     
     console.log("🔍 Job details:");
     console.log("- jobId:", jobId);
@@ -427,13 +376,6 @@ serve(async (req) => {
     console.log("🧩 Creating hierarchical chunks with semantic categorization...");
     const allChunks = createHierarchicalChunks(markdown, document.manual_id);
     console.log(`📚 Created ${allChunks.length} hierarchical chunks`);
-    
-    // Log page number distribution for debugging
-    const pageDistribution = allChunks.reduce((acc, chunk) => {
-      acc[chunk.page_start] = (acc[chunk.page_start] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
-    console.log('📊 Page distribution:', pageDistribution);
 
     // Update progress
     await supabase
@@ -506,155 +448,203 @@ serve(async (req) => {
         .eq('job_id', jobId);
     }
 
-    // STEP 4.4: Auto-repage the manual to fix any page number issues
-    console.log('📄 Running auto-repage to fix page numbers...');
-    try {
-      const repageResponse = await supabase.functions.invoke('repage-manual', {
-        body: { manual_id: document.manual_id }
-      });
-      
-      if (repageResponse.error) {
-        console.error('⚠️ Repage failed:', repageResponse.error);
-      } else {
-        console.log('✅ Auto-repage complete:', repageResponse.data);
-      }
-    } catch (repageError) {
-      console.error('⚠️ Repage error:', repageError);
-      // Don't fail the whole process if repage fails
-    }
-
-    // STEP 4.5: Auto-create manual_metadata entry
-    console.log('📝 Creating manual_metadata entry...');
-    try {
-      const { data: existingMetadata } = await supabase
-        .from('manual_metadata')
-        .select('manual_id')
-        .eq('manual_id', manual_id)
-        .maybeSingle();
-      
-      if (!existingMetadata) {
-        // Extract basic info from title
-        const cleanTitle = document.title.replace(/\.pdf$/i, '').trim();
-        
-        const { error: metadataError } = await supabase.rpc('upsert_manual_metadata', {
-          p_metadata: {
-            manual_id: manual_id,
-            canonical_title: cleanTitle,
-            uploaded_by: 'llama_webhook',
-            ingest_status: 'ingested',
-            language: 'en'
+    // STEP 5: Fetch images from LlamaCloud API if not in webhook
+    let figuresProcessed = 0;
+    let allFigures = [...(images || []), ...(charts || [])];
+    
+    // If no images in webhook, fetch from API
+    if (allFigures.length === 0) {
+      console.log('📡 No images in webhook, fetching from LlamaCloud API...');
+      try {
+        const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
+        const jobResultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/json`, {
+          headers: {
+            'Authorization': `Bearer ${llamaApiKey}`
           }
         });
         
-        if (metadataError) {
-          console.error('❌ Failed to create manual_metadata:', metadataError);
-        } else {
-          console.log('✅ manual_metadata created');
+        if (jobResultResponse.ok) {
+          const jobResult = await jobResultResponse.json();
+          console.log('✅ Got job result from API');
+          console.log('📋 Job result keys:', Object.keys(jobResult));
+          console.log('📋 Full job result structure:', JSON.stringify(jobResult, null, 2).substring(0, 2000));
           
-          // Auto-backfill the metadata into chunks
-          console.log('🔄 Auto-backfilling metadata into chunks...');
-          const { data: backfillResult, error: backfillError } = await supabase.rpc('fn_backfill_for_manual_any', {
-            p_manual_id: manual_id
-          });
-          
-          if (backfillError) {
-            console.error('❌ Auto-backfill failed:', backfillError);
+          // Extract image objects from pages (with filtering)
+          if (jobResult.pages && Array.isArray(jobResult.pages)) {
+            console.log(`📄 Found ${jobResult.pages.length} pages`);
+            const imageObjects: any[] = [];
+            let totalRawImages = 0;
+            
+            for (const page of jobResult.pages) {
+              console.log('📄 Page keys:', Object.keys(page));
+              console.log('📄 Page images:', page.images);
+              console.log('📄 Page charts:', page.charts);
+              
+              // Process images with filtering
+              if (page.images && Array.isArray(page.images)) {
+                for (const img of page.images) {
+                  totalRawImages++;
+                  const meta = {
+                    name: img.name,
+                    page: page.page,
+                    type: 'image',
+                    width: img.width ?? img.w,
+                    height: img.height ?? img.h,
+                    bbox: img.bbox
+                  };
+                  if (shouldKeepImage(meta)) {
+                    imageObjects.push(meta);
+                  }
+                }
+              }
+              // Process charts with filtering
+              if (page.charts && Array.isArray(page.charts)) {
+                for (const chart of page.charts) {
+                  totalRawImages++;
+                  const meta = {
+                    name: chart.name,
+                    page: page.page,
+                    type: 'chart',
+                    width: chart.width ?? chart.w,
+                    height: chart.height ?? chart.h,
+                    bbox: chart.bbox
+                  };
+                  if (shouldKeepImage(meta)) {
+                    imageObjects.push(meta);
+                  }
+                }
+              }
+            }
+            allFigures = imageObjects;
+            console.log(`📸 Found ${allFigures.length} figures after filtering (from ${totalRawImages} total)`);
           } else {
-            console.log('✅ Auto-backfill completed:', backfillResult);
+            console.log('⚠️ No pages array found in job result');
           }
+        } else {
+          console.error('❌ Failed to fetch job result from API:', jobResultResponse.status);
         }
-      } else {
-        console.log('ℹ️ manual_metadata already exists, skipping creation');
+      } catch (fetchError) {
+        console.error('❌ Error fetching images from API:', fetchError);
       }
-    } catch (metadataErr) {
-      console.error('❌ Error in manual_metadata creation:', metadataErr);
     }
-
-    // STEP 5: Process images from LlamaCloud
-    let figuresProcessed = 0;
-    console.log(`📡 Processing ${images?.length || 0} images from LlamaCloud...`);
     
-    const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
-    console.log(`🎛️ KEEP_ALL_IMAGES override: ${keepAllImages}`);
-    
-    if (!images || images.length === 0) {
-      console.log('⚠️ No images found in LlamaCloud response');
-    } else {
-      console.log(`🖼️ Processing ${images.length} images...`);
+    if (allFigures.length > 0) {
+      console.log(`🖼️ Processing ${allFigures.length} figures...`);
+      console.log(`📋 First few figures:`, JSON.stringify(allFigures.slice(0, 3), null, 2));
       
       await supabase
         .from('processing_status')
         .update({
           status: 'processing',
           stage: 'image_processing',
-          current_task: 'Downloading and processing images',
-          total_figures: images.length,
+          current_task: 'Processing images with AI vision analysis',
+          total_figures: allFigures.length,
           progress_percent: 95
         })
         .eq('job_id', jobId);
 
-      // Process images in parallel batches
+      // Process ALL images in parallel batches - download, upload, store metadata
       const batchSize = 10;
-      const insertedFigureIds: { id: string, figureName: string }[] = [];
+      const insertedFigureIds: { id: string, figureName: string, storagePath: string }[] = [];
       
-      for (let i = 0; i < images.length; i += batchSize) {
-        const batch = images.slice(i, i + batchSize);
+      for (let i = 0; i < allFigures.length; i += batchSize) {
+        const batch = allFigures.slice(i, i + batchSize);
         
-        const batchResults = await Promise.all(batch.map(async (imageName: string, batchIdx: number) => {
+        const batchResults = await Promise.all(batch.map(async (figure) => {
           try {
-            const imageIndex = i + batchIdx;
-            console.log(`🔄 Processing image ${imageIndex + 1}/${images.length}: ${imageName}`);
+            console.log(`🔄 Processing figure:`, JSON.stringify(figure, null, 2));
             
-            // Extract page number from filename
+            let figureName: string;
             let pageNumber: number | null = null;
-            const pageMatch = imageName.match(/(?:page|p)_?(\d+)/i);
-            if (pageMatch) pageNumber = parseInt(pageMatch[1], 10);
+            let llamaCloudUrl: string;
             
-            // Download image from LlamaCloud using the job ID
-            const imageUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${imageName}`;
-            console.log(`📥 Downloading from: ${imageUrl}`);
+            // Figure is now an object with {name, page, type}
+            if (typeof figure === 'object' && figure.name) {
+              figureName = figure.name;
+              pageNumber = figure.page || null;
+              
+              // Filter again before download (belt-and-suspenders)
+              const meta = {
+                name: figureName,
+                width: (figure as any).width,
+                height: (figure as any).height,
+                bbox: (figure as any).bbox
+              };
+              if (!shouldKeepImage(meta)) {
+                console.log(`⏭️ Skipping low-signal image: ${figureName}`);
+                return null;
+              }
+              
+              // Construct proper LlamaCloud image URL using the API key
+              llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
+            } else if (typeof figure === 'string') {
+              // Fallback for string format
+              figureName = figure;
+              const meta = {
+                name: figureName,
+                width: undefined,
+                height: undefined,
+                bbox: undefined
+              };
+              if (!shouldKeepImage(meta)) {
+                console.log(`⏭️ Skipping low-signal image: ${figureName}`);
+                return null;
+              }
+              llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
+            } else {
+              console.error("❌ Unknown figure format:", figure);
+              return null;
+            }
             
+            console.log(`📥 Downloading image from LlamaCloud: ${llamaCloudUrl}`);
+            
+            // Download image from LlamaCloud with auth
             const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
-            const imageResponse = await fetch(imageUrl, {
-              headers: { 'Authorization': `Bearer ${llamaApiKey}` }
+            const imageResponse = await fetch(llamaCloudUrl, {
+              headers: {
+                'Authorization': `Bearer ${llamaApiKey}`
+              }
             });
             
             if (!imageResponse.ok) {
-              console.error(`❌ Failed to download image ${imageName}: ${imageResponse.status}`);
+              console.error(`❌ Failed to download image from LlamaCloud: ${imageResponse.status}`, await imageResponse.text());
               return null;
             }
             
             const imageBlob = await imageResponse.blob();
-            const imageBuffer = await imageBlob.arrayBuffer();
+            const imageArrayBuffer = await imageBlob.arrayBuffer();
             
-            // Upload to postparse bucket
-            const storagePath = `${document.manual_id}/${imageName}`;
-            // Determine content type from filename
-            const contentType = imageName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+            // Determine content type
+            const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
             
+            // Create storage path: {manual_id}/figures/{figure_name}
+            const storagePath = `${document.manual_id}/figures/${figureName}`;
+            
+            console.log(`📤 Uploading to Supabase storage: ${storagePath}`);
+            
+            // Upload to Supabase storage
             const { error: uploadError } = await supabase.storage
               .from('postparse')
-              .upload(storagePath, imageBuffer, {
+              .upload(storagePath, imageArrayBuffer, {
                 contentType,
                 upsert: true
               });
             
             if (uploadError) {
-              console.error(`❌ Failed to upload image ${imageName}:`, uploadError);
+              console.error(`❌ Failed to upload to storage:`, uploadError);
               return null;
             }
             
-            console.log(`✅ Image uploaded to storage: postparse/${storagePath}`);
+            console.log(`✅ Image stored successfully: ${storagePath}`);
             
-            // Store figure metadata in database
             const figureData = {
               manual_id: document.manual_id,
-              figure_id: imageName,
+              figure_id: figureName,
               storage_path: storagePath,
               page_number: pageNumber,
-              llama_asset_name: imageName,
-              fec_tenant_id: document.fec_tenant_id,
-              raw_image_metadata: { name: imageName }
+              bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
+              llama_asset_name: figureName,
+              fec_tenant_id: document.fec_tenant_id
             };
             
             console.log("📸 Storing figure metadata:", figureData);
@@ -670,11 +660,11 @@ serve(async (req) => {
               return null;
             } else {
               figuresProcessed++;
-              console.log(`✅ Figure ${figuresProcessed}/${images.length} stored`);
-              return { id: insertedFigure.id, figureName: imageName };
+              console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
+              return { id: insertedFigure.id, figureName, storagePath };
             }
           } catch (error) {
-            console.error("❌ Error processing image:", error);
+            console.error("❌ Error processing figure:", error);
             return null;
           }
         }));
@@ -786,7 +776,7 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
       chunks_processed: processedCount,
       total_chunks: allChunks.length,
       figures_processed: figuresProcessed,
-      total_figures: images?.length || 0
+      total_figures: allFigures.length
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

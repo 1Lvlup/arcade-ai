@@ -761,7 +761,7 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
       chunks_processed: processedCount,
       total_chunks: allChunks.length,
       figures_processed: figuresProcessed,
-      total_figures: allFigures.length
+      total_figures: images?.length || 0
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

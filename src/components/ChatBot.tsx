@@ -309,29 +309,27 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-black">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
+                className={`max-w-[80%] rounded-lg p-3 font-sans ${
                   message.type === 'user'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted'
                 }`}
               >
-                <div className="flex items-center space-x-2 mb-2">
-                  {message.type === 'user' ? (
+                {message.type === 'user' && (
+                  <div className="flex items-center space-x-2 mb-2">
                     <User className="h-4 w-4" />
-                  ) : (
-                    <Bot className="h-4 w-4 text-primary" />
-                  )}
-                  <span className="text-xs opacity-70">
-                    {message.timestamp.toLocaleTimeString()}
-                  </span>
-                </div>
+                    <span className="text-xs opacity-70">
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
                 
                 {message.type === 'user' ? (
                   <div className="text-sm whitespace-pre-wrap">{message.content as string}</div>

@@ -216,17 +216,17 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
     <div className="w-full max-w-4xl mx-auto">
       <div className="space-y-6">
         {/* Messages Container */}
-        <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 p-6 rounded-xl tech-card bg-gradient-tech custom-scrollbar">
+        <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 p-6 rounded-xl bg-black custom-scrollbar">
           {messages.map((message, index) => (
             <div
               key={index}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] p-4 rounded-xl font-body ${
+                className={`max-w-[80%] p-4 rounded-xl ${
                   message.role === 'user'
-                    ? 'bg-primary text-primary-foreground ml-auto border border-primary/20'
-                    : 'tech-card text-foreground border-tech mr-auto'
+                    ? 'bg-primary text-primary-foreground ml-auto border border-primary/20 font-sans'
+                    : 'tech-card text-foreground border-tech mr-auto font-sans'
                 }`}
               >
                 {message.role === 'user' ? (
@@ -241,19 +241,16 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
                   </div>
                 )}
                 
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      message.role === 'user' ? 'bg-white/60' : 'bg-primary/60'
-                    }`}></div>
-                    <span className={`font-mono text-xs ${
-                      message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'
-                    }`}>
-                      {message.role === 'user' ? 'USER' : 'AI ASSISTANT'}
-                    </span>
+                {message.role === 'user' && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-white/60"></div>
+                    <span className="font-mono text-xs text-white/70">USER</span>
                   </div>
-                  {message.role === 'assistant' && message.grading && (
-                    <div 
+                )}
+                
+                {message.role === 'assistant' && message.grading && (
+                  <div className="mt-2 flex items-center justify-end">
+                    <div
                       className={`px-2 py-1 rounded text-xs font-mono border ${
                         message.grading.overall === 'PASS' 
                           ? 'bg-green-500/10 text-green-500 border-green-500/30' 
@@ -265,8 +262,8 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
                     >
                       {message.grading.overall}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Metadata & Context Toggle */}
                 {message.role === 'assistant' && message.metadata && (

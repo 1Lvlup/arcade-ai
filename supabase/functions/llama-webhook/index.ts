@@ -545,125 +545,106 @@ serve(async (req) => {
       console.error('❌ Error in manual_metadata creation:', metadataErr);
     }
 
-    // STEP 5: List images from postparse bucket (already uploaded by LlamaCloud)
+    // STEP 5: Process images from LlamaCloud
     let figuresProcessed = 0;
-    console.log(`📡 Listing images from postparse bucket for manual: ${document.manual_id}...`);
-    
-    // List all files in the postparse bucket under this manual's prefix
-    const { data: storageFiles, error: listError } = await supabase.storage
-      .from('postparse')
-      .list(document.manual_id);
-
-    if (listError) {
-      console.error(`❌ Error listing postparse bucket: ${listError.message}`);
-    } else if (!storageFiles || storageFiles.length === 0) {
-      console.log('⚠️ No images found in postparse bucket for this manual');
-    } else {
-      console.log(`📋 Found ${storageFiles.length} files in postparse/${document.manual_id}`);
-    }
+    console.log(`📡 Processing ${images?.length || 0} images from LlamaCloud...`);
     
     const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
     console.log(`🎛️ KEEP_ALL_IMAGES override: ${keepAllImages}`);
     
-    // Convert storage files to figure objects and merge with LlamaCloud metadata
-    const allFigures = (storageFiles || []).map(file => {
-      // Try to find matching image metadata from LlamaCloud JSON result
-      const llamaImage = images?.find((img: any) => {
-        const imgName = img.name || img.path?.split('/').pop() || '';
-        return imgName === file.name || imgName.includes(file.name) || file.name.includes(imgName);
-      });
-      
-      return {
-        name: file.name,
-        page: llamaImage?.page || null,
-        type: file.name.includes('chart') || llamaImage?.type === 'chart' ? 'chart' : 'image',
-        width: llamaImage?.width || llamaImage?.original_width,
-        height: llamaImage?.height || llamaImage?.original_height,
-        storagePath: `${document.manual_id}/${file.name}`,
-        // Capture ALL available LlamaCloud metadata
-        ocr_text: llamaImage?.ocr_text || llamaImage?.text || llamaImage?.ocr || null,
-        ocr_confidence: llamaImage?.ocr_confidence || llamaImage?.confidence || null,
-        vision_text: llamaImage?.vision_text || llamaImage?.description || null,
-        table_structures: llamaImage?.tables || llamaImage?.table_structures || null,
-        bbox: llamaImage?.bbox || llamaImage?.bounding_box || null,
-        callouts: llamaImage?.callouts || llamaImage?.annotations || null,
-        keywords: llamaImage?.keywords || llamaImage?.tags || null,
-        raw_metadata: llamaImage || null
-      };
-    });
-    
-    if (allFigures.length > 0) {
-      console.log(`🖼️ Processing ${allFigures.length} figures...`);
-      console.log(`📋 First few figures:`, JSON.stringify(allFigures.slice(0, 3), null, 2));
+    if (!images || images.length === 0) {
+      console.log('⚠️ No images found in LlamaCloud response');
+    } else {
+      console.log(`🖼️ Processing ${images.length} images...`);
       
       await supabase
         .from('processing_status')
         .update({
           status: 'processing',
           stage: 'image_processing',
-          current_task: 'Processing images with AI vision analysis',
-          total_figures: allFigures.length,
+          current_task: 'Downloading and processing images',
+          total_figures: images.length,
           progress_percent: 95
         })
         .eq('job_id', jobId);
 
-      // Process ALL images in parallel batches - download, upload, store metadata
+      // Process images in parallel batches
       const batchSize = 10;
-      const insertedFigureIds: { id: string, figureName: string, storagePath: string }[] = [];
+      const insertedFigureIds: { id: string, figureName: string }[] = [];
       
-      for (let i = 0; i < allFigures.length; i += batchSize) {
-        const batch = allFigures.slice(i, i + batchSize);
+      for (let i = 0; i < images.length; i += batchSize) {
+        const batch = images.slice(i, i + batchSize);
         
-        const batchResults = await Promise.all(batch.map(async (figure) => {
+        const batchResults = await Promise.all(batch.map(async (imageMetadata: any) => {
           try {
-            console.log(`🔄 Processing figure from storage:`, JSON.stringify(figure, null, 2));
+            const imageName = imageMetadata.name || imageMetadata.path?.split('/').pop() || `image_${i}.jpg`;
+            console.log(`🔄 Processing image: ${imageName}`);
             
-            const figureName = figure.name;
-            const storagePath = figure.storagePath;
-            
-            // Extract page number from filename if present (e.g., "page_3_picture_1.jpg")
-            let pageNumber: number | null = null;
-            const pageMatch = figureName.match(/page_(\d+)/);
-            if (pageMatch) {
-              pageNumber = parseInt(pageMatch[1], 10);
+            // Extract page number from metadata
+            let pageNumber: number | null = imageMetadata.page || null;
+            if (!pageNumber) {
+              const pageMatch = imageName.match(/page_(\d+)/);
+              if (pageMatch) pageNumber = parseInt(pageMatch[1], 10);
             }
-            
-            // C) Check KEEP_ALL_IMAGES override
-            const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
             
             // Filter low-signal images unless override is set
-            if (!keepAllImages) {
-              const meta = {
-                name: figureName,
-                width: figure.width,
-                height: figure.height,
-                bbox: undefined
-              };
-              if (!shouldKeepImage(meta)) {
-                console.log(`⏭️ Skipping low-signal image: ${figureName}`);
-                return null;
-              }
+            if (!keepAllImages && !shouldKeepImage(imageMetadata)) {
+              console.log(`⏭️ Skipping low-signal image: ${imageName}`);
+              return null;
             }
             
-            console.log(`✅ Image already in storage: postparse/${storagePath}`);
+            // Download image from LlamaCloud
+            const imageUrl = imageMetadata.url || imageMetadata.image_url;
+            if (!imageUrl) {
+              console.log(`⚠️ No URL found for image: ${imageName}`);
+              return null;
+            }
             
-            // Extract ALL available OCR and metadata from LlamaCloud
+            const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
+            const imageResponse = await fetch(imageUrl, {
+              headers: { 'Authorization': `Bearer ${llamaApiKey}` }
+            });
+            
+            if (!imageResponse.ok) {
+              console.error(`❌ Failed to download image ${imageName}: ${imageResponse.status}`);
+              return null;
+            }
+            
+            const imageBlob = await imageResponse.blob();
+            const imageBuffer = await imageBlob.arrayBuffer();
+            
+            // Upload to postparse bucket
+            const storagePath = `${document.manual_id}/${imageName}`;
+            const { error: uploadError } = await supabase.storage
+              .from('postparse')
+              .upload(storagePath, imageBuffer, {
+                contentType: imageMetadata.content_type || 'image/jpeg',
+                upsert: true
+              });
+            
+            if (uploadError) {
+              console.error(`❌ Failed to upload image ${imageName}:`, uploadError);
+              return null;
+            }
+            
+            console.log(`✅ Image uploaded to storage: postparse/${storagePath}`);
+            
+            // Store figure metadata in database
             const figureData = {
               manual_id: document.manual_id,
-              figure_id: figureName,
+              figure_id: imageName,
               storage_path: storagePath,
               page_number: pageNumber,
-              bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
-              llama_asset_name: figureName,
+              bbox_pdf_coords: imageMetadata.bbox ? JSON.stringify(imageMetadata.bbox) : null,
+              llama_asset_name: imageName,
               fec_tenant_id: document.fec_tenant_id,
-              // Store all available LlamaCloud metadata
-              raw_image_metadata: figure.raw_metadata || figure,
-              ocr_text: figure.ocr_text,
-              ocr_confidence: figure.ocr_confidence,
-              vision_text: figure.vision_text,
-              structured_json: figure.table_structures,
-              callouts_json: figure.callouts,
-              keywords: figure.keywords
+              raw_image_metadata: imageMetadata,
+              ocr_text: imageMetadata.ocr_text || imageMetadata.text || imageMetadata.ocr || null,
+              ocr_confidence: imageMetadata.ocr_confidence || imageMetadata.confidence || null,
+              vision_text: imageMetadata.vision_text || imageMetadata.description || null,
+              structured_json: imageMetadata.tables || imageMetadata.table_structures || null,
+              callouts_json: imageMetadata.callouts || imageMetadata.annotations || null,
+              keywords: imageMetadata.keywords || imageMetadata.tags || null
             };
             
             console.log("📸 Storing figure metadata:", figureData);
@@ -679,11 +660,11 @@ serve(async (req) => {
               return null;
             } else {
               figuresProcessed++;
-              console.log(`✅ Figure ${figuresProcessed}/${allFigures.length} stored`);
-              return { id: insertedFigure.id, figureName, storagePath };
+              console.log(`✅ Figure ${figuresProcessed}/${images.length} stored`);
+              return { id: insertedFigure.id, figureName: imageName };
             }
           } catch (error) {
-            console.error("❌ Error processing figure:", error);
+            console.error("❌ Error processing image:", error);
             return null;
           }
         }));

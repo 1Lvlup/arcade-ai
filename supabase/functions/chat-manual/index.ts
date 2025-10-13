@@ -537,18 +537,17 @@ ${styleHint}`;
   
   console.log(`🤖 Generating answer with model: ${model}`);
 
-  const url = isGpt5(model) ? "https://api.openai.com/v1/responses" : "https://api.openai.com/v1/chat/completions";
-
+  const url = "https://api.openai.com/v1/chat/completions";
   const temperature = ANSWER_STYLE === "conversational" ? 0.4 : 0.1;
 
   const body: any = isGpt5(model)
     ? {
         model,
-        input: [
+        messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_output_tokens: 8000,
+        max_completion_tokens: 8000,
         // GPT-5 doesn't support temperature parameter
       }
     : {
@@ -576,9 +575,7 @@ ${styleHint}`;
 
   console.log("📦 OpenAI response usage:", data.usage);
 
-  const answerText = isGpt5(model)
-    ? (data.output_text ?? data.choices?.[0]?.message?.content ?? data.output?.[1]?.content?.[0]?.text ?? "")
-    : (data.choices?.[0]?.message?.content ?? "");
+  const answerText = data.choices?.[0]?.message?.content ?? "";
 
   if (!answerText || answerText.trim() === "") {
     console.error("❌ Empty answer from model. Response:", JSON.stringify(data, null, 2));

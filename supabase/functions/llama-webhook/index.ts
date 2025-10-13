@@ -229,22 +229,19 @@ serve(async (req) => {
     // This is a best-effort audit record; must not interrupt the webhook flow
     try {
       const jobIdFromBody = body.jobId || body.data?.job_id || body.job_id;
-      const manualIdFromBody = body.manual_id || body.document?.id || null;
       
       if (jobIdFromBody) {
         console.log('💾 Persisting raw webhook payload and headers (best-effort)...');
         const webhookHeaders = Object.fromEntries(req.headers.entries());
         
+        // UPDATE existing row (created by upload-manual) instead of INSERT
         await supabase
           .from('processing_status')
-          .insert([{
-            job_id: jobIdFromBody,
-            manual_id: manualIdFromBody,
+          .update({
             raw_payload: body,
-            webhook_headers: webhookHeaders,
-            status: 'received',
-            created_at: new Date().toISOString()
-          }]);
+            webhook_headers: webhookHeaders
+          })
+          .eq('job_id', jobIdFromBody);
         
         console.log('✅ Raw webhook saved to processing_status');
       }

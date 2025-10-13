@@ -517,7 +517,7 @@ serve(async (req) => {
       const { data: existingMetadata } = await supabase
         .from('manual_metadata')
         .select('manual_id')
-        .eq('manual_id', manual_id)
+        .eq('manual_id', document.manual_id)
         .maybeSingle();
       
       if (!existingMetadata) {
@@ -526,7 +526,7 @@ serve(async (req) => {
         
         const { error: metadataError } = await supabase.rpc('upsert_manual_metadata', {
           p_metadata: {
-            manual_id: manual_id,
+            manual_id: document.manual_id,
             canonical_title: cleanTitle,
             uploaded_by: 'llama_webhook',
             ingest_status: 'ingested',
@@ -542,7 +542,7 @@ serve(async (req) => {
           // Auto-backfill the metadata into chunks
           console.log('🔄 Auto-backfilling metadata into chunks...');
           const { data: backfillResult, error: backfillError } = await supabase.rpc('fn_backfill_for_manual_any', {
-            p_manual_id: manual_id
+            p_manual_id: document.manual_id
           });
           
           if (backfillError) {
@@ -692,7 +692,7 @@ serve(async (req) => {
             // Get public URL for the image
             const { data: publicUrlData } = supabase.storage
               .from('postparse')
-              .getPublicUrl(figureInfo.storagePath);
+              .getPublicUrl(`${document.manual_id}/${figureInfo.figureName}`);
             
             const imagePublicUrl = publicUrlData.publicUrl;
             

@@ -598,19 +598,27 @@ serve(async (req) => {
       for (let i = 0; i < images.length; i += batchSize) {
         const batch = images.slice(i, i + batchSize);
         
-        const batchResults = await Promise.all(batch.map(async (imageName: string, batchIdx: number) => {
-          try {
-            const imageIndex = i + batchIdx;
-            console.log(`🔄 Processing image ${imageIndex + 1}/${images.length}: ${imageName}`);
-            
-            // Extract page number from filename
-            let pageNumber: number | null = null;
-            const pageMatch = imageName.match(/(?:page|p)_?(\d+)/i);
-            if (pageMatch) pageNumber = parseInt(pageMatch[1], 10);
-            
-            // Download image from LlamaCloud using the job ID
-            const imageUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${imageName}`;
-            console.log(`📥 Downloading from: ${imageUrl}`);
+      const batchResults = await Promise.all(batch.map(async (imageItem: any, batchIdx: number) => {
+        try {
+          const imageIndex = i + batchIdx;
+          // Handle both string and object formats
+          const imageName = typeof imageItem === 'string' ? imageItem : imageItem.name;
+          
+          if (!imageName || typeof imageName !== 'string') {
+            console.error(`❌ Invalid image name at index ${imageIndex}:`, imageItem);
+            return null;
+          }
+          
+          console.log(`🔄 Processing image ${imageIndex + 1}/${images.length}: ${imageName}`);
+          
+          // Extract page number from filename
+          let pageNumber: number | null = null;
+          const pageMatch = imageName.match(/(?:page|p)_?(\d+)/i);
+          if (pageMatch) pageNumber = parseInt(pageMatch[1], 10);
+          
+          // Download image from LlamaCloud using the job ID
+          const imageUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${imageName}`;
+          console.log(`📥 Downloading from: ${imageUrl}`);
             
             const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
             const imageResponse = await fetch(imageUrl, {

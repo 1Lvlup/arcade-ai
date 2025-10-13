@@ -540,7 +540,23 @@ serve(async (req) => {
           console.log('📋 Job result keys:', Object.keys(jobResult));
           console.log('📋 Full job result structure:', JSON.stringify(jobResult, null, 2).substring(0, 2000));
           
-          // Extract image objects from pages (with filtering)
+          // C) Persist raw payload and headers
+          console.log('💾 Persisting raw payload and headers to processing_status...');
+          const webhookHeaders = Object.fromEntries(req.headers.entries());
+          await supabase
+            .from('processing_status')
+            .update({
+              raw_payload: jobResult,
+              webhook_headers: webhookHeaders
+            })
+            .eq('job_id', jobId);
+          console.log('✅ Raw payload and headers saved');
+          
+          // C) Check KEEP_ALL_IMAGES override
+          const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
+          console.log(`🎛️ KEEP_ALL_IMAGES override: ${keepAllImages}`);
+          
+          // Extract image objects from pages (with optional filtering)
           if (jobResult.pages && Array.isArray(jobResult.pages)) {
             console.log(`📄 Found ${jobResult.pages.length} pages`);
             const imageObjects: any[] = [];
@@ -551,43 +567,45 @@ serve(async (req) => {
               console.log('📄 Page images:', page.images);
               console.log('📄 Page charts:', page.charts);
               
-              // Process images with filtering
+              // Process images with optional filtering
               if (page.images && Array.isArray(page.images)) {
                 for (const img of page.images) {
                   totalRawImages++;
                   const meta = {
-                    name: img.name,
+                    ...img,
                     page: page.page,
                     type: 'image',
                     width: img.width ?? img.w,
-                    height: img.height ?? img.h,
-                    bbox: img.bbox
+                    height: img.height ?? img.h
                   };
-                  if (shouldKeepImage(meta)) {
+                  
+                  // C) Skip filtering if KEEP_ALL_IMAGES=true
+                  if (keepAllImages || shouldKeepImage(meta)) {
                     imageObjects.push(meta);
                   }
                 }
               }
-              // Process charts with filtering
+              // Process charts with optional filtering
               if (page.charts && Array.isArray(page.charts)) {
                 for (const chart of page.charts) {
                   totalRawImages++;
                   const meta = {
-                    name: chart.name,
+                    ...chart,
                     page: page.page,
                     type: 'chart',
                     width: chart.width ?? chart.w,
-                    height: chart.height ?? chart.h,
-                    bbox: chart.bbox
+                    height: chart.height ?? chart.h
                   };
-                  if (shouldKeepImage(meta)) {
+                  
+                  // C) Skip filtering if KEEP_ALL_IMAGES=true
+                  if (keepAllImages || shouldKeepImage(meta)) {
                     imageObjects.push(meta);
                   }
                 }
               }
             }
             allFigures = imageObjects;
-            console.log(`📸 Found ${allFigures.length} figures after filtering (from ${totalRawImages} total)`);
+            console.log(`📸 Found ${allFigures.length} figures ${keepAllImages ? '(all kept)' : 'after filtering'} (from ${totalRawImages} total)`);
           } else {
             console.log('⚠️ No pages array found in job result');
           }
@@ -629,21 +647,26 @@ serve(async (req) => {
             let pageNumber: number | null = null;
             let llamaCloudUrl: string;
             
-            // Figure is now an object with {name, page, type}
+            // Figure is now an object with full metadata
             if (typeof figure === 'object' && figure.name) {
               figureName = figure.name;
               pageNumber = figure.page || null;
               
-              // Filter again before download (belt-and-suspenders)
-              const meta = {
-                name: figureName,
-                width: (figure as any).width,
-                height: (figure as any).height,
-                bbox: (figure as any).bbox
-              };
-              if (!shouldKeepImage(meta)) {
-                console.log(`⏭️ Skipping low-signal image: ${figureName}`);
-                return null;
+              // C) Check KEEP_ALL_IMAGES override
+              const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
+              
+              // Filter again before download (belt-and-suspenders) unless override is set
+              if (!keepAllImages) {
+                const meta = {
+                  name: figureName,
+                  width: (figure as any).width,
+                  height: (figure as any).height,
+                  bbox: (figure as any).bbox
+                };
+                if (!shouldKeepImage(meta)) {
+                  console.log(`⏭️ Skipping low-signal image: ${figureName}`);
+                  return null;
+                }
               }
               
               // Construct proper LlamaCloud image URL using the API key
@@ -708,6 +731,11 @@ serve(async (req) => {
             
             console.log(`✅ Image stored successfully: ${storagePath}`);
             
+            // C) Extract OCR and table structure data
+            const ocrText = (figure as any).ocr || (figure as any).ocr_text || null;
+            const ocrConfidence = (figure as any).ocr_confidence || (figure as any).confidence || null;
+            const tableStructures = (figure as any).table_structures || (figure as any).tables || null;
+            
             const figureData = {
               manual_id: document.manual_id,
               figure_id: figureName,
@@ -715,7 +743,12 @@ serve(async (req) => {
               page_number: pageNumber,
               bbox_pdf_coords: figure.bbox ? JSON.stringify(figure.bbox) : null,
               llama_asset_name: figureName,
-              fec_tenant_id: document.fec_tenant_id
+              fec_tenant_id: document.fec_tenant_id,
+              // C) New columns for enhanced metadata
+              raw_image_metadata: figure, // Full image object
+              ocr_text: ocrText,
+              ocr_confidence: ocrConfidence,
+              structured_json: tableStructures
             };
             
             console.log("📸 Storing figure metadata:", figureData);

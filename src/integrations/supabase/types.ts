@@ -84,6 +84,7 @@ export type Database = {
           metadata: Json | null
           page_end: number | null
           page_start: number | null
+          text_confidence: number | null
         }
         Insert: {
           content: string
@@ -97,6 +98,7 @@ export type Database = {
           metadata?: Json | null
           page_end?: number | null
           page_start?: number | null
+          text_confidence?: number | null
         }
         Update: {
           content?: string
@@ -110,6 +112,7 @@ export type Database = {
           metadata?: Json | null
           page_end?: number | null
           page_start?: number | null
+          text_confidence?: number | null
         }
         Relationships: [
           {
@@ -234,6 +237,8 @@ export type Database = {
           callouts_json: Json | null
           caption_text: string | null
           created_at: string | null
+          dropped: boolean | null
+          dropped_reason: string | null
           embedding_text: string | null
           fec_tenant_id: string
           figure_id: string | null
@@ -245,11 +250,14 @@ export type Database = {
           kind: string | null
           llama_asset_name: string | null
           manual_id: string
+          ocr_confidence: number | null
           ocr_text: string | null
           page: number | null
           page_number: number | null
+          raw_image_metadata: Json | null
           storage_path: string | null
           storage_url: string | null
+          structured_json: Json | null
           version: string | null
           vision_text: string | null
         }
@@ -258,6 +266,8 @@ export type Database = {
           callouts_json?: Json | null
           caption_text?: string | null
           created_at?: string | null
+          dropped?: boolean | null
+          dropped_reason?: string | null
           embedding_text?: string | null
           fec_tenant_id?: string
           figure_id?: string | null
@@ -269,11 +279,14 @@ export type Database = {
           kind?: string | null
           llama_asset_name?: string | null
           manual_id: string
+          ocr_confidence?: number | null
           ocr_text?: string | null
           page?: number | null
           page_number?: number | null
+          raw_image_metadata?: Json | null
           storage_path?: string | null
           storage_url?: string | null
+          structured_json?: Json | null
           version?: string | null
           vision_text?: string | null
         }
@@ -282,6 +295,8 @@ export type Database = {
           callouts_json?: Json | null
           caption_text?: string | null
           created_at?: string | null
+          dropped?: boolean | null
+          dropped_reason?: string | null
           embedding_text?: string | null
           fec_tenant_id?: string
           figure_id?: string | null
@@ -293,11 +308,14 @@ export type Database = {
           kind?: string | null
           llama_asset_name?: string | null
           manual_id?: string
+          ocr_confidence?: number | null
           ocr_text?: string | null
           page?: number | null
           page_number?: number | null
+          raw_image_metadata?: Json | null
           storage_path?: string | null
           storage_url?: string | null
+          structured_json?: Json | null
           version?: string | null
           vision_text?: string | null
         }
@@ -506,11 +524,13 @@ export type Database = {
           job_id: string
           manual_id: string
           progress_percent: number | null
+          raw_payload: Json | null
           stage: string | null
           status: string
           total_chunks: number | null
           total_figures: number | null
           updated_at: string
+          webhook_headers: Json | null
         }
         Insert: {
           chunks_processed?: number | null
@@ -523,11 +543,13 @@ export type Database = {
           job_id: string
           manual_id: string
           progress_percent?: number | null
+          raw_payload?: Json | null
           stage?: string | null
           status?: string
           total_chunks?: number | null
           total_figures?: number | null
           updated_at?: string
+          webhook_headers?: Json | null
         }
         Update: {
           chunks_processed?: number | null
@@ -540,11 +562,13 @@ export type Database = {
           job_id?: string
           manual_id?: string
           progress_percent?: number | null
+          raw_payload?: Json | null
           stage?: string | null
           status?: string
           total_chunks?: number | null
           total_figures?: number | null
           updated_at?: string
+          webhook_headers?: Json | null
         }
         Relationships: []
       }

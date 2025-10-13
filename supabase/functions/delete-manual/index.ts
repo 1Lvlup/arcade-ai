@@ -96,38 +96,111 @@ serve(async (req) => {
     }
 
     // Delete related data in order (due to potential dependencies)
-    console.log('Deleting chunks...')
+    console.log('Deleting all related data for manual:', manual_id)
+    
+    // Delete chunks_text
+    console.log('Deleting chunks_text...')
     const { error: chunksError } = await supabase
       .from('chunks_text')
       .delete()
       .eq('manual_id', manual_id)
       .eq('fec_tenant_id', profile.fec_tenant_id)
+    if (chunksError) console.error('Error deleting chunks_text:', chunksError)
 
-    if (chunksError) {
-      console.error('Error deleting chunks:', chunksError)
-    }
+    // Delete rag_chunks
+    console.log('Deleting rag_chunks...')
+    const { error: ragChunksError } = await supabase
+      .from('rag_chunks')
+      .delete()
+      .eq('manual_id', manual_id)
+      .eq('fec_tenant_id', profile.fec_tenant_id)
+    if (ragChunksError) console.error('Error deleting rag_chunks:', ragChunksError)
 
+    // Delete figures
     console.log('Deleting figures...')
     const { error: figuresError } = await supabase
       .from('figures')
       .delete()
       .eq('manual_id', manual_id)
       .eq('fec_tenant_id', profile.fec_tenant_id)
+    if (figuresError) console.error('Error deleting figures:', figuresError)
 
-    if (figuresError) {
-      console.error('Error deleting figures:', figuresError)
-    }
+    // Delete golden_questions
+    console.log('Deleting golden_questions...')
+    const { error: questionsError } = await supabase
+      .from('golden_questions')
+      .delete()
+      .eq('manual_id', manual_id)
+      .eq('fec_tenant_id', profile.fec_tenant_id)
+    if (questionsError) console.error('Error deleting golden_questions:', questionsError)
 
+    // Delete question_evaluations
+    console.log('Deleting question_evaluations...')
+    const { error: evaluationsError } = await supabase
+      .from('question_evaluations')
+      .delete()
+      .eq('manual_id', manual_id)
+      .eq('fec_tenant_id', profile.fec_tenant_id)
+    if (evaluationsError) console.error('Error deleting question_evaluations:', evaluationsError)
+
+    // Delete manual_pages
+    console.log('Deleting manual_pages...')
+    const { error: pagesError } = await supabase
+      .from('manual_pages')
+      .delete()
+      .eq('manual_id', manual_id)
+    if (pagesError) console.error('Error deleting manual_pages:', pagesError)
+
+    // Delete processing_status
+    console.log('Deleting processing_status...')
+    const { error: statusError } = await supabase
+      .from('processing_status')
+      .delete()
+      .eq('manual_id', manual_id)
+      .eq('fec_tenant_id', profile.fec_tenant_id)
+    if (statusError) console.error('Error deleting processing_status:', statusError)
+
+    // Delete manual_metadata
     console.log('Deleting manual_metadata...')
     const { error: metadataError } = await supabase
       .from('manual_metadata')
       .delete()
       .eq('manual_id', manual_id)
+    if (metadataError) console.error('Error deleting manual_metadata:', metadataError)
 
-    if (metadataError) {
-      console.error('Error deleting manual_metadata:', metadataError)
+    // Delete storage files from postparse bucket
+    console.log('Deleting files from postparse bucket...')
+    const { data: postparseFiles, error: listPostparseError } = await supabase.storage
+      .from('postparse')
+      .list(manual_id)
+    
+    if (listPostparseError) {
+      console.error('Error listing postparse files:', listPostparseError)
+    } else if (postparseFiles && postparseFiles.length > 0) {
+      const filePaths = postparseFiles.map(file => `${manual_id}/${file.name}`)
+      const { error: removePostparseError } = await supabase.storage
+        .from('postparse')
+        .remove(filePaths)
+      if (removePostparseError) console.error('Error removing postparse files:', removePostparseError)
     }
 
+    // Delete storage files from manuals bucket
+    console.log('Deleting files from manuals bucket...')
+    const { data: manualsFiles, error: listManualsError } = await supabase.storage
+      .from('manuals')
+      .list(manual_id)
+    
+    if (listManualsError) {
+      console.error('Error listing manuals files:', listManualsError)
+    } else if (manualsFiles && manualsFiles.length > 0) {
+      const filePaths = manualsFiles.map(file => `${manual_id}/${file.name}`)
+      const { error: removeManualsError } = await supabase.storage
+        .from('manuals')
+        .remove(filePaths)
+      if (removeManualsError) console.error('Error removing manuals files:', removeManualsError)
+    }
+
+    // Finally delete the document record
     console.log('Deleting document...')
     const { error: documentError } = await supabase
       .from('documents')

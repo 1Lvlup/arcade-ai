@@ -225,19 +225,32 @@ serve(async (req) => {
     console.log("📋 Parsed body keys:", Object.keys(body));
     console.log("📋 Full body:", JSON.stringify(body, null, 2));
     
-    // C) Persist raw webhook immediately (before any processing)
-    const jobIdFromBody = body.jobId || body.data?.job_id || body.job_id;
-    if (jobIdFromBody) {
-      console.log('💾 Persisting raw webhook payload and headers...');
-      const webhookHeaders = Object.fromEntries(req.headers.entries());
-      await supabase
-        .from('processing_status')
-        .update({
-          raw_payload: body,
-          webhook_headers: webhookHeaders
-        })
-        .eq('job_id', jobIdFromBody);
-      console.log('✅ Raw webhook saved to processing_status');
+    // CRITICAL: Persist raw webhook immediately (before any processing/awaits)
+    // This is a best-effort audit record; must not interrupt the webhook flow
+    try {
+      const jobIdFromBody = body.jobId || body.data?.job_id || body.job_id;
+      const manualIdFromBody = body.manual_id || body.document?.id || null;
+      
+      if (jobIdFromBody) {
+        console.log('💾 Persisting raw webhook payload and headers (best-effort)...');
+        const webhookHeaders = Object.fromEntries(req.headers.entries());
+        
+        await supabase
+          .from('processing_status')
+          .insert([{
+            job_id: jobIdFromBody,
+            manual_id: manualIdFromBody,
+            raw_payload: body,
+            webhook_headers: webhookHeaders,
+            status: 'received',
+            created_at: new Date().toISOString()
+          }]);
+        
+        console.log('✅ Raw webhook saved to processing_status');
+      }
+    } catch (err) {
+      console.warn('⚠️ Persist raw payload failed (non-fatal):', err);
+      // Intentionally continue — persistence is useful for debug but must not stop ingestion
     }
     
     // Handle LlamaCloud event notifications (event_type structure)
@@ -267,17 +280,6 @@ serve(async (req) => {
         console.log("✅ Successfully fetched job results from API");
         console.log("📄 Markdown result keys:", Object.keys(markdownResult));
         console.log("📄 JSON result keys:", Object.keys(jsonResult));
-        
-        // C) Persist raw payload and headers immediately
-        console.log('💾 Persisting raw payload and headers to processing_status...');
-        const webhookHeaders = Object.fromEntries(req.headers.entries());
-        await supabase
-          .from('processing_status')
-          .update({
-            raw_payload: jsonResult,
-            webhook_headers: webhookHeaders
-          })
-          .eq('job_id', jobId);
         console.log('✅ Raw payload and headers saved');
         
         // Replace body with the actual job result data

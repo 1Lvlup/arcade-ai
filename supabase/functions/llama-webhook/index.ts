@@ -338,7 +338,7 @@ serve(async (req) => {
     
     const markdown = body.md;
     const jsonData = body.json;
-    const images = body.images || [];
+    let images = body.images || [];
     const charts = body.charts || [];
     const pages = body.pages || [];
     

@@ -141,12 +141,14 @@ serve(async (req) => {
     const systemPromptAppend = `Label EVERY picture as "Figure {N}" in chronological order PER PAGE. Output clean per-page markdown for downstream retrieval. Convert tables to markdown. Preserve units/codes/part numbers exactly. Clearly label each page with page number`
     formData.append('system_prompt_append', systemPromptAppend)
     
-    // Webhook configuration (v1 API format - separate fields, not array)
-    formData.append('webhook_url', `${supabaseUrl}/functions/v1/llama-webhook`);
-    formData.append('webhook_events', JSON.stringify(['parse.success', 'parse.error']));
-    formData.append('webhook_headers', JSON.stringify({
-      'x-signature': webhookSecret
-    }));
+    // Webhook configuration (proper format for v1 API - webhook_configurations array)
+    formData.append('webhook_configurations', JSON.stringify([{
+      webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
+      webhook_events: ['parse.success', 'parse.error'],
+      webhook_headers: {
+        'x-signature': webhookSecret
+      }
+    }]));
 
     const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/v1/parsing/upload', {
       method: 'POST',

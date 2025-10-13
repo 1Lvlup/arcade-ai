@@ -32,19 +32,26 @@ function shouldKeepImage(meta: {
 }): boolean {
   const name = (meta.name || "").toLowerCase();
 
-  // Drop obvious ornaments/backgrounds
-  if (/(background|border|mask|frame|header|footer|shadow|separator|rule|page-\d+)/.test(name)) return false;
+  // Drop obvious ornaments/backgrounds - ENHANCED
+  if (/(background|border|mask|frame|shadow|separator|rule|divider|ornament|decoration)/.test(name)) return false;
+  
+  // Drop headers/footers (pageHeader, pageFooter, sectionHeader, etc.)
+  if (/(header|footer|heading)/.test(name)) return false;
+  
+  // Drop page markers and text blocks
+  if (/(page_\d+_text|pagenumber|page-\d+)/.test(name)) return false;
+  
   if (name.endsWith(".svg")) return false;
 
   // Size heuristics
   const w = meta.width ?? meta.bbox?.width ?? 0;
   const h = meta.height ?? meta.bbox?.height ?? 0;
 
-  // Too small
-  if ((w && w < 100) || (h && h < 60)) return false;
+  // Too small - increased threshold
+  if ((w && w < 150) || (h && h < 100)) return false;
 
-  // Too tiny area
-  if (w && h && (w * h) < 12000) return false;
+  // Too tiny area - increased threshold
+  if (w && h && (w * h) < 20000) return false;
 
   // Weird aspect ratios
   if (isWeirdAspect(w, h)) return false;
@@ -641,6 +648,15 @@ serve(async (req) => {
           }
           
           console.log(`🔄 [${imageIndex + 1}/${images.length}] Processing: ${imageName}`);
+          
+          // Apply filtering unless KEEP_ALL_IMAGES is true
+          if (!keepAllImages) {
+            const metadata = typeof imageItem === 'object' ? imageItem : { name: imageName };
+            if (!shouldKeepImage(metadata)) {
+              console.log(`  ⏭️ SKIPPED (decorative/small): ${imageName}`);
+              return null;
+            }
+          }
           
           // Extract page number from filename (e.g., img_p0_1.png -> page 0)
           let pageNumber: number | null = null;

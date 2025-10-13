@@ -240,8 +240,8 @@ serve(async (req) => {
       body = {};
     }
     
-    // Extract job_id from various possible locations
-    const jobId = body.job_id || body.jobId || body.data?.job_id || body.id;
+    // Extract job_id - LlamaCloud sends it in data.job_id
+    const jobId = body.data?.job_id || body.job_id || body.jobId || body.id;
     console.log("🔑 Extracted job_id:", jobId);
     
     if (!jobId) {

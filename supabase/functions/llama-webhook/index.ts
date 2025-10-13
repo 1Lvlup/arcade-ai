@@ -225,6 +225,21 @@ serve(async (req) => {
     console.log("📋 Parsed body keys:", Object.keys(body));
     console.log("📋 Full body:", JSON.stringify(body, null, 2));
     
+    // C) Persist raw webhook immediately (before any processing)
+    const jobIdFromBody = body.jobId || body.data?.job_id || body.job_id;
+    if (jobIdFromBody) {
+      console.log('💾 Persisting raw webhook payload and headers...');
+      const webhookHeaders = Object.fromEntries(req.headers.entries());
+      await supabase
+        .from('processing_status')
+        .update({
+          raw_payload: body,
+          webhook_headers: webhookHeaders
+        })
+        .eq('job_id', jobIdFromBody);
+      console.log('✅ Raw webhook saved to processing_status');
+    }
+    
     // Handle LlamaCloud event notifications (event_type structure)
     if (body.event_type === 'parse.success' && body.data?.job_id) {
       console.log("📬 Received parse.success event, fetching job result from API...");

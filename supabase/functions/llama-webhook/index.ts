@@ -575,30 +575,18 @@ serve(async (req) => {
       for (let i = 0; i < images.length; i += batchSize) {
         const batch = images.slice(i, i + batchSize);
         
-        const batchResults = await Promise.all(batch.map(async (imageMetadata: any) => {
+      const batchResults = await Promise.all(batch.map(async (imageName: string, idx: number) => {
           try {
-            const imageName = imageMetadata.name || imageMetadata.path?.split('/').pop() || `image_${i}.jpg`;
-            console.log(`🔄 Processing image: ${imageName}`);
+            console.log(`🔄 Processing image ${i + idx + 1}/${images.length}: ${imageName}`);
             
-            // Extract page number from metadata
-            let pageNumber: number | null = imageMetadata.page || null;
-            if (!pageNumber) {
-              const pageMatch = imageName.match(/page_(\d+)/);
-              if (pageMatch) pageNumber = parseInt(pageMatch[1], 10);
-            }
+            // Extract page number from filename
+            let pageNumber: number | null = null;
+            const pageMatch = imageName.match(/(?:page|p)_?(\d+)/i);
+            if (pageMatch) pageNumber = parseInt(pageMatch[1], 10);
             
-            // Filter low-signal images unless override is set
-            if (!keepAllImages && !shouldKeepImage(imageMetadata)) {
-              console.log(`⏭️ Skipping low-signal image: ${imageName}`);
-              return null;
-            }
-            
-            // Download image from LlamaCloud
-            const imageUrl = imageMetadata.url || imageMetadata.image_url;
-            if (!imageUrl) {
-              console.log(`⚠️ No URL found for image: ${imageName}`);
-              return null;
-            }
+            // Download image from LlamaCloud using the job ID
+            const imageUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${imageName}`;
+            console.log(`📥 Downloading from: ${imageUrl}`);
             
             const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
             const imageResponse = await fetch(imageUrl, {
@@ -615,10 +603,13 @@ serve(async (req) => {
             
             // Upload to postparse bucket
             const storagePath = `${document.manual_id}/${imageName}`;
+            // Determine content type from filename
+            const contentType = imageName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+            
             const { error: uploadError } = await supabase.storage
               .from('postparse')
               .upload(storagePath, imageBuffer, {
-                contentType: imageMetadata.content_type || 'image/jpeg',
+                contentType,
                 upsert: true
               });
             
@@ -635,16 +626,9 @@ serve(async (req) => {
               figure_id: imageName,
               storage_path: storagePath,
               page_number: pageNumber,
-              bbox_pdf_coords: imageMetadata.bbox ? JSON.stringify(imageMetadata.bbox) : null,
               llama_asset_name: imageName,
               fec_tenant_id: document.fec_tenant_id,
-              raw_image_metadata: imageMetadata,
-              ocr_text: imageMetadata.ocr_text || imageMetadata.text || imageMetadata.ocr || null,
-              ocr_confidence: imageMetadata.ocr_confidence || imageMetadata.confidence || null,
-              vision_text: imageMetadata.vision_text || imageMetadata.description || null,
-              structured_json: imageMetadata.tables || imageMetadata.table_structures || null,
-              callouts_json: imageMetadata.callouts || imageMetadata.annotations || null,
-              keywords: imageMetadata.keywords || imageMetadata.tags || null
+              raw_image_metadata: { name: imageName }
             };
             
             console.log("📸 Storing figure metadata:", figureData);

@@ -95,7 +95,7 @@ serve(async (req) => {
     const formData = new FormData()
     formData.append('input_url', signedUrlData.signedUrl)
     const displayName = title.endsWith('.pdf') ? title : `${title}.pdf`
-    formData.append('file_name', displayName) // Use the user's entered title
+    formData.append('file_name', displayName)
     formData.append('result_type', 'markdown')
     
     // Parse with Agent mode and GPT-5
@@ -122,7 +122,7 @@ serve(async (req) => {
     formData.append('compact_markdown_table', 'true')
     formData.append('return_table_structures', 'true')
     
-    // Images - CRITICAL: Must set save_images=true to actually save them!
+    // Images - CRITICAL: save_images tells LlamaCloud to make images available via API
     formData.append('save_images', 'true')
     formData.append('extract_charts', 'true')
     formData.append('specialized_image_parsing', 'true')
@@ -130,7 +130,6 @@ serve(async (req) => {
     formData.append('inline_images_in_markdown', 'true')
     formData.append('return_image_ocr', 'true')
     formData.append('return_images', 'true')
-    formData.append('output_s3_path_prefix', `postparse/${manual_id}`)
     
     // Caching/behavior
     formData.append('invalidate_cache', 'true')
@@ -141,14 +140,17 @@ serve(async (req) => {
     const systemPromptAppend = `Label EVERY picture as "Figure {N}" in chronological order PER PAGE. Output clean per-page markdown for downstream retrieval. Convert tables to markdown. Preserve units/codes/part numbers exactly. Clearly label each page with page number`
     formData.append('system_prompt_append', systemPromptAppend)
     
-    // Webhook configuration (proper format for v1 API - webhook_configurations array)
-    formData.append('webhook_configurations', JSON.stringify([{
+    // Webhook configuration - CRITICAL: Must be array format
+    console.log('📡 Configuring webhook:', `${supabaseUrl}/functions/v1/llama-webhook`)
+    const webhookConfig = [{
       webhook_url: `${supabaseUrl}/functions/v1/llama-webhook`,
       webhook_events: ['parse.success', 'parse.error'],
       webhook_headers: {
         'x-signature': webhookSecret
       }
-    }]));
+    }]
+    console.log('🔧 Webhook config:', JSON.stringify(webhookConfig, null, 2))
+    formData.append('webhook_configurations', JSON.stringify(webhookConfig))
 
     const llamaResponse = await fetch('https://api.cloud.llamaindex.ai/api/v1/parsing/upload', {
       method: 'POST',

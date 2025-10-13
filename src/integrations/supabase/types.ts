@@ -251,7 +251,10 @@ export type Database = {
           llama_asset_name: string | null
           manual_id: string
           ocr_confidence: number | null
+          ocr_error: string | null
+          ocr_status: string | null
           ocr_text: string | null
+          ocr_updated_at: string | null
           page: number | null
           page_number: number | null
           raw_image_metadata: Json | null
@@ -280,7 +283,10 @@ export type Database = {
           llama_asset_name?: string | null
           manual_id: string
           ocr_confidence?: number | null
+          ocr_error?: string | null
+          ocr_status?: string | null
           ocr_text?: string | null
+          ocr_updated_at?: string | null
           page?: number | null
           page_number?: number | null
           raw_image_metadata?: Json | null
@@ -309,7 +315,10 @@ export type Database = {
           llama_asset_name?: string | null
           manual_id?: string
           ocr_confidence?: number | null
+          ocr_error?: string | null
+          ocr_status?: string | null
           ocr_text?: string | null
+          ocr_updated_at?: string | null
           page?: number | null
           page_number?: number | null
           raw_image_metadata?: Json | null

@@ -297,14 +297,14 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
           return s.length > 1500 ? s.slice(0, 1500) : s;
         });
 
-        const cohereRes = await fetch("https://api.cohere.ai/v1/rerank", {
+        const cohereRes = await fetch("https://api.cohere.ai/v2/rerank", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${cohereApiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "rerank-english-v3.0",
+            model: "rerank-v3.5",
             query: expanded ?? query,
             documents: truncatedDocs,
             top_n: Math.min(10, truncatedDocs.length),

@@ -86,7 +86,7 @@ function createHierarchicalChunks(content: string, manual_id: string) {
   
   let currentChunk = '';
   let currentSection = '';
-  let currentPage = null;
+  let currentPage = 1; // Start at page 1 instead of null
   let chunkIndex = 0;
   
   // Enhanced regex patterns for arcade manual structure
@@ -376,6 +376,13 @@ serve(async (req) => {
     console.log("🧩 Creating hierarchical chunks with semantic categorization...");
     const allChunks = createHierarchicalChunks(markdown, document.manual_id);
     console.log(`📚 Created ${allChunks.length} hierarchical chunks`);
+    
+    // Log page number distribution for debugging
+    const pageDistribution = allChunks.reduce((acc, chunk) => {
+      acc[chunk.page_start] = (acc[chunk.page_start] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>);
+    console.log('📊 Page distribution:', pageDistribution);
 
     // Update progress
     await supabase
@@ -446,6 +453,23 @@ serve(async (req) => {
           progress_percent: progressPercent
         })
         .eq('job_id', jobId);
+    }
+
+    // STEP 4.4: Auto-repage the manual to fix any page number issues
+    console.log('📄 Running auto-repage to fix page numbers...');
+    try {
+      const repageResponse = await supabase.functions.invoke('repage-manual', {
+        body: { manual_id: document.manual_id }
+      });
+      
+      if (repageResponse.error) {
+        console.error('⚠️ Repage failed:', repageResponse.error);
+      } else {
+        console.log('✅ Auto-repage complete:', repageResponse.data);
+      }
+    } catch (repageError) {
+      console.error('⚠️ Repage error:', repageError);
+      // Don't fail the whole process if repage fails
     }
 
     // STEP 4.5: Auto-create manual_metadata entry

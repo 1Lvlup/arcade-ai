@@ -21,7 +21,7 @@ async function pollJobCompletion(jobId: string, manualId: string, tenantId: stri
   await supabase.rpc('set_tenant_context', { tenant_id: tenantId })
   
   console.log(`📊 Starting polling for job: ${jobId}`)
-  const maxAttempts = 60 // 5 minutes max (5 second intervals)
+  const maxAttempts = 240 // 20 minutes max (5 second intervals)
   let attempt = 0
   
   while (attempt < maxAttempts) {
@@ -138,7 +138,7 @@ async function pollJobCompletion(jobId: string, manualId: string, tenantId: stri
     .from('processing_status')
     .update({
       status: 'error',
-      error_message: 'Processing timed out after 5 minutes',
+      error_message: 'Processing timed out after 20 minutes',
       progress_percent: 0
     })
     .eq('job_id', jobId)

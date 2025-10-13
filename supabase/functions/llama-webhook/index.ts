@@ -545,91 +545,35 @@ serve(async (req) => {
       console.error('❌ Error in manual_metadata creation:', metadataErr);
     }
 
-    // STEP 5: Fetch images from LlamaCloud API if not in webhook
+    // STEP 5: List images from postparse bucket (already uploaded by LlamaCloud)
     let figuresProcessed = 0;
-    let allFigures = [...(images || []), ...(charts || [])];
+    console.log(`📡 Listing images from postparse bucket for manual: ${document.manual_id}...`);
     
-    // If no images in webhook, fetch from API
-    if (allFigures.length === 0) {
-      console.log('📡 No images in webhook, fetching from LlamaCloud API...');
-      try {
-        const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
-        const jobResultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/json`, {
-          headers: {
-            'Authorization': `Bearer ${llamaApiKey}`
-          }
-        });
-        
-        if (jobResultResponse.ok) {
-          const jobResult = await jobResultResponse.json();
-          console.log('✅ Got job result from API');
-          console.log('📋 Job result keys:', Object.keys(jobResult));
-          console.log('📋 Full job result structure:', JSON.stringify(jobResult, null, 2).substring(0, 2000));
-          
-          // C) Check KEEP_ALL_IMAGES override
-          const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
-          console.log(`🎛️ KEEP_ALL_IMAGES override: ${keepAllImages}`);
-          
-          // Extract image objects from pages (with optional filtering)
-          if (jobResult.pages && Array.isArray(jobResult.pages)) {
-            console.log(`📄 Found ${jobResult.pages.length} pages`);
-            const imageObjects: any[] = [];
-            let totalRawImages = 0;
-            
-            for (const page of jobResult.pages) {
-              console.log('📄 Page keys:', Object.keys(page));
-              console.log('📄 Page images:', page.images);
-              console.log('📄 Page charts:', page.charts);
-              
-              // Process images with optional filtering
-              if (page.images && Array.isArray(page.images)) {
-                for (const img of page.images) {
-                  totalRawImages++;
-                  const meta = {
-                    ...img,
-                    page: page.page,
-                    type: 'image',
-                    width: img.width ?? img.w,
-                    height: img.height ?? img.h
-                  };
-                  
-                  // C) Skip filtering if KEEP_ALL_IMAGES=true
-                  if (keepAllImages || shouldKeepImage(meta)) {
-                    imageObjects.push(meta);
-                  }
-                }
-              }
-              // Process charts with optional filtering
-              if (page.charts && Array.isArray(page.charts)) {
-                for (const chart of page.charts) {
-                  totalRawImages++;
-                  const meta = {
-                    ...chart,
-                    page: page.page,
-                    type: 'chart',
-                    width: chart.width ?? chart.w,
-                    height: chart.height ?? chart.h
-                  };
-                  
-                  // C) Skip filtering if KEEP_ALL_IMAGES=true
-                  if (keepAllImages || shouldKeepImage(meta)) {
-                    imageObjects.push(meta);
-                  }
-                }
-              }
-            }
-            allFigures = imageObjects;
-            console.log(`📸 Found ${allFigures.length} figures ${keepAllImages ? '(all kept)' : 'after filtering'} (from ${totalRawImages} total)`);
-          } else {
-            console.log('⚠️ No pages array found in job result');
-          }
-        } else {
-          console.error('❌ Failed to fetch job result from API:', jobResultResponse.status);
-        }
-      } catch (fetchError) {
-        console.error('❌ Error fetching images from API:', fetchError);
-      }
+    // List all files in the postparse bucket under this manual's prefix
+    const { data: storageFiles, error: listError } = await supabase.storage
+      .from('postparse')
+      .list(document.manual_id);
+
+    if (listError) {
+      console.error(`❌ Error listing postparse bucket: ${listError.message}`);
+    } else if (!storageFiles || storageFiles.length === 0) {
+      console.log('⚠️ No images found in postparse bucket for this manual');
+    } else {
+      console.log(`📋 Found ${storageFiles.length} files in postparse/${document.manual_id}`);
     }
+    
+    const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
+    console.log(`🎛️ KEEP_ALL_IMAGES override: ${keepAllImages}`);
+    
+    // Convert storage files to figure objects
+    const allFigures = (storageFiles || []).map(file => ({
+      name: file.name,
+      page: null, // We'll extract from filename if possible
+      type: file.name.includes('chart') ? 'chart' : 'image',
+      width: undefined,
+      height: undefined,
+      storagePath: `${document.manual_id}/${file.name}`
+    }));
     
     if (allFigures.length > 0) {
       console.log(`🖼️ Processing ${allFigures.length} figures...`);
@@ -655,95 +599,36 @@ serve(async (req) => {
         
         const batchResults = await Promise.all(batch.map(async (figure) => {
           try {
-            console.log(`🔄 Processing figure:`, JSON.stringify(figure, null, 2));
+            console.log(`🔄 Processing figure from storage:`, JSON.stringify(figure, null, 2));
             
-            let figureName: string;
+            const figureName = figure.name;
+            const storagePath = figure.storagePath;
+            
+            // Extract page number from filename if present (e.g., "page_3_picture_1.jpg")
             let pageNumber: number | null = null;
-            let llamaCloudUrl: string;
+            const pageMatch = figureName.match(/page_(\d+)/);
+            if (pageMatch) {
+              pageNumber = parseInt(pageMatch[1], 10);
+            }
             
-            // Figure is now an object with full metadata
-            if (typeof figure === 'object' && figure.name) {
-              figureName = figure.name;
-              pageNumber = figure.page || null;
-              
-              // C) Check KEEP_ALL_IMAGES override
-              const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
-              
-              // Filter again before download (belt-and-suspenders) unless override is set
-              if (!keepAllImages) {
-                const meta = {
-                  name: figureName,
-                  width: (figure as any).width,
-                  height: (figure as any).height,
-                  bbox: (figure as any).bbox
-                };
-                if (!shouldKeepImage(meta)) {
-                  console.log(`⏭️ Skipping low-signal image: ${figureName}`);
-                  return null;
-                }
-              }
-              
-              // Construct proper LlamaCloud image URL using the API key
-              llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figureName}`;
-            } else if (typeof figure === 'string') {
-              // Fallback for string format
-              figureName = figure;
+            // C) Check KEEP_ALL_IMAGES override
+            const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
+            
+            // Filter low-signal images unless override is set
+            if (!keepAllImages) {
               const meta = {
                 name: figureName,
-                width: undefined,
-                height: undefined,
+                width: figure.width,
+                height: figure.height,
                 bbox: undefined
               };
               if (!shouldKeepImage(meta)) {
                 console.log(`⏭️ Skipping low-signal image: ${figureName}`);
                 return null;
               }
-              llamaCloudUrl = `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/image/${figure}`;
-            } else {
-              console.error("❌ Unknown figure format:", figure);
-              return null;
             }
             
-            console.log(`📥 Downloading image from LlamaCloud: ${llamaCloudUrl}`);
-            
-            // Download image from LlamaCloud with auth
-            const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
-            const imageResponse = await fetch(llamaCloudUrl, {
-              headers: {
-                'Authorization': `Bearer ${llamaApiKey}`
-              }
-            });
-            
-            if (!imageResponse.ok) {
-              console.error(`❌ Failed to download image from LlamaCloud: ${imageResponse.status}`, await imageResponse.text());
-              return null;
-            }
-            
-            const imageBlob = await imageResponse.blob();
-            const imageArrayBuffer = await imageBlob.arrayBuffer();
-            
-            // Determine content type
-            const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
-            
-            // Create storage path: {manual_id}/figures/{figure_name}
-            const storagePath = `${document.manual_id}/figures/${figureName}`;
-            
-            console.log(`📤 Uploading to Supabase storage: ${storagePath}`);
-            
-            // Upload to Supabase storage
-            const { error: uploadError } = await supabase.storage
-              .from('postparse')
-              .upload(storagePath, imageArrayBuffer, {
-                contentType,
-                upsert: true
-              });
-            
-            if (uploadError) {
-              console.error(`❌ Failed to upload to storage:`, uploadError);
-              return null;
-            }
-            
-            console.log(`✅ Image stored successfully: ${storagePath}`);
+            console.log(`✅ Image already in storage: postparse/${storagePath}`);
             
             // C) Extract OCR and table structure data
             const ocrText = (figure as any).ocr || (figure as any).ocr_text || null;

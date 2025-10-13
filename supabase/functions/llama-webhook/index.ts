@@ -601,89 +601,116 @@ serve(async (req) => {
       const batchResults = await Promise.all(batch.map(async (imageItem: any, batchIdx: number) => {
         try {
           const imageIndex = i + batchIdx;
-          // Handle both string and object formats
-          const imageName = typeof imageItem === 'string' ? imageItem : imageItem.name;
+          
+          // CRITICAL: Handle both string and object formats from LlamaCloud
+          // LlamaCloud returns objects like: {name: "img_p0_1.png", x: 24.96, y: 245.52, width: 492.12, height: 37.92}
+          let imageName: string;
+          
+          if (typeof imageItem === 'string') {
+            imageName = imageItem;
+          } else if (imageItem && typeof imageItem === 'object' && imageItem.name) {
+            imageName = imageItem.name;
+          } else {
+            console.error(`❌ Invalid image format at index ${imageIndex}:`, JSON.stringify(imageItem));
+            return null;
+          }
           
           if (!imageName || typeof imageName !== 'string') {
-            console.error(`❌ Invalid image name at index ${imageIndex}:`, imageItem);
+            console.error(`❌ Image name is not a string at index ${imageIndex}:`, imageName);
             return null;
           }
           
-          console.log(`🔄 Processing image ${imageIndex + 1}/${images.length}: ${imageName}`);
+          console.log(`🔄 [${imageIndex + 1}/${images.length}] Processing: ${imageName}`);
           
-          // Extract page number from filename
+          // Extract page number from filename (e.g., img_p0_1.png -> page 0)
           let pageNumber: number | null = null;
           const pageMatch = imageName.match(/(?:page|p)_?(\d+)/i);
-          if (pageMatch) pageNumber = parseInt(pageMatch[1], 10);
+          if (pageMatch) {
+            pageNumber = parseInt(pageMatch[1], 10);
+            console.log(`  📄 Extracted page number: ${pageNumber}`);
+          }
           
-          // Download image from LlamaCloud using the job ID
-          const imageUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${imageName}`;
-          console.log(`📥 Downloading from: ${imageUrl}`);
+          // Download image from LlamaCloud API
+          const imageUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${encodeURIComponent(imageName)}`;
+          console.log(`  📥 Downloading from: ${imageUrl}`);
             
-            const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!;
-            const imageResponse = await fetch(imageUrl, {
-              headers: { 'Authorization': `Bearer ${llamaApiKey}` }
-            });
-            
-            if (!imageResponse.ok) {
-              console.error(`❌ Failed to download image ${imageName}: ${imageResponse.status}`);
-              return null;
-            }
-            
-            const imageBlob = await imageResponse.blob();
-            const imageBuffer = await imageBlob.arrayBuffer();
-            
-            // Upload to postparse bucket
-            const storagePath = `${document.manual_id}/${imageName}`;
-            // Determine content type from filename
-            const contentType = imageName.endsWith('.png') ? 'image/png' : 'image/jpeg';
-            
-            const { error: uploadError } = await supabase.storage
-              .from('postparse')
-              .upload(storagePath, imageBuffer, {
-                contentType,
-                upsert: true
-              });
-            
-            if (uploadError) {
-              console.error(`❌ Failed to upload image ${imageName}:`, uploadError);
-              return null;
-            }
-            
-            console.log(`✅ Image uploaded to storage: postparse/${storagePath}`);
-            
-            // Store figure metadata in database
-            const figureData = {
-              manual_id: document.manual_id,
-              figure_id: imageName,
-              storage_path: storagePath,
-              page_number: pageNumber,
-              llama_asset_name: imageName,
-              fec_tenant_id: document.fec_tenant_id,
-              raw_image_metadata: { name: imageName }
-            };
-            
-            console.log("📸 Storing figure metadata:", figureData);
-            
-            const { data: insertedFigure, error: figureError } = await supabase
-              .from('figures')
-              .insert(figureData)
-              .select()
-              .single();
-              
-            if (figureError) {
-              console.error("❌ Error storing figure:", figureError);
-              return null;
-            } else {
-              figuresProcessed++;
-              console.log(`✅ Figure ${figuresProcessed}/${images.length} stored`);
-              return { id: insertedFigure.id, figureName: imageName };
-            }
-          } catch (error) {
-            console.error("❌ Error processing image:", error);
+          const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY');
+          if (!llamaApiKey) {
+            console.error(`  ❌ LLAMACLOUD_API_KEY not configured`);
             return null;
           }
-        }));
+          
+          const imageResponse = await fetch(imageUrl, {
+            headers: { 'Authorization': `Bearer ${llamaApiKey}` }
+          });
+          
+          if (!imageResponse.ok) {
+            const errorText = await imageResponse.text();
+            console.error(`  ❌ Download failed (${imageResponse.status}): ${errorText}`);
+            return null;
+          }
+          
+          console.log(`  ✅ Downloaded ${imageResponse.headers.get('content-length')} bytes`);
+          
+          const imageBlob = await imageResponse.blob();
+          const imageBuffer = await imageBlob.arrayBuffer();
+          
+          // Upload to Supabase Storage (postparse bucket is public)
+          const storagePath = `${document.manual_id}/${imageName}`;
+          const contentType = imageName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+          
+          console.log(`  ☁️ Uploading to: postparse/${storagePath}`);
+          
+          const { error: uploadError } = await supabase.storage
+            .from('postparse')
+            .upload(storagePath, imageBuffer, {
+              contentType,
+              upsert: true
+            });
+          
+          if (uploadError) {
+            console.error(`  ❌ Storage upload failed:`, uploadError);
+            return null;
+          }
+          
+          console.log(`  ✅ Uploaded to storage`);
+          
+          // Insert figure metadata into database
+          const figureData = {
+            manual_id: document.manual_id,
+            figure_id: imageName,
+            storage_path: storagePath,
+            page_number: pageNumber,
+            llama_asset_name: imageName,
+            fec_tenant_id: document.fec_tenant_id,
+            raw_image_metadata: imageItem && typeof imageItem === 'object' ? imageItem : { name: imageName }
+          };
+          
+          console.log(`  💾 Inserting figure record...`);
+          
+          const { data: insertedFigure, error: figureError } = await supabase
+            .from('figures')
+            .insert(figureData)
+            .select()
+            .single();
+            
+          if (figureError) {
+            console.error(`  ❌ DB insert failed:`, figureError);
+            return null;
+          }
+          
+          figuresProcessed++;
+          console.log(`  ✅ [${figuresProcessed}/${images.length}] Figure stored successfully!`);
+          return { id: insertedFigure.id, figureName: imageName };
+          
+        } catch (error) {
+          console.error(`  ❌ Exception processing image:`, error);
+          if (error instanceof Error) {
+            console.error(`  ❌ Error stack:`, error.stack);
+          }
+          return null;
+        }
+      }));
         
         // Collect successful inserts for caption generation
         insertedFigureIds.push(...batchResults.filter(r => r !== null));

@@ -566,8 +566,18 @@ serve(async (req) => {
     console.log(`🎛️ KEEP_ALL_IMAGES override: ${keepAllImages}`);
     
     if (!images || images.length === 0) {
-      console.log('⚠️ No images found in LlamaCloud response');
-    } else {
+      console.log('⚠️ No images found in top-level array, checking pages...');
+      // Fallback: extract images from pages array
+      if (body.pages && Array.isArray(body.pages)) {
+        const extractedImages = body.pages.flatMap((page: any) => page.images || []);
+        if (extractedImages.length > 0) {
+          console.log(`✅ Found ${extractedImages.length} images in pages array`);
+          images = extractedImages;
+        }
+      }
+    }
+    
+    if (images && images.length > 0) {
       console.log(`🖼️ Processing ${images.length} images...`);
       
       await supabase

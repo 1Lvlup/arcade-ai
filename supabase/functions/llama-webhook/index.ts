@@ -227,18 +227,9 @@ serve(async (req) => {
     console.log("📬 Event type:", eventType);
     console.log("📬 Event ID:", eventId);
     
-    // Parse body - LlamaCloud sends a simple JSON object with job_id
-    const rawBody = await req.text();
-    console.log("📋 Raw body:", rawBody);
-    
-    let body: any;
-    try {
-      body = JSON.parse(rawBody);
-      console.log("📋 Parsed body:", JSON.stringify(body, null, 2));
-    } catch (e) {
-      console.error("❌ Failed to parse body:", e);
-      body = {};
-    }
+    // Parse body - use req.json() since content-type is application/json
+    const body = await req.json();
+    console.log("📋 Parsed body:", JSON.stringify(body, null, 2));
     
     // Extract job_id - LlamaCloud sends it in data.job_id
     const jobId = body.data?.job_id || body.job_id || body.jobId || body.id;
@@ -246,6 +237,7 @@ serve(async (req) => {
     
     if (!jobId) {
       console.error("❌ No job_id found in webhook");
+      console.error("Body structure:", JSON.stringify(body, null, 2));
       return new Response(JSON.stringify({ error: "No job_id in webhook" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

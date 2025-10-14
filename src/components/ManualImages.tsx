@@ -30,7 +30,9 @@ export function ManualImages({ manualId }: ManualImagesProps) {
   const [figures, setFigures] = useState<Figure[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingFigure, setEditingFigure] = useState<string | null>(null);
+  const [editingOcr, setEditingOcr] = useState<string | null>(null);
   const [captionText, setCaptionText] = useState('');
+  const [ocrText, setOcrText] = useState('');
   const [generatingCaption, setGeneratingCaption] = useState<string | null>(null);
   const [selectedFigures, setSelectedFigures] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -165,9 +167,46 @@ export function ManualImages({ manualId }: ManualImagesProps) {
     setCaptionText(figure.caption_text || '');
   };
 
+  const startEditingOcr = (figure: Figure) => {
+    setEditingOcr(figure.id);
+    setOcrText(figure.ocr_text || '');
+  };
+
   const cancelEditing = () => {
     setEditingFigure(null);
     setCaptionText('');
+  };
+
+  const cancelEditingOcr = () => {
+    setEditingOcr(null);
+    setOcrText('');
+  };
+
+  const saveOcr = async (figureId: string) => {
+    try {
+      const { error } = await supabase
+        .from('figures')
+        .update({ ocr_text: ocrText })
+        .eq('id', figureId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'OCR text saved',
+        description: 'Image OCR text has been updated',
+      });
+      
+      setEditingOcr(null);
+      setOcrText('');
+      fetchFigures(); // Refresh the list
+    } catch (error) {
+      console.error('Error saving OCR text:', error);
+      toast({
+        title: 'Error saving OCR text',
+        description: 'Failed to save OCR text. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const hideFigure = async (figureId: string) => {
@@ -444,14 +483,58 @@ export function ManualImages({ manualId }: ManualImagesProps) {
                     </div>
 
                     {/* OCR Text */}
-                    {figure.ocr_text && (
-                      <div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
                         <label className="text-sm font-semibold text-green-900">Text in Image</label>
-                        <p className="text-sm text-gray-700 bg-blue-50 p-3 rounded-lg">
-                          {figure.ocr_text}
-                        </p>
+                        {figure.ocr_text && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditingOcr(figure)}
+                            title="Edit OCR text"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
-                    )}
+                      
+                      {editingOcr === figure.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={ocrText}
+                            onChange={(e) => setOcrText(e.target.value)}
+                            placeholder="Enter OCR text..."
+                            className="min-h-[80px]"
+                          />
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              onClick={() => saveOcr(figure.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Save className="h-4 w-4 mr-1" />
+                              Save
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={cancelEditingOcr}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-700 bg-blue-50 p-3 rounded-lg min-h-[60px]">
+                          {figure.ocr_text || (
+                            <span className="italic text-gray-400">
+                              No OCR text available. Use AI to extract text from the image.
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
 
                     {/* Keywords */}
                     {figure.keywords && figure.keywords.length > 0 && (

@@ -121,3 +121,6 @@ verify_jwt = false
 
 [functions.repage-manual]
 verify_jwt = true
+
+[functions.retry-processing]
+verify_jwt = true

@@ -15,6 +15,7 @@ import {
   Zap,
   Database
 } from 'lucide-react';
+import { RetryProcessingButton } from './RetryProcessingButton';
 
 interface ProcessingStatus {
   job_id: string;
@@ -281,6 +282,9 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
               >
                 Retry Processing
               </Button>
+            )}
+            {processingStatus && processingStatus.status === 'completed' && processingStatus.total_figures > 0 && (
+              <RetryProcessingButton manualId={processingStatus.manual_id} disabled={loading} />
             )}
           </div>
         </CardTitle>

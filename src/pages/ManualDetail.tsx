@@ -13,6 +13,7 @@ import { ManualQuestions } from '@/components/ManualQuestions';
 import { ManualImages } from '@/components/ManualImages';
 import { ManualChunks } from '@/components/ManualChunks';
 import { QualityEvaluation } from '@/components/QualityEvaluation';
+import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 
 interface Manual {
   id: string;
@@ -273,24 +274,17 @@ export function ManualDetail() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Processing Status */}
-            {processingStatus && (
+            {/* Processing Monitor with Resume Button */}
+            {manual.job_id && (
               <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full ${getStatusColor()}`}></div>
-                    <span className="font-semibold text-xl">{getStatusText()}</span>
-                  </div>
-                  <Badge variant={processingStatus.status === 'completed' ? 'default' : 'secondary'}>
-                    {processingStatus.progress_percent}% Complete
-                  </Badge>
-                </div>
-                <Progress value={processingStatus.progress_percent} className="h-3" />
-                {processingStatus.status === 'processing' && (
-                  <div className="mt-2 text-base text-muted-foreground">
-                    {processingStatus.chunks_processed} / {processingStatus.total_chunks} chunks processed
-                  </div>
-                )}
+                <ProcessingMonitor 
+                  job_id={manual.job_id} 
+                  manual_id={manual.manual_id}
+                  onComplete={() => {
+                    fetchStats();
+                    fetchProcessingStatus();
+                  }}
+                />
               </div>
             )}
 

@@ -210,7 +210,7 @@ Return as JSON with "caption" and "ocr_text" fields.`
         caption_text: caption,
         vision_text: caption,
         ocr_text: ocrText,
-        ocr_status: 'completed',
+        ocr_status: 'success',
         ocr_updated_at: new Date().toISOString()
       })
       .eq('id', figure_id);

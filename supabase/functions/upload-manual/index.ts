@@ -84,27 +84,41 @@ async function pollJobCompletion(jobId: string, manualId: string, tenantId: stri
         }
         
         console.log(`🎯 Calling llama-webhook with ${webhookPayload.images.length} images, ${webhookPayload.pages.length} pages`)
+        console.log(`📦 Webhook payload keys:`, Object.keys(webhookPayload))
         
-        const webhookResponse = await supabase.functions.invoke('llama-webhook', {
-          body: webhookPayload,
-          headers: {
-            'x-webhook-event-type': 'parse.success',
-            'x-webhook-event-id': `poll-${jobId}`,
-            'x-signature': webhookSecret
+        try {
+          const webhookResponse = await supabase.functions.invoke('llama-webhook', {
+            body: webhookPayload,
+            headers: {
+              'x-webhook-event-type': 'parse.success',
+              'x-webhook-event-id': `poll-${jobId}`,
+              'x-signature': webhookSecret
+            }
+          })
+          
+          console.log(`📨 Webhook response:`, JSON.stringify(webhookResponse, null, 2))
+          
+          if (webhookResponse.error) {
+            console.error(`❌ Webhook call failed:`, webhookResponse.error)
+            await supabase
+              .from('processing_status')
+              .update({
+                status: 'error',
+                error_message: `Webhook processing failed: ${JSON.stringify(webhookResponse.error)}`
+              })
+              .eq('job_id', jobId)
+          } else {
+            console.log(`✅ Webhook processing completed successfully`)
           }
-        })
-        
-        if (webhookResponse.error) {
-          console.error(`❌ Webhook call failed:`, webhookResponse.error)
+        } catch (webhookError) {
+          console.error(`❌ Exception calling webhook:`, webhookError)
           await supabase
             .from('processing_status')
             .update({
               status: 'error',
-              error_message: `Webhook processing failed: ${webhookResponse.error.message}`
+              error_message: `Webhook exception: ${webhookError instanceof Error ? webhookError.message : String(webhookError)}`
             })
             .eq('job_id', jobId)
-        } else {
-          console.log(`✅ Webhook processing completed:`, webhookResponse.data)
         }
         
         return

@@ -50,33 +50,58 @@ serve(async (req) => {
       updated_at: statusData.updated_at
     });
 
-    // Get all pending figures
-    const { data: figures, error: figuresError } = await supabase
+    // Get statistics about pending figures
+    const { data: stats, error: statsError } = await supabase
       .from('figures')
-      .select('id, page_number, storage_url')
-      .eq('manual_id', manual_id)
-      .eq('ocr_status', 'pending')
-      .not('storage_url', 'is', null)
-      .order('page_number');
+      .select('id, page_number, storage_url, ocr_status, dropped')
+      .eq('manual_id', manual_id);
 
-    if (figuresError) {
-      console.error('[retry-processing] Error fetching figures:', figuresError);
-      throw new Error(`Failed to fetch figures: ${figuresError.message}`);
+    if (statsError) {
+      console.error('[retry-processing] Error fetching figures:', statsError);
+      throw new Error(`Failed to fetch figures: ${statsError.message}`);
     }
 
-    console.log(`[retry-processing] Found ${figures?.length || 0} pending figures to process`);
+    const totalFigures = stats?.length || 0;
+    const pendingWithUrl = stats?.filter(f => f.ocr_status === 'pending' && !f.dropped && f.storage_url) || [];
+    const pendingWithoutUrl = stats?.filter(f => f.ocr_status === 'pending' && !f.dropped && !f.storage_url) || [];
+    const completed = stats?.filter(f => f.ocr_status === 'completed') || [];
+    const dropped = stats?.filter(f => f.dropped) || [];
 
-    if (!figures || figures.length === 0) {
+    console.log(`[retry-processing] Figure statistics:`, {
+      total: totalFigures,
+      completed: completed.length,
+      pending_with_url: pendingWithUrl.length,
+      pending_without_url: pendingWithoutUrl.length,
+      dropped: dropped.length
+    });
+
+    // If no figures are ready to process
+    if (pendingWithUrl.length === 0) {
+      let message = 'No figures ready to process';
+      if (pendingWithoutUrl.length > 0) {
+        message = `${pendingWithoutUrl.length} figures are pending but images haven't been uploaded to storage yet. The LlamaCloud processing is still extracting images.`;
+      } else if (completed.length === totalFigures) {
+        message = 'All figures have been processed!';
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
-          message: 'No pending figures to process',
+          message,
           manual_id,
-          pending_count: 0
+          stats: {
+            total: totalFigures,
+            completed: completed.length,
+            pending_with_url: pendingWithUrl.length,
+            pending_without_url: pendingWithoutUrl.length,
+            dropped: dropped.length
+          }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const figures = pendingWithUrl;
 
     // Update processing status to show we're resuming
     const { error: updateError } = await supabase

@@ -8,13 +8,25 @@ import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 const Index = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [selectedManualId, setSelectedManualId] = useState<string>();
   const [selectedManualTitle, setSelectedManualTitle] = useState<string>();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) return;
+      const { data } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
+      setIsAdmin(data || false);
+    };
+    checkAdmin();
+  }, [user]);
+
   useEffect(() => {
     // Check URL parameters for chat mode
     const urlParams = new URLSearchParams(window.location.search);
@@ -408,6 +420,29 @@ const Index = () => {
               </div>)}
           </div>
         </section>
+
+        {/* Admin Quick Access */}
+        {isAdmin && (
+          <section className="py-12">
+            <Card className="premium-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Admin Panel
+                </CardTitle>
+                <CardDescription>Quick access to administrative functions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link to="/tenant-management">
+                  <Button className="w-full" variant="outline">
+                    <Users className="h-4 w-4 mr-2" />
+                    Manage Tenant Access to Manuals
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </section>
+        )}
 
         {/* CTA Section */}
         <section className="text-center py-24">

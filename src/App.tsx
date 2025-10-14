@@ -14,6 +14,7 @@ import VisionBoard from "./pages/VisionBoard";
 import AIConfiguration from "./pages/AIConfiguration";
 import ManualAdmin from "./pages/ManualAdmin";
 import ManualAdminEdit from "./pages/ManualAdminEdit";
+import TenantManagement from "./pages/TenantManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -75,6 +76,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <ManualAdminEdit />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/tenant-management" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <TenantManagement />
                 </AdminRoute>
               </ProtectedRoute>
             } />

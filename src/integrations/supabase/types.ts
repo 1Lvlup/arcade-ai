@@ -849,6 +849,38 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_manual_access: {
+        Row: {
+          fec_tenant_id: string
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          manual_id: string
+        }
+        Insert: {
+          fec_tenant_id: string
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          manual_id: string
+        }
+        Update: {
+          fec_tenant_id?: string
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          manual_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_manual_access_fec_tenant_id_fkey"
+            columns: ["fec_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "fec_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null

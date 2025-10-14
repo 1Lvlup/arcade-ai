@@ -616,6 +616,96 @@ export type Database = {
           },
         ]
       }
+      query_logs: {
+        Row: {
+          claim_coverage: number | null
+          created_at: string
+          fec_tenant_id: string
+          grounding_sources: string[] | null
+          human_correction: string | null
+          human_label: string | null
+          id: string
+          image_ocr_match_ratio: number | null
+          keyword_match_ratio: number | null
+          manual_id: string | null
+          model_name: string | null
+          normalized_query: string | null
+          photo_url: string | null
+          quality_score: number | null
+          quality_tier: string | null
+          query_text: string
+          rerank_mean: number | null
+          response_text: string | null
+          retrieval_method: string | null
+          success_after_fix: boolean | null
+          top_doc_ids: string[] | null
+          top_doc_pages: string[] | null
+          top_doc_scores: number[] | null
+          unique_docs_matched: number | null
+          updated_at: string
+          user_id: string | null
+          vector_mean: number | null
+        }
+        Insert: {
+          claim_coverage?: number | null
+          created_at?: string
+          fec_tenant_id?: string
+          grounding_sources?: string[] | null
+          human_correction?: string | null
+          human_label?: string | null
+          id?: string
+          image_ocr_match_ratio?: number | null
+          keyword_match_ratio?: number | null
+          manual_id?: string | null
+          model_name?: string | null
+          normalized_query?: string | null
+          photo_url?: string | null
+          quality_score?: number | null
+          quality_tier?: string | null
+          query_text: string
+          rerank_mean?: number | null
+          response_text?: string | null
+          retrieval_method?: string | null
+          success_after_fix?: boolean | null
+          top_doc_ids?: string[] | null
+          top_doc_pages?: string[] | null
+          top_doc_scores?: number[] | null
+          unique_docs_matched?: number | null
+          updated_at?: string
+          user_id?: string | null
+          vector_mean?: number | null
+        }
+        Update: {
+          claim_coverage?: number | null
+          created_at?: string
+          fec_tenant_id?: string
+          grounding_sources?: string[] | null
+          human_correction?: string | null
+          human_label?: string | null
+          id?: string
+          image_ocr_match_ratio?: number | null
+          keyword_match_ratio?: number | null
+          manual_id?: string | null
+          model_name?: string | null
+          normalized_query?: string | null
+          photo_url?: string | null
+          quality_score?: number | null
+          quality_tier?: string | null
+          query_text?: string
+          rerank_mean?: number | null
+          response_text?: string | null
+          retrieval_method?: string | null
+          success_after_fix?: boolean | null
+          top_doc_ids?: string[] | null
+          top_doc_pages?: string[] | null
+          top_doc_scores?: number[] | null
+          unique_docs_matched?: number | null
+          updated_at?: string
+          user_id?: string | null
+          vector_mean?: number | null
+        }
+        Relationships: []
+      }
       question_evaluations: {
         Row: {
           answer: string

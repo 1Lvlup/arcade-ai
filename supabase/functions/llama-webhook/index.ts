@@ -235,7 +235,14 @@ serve(async (req) => {
     console.log("📬 Event ID:", eventId);
     
     // Parse body - use req.json() since content-type is application/json
-    const body = await req.json();
+    let body = await req.json();
+    
+    // Handle double-encoded JSON (sometimes LlamaCloud sends stringified JSON)
+    if (typeof body === 'string') {
+      console.log("⚠️ Body is a string, parsing again...");
+      body = JSON.parse(body);
+    }
+    
     console.log("📋 Parsed body:", JSON.stringify(body, null, 2));
     
     // Extract job_id - LlamaCloud sends it in data.job_id

@@ -31,7 +31,7 @@ serve(async (req) => {
       .eq('manual_id', manual_id)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (statusError) {
       console.error('[retry-processing] Error fetching status:', statusError);
@@ -39,15 +39,30 @@ serve(async (req) => {
     }
 
     if (!statusData) {
-      throw new Error(`No processing status found for manual: ${manual_id}`);
+      console.warn('[retry-processing] No processing status found for manual:', manual_id);
+      // Create a minimal status object to continue
+      const { error: createError } = await supabase
+        .from('processing_status')
+        .insert({
+          manual_id,
+          job_id: 'manual-retry',
+          status: 'processing',
+          stage: 'image_enhancement',
+          figures_processed: 0,
+          total_figures: 0
+        });
+
+      if (createError) {
+        console.error('[retry-processing] Error creating status:', createError);
+      }
     }
 
     console.log(`[retry-processing] Current status:`, {
-      status: statusData.status,
-      stage: statusData.stage,
-      total_figures: statusData.total_figures,
-      figures_processed: statusData.figures_processed,
-      updated_at: statusData.updated_at
+      status: statusData?.status,
+      stage: statusData?.stage,
+      total_figures: statusData?.total_figures,
+      figures_processed: statusData?.figures_processed,
+      updated_at: statusData?.updated_at
     });
 
     // Get statistics about pending figures
@@ -118,8 +133,8 @@ serve(async (req) => {
       console.error('[retry-processing] Error updating status:', updateError);
     }
 
-    // Process figures in batches of 10
-    const batchSize = 10;
+    // Process figures in batches of 5 (reduced from 10 to avoid timeouts)
+    const batchSize = 5;
     let processed = 0;
     
     for (let i = 0; i < figures.length; i += batchSize) {
@@ -150,8 +165,8 @@ serve(async (req) => {
           await supabase
             .from('processing_status')
             .update({
-              figures_processed: statusData.figures_processed + processed,
-              current_task: `Processing figures: ${statusData.figures_processed + processed}/${statusData.total_figures}`,
+              figures_processed: (statusData?.figures_processed || 0) + processed,
+              current_task: `Processing figures: ${(statusData?.figures_processed || 0) + processed}/${statusData?.total_figures || totalFigures}`,
               updated_at: new Date().toISOString()
             })
             .eq('manual_id', manual_id);
@@ -178,7 +193,7 @@ serve(async (req) => {
         status: 'completed',
         stage: 'completed',
         current_task: `Completed processing ${processed} figures`,
-        figures_processed: statusData.figures_processed + processed,
+        figures_processed: (statusData?.figures_processed || 0) + processed,
         updated_at: new Date().toISOString()
       })
       .eq('manual_id', manual_id);

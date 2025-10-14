@@ -203,16 +203,54 @@ Return as JSON with "caption" and "ocr_text" fields.`
     console.log('📝 Generated caption:', caption.substring(0, 100) + '...');
     console.log('📄 Extracted OCR text:', ocrText.substring(0, 100) + '...');
 
-    // Update the figure in the database with both caption and OCR
+    // Generate embedding for combined text so AI can search for relevant images
+    const combinedText = `${caption}\n\n${ocrText}`.trim();
+    let embedding = null;
+
+    if (combinedText.length > 0) {
+      console.log('🔢 Generating embedding for semantic search...');
+      try {
+        const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+            'OpenAI-Project': openaiProjectId,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'text-embedding-3-small',
+            input: combinedText
+          })
+        });
+
+        if (embeddingResponse.ok) {
+          const embeddingData = await embeddingResponse.json();
+          embedding = embeddingData.data[0].embedding;
+          console.log('✅ Embedding generated');
+        } else {
+          console.warn('⚠️ Failed to generate embedding, continuing without it');
+        }
+      } catch (e) {
+        console.warn('⚠️ Embedding generation error:', e);
+      }
+    }
+
+    // Update the figure in the database with caption, OCR, and embedding
+    const updateData: any = {
+      caption_text: caption,
+      vision_text: caption,
+      ocr_text: ocrText,
+      ocr_status: 'success',
+      ocr_updated_at: new Date().toISOString()
+    };
+
+    if (embedding) {
+      updateData.embedding_text = embedding;
+    }
+
     const { error: updateError } = await supabase
       .from('figures')
-      .update({
-        caption_text: caption,
-        vision_text: caption,
-        ocr_text: ocrText,
-        ocr_status: 'success',
-        ocr_updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', figure_id);
 
     if (updateError) {

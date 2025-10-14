@@ -658,12 +658,15 @@ serve(async (req) => {
             }
           }
           
-          // Extract page number from filename (e.g., img_p0_1.png -> page 0)
+          // Extract page number from filename
+          // Handles formats like: page_3.jpg, page_3_text_1.jpg, img_p0_1.png, p3_image.png
           let pageNumber: number | null = null;
-          const pageMatch = imageName.match(/(?:page|p)_?(\d+)/i);
+          const pageMatch = imageName.match(/(?:page|p)[_-]?(\d+)/i);
           if (pageMatch) {
             pageNumber = parseInt(pageMatch[1], 10);
             console.log(`  📄 Extracted page number: ${pageNumber}`);
+          } else {
+            console.log(`  ⚠️ Could not extract page number from: ${imageName}`);
           }
           
           // Download image from LlamaCloud API

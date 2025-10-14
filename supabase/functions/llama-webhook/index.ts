@@ -669,35 +669,44 @@ serve(async (req) => {
     }
     
     if (images && images.length > 0) {
-      console.log(`🖼️ Processing ${images.length} images...`);
+      console.log(`🖼️ Processing ${images.length} raw images from LlamaCloud...`);
       
-      // STAGE 8: Visual Asset Extraction Pipeline
+      // Pre-filter images to get accurate count
+      const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
+      const filteredImages = keepAllImages ? images : images.filter((img: any) => {
+        const metadata = typeof img === 'object' ? img : { name: img };
+        return shouldKeepImage(metadata);
+      });
+      
+      console.log(`✅ After filtering: ${filteredImages.length} images (${images.length - filteredImages.length} decorative/small images skipped)`);
+      
+      // STAGE 8: Visual Asset Extraction Pipeline with ACCURATE count
       await supabase
         .from('processing_status')
         .update({
           status: 'processing',
           stage: 'visual_asset_extraction',
-          current_task: `Initializing visual asset extraction pipeline for ${images.length} diagrams and schematics`,
-          total_figures: images.length,
+          current_task: `Initializing visual asset extraction pipeline for ${filteredImages.length} diagrams and schematics (${images.length - filteredImages.length} decorative items filtered out)`,
+          total_figures: filteredImages.length,  // Use filtered count!
           progress_percent: 80
         })
         .eq('job_id', jobId);
 
-      // Process images in parallel batches
+      // Process filtered images in parallel batches
       const batchSize = 10;
       const insertedFigureIds: { id: string, figureName: string }[] = [];
       
-      for (let i = 0; i < images.length; i += batchSize) {
-        const batch = images.slice(i, i + batchSize);
+      for (let i = 0; i < filteredImages.length; i += batchSize) {
+        const batch = filteredImages.slice(i, i + batchSize);
         
       // Update progress for this image batch
-      const imageProgress = Math.round(80 + ((i + batch.length) / images.length) * 10);
+      const imageProgress = Math.round(80 + ((i + batch.length) / filteredImages.length) * 10);
       await supabase
         .from('processing_status')
         .update({
           stage: 'image_ingestion',
-          current_task: `Processing visual assets: ${Math.min(i + batch.length, images.length)}/${images.length} diagrams extracted and cataloged`,
-          figures_processed: Math.min(i + batch.length, images.length),
+          current_task: `Processing visual assets: ${Math.min(i + batch.length, filteredImages.length)}/${filteredImages.length} diagrams extracted and cataloged`,
+          figures_processed: Math.min(i + batch.length, filteredImages.length),
           progress_percent: imageProgress
         })
         .eq('job_id', jobId);
@@ -724,15 +733,13 @@ serve(async (req) => {
             return null;
           }
           
-          console.log(`🔄 [${imageIndex + 1}/${images.length}] Processing: ${imageName}`);
+          console.log(`🔄 [${imageIndex + 1}/${filteredImages.length}] Processing: ${imageName}`);
           
-          // Apply filtering unless KEEP_ALL_IMAGES is true
-          if (!keepAllImages) {
-            const metadata = typeof imageItem === 'object' ? imageItem : { name: imageName };
-            if (!shouldKeepImage(metadata)) {
-              console.log(`  ⏭️ SKIPPED (decorative/small): ${imageName}`);
-              return null;
-            }
+          // Note: Images already pre-filtered above, but keep the check for safety
+          const metadata = typeof imageItem === 'object' ? imageItem : { name: imageName };
+          if (!keepAllImages && !shouldKeepImage(metadata)) {
+            console.log(`  ⏭️ SKIPPED (should have been filtered earlier): ${imageName}`);
+            return null;
           }
           
           // Extract page number from filename

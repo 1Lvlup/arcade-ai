@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Clock, Zap } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface OCRDebugData {
   id: string;
@@ -25,6 +27,8 @@ interface OCRDebugPanelProps {
 export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
   const [figures, setFigures] = useState<OCRDebugData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [extracting, setExtracting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadFigures();
@@ -68,6 +72,34 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
     }
   };
 
+  const extractExistingOCR = async () => {
+    setExtracting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-existing-ocr', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'OCR Extraction Complete',
+        description: `Extracted OCR from ${data.extracted} of ${data.total_figures} figures`,
+      });
+
+      // Reload figures
+      loadFigures();
+    } catch (error) {
+      console.error('Error extracting OCR:', error);
+      toast({
+        title: 'Extraction Failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -98,6 +130,7 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
   const stats = {
     total: figures.length,
     withLlamaOCR: figures.filter(f => hasLlamaOCR(f.raw_image_metadata)).length,
+    withLlamaOCRButNoText: figures.filter(f => hasLlamaOCR(f.raw_image_metadata) && (!f.ocr_text || f.ocr_text.length === 0)).length,
     completed: figures.filter(f => f.ocr_status === 'completed').length,
     pending: figures.filter(f => f.ocr_status === 'pending').length,
     failed: figures.filter(f => f.ocr_status === 'failed').length,
@@ -108,10 +141,33 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>OCR Processing Debug Panel</CardTitle>
-        <CardDescription>
-          Real-time OCR extraction status for all figures
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>OCR Processing Debug Panel</CardTitle>
+            <CardDescription>
+              Real-time OCR extraction status for all figures
+            </CardDescription>
+          </div>
+          {stats.withLlamaOCRButNoText > 0 && (
+            <Button 
+              onClick={extractExistingOCR} 
+              disabled={extracting}
+              variant="default"
+            >
+              {extracting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Extracting...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Extract OCR ({stats.withLlamaOCRButNoText} figures)
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {/* Stats Summary */}

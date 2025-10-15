@@ -11,7 +11,37 @@ interface RetryProcessingButtonProps {
 
 export function RetryProcessingButton({ manualId, disabled }: RetryProcessingButtonProps) {
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-processing-status', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Status synced',
+        description: data.message,
+      });
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast({
+        title: 'Sync failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleRetry = async () => {
     setIsRetrying(true);
@@ -27,7 +57,6 @@ export function RetryProcessingButton({ manualId, disabled }: RetryProcessingBut
         description: data.message || `Processing ${data.processed_count} pending figures`,
       });
 
-      // Refresh the page after a short delay
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -44,14 +73,25 @@ export function RetryProcessingButton({ manualId, disabled }: RetryProcessingBut
   };
 
   return (
-    <Button
-      onClick={handleRetry}
-      disabled={disabled || isRetrying}
-      variant="outline"
-      size="sm"
-    >
-      <RefreshCw className={`h-4 w-4 mr-2 ${isRetrying ? 'animate-spin' : ''}`} />
-      {isRetrying ? 'Resuming...' : 'Resume Processing'}
-    </Button>
+    <div className="flex gap-2">
+      <Button
+        onClick={handleSync}
+        disabled={disabled || isSyncing}
+        variant="outline"
+        size="sm"
+      >
+        <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+        {isSyncing ? 'Syncing...' : 'Sync Status'}
+      </Button>
+      <Button
+        onClick={handleRetry}
+        disabled={disabled || isRetrying}
+        variant="outline"
+        size="sm"
+      >
+        <RefreshCw className={`h-4 w-4 mr-2 ${isRetrying ? 'animate-spin' : ''}`} />
+        {isRetrying ? 'Resuming...' : 'Resume Processing'}
+      </Button>
+    </div>
   );
 }

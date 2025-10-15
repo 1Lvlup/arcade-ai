@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Database, Image, MessageCircle, Brain, Activity, RefreshCw, Sparkles, Eye, Download } from 'lucide-react';
+import { ArrowLeft, Database, Image, MessageCircle, Brain, Activity, RefreshCw, Sparkles, Eye, Download, Zap } from 'lucide-react';
 import { SharedHeader } from '@/components/SharedHeader';
 import { ManualQuestions } from '@/components/ManualQuestions';
 import { ManualImages } from '@/components/ManualImages';
@@ -56,6 +56,7 @@ export function ManualDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
+  const [extractingOCR, setExtractingOCR] = useState(false);
 
   useEffect(() => {
     if (manualId) {
@@ -192,6 +193,35 @@ export function ManualDetail() {
     }
   };
 
+  const extractOCR = async () => {
+    if (!manualId) return;
+    
+    setExtractingOCR(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-existing-ocr', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'OCR Extraction Complete',
+        description: `Extracted OCR from ${data.extracted} of ${data.total_figures} figures`,
+      });
+
+      fetchStats(); // Refresh stats
+    } catch (error) {
+      console.error('Error extracting OCR:', error);
+      toast({
+        title: 'Extraction Failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setExtractingOCR(false);
+    }
+  };
+
   const getStatusColor = () => {
     if (!processingStatus) return 'bg-muted';
     
@@ -311,6 +341,18 @@ export function ManualDetail() {
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mt-6">
               <Button 
+                onClick={extractOCR}
+                disabled={extractingOCR || processingStatus?.status !== 'completed'}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+              >
+                {extractingOCR ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Zap className="h-4 w-4 mr-2" />
+                )}
+                Extract OCR from Images
+              </Button>
+              <Button 
                 onClick={generateGoldenQuestions}
                 disabled={generatingQuestions || processingStatus?.status !== 'completed'}
                 className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
@@ -335,41 +377,6 @@ export function ManualDetail() {
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Chat with Manual
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={async () => {
-                  try {
-                    const { data, error } = await supabase.functions.invoke('export-chunks', {
-                      body: { manualId: manual.manual_id }
-                    });
-                    if (error) throw error;
-                    
-                    // Create download
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `chunks-${manual.manual_id}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    
-                    toast({
-                      title: 'Chunks exported',
-                      description: `Exported ${data.total_chunks} chunks to JSON file`,
-                    });
-                  } catch (error) {
-                    console.error('Export error:', error);
-                    toast({
-                      title: 'Export failed',
-                      description: 'Failed to export chunks. Please try again.',
-                      variant: 'destructive',
-                    });
-                  }
-                }}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export Chunks
               </Button>
             </div>
           </CardContent>

@@ -124,6 +124,100 @@ export type Database = {
           },
         ]
       }
+      code_assistant_conversations: {
+        Row: {
+          created_at: string | null
+          fec_tenant_id: string
+          id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          fec_tenant_id?: string
+          id?: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          fec_tenant_id?: string
+          id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      code_assistant_files: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          file_content: string
+          file_path: string
+          id: string
+          language: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          file_content: string
+          file_path: string
+          id?: string
+          language?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          file_content?: string
+          file_path?: string
+          id?: string
+          language?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_assistant_files_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "code_assistant_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      code_assistant_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_assistant_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "code_assistant_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       docs: {
         Row: {
           content: string

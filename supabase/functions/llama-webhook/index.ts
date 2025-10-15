@@ -1125,6 +1125,22 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
 
     console.log(`🎉 Processing completed: ${processedCount} chunks, ${figuresProcessed} figures saved`);
     
+    // Automatically extract OCR from LlamaCloud metadata after processing
+    console.log('🔄 Triggering automatic OCR extraction from LlamaCloud metadata...');
+    try {
+      const extractResponse = await supabase.functions.invoke('extract-existing-ocr', {
+        body: { manual_id: manualId }
+      });
+      
+      if (extractResponse.error) {
+        console.error('⚠️ OCR extraction failed:', extractResponse.error);
+      } else {
+        console.log('✅ Automatic OCR extraction completed:', extractResponse.data);
+      }
+    } catch (extractError) {
+      console.error('⚠️ Error invoking OCR extraction:', extractError);
+    }
+    
     return new Response(JSON.stringify({ 
       success: true, 
       chunks_processed: processedCount,

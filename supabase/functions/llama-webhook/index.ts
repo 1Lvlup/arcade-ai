@@ -814,6 +814,29 @@ serve(async (req) => {
           const storageUrl = urlData.publicUrl;
           console.log(`  🔗 Storage URL: ${storageUrl}`);
           
+          // Extract OCR text from LlamaCloud metadata if available
+          let extractedOcrText = null;
+          let extractedOcrConfidence = null;
+          
+          if (imageItem && typeof imageItem === 'object' && imageItem.ocr && Array.isArray(imageItem.ocr) && imageItem.ocr.length > 0) {
+            // Combine all OCR text segments
+            extractedOcrText = imageItem.ocr
+              .map((item: any) => item.text)
+              .filter(Boolean)
+              .join(' ');
+            
+            // Calculate average confidence
+            const confidences = imageItem.ocr
+              .map((item: any) => item.confidence)
+              .filter((c: any) => typeof c === 'number');
+            
+            if (confidences.length > 0) {
+              extractedOcrConfidence = confidences.reduce((a: number, b: number) => a + b, 0) / confidences.length;
+            }
+            
+            console.log(`  📝 Extracted OCR from LlamaCloud: ${extractedOcrText?.substring(0, 50)}... (confidence: ${extractedOcrConfidence?.toFixed(2)})`);
+          }
+          
           // Insert figure metadata into database WITH storage_url
           const figureData = {
             manual_id: document.manual_id,
@@ -823,7 +846,11 @@ serve(async (req) => {
             page_number: pageNumber,
             llama_asset_name: imageName,
             fec_tenant_id: document.fec_tenant_id,
-            raw_image_metadata: imageItem && typeof imageItem === 'object' ? imageItem : { name: imageName }
+            raw_image_metadata: imageItem && typeof imageItem === 'object' ? imageItem : { name: imageName },
+            // Set OCR data from LlamaCloud if available, otherwise mark as pending
+            ocr_text: extractedOcrText,
+            ocr_confidence: extractedOcrConfidence,
+            ocr_status: extractedOcrText ? 'completed' : 'pending'
           };
           
           console.log(`  💾 Inserting figure record...`);
@@ -841,7 +868,11 @@ serve(async (req) => {
           
           figuresProcessed++;
           console.log(`  ✅ [${figuresProcessed}/${images.length}] Figure stored successfully!`);
-          return { id: insertedFigure.id, figureName: imageName };
+          return { 
+            id: insertedFigure.id, 
+            figureName: imageName,
+            hasOcr: !!extractedOcrText // Track if this figure already has OCR from LlamaCloud
+          };
           
         } catch (error) {
           console.error(`  ❌ Exception processing image:`, error);
@@ -858,18 +889,23 @@ serve(async (req) => {
       
       console.log(`✅ All ${figuresProcessed} images stored, starting background caption generation...`);
       
-      // Generate captions and OCR in background (fire-and-forget)
+      // Generate captions for figures that don't have LlamaCloud OCR (fire-and-forget)
       EdgeRuntime.waitUntil((async () => {
         // CRITICAL FIX: Get API keys inside the background function scope
         const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
         const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
         
         if (!openaiApiKey || !openaiProjectId) {
-          console.error('❌ Missing OpenAI credentials for background OCR processing');
+          console.error('❌ Missing OpenAI credentials for background caption/OCR processing');
           return;
         }
         
-        for (const figureInfo of insertedFigureIds) {
+        // Only process figures that still have ocr_status = 'pending' (no LlamaCloud OCR)
+        const figuresToProcess = insertedFigureIds.filter(f => !f.hasOcr);
+        
+        console.log(`🤖 Processing ${figuresToProcess.length} figures without LlamaCloud OCR`);
+        
+        for (const figureInfo of figuresToProcess) {
           try {
             console.log(`🤖 Generating AI caption and OCR for: ${figureInfo.figureName}`);
             

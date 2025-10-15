@@ -100,6 +100,39 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
     }
   };
 
+  const processAllOCR = async () => {
+    setExtracting(true);
+    try {
+      toast({
+        title: 'Processing Started',
+        description: 'Running OCR on all images without text. This may take several minutes...',
+      });
+
+      const { data, error } = await supabase.functions.invoke('process-all-ocr', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'OCR Processing Complete',
+        description: `Successfully processed ${data.successful} of ${data.total_figures} figures`,
+      });
+
+      // Reload figures
+      loadFigures();
+    } catch (error) {
+      console.error('Error processing OCR:', error);
+      toast({
+        title: 'Processing Failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
@@ -139,6 +172,7 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
     failed: figures.filter(f => f.ocr_status === 'failed').length,
     hasText: figures.filter(f => f.ocr_text && f.ocr_text.length > 0).length,
     hasCaption: figures.filter(f => f.caption_text && f.caption_text.length > 0).length,
+    needsOCR: figures.filter(f => !f.ocr_text || f.ocr_text.length === 0).length,
   };
 
   return (
@@ -151,25 +185,47 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
               Real-time OCR extraction status for all figures
             </CardDescription>
           </div>
-          {stats.withLlamaOCRButNoText > 0 && (
-            <Button 
-              onClick={extractExistingOCR} 
-              disabled={extracting}
-              variant="default"
-            >
-              {extracting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Extracting...
-                </>
-              ) : (
-                <>
-                  <Zap className="h-4 w-4 mr-2" />
-                  Extract OCR ({stats.withLlamaOCRButNoText} figures)
-                </>
-              )}
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {stats.withLlamaOCRButNoText > 0 && (
+              <Button 
+                onClick={extractExistingOCR} 
+                disabled={extracting}
+                variant="outline"
+                size="sm"
+              >
+                {extracting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Extracting...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Extract LlamaCloud OCR ({stats.withLlamaOCRButNoText})
+                  </>
+                )}
+              </Button>
+            )}
+            {stats.needsOCR > 0 && (
+              <Button 
+                onClick={processAllOCR} 
+                disabled={extracting}
+                variant="default"
+              >
+                {extracting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Process All Images ({stats.needsOCR})
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>

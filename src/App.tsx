@@ -15,6 +15,7 @@ import AIConfiguration from "./pages/AIConfiguration";
 import ManualAdmin from "./pages/ManualAdmin";
 import ManualAdminEdit from "./pages/ManualAdminEdit";
 import TenantManagement from "./pages/TenantManagement";
+import { CodeAssistant } from "./pages/CodeAssistant";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -84,6 +85,11 @@ const App = () => (
                 <AdminRoute>
                   <TenantManagement />
                 </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/code-assistant" element={
+              <ProtectedRoute>
+                <CodeAssistant />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, Shield, BarChart3, Users, Globe, CheckCircle, ArrowRight, TrendingUp, Clock } from 'lucide-react';
+import { Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, Shield, BarChart3, Users, Globe, CheckCircle, ArrowRight, TrendingUp, Clock, Code } from 'lucide-react';
 import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
@@ -78,6 +78,13 @@ const Index = () => {
     status: "Production Ready",
     metrics: "99.9% Uptime",
     onClick: handleStartGeneralChat
+  }, {
+    icon: <Code className="h-8 w-8" />,
+    title: "AI Code Assistant",
+    description: "Generate code, debug issues, and get coding help with AI-powered development tools",
+    status: "Developer Tool",
+    metrics: "Real-time Help",
+    link: "/code-assistant"
   }, {
     icon: <BookOpen className="h-8 w-8" />,
     title: "Intelligent Document Processing",

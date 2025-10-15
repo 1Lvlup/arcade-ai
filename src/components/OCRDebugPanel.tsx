@@ -102,10 +102,12 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'success':
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'processing':
+        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'failed':
         return <XCircle className="h-4 w-4 text-red-500" />;
       default:
@@ -131,8 +133,9 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
     total: figures.length,
     withLlamaOCR: figures.filter(f => hasLlamaOCR(f.raw_image_metadata)).length,
     withLlamaOCRButNoText: figures.filter(f => hasLlamaOCR(f.raw_image_metadata) && (!f.ocr_text || f.ocr_text.length === 0)).length,
-    completed: figures.filter(f => f.ocr_status === 'completed').length,
+    success: figures.filter(f => f.ocr_status === 'success').length,
     pending: figures.filter(f => f.ocr_status === 'pending').length,
+    processing: figures.filter(f => f.ocr_status === 'processing').length,
     failed: figures.filter(f => f.ocr_status === 'failed').length,
     hasText: figures.filter(f => f.ocr_text && f.ocr_text.length > 0).length,
     hasCaption: figures.filter(f => f.caption_text && f.caption_text.length > 0).length,
@@ -205,7 +208,7 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
                       <span className="font-medium">Page {figure.page_number}</span>
                       <Badge variant="outline">{figure.llama_asset_name}</Badge>
                     </div>
-                    <Badge variant={figure.ocr_status === 'completed' ? 'default' : 'secondary'}>
+                    <Badge variant={figure.ocr_status === 'success' ? 'default' : 'secondary'}>
                       {figure.ocr_status}
                     </Badge>
                   </div>

@@ -67,13 +67,13 @@ Deno.serve(async (req) => {
 
         console.log(`✅ Extracted OCR from ${figure.llama_asset_name}: ${extractedOcrText.substring(0, 50)}... (confidence: ${extractedOcrConfidence?.toFixed(4)})`);
 
-        // Update figure with extracted OCR
+        // Update figure with extracted OCR - use 'success' to match the constraint
         const { error: updateError } = await supabase
           .from('figures')
           .update({
             ocr_text: extractedOcrText,
             ocr_confidence: extractedOcrConfidence,
-            ocr_status: 'completed',
+            ocr_status: 'success',
             ocr_updated_at: new Date().toISOString()
           })
           .eq('id', figure.id);

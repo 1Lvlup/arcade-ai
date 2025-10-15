@@ -863,7 +863,7 @@ serve(async (req) => {
             // Set OCR data from LlamaCloud if available, otherwise mark as pending
             ocr_text: extractedOcrText,
             ocr_confidence: extractedOcrConfidence,
-            ocr_status: extractedOcrText ? 'completed' : 'pending'
+            ocr_status: extractedOcrText ? 'success' : 'pending'
           };
           
           console.log(`  💾 Inserting figure record...`);

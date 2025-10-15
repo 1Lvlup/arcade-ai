@@ -860,6 +860,15 @@ serve(async (req) => {
       
       // Generate captions and OCR in background (fire-and-forget)
       EdgeRuntime.waitUntil((async () => {
+        // CRITICAL FIX: Get API keys inside the background function scope
+        const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+        const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
+        
+        if (!openaiApiKey || !openaiProjectId) {
+          console.error('❌ Missing OpenAI credentials for background OCR processing');
+          return;
+        }
+        
         for (const figureInfo of insertedFigureIds) {
           try {
             console.log(`🤖 Generating AI caption and OCR for: ${figureInfo.figureName}`);
@@ -870,7 +879,6 @@ serve(async (req) => {
               .getPublicUrl(`${document.manual_id}/${figureInfo.figureName}`);
             
             const imagePublicUrl = publicUrlData.publicUrl;
-            const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
             
             // Call GPT-4.1 Vision for caption generation
             const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {

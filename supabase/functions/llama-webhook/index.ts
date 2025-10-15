@@ -98,7 +98,8 @@ function createHierarchicalChunks(content: string, manual_id: string) {
   
   // Enhanced regex patterns for arcade manual structure
   const patterns = {
-    pageMarker: /^<!--\s*Page\s+(\d+)\s*(Start|End)\s*-->$/,
+    pageMarkerComment: /^<!--\s*Page\s+(\d+)\s*(Start|End)\s*-->$/,
+    pageMarkerHeader: /^##?\s*Page\s+(\d+)\s*$/i,  // Matches "# Page 2" or "## Page 4"
     header: /^#{1,3}\s+(.+)$/,
     troubleshootingSection: /^(troubleshooting|problem|issue|error|fault|repair|maintenance)/i,
     partsList: /^(parts?\s+list|components?|hardware|replacement)/i,
@@ -116,11 +117,18 @@ function createHierarchicalChunks(content: string, manual_id: string) {
       continue;
     }
     
-    // Track page numbers from enhanced page separators
-    const pageMatch = line.match(patterns.pageMarker);
-    if (pageMatch && pageMatch[2] === 'Start') {
-      currentPage = parseInt(pageMatch[1]);
+    // Track page numbers from HTML comment markers
+    const pageCommentMatch = line.match(patterns.pageMarkerComment);
+    if (pageCommentMatch && pageCommentMatch[2] === 'Start') {
+      currentPage = parseInt(pageCommentMatch[1]);
       continue;
+    }
+    
+    // Track page numbers from markdown headers like "# Page 2"
+    const pageHeaderMatch = line.match(patterns.pageMarkerHeader);
+    if (pageHeaderMatch) {
+      currentPage = parseInt(pageHeaderMatch[1]);
+      continue; // Skip adding this line to chunks
     }
     
     // Detect section headers and important content types

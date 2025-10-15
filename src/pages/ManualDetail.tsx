@@ -14,6 +14,7 @@ import { ManualImages } from '@/components/ManualImages';
 import { ManualChunks } from '@/components/ManualChunks';
 import { QualityEvaluation } from '@/components/QualityEvaluation';
 import { ProcessingMonitor } from '@/components/ProcessingMonitor';
+import { OCRDebugPanel } from '@/components/OCRDebugPanel';
 
 interface Manual {
   id: string;
@@ -436,8 +437,13 @@ export function ManualDetail() {
             {activeTab === 'evaluation' && <QualityEvaluation manualId={manualId!} />}
           </TabsContent>
 
-          <TabsContent value="images">
-            {activeTab === 'images' && <ManualImages manualId={manualId!} />}
+          <TabsContent value="images" className="space-y-6">
+            {activeTab === 'images' && (
+              <>
+                <OCRDebugPanel manualId={manualId!} />
+                <ManualImages manualId={manualId!} />
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="chunks">

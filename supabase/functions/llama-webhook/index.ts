@@ -818,7 +818,16 @@ serve(async (req) => {
           let extractedOcrText = null;
           let extractedOcrConfidence = null;
           
+          console.log(`  🔍 RAW IMAGE METADATA TYPE: ${typeof imageItem}`);
+          console.log(`  🔍 RAW IMAGE METADATA KEYS: ${imageItem && typeof imageItem === 'object' ? Object.keys(imageItem).join(', ') : 'N/A'}`);
+          console.log(`  🔍 HAS OCR FIELD: ${imageItem && typeof imageItem === 'object' && 'ocr' in imageItem}`);
+          console.log(`  🔍 OCR TYPE: ${imageItem && typeof imageItem === 'object' && imageItem.ocr ? typeof imageItem.ocr : 'N/A'}`);
+          console.log(`  🔍 OCR IS ARRAY: ${imageItem && typeof imageItem === 'object' && imageItem.ocr ? Array.isArray(imageItem.ocr) : 'N/A'}`);
+          console.log(`  🔍 OCR ARRAY LENGTH: ${imageItem && typeof imageItem === 'object' && imageItem.ocr && Array.isArray(imageItem.ocr) ? imageItem.ocr.length : 'N/A'}`);
+          
           if (imageItem && typeof imageItem === 'object' && imageItem.ocr && Array.isArray(imageItem.ocr) && imageItem.ocr.length > 0) {
+            console.log(`  🔍 FIRST OCR ITEM:`, JSON.stringify(imageItem.ocr[0], null, 2));
+            
             // Combine all OCR text segments
             extractedOcrText = imageItem.ocr
               .map((item: any) => item.text)
@@ -834,7 +843,11 @@ serve(async (req) => {
               extractedOcrConfidence = confidences.reduce((a: number, b: number) => a + b, 0) / confidences.length;
             }
             
-            console.log(`  📝 Extracted OCR from LlamaCloud: ${extractedOcrText?.substring(0, 50)}... (confidence: ${extractedOcrConfidence?.toFixed(2)})`);
+            console.log(`  ✅ EXTRACTED OCR TEXT (${extractedOcrText?.length} chars): ${extractedOcrText?.substring(0, 100)}...`);
+            console.log(`  ✅ EXTRACTED OCR CONFIDENCE: ${extractedOcrConfidence?.toFixed(4)}`);
+          } else {
+            console.log(`  ⚠️ NO OCR DATA FOUND IN LLAMACLOUD METADATA`);
+            console.log(`  ⚠️ FULL RAW METADATA:`, JSON.stringify(imageItem, null, 2));
           }
           
           // Insert figure metadata into database WITH storage_url

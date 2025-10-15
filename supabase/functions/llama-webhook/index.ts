@@ -798,11 +798,20 @@ serve(async (req) => {
           
           console.log(`  ✅ Uploaded to storage`);
           
-          // Insert figure metadata into database
+          // Get public URL for the image
+          const { data: urlData } = supabase.storage
+            .from('postparse')
+            .getPublicUrl(storagePath);
+          
+          const storageUrl = urlData.publicUrl;
+          console.log(`  🔗 Storage URL: ${storageUrl}`);
+          
+          // Insert figure metadata into database WITH storage_url
           const figureData = {
             manual_id: document.manual_id,
             figure_id: imageName,
             storage_path: storagePath,
+            storage_url: storageUrl, // CRITICAL: Set this so OCR can proceed
             page_number: pageNumber,
             llama_asset_name: imageName,
             fec_tenant_id: document.fec_tenant_id,
@@ -950,8 +959,42 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
               console.error(`❌ OCR API error for ${figureInfo.figureName}:`, ocrResponse.status);
             }
             
-            // Update figure with both caption and OCR text
-            const updateData: any = {};
+            // Generate embedding from combined caption + OCR text for semantic search
+            let embedding = null;
+            const combinedText = `${caption || ''}\n\n${ocrText || ''}`.trim();
+            
+            if (combinedText.length > 0) {
+              try {
+                const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${openaiApiKey}`,
+                    'OpenAI-Project': openaiProjectId,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    model: 'text-embedding-3-small',
+                    input: combinedText.substring(0, 8000) // Limit to token constraints
+                  })
+                });
+                
+                if (embeddingResponse.ok) {
+                  const embeddingData = await embeddingResponse.json();
+                  embedding = embeddingData.data[0].embedding;
+                  console.log(`  🔢 Generated embedding for ${figureInfo.figureName}`);
+                } else {
+                  console.error(`  ⚠️ Embedding generation failed (${embeddingResponse.status})`);
+                }
+              } catch (embError) {
+                console.error(`  ⚠️ Embedding error:`, embError);
+              }
+            }
+            
+            // Update figure with caption, OCR text, embedding, and status
+            const updateData: any = {
+              ocr_status: 'completed', // Mark as completed
+              ocr_updated_at: new Date().toISOString()
+            };
             if (caption) {
               updateData.caption_text = caption;
               updateData.vision_text = caption;
@@ -959,15 +1002,16 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
             if (ocrText) {
               updateData.ocr_text = ocrText;
             }
-            
-            if (Object.keys(updateData).length > 0) {
-              await supabase
-                .from('figures')
-                .update(updateData)
-                .eq('id', figureInfo.id);
-              
-              console.log(`✅ Updated ${figureInfo.figureName} with caption: ${!!caption}, OCR: ${!!ocrText}`);
+            if (embedding) {
+              updateData.embedding_text = embedding; // CRITICAL for semantic search
             }
+            
+            await supabase
+              .from('figures')
+              .update(updateData)
+              .eq('id', figureInfo.id);
+            
+            console.log(`✅ Updated ${figureInfo.figureName} with caption: ${!!caption}, OCR: ${!!ocrText}, embedding: ${!!embedding}`);
             
           } catch (captionError) {
             console.error(`❌ Error processing ${figureInfo.figureName}:`, captionError);

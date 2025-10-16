@@ -16,7 +16,9 @@ import {
   FileText,
   AlertTriangle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -45,6 +47,8 @@ interface ChatMessage {
   type: 'user' | 'bot';
   content: string | StructuredAnswer;
   timestamp: Date;
+  query_log_id?: string;
+  feedback?: 'thumbs_up' | 'thumbs_down' | null;
 }
 
 interface ChatBotProps {
@@ -137,7 +141,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         id: (Date.now() + 1).toString(),
         type: 'bot',
         content: data.answer,
-        timestamp: new Date()
+        timestamp: new Date(),
+        query_log_id: data.query_log_id,
+        feedback: null
       };
 
       console.log('✅ Bot message created:', botMessage);
@@ -164,6 +170,38 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleFeedback = async (messageId: string, rating: 'thumbs_up' | 'thumbs_down') => {
+    const message = messages.find(m => m.id === messageId);
+    if (!message || message.type !== 'bot' || !message.query_log_id) return;
+
+    try {
+      const { error } = await supabase.from('model_feedback').insert({
+        query_log_id: message.query_log_id,
+        rating,
+        model_type: 'rag_pipeline',
+        actual_answer: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+      });
+
+      if (error) throw error;
+
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, feedback: rating } : msg
+      ));
+
+      toast({
+        title: 'Feedback recorded',
+        description: rating === 'thumbs_up' ? 'Thanks for the positive feedback!' : 'Thanks for the feedback, we\'ll work to improve.',
+      });
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save feedback',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -337,6 +375,39 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                   renderStructuredAnswer(message.content, message.id)
                 ) : (
                   <div className="text-sm whitespace-pre-wrap">{message.content as string}</div>
+                )}
+
+                {/* Thumbs Up/Down for Bot Messages */}
+                {message.type === 'bot' && (
+                  <div className="mt-3 pt-3 border-t border-primary/10 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground mr-2">Was this helpful?</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleFeedback(message.id, 'thumbs_up')}
+                      disabled={message.feedback !== null}
+                      className={`h-8 px-3 ${
+                        message.feedback === 'thumbs_up' 
+                          ? 'bg-green-500/20 text-green-500 border border-green-500/30' 
+                          : 'hover:bg-green-500/10 hover:text-green-500'
+                      }`}
+                    >
+                      <ThumbsUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleFeedback(message.id, 'thumbs_down')}
+                      disabled={message.feedback !== null}
+                      className={`h-8 px-3 ${
+                        message.feedback === 'thumbs_down' 
+                          ? 'bg-red-500/20 text-red-500 border border-red-500/30' 
+                          : 'hover:bg-red-500/10 hover:text-red-500'
+                      }`}
+                    >
+                      <ThumbsDown className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

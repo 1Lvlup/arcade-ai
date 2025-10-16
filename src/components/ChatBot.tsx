@@ -180,8 +180,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     try {
       const { error } = await supabase.from('model_feedback').insert({
         query_log_id: message.query_log_id,
-        rating,
-        model_type: 'rag_pipeline',
+        rating: rating === 'thumbs_up' ? 'excellent' : 'poor',
+        model_type: 'manual_troubleshooting',
         actual_answer: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
       });
 

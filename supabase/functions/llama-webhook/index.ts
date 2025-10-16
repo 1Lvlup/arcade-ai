@@ -1110,76 +1110,45 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // STAGE 11: OCR Processing Phase
-    // Don't mark as completed yet - OCR still needs to run
+    // STAGE 11: LlamaCloud Processing Complete!
+    // Mark as 100% complete - upload and parsing is done
     await supabase
       .from('processing_status')
       .update({
-        status: 'processing',
-        stage: 'ocr_processing',
-        current_task: `Text/image processing complete. Starting OCR for ${figuresProcessed} figures...`,
-        progress_percent: 95,
+        status: 'completed',
+        stage: 'completed',
+        current_task: `Upload complete: ${processedCount} text chunks, ${figuresProcessed} images extracted`,
+        progress_percent: 100,
         chunks_processed: processedCount,
         total_chunks: processedCount,
         total_figures: figuresProcessed,
-        figures_processed: 0 // OCR hasn't started yet
+        figures_processed: 0
       })
       .eq('job_id', jobId);
 
-    console.log(`✅ Text processing complete: ${processedCount} chunks, ${figuresProcessed} figures stored`);
-    console.log(`🔄 Starting automatic OCR processing for all figures...`);
+    console.log(`✅ LlamaCloud processing complete: ${processedCount} chunks, ${figuresProcessed} figures stored`);
+    console.log(`🔄 Triggering OCR as separate background process (doesn't affect upload progress)...`);
     
-    // Trigger OCR processing in background (don't wait for it)
-    EdgeRuntime.waitUntil((async () => {
-      try {
-        console.log(`🤖 Invoking process-all-ocr for manual: ${document.manual_id}`);
-        
-        const ocrResponse = await supabase.functions.invoke('process-all-ocr', {
-          body: { manual_id: document.manual_id }
-        });
-        
-        if (ocrResponse.error) {
-          console.error('❌ OCR processing failed:', ocrResponse.error);
+    // Trigger OCR processing in background as a separate task (doesn't affect main upload progress)
+    if (figuresProcessed > 0) {
+      EdgeRuntime.waitUntil((async () => {
+        try {
+          console.log(`🤖 Invoking process-all-ocr for manual: ${document.manual_id}`);
           
-          // Update status to show OCR error but text is complete
-          await supabase
-            .from('processing_status')
-            .update({
-              status: 'partially_complete',
-              stage: 'ocr_failed',
-              current_task: `Text chunks complete (${processedCount}), but OCR processing failed`,
-              error_message: `OCR error: ${JSON.stringify(ocrResponse.error)}`
-            })
-            .eq('job_id', jobId);
-        } else {
-          console.log('✅ OCR processing completed:', ocrResponse.data);
+          const ocrResponse = await supabase.functions.invoke('process-all-ocr', {
+            body: { manual_id: document.manual_id }
+          });
           
-          // Mark as fully completed now that OCR is done
-          await supabase
-            .from('processing_status')
-            .update({
-              status: 'completed',
-              stage: 'completed',
-              current_task: `Processing complete: ${processedCount} chunks, ${ocrResponse.data?.successful || 0} figures with OCR`,
-              progress_percent: 100,
-              figures_processed: ocrResponse.data?.successful || figuresProcessed
-            })
-            .eq('job_id', jobId);
+          if (ocrResponse.error) {
+            console.error('❌ OCR processing failed:', ocrResponse.error);
+          } else {
+            console.log('✅ OCR processing completed:', ocrResponse.data);
+          }
+        } catch (ocrError) {
+          console.error('❌ Error invoking OCR processing:', ocrError);
         }
-      } catch (ocrError) {
-        console.error('❌ Error invoking OCR processing:', ocrError);
-        
-        await supabase
-          .from('processing_status')
-          .update({
-            status: 'partially_complete',
-            stage: 'ocr_error',
-            current_task: `Text chunks complete (${processedCount}), OCR processing encountered an error`,
-            error_message: ocrError instanceof Error ? ocrError.message : 'Unknown OCR error'
-          })
-          .eq('job_id', jobId);
-      }
-    })());
+      })());
+    }
     
     return new Response(JSON.stringify({ 
       success: true, 

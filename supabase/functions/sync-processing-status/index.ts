@@ -58,7 +58,8 @@ Deno.serve(async (req) => {
       - Figures OCR completed: ${actualFiguresProcessed}
     `);
 
-    // Determine status
+    // Determine status - progress is ONLY for LlamaCloud upload/processing
+    // OCR is tracked separately and doesn't affect main progress
     let newStatus = 'processing';
     let newStage = 'unknown';
     let currentTask = '';
@@ -69,40 +70,12 @@ Deno.serve(async (req) => {
       newStage = 'waiting_for_llamacloud';
       currentTask = 'Waiting for LlamaCloud to begin processing';
       progressPercent = 10;
-    } else if (actualFiguresWithStorage === 0 && actualTotalFigures > 0) {
-      // Figures exist but no storage URLs - stuck waiting for LlamaCloud uploads
-      newStatus = 'stalled';
-      newStage = 'awaiting_image_upload';
-      currentTask = `${actualTotalFigures} figures extracted, awaiting image upload to storage by LlamaCloud (0/${actualTotalFigures} uploaded)`;
-      progressPercent = 85;
-    } else if (actualFiguresProcessed < actualFiguresWithStorage) {
-      // Images available but OCR incomplete
-      newStatus = 'processing';
-      newStage = 'ocr_processing';
-      currentTask = `Processing OCR: ${actualFiguresProcessed}/${actualFiguresWithStorage} figures completed`;
-      // OCR is 90-100% of total progress
-      const ocrProgress = actualFiguresWithStorage > 0 
-        ? (actualFiguresProcessed / actualFiguresWithStorage) * 10
-        : 0;
-      progressPercent = 90 + Math.round(ocrProgress);
-    } else if (actualFiguresProcessed === actualFiguresWithStorage && actualFiguresWithStorage === actualTotalFigures && actualFiguresProcessed > 0) {
-      // Everything complete (only if we actually have processed figures)
+    } else if (actualChunks > 0 || actualTotalFigures > 0) {
+      // If we have chunks or figures, LlamaCloud processing is complete (100%)
       newStatus = 'completed';
       newStage = 'completed';
-      currentTask = `Processing complete: ${actualChunks} text chunks, ${actualFiguresProcessed} figures with OCR`;
+      currentTask = `Upload complete: ${actualChunks} text chunks, ${actualTotalFigures} images extracted`;
       progressPercent = 100;
-    } else if (actualChunks > 0 && actualTotalFigures === 0) {
-      // Manual has text but no figures at all - this is complete
-      newStatus = 'completed';
-      newStage = 'completed';
-      currentTask = `Processing complete: ${actualChunks} text chunks (no figures in manual)`;
-      progressPercent = 100;
-    } else {
-      // Partial completion
-      newStatus = 'partially_complete';
-      newStage = 'review_needed';
-      currentTask = `${actualChunks} text chunks, ${actualFiguresProcessed}/${actualTotalFigures} figures processed (${actualTotalFigures - actualFiguresWithStorage} missing storage URLs)`;
-      progressPercent = 95;
     }
 
     // Update processing_status with actual values

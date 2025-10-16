@@ -1110,36 +1110,76 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // FINAL STAGE: Processing Complete
+    // STAGE 11: OCR Processing Phase
+    // Don't mark as completed yet - OCR still needs to run
     await supabase
       .from('processing_status')
       .update({
-        status: 'completed',
-        stage: 'completed',
-        current_task: `PREMIUM processing complete: ${processedCount} chunks, ${figuresProcessed} figures with advanced AI analysis`,
-        progress_percent: 100,
+        status: 'processing',
+        stage: 'ocr_processing',
+        current_task: `Text/image processing complete. Starting OCR for ${figuresProcessed} figures...`,
+        progress_percent: 95,
         chunks_processed: processedCount,
-        figures_processed: figuresProcessed
+        total_chunks: processedCount,
+        total_figures: figuresProcessed,
+        figures_processed: 0 // OCR hasn't started yet
       })
       .eq('job_id', jobId);
 
-    console.log(`🎉 Processing completed: ${processedCount} chunks, ${figuresProcessed} figures saved`);
+    console.log(`✅ Text processing complete: ${processedCount} chunks, ${figuresProcessed} figures stored`);
+    console.log(`🔄 Starting automatic OCR processing for all figures...`);
     
-    // Automatically extract OCR from LlamaCloud metadata after processing
-    console.log('🔄 Triggering automatic OCR extraction from LlamaCloud metadata...');
-    try {
-      const extractResponse = await supabase.functions.invoke('extract-existing-ocr', {
-        body: { manual_id: manualId }
-      });
-      
-      if (extractResponse.error) {
-        console.error('⚠️ OCR extraction failed:', extractResponse.error);
-      } else {
-        console.log('✅ Automatic OCR extraction completed:', extractResponse.data);
+    // Trigger OCR processing in background (don't wait for it)
+    EdgeRuntime.waitUntil((async () => {
+      try {
+        console.log(`🤖 Invoking process-all-ocr for manual: ${document.manual_id}`);
+        
+        const ocrResponse = await supabase.functions.invoke('process-all-ocr', {
+          body: { manual_id: document.manual_id }
+        });
+        
+        if (ocrResponse.error) {
+          console.error('❌ OCR processing failed:', ocrResponse.error);
+          
+          // Update status to show OCR error but text is complete
+          await supabase
+            .from('processing_status')
+            .update({
+              status: 'partially_complete',
+              stage: 'ocr_failed',
+              current_task: `Text chunks complete (${processedCount}), but OCR processing failed`,
+              error_message: `OCR error: ${JSON.stringify(ocrResponse.error)}`
+            })
+            .eq('job_id', jobId);
+        } else {
+          console.log('✅ OCR processing completed:', ocrResponse.data);
+          
+          // Mark as fully completed now that OCR is done
+          await supabase
+            .from('processing_status')
+            .update({
+              status: 'completed',
+              stage: 'completed',
+              current_task: `Processing complete: ${processedCount} chunks, ${ocrResponse.data?.successful || 0} figures with OCR`,
+              progress_percent: 100,
+              figures_processed: ocrResponse.data?.successful || figuresProcessed
+            })
+            .eq('job_id', jobId);
+        }
+      } catch (ocrError) {
+        console.error('❌ Error invoking OCR processing:', ocrError);
+        
+        await supabase
+          .from('processing_status')
+          .update({
+            status: 'partially_complete',
+            stage: 'ocr_error',
+            current_task: `Text chunks complete (${processedCount}), OCR processing encountered an error`,
+            error_message: ocrError instanceof Error ? ocrError.message : 'Unknown OCR error'
+          })
+          .eq('job_id', jobId);
       }
-    } catch (extractError) {
-      console.error('⚠️ Error invoking OCR extraction:', extractError);
-    }
+    })());
     
     return new Response(JSON.stringify({ 
       success: true, 

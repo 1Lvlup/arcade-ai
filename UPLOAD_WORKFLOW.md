@@ -116,35 +116,40 @@ For each **filtered** image:
 
 ---
 
-### Step 4: OCR Processing (Asynchronous)
+### Step 4: OCR Processing (Automatic & Tracked)
 **Location**: supabase/functions/process-all-ocr/index.ts  
 **What Happens**:
 
-For each figure with `ocr_status = 'pending'`:
-1. **Fetch image** from storage
-2. **Send to VLM endpoint** (Vision Language Model)
-3. **Extract text** from the image (OCR)
-4. **Generate caption** describing what's in the image
-5. **Create embedding** of the OCR text
-6. **Update figure** with:
-   - `ocr_text`: extracted text
-   - `caption_text`: AI description
-   - `embedding_text`: searchable vector
-   - `ocr_status`: 'success' or 'failed'
+After webhook completes image storage, OCR automatically starts:
 
-**This happens in batches** and can take a while for 300+ images.
+1. **Webhook triggers OCR** - no manual intervention needed
+2. **For each figure with `ocr_status = 'pending'`**:
+   - Fetch image from storage
+   - Send to GPT-4 Vision API
+   - Extract all visible text (OCR)
+   - Generate embedding for semantic search
+   - Update figure with OCR text and embedding
+   - Mark as `ocr_status: 'completed'`
+3. **Progress tracking** - updates every 5 images
+   - Shows "Processing OCR: X/Y figures completed"
+   - Progress bar moves from 90% → 100%
+   - Database updates in real-time
 
-**Progress**: Not tracked in main progress bar (happens after "completion")
+**This now happens automatically and is fully tracked!**
+
+**Progress**: 90% → 100% (tracked in main progress bar)
 
 ---
 
-### Step 5: Manual is "Complete" (But Not Really)
-**What "Complete" Means**:
+### Step 5: Manual is Fully Complete
+**What "Complete" Now Means**:
 - ✅ Text is chunked and embedded
 - ✅ Images are downloaded and stored
-- ❌ **OCR is still running in background**
+- ✅ **OCR is complete for all images**
+- ✅ All embeddings generated
+- ✅ **Everything is searchable**
 
-**This is why manuals show 87-95% but images aren't searchable yet!**
+**Progress shows 100% only when ALL processing is done!**
 
 ---
 
@@ -167,34 +172,41 @@ The constraint `figures_manual_figure_unique` prevents duplicate images. Sometim
 
 ---
 
-## What Should Be Improved
+## ✅ FIXED - Improvements Implemented
 
-### Immediate Improvements Needed:
+### What Was Fixed:
 
-1. **Better Progress Tracking**
-   - Show separate progress for text vs images
-   - Show "OCR: 177/370 complete" clearly
-   - Don't say "complete" until OCR is done
+1. **✅ Better Progress Tracking**
+   - Separate tracking for text (0-90%) vs OCR (90-100%)
+   - Clear messages: "Processing OCR: 177/370 figures completed"
+   - Only shows "completed" when OCR is actually done
+   - Real-time progress updates every 5 images
 
-2. **Automatic OCR Trigger**
-   - OCR should start automatically after upload
+2. **✅ Automatic OCR Trigger**
+   - OCR starts automatically after webhook completes
+   - Runs in background via EdgeRuntime.waitUntil()
    - No manual intervention needed
+   - Fully integrated into upload workflow
 
-3. **Better Error Handling**
-   - Retry failed OCR automatically
-   - Show which images failed and why
-   - Handle duplicate insertions gracefully
+3. **✅ Improved Status Logic**
+   - Won't mark as "completed" until ALL OCR finishes
+   - Stays at 95% "ocr_processing" until done
+   - Handles edge cases (no figures, partial completion)
+   - sync-processing-status properly tracks OCR completion
 
-4. **Clearer Image Count**
-   - Show: "370 diagrams extracted (89 decorative filtered)"
-   - Not just: "193 images"
-
-5. **Single "Completion" State**
-   - Don't mark as complete until:
-     - ✅ Text chunked
-     - ✅ Images stored
-     - ✅ OCR completed
+4. **✅ Unified Completion State**
+   - Manual is complete when:
+     - ✅ Text chunked and embedded
+     - ✅ Images stored in Supabase
+     - ✅ OCR completed for all figures
      - ✅ All embeddings generated
+   - Progress reaches 100% only when everything is done
+
+### Still To Improve (Future):
+
+1. **Retry Failed OCR** - automatic retry logic for failed images
+2. **Better Error Messages** - show which specific images failed and why
+3. **Clearer Image Counts** - differentiate raw vs filtered image counts in UI
 
 ---
 

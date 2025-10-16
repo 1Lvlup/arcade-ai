@@ -26,17 +26,17 @@ Deno.serve(async (req) => {
 
     console.log(`🔍 Processing OCR for all images in manual: ${manual_id}`);
 
-    // Get all figures without OCR text
+    // Get all figures with pending OCR status (includes both missing OCR and explicitly pending)
     const { data: figures, error: fetchError } = await supabase
       .from('figures')
-      .select('id, manual_id, page_number, llama_asset_name, storage_path')
+      .select('id, manual_id, page_number, llama_asset_name, storage_path, ocr_status')
       .eq('manual_id', manual_id)
-      .or('ocr_text.is.null,ocr_text.eq.')
+      .eq('ocr_status', 'pending')
       .not('storage_path', 'is', null);
 
     if (fetchError) throw fetchError;
 
-    console.log(`📊 Found ${figures?.length || 0} figures without OCR text`);
+    console.log(`📊 Found ${figures?.length || 0} figures with pending OCR status`);
 
     let processedCount = 0;
     let successCount = 0;
@@ -135,13 +135,13 @@ Deno.serve(async (req) => {
           console.log(`🔢 Generated embedding`);
         }
 
-        // Update figure with OCR text
+        // Update figure with OCR text and mark as completed
         const { error: updateError } = await supabase
           .from('figures')
           .update({
             ocr_text: extractedText,
             ocr_confidence: null, // GPT-4 Vision doesn't provide confidence scores
-            ocr_status: 'success',
+            ocr_status: 'completed', // Changed from 'success' to 'completed'
             ocr_updated_at: new Date().toISOString(),
             ...(embedding ? { embedding_text: embedding } : {})
           })
@@ -155,6 +155,27 @@ Deno.serve(async (req) => {
 
         console.log(`✅ Successfully processed ${figure.llama_asset_name}`);
         successCount++;
+        
+        // Update processing_status with progress
+        if (processedCount % 5 === 0) {
+          const { data: statusData } = await supabase
+            .from('processing_status')
+            .select('total_figures')
+            .eq('manual_id', manual_id)
+            .single();
+          
+          const totalFigures = statusData?.total_figures || figures.length;
+          const progressPercent = 90 + Math.round((successCount / totalFigures) * 10);
+          
+          await supabase
+            .from('processing_status')
+            .update({
+              figures_processed: successCount,
+              progress_percent: Math.min(progressPercent, 99), // Keep at 99 until fully done
+              current_task: `Processing OCR: ${successCount}/${totalFigures} figures completed`
+            })
+            .eq('manual_id', manual_id);
+        }
 
       } catch (error) {
         console.error(`❌ Error processing figure ${figure.id}:`, error);

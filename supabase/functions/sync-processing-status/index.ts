@@ -80,12 +80,22 @@ Deno.serve(async (req) => {
       newStatus = 'processing';
       newStage = 'ocr_processing';
       currentTask = `Processing OCR: ${actualFiguresProcessed}/${actualFiguresWithStorage} figures completed`;
-      progressPercent = 90 + Math.round((actualFiguresProcessed / actualFiguresWithStorage) * 10);
-    } else if (actualFiguresProcessed === actualFiguresWithStorage && actualFiguresWithStorage === actualTotalFigures) {
-      // Everything complete
+      // OCR is 90-100% of total progress
+      const ocrProgress = actualFiguresWithStorage > 0 
+        ? (actualFiguresProcessed / actualFiguresWithStorage) * 10
+        : 0;
+      progressPercent = 90 + Math.round(ocrProgress);
+    } else if (actualFiguresProcessed === actualFiguresWithStorage && actualFiguresWithStorage === actualTotalFigures && actualFiguresProcessed > 0) {
+      // Everything complete (only if we actually have processed figures)
       newStatus = 'completed';
       newStage = 'completed';
-      currentTask = `Processing complete: ${actualChunks} text chunks, ${actualFiguresProcessed} figures processed`;
+      currentTask = `Processing complete: ${actualChunks} text chunks, ${actualFiguresProcessed} figures with OCR`;
+      progressPercent = 100;
+    } else if (actualChunks > 0 && actualTotalFigures === 0) {
+      // Manual has text but no figures at all - this is complete
+      newStatus = 'completed';
+      newStage = 'completed';
+      currentTask = `Processing complete: ${actualChunks} text chunks (no figures in manual)`;
       progressPercent = 100;
     } else {
       // Partial completion

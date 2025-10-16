@@ -15,6 +15,7 @@ import AIConfiguration from "./pages/AIConfiguration";
 import ManualAdmin from "./pages/ManualAdmin";
 import ManualAdminEdit from "./pages/ManualAdminEdit";
 import TenantManagement from "./pages/TenantManagement";
+import { TrainingDashboard } from "./pages/TrainingDashboard";
 import { CodeAssistant } from "./pages/CodeAssistant";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
@@ -84,6 +85,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <TenantManagement />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/training-dashboard" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <TrainingDashboard />
                 </AdminRoute>
               </ProtectedRoute>
             } />

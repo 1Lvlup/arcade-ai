@@ -1,7 +1,10 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Brain, LogOut, ArrowLeft, Settings, Database, Home } from 'lucide-react';
+import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SharedHeaderProps {
   title: string;
@@ -12,6 +15,19 @@ interface SharedHeaderProps {
 
 export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBackClick }: SharedHeaderProps) => {
   const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) return;
+      const { data } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
+      setIsAdmin(data || false);
+    };
+    checkAdmin();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -51,18 +67,51 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
               Home
             </Button>
           </Link>
-          <Link to="/manual-admin">
-            <Button variant="minimal" size="sm">
-              <Database className="h-4 w-4 mr-2" />
-              Manuals
-            </Button>
-          </Link>
-          <Link to="/ai-config">
-            <Button variant="minimal" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              AI Config
-            </Button>
-          </Link>
+          
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="minimal" size="sm">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                <DropdownMenuItem asChild>
+                  <Link to="/manual-admin" className="cursor-pointer">
+                    <Database className="h-4 w-4 mr-2" />
+                    Manual Management
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/ai-config" className="cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
+                    AI Configuration
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/training-dashboard" className="cursor-pointer">
+                    <GraduationCap className="h-4 w-4 mr-2" />
+                    Training Hub
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/vision-board" className="cursor-pointer">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Analytics
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/tenant-management" className="cursor-pointer">
+                    <Users className="h-4 w-4 mr-2" />
+                    Tenant Management
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
           <Button
             variant="minimal"
             size="sm"

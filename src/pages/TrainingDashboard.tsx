@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { SharedHeader } from '@/components/SharedHeader';
+import { TrainingChat } from '@/components/TrainingChat';
 import { Plus, Trash2, CheckCircle, XCircle, Star, TrendingUp } from 'lucide-react';
 
 interface TrainingExample {
@@ -215,11 +216,16 @@ export function TrainingDashboard() {
             </Card>
           </div>
 
-          <Tabs defaultValue="examples">
-            <TabsList>
+          <Tabs defaultValue="chat">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="chat">Train AI</TabsTrigger>
               <TabsTrigger value="examples">Training Examples</TabsTrigger>
-              <TabsTrigger value="feedback">User Feedback</TabsTrigger>
+              <TabsTrigger value="feedback">Feedback History</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="chat" className="mt-6">
+              <TrainingChat />
+            </TabsContent>
 
             <TabsContent value="examples" className="space-y-4">
               <div className="flex justify-between items-center">

@@ -660,11 +660,6 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
   const pages = new Set(topChunks.map(c => c.page_start).filter(Boolean));
   const hasRealPages = pages.size >= 2 && !pages.has(1); // ignore cover/TOC p1
   const hasSpecTokens = topChunks.some(c => looksSpecy(c.content));
-
-  // Check if we have quality evidence before answering
-  const pages = new Set(topChunks.map(c => c.page_start).filter(Boolean));
-  const hasRealPages = pages.size >= 2 && !pages.has(1); // ignore cover/TOC p1
-  const hasSpecTokens = topChunks.some(c => looksSpecy(c.content));
   const hasGoodContent = topChunks.some(c => c.content && c.content.length > 100);
 
   // Only ask clarifying questions if we truly have no useful content

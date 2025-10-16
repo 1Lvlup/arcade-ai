@@ -17,6 +17,8 @@ import ManualAdminEdit from "./pages/ManualAdminEdit";
 import TenantManagement from "./pages/TenantManagement";
 import { TrainingDashboard } from "./pages/TrainingDashboard";
 import { CodeAssistant } from "./pages/CodeAssistant";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import AccountSettings from "./pages/AccountSettings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -98,6 +100,12 @@ const App = () => (
             <Route path="/code-assistant" element={
               <ProtectedRoute>
                 <CodeAssistant />
+              </ProtectedRoute>
+            } />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/account-settings" element={
+              <ProtectedRoute>
+                <AccountSettings />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

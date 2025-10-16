@@ -7,6 +7,7 @@ import { Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, Shield, Bar
 import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
+import { Footer } from '@/components/Footer';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 const Index = () => {
@@ -64,11 +65,12 @@ const Index = () => {
     window.history.pushState({}, '', newUrl.toString());
   };
   if (showChat) {
-    return <div className="min-h-screen professional-bg">
+    return <div className="min-h-screen professional-bg flex flex-col">
         <SharedHeader title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} showBackButton={true} backTo="/" onBackClick={handleBackToHome} />
-        <main className="container mx-auto px-4 py-8">
+        <main className="container mx-auto px-4 py-8 flex-1">
           <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />
         </main>
+        <Footer />
       </div>;
   }
   const coreFeatures = [{
@@ -483,6 +485,7 @@ const Index = () => {
           <ProcessingMonitor />
         </div>
       </main>
+      <Footer />
     </div>;
 };
 export default Index;

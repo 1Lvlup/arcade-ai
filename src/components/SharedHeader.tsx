@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users } from 'lucide-react';
+import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useState, useEffect } from 'react';
@@ -58,9 +58,6 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-muted-foreground font-medium">
-            {user?.email}
-          </span>
           <Link to="/">
             <Button variant="minimal" size="sm">
               <Home className="h-4 w-4 mr-2" />
@@ -112,14 +109,27 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
             </DropdownMenu>
           )}
           
-          <Button
-            variant="minimal"
-            size="sm"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="minimal" size="sm">
+                {user?.email}
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+              <DropdownMenuItem asChild>
+                <Link to="/account-settings" className="cursor-pointer">
+                  <User className="h-4 w-4 mr-2" />
+                  Account Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

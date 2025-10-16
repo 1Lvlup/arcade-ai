@@ -1024,6 +1024,48 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          fec_tenant_id: string
+          id: string
+          message: string
+          priority: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          fec_tenant_id?: string
+          id?: string
+          message: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          fec_tenant_id?: string
+          id?: string
+          message?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tenant_manual_access: {
         Row: {
           fec_tenant_id: string
@@ -1104,6 +1146,36 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      usage_limits: {
+        Row: {
+          created_at: string
+          fec_tenant_id: string
+          id: string
+          last_reset_date: string
+          queries_per_month: number
+          queries_used_this_month: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fec_tenant_id: string
+          id?: string
+          last_reset_date?: string
+          queries_per_month?: number
+          queries_used_this_month?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fec_tenant_id?: string
+          id?: string
+          last_reset_date?: string
+          queries_per_month?: number
+          queries_used_this_month?: number
+          updated_at?: string
         }
         Relationships: []
       }

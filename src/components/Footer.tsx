@@ -15,6 +15,12 @@ export function Footer() {
             >
               Privacy Policy
             </Link>
+            <Link 
+              to="/support" 
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Contact Support
+            </Link>
           </nav>
         </div>
       </div>

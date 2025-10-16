@@ -19,6 +19,8 @@ import { TrainingDashboard } from "./pages/TrainingDashboard";
 import { CodeAssistant } from "./pages/CodeAssistant";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccountSettings from "./pages/AccountSettings";
+import Support from "./pages/Support";
+import SupportTickets from "./pages/SupportTickets";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -106,6 +108,18 @@ const App = () => (
             <Route path="/account-settings" element={
               <ProtectedRoute>
                 <AccountSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/support" element={
+              <ProtectedRoute>
+                <Support />
+              </ProtectedRoute>
+            } />
+            <Route path="/support-tickets" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <SupportTickets />
+                </AdminRoute>
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

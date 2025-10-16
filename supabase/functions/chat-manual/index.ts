@@ -662,13 +662,38 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
   const hasSpecTokens = topChunks.some(c => looksSpecy(c.content));
 
   if (!hasRealPages && !hasSpecTokens) {
+    console.log("⚠️ Insufficient specific evidence - asking clarifying question");
     const q = query.toLowerCase();
-    const followup =
-      /opto|sensor|beam/.test(q) ? "A) Which sensor (entry/exit)? B) Which lane/board header? C) Do you have a multimeter on site?" :
-      /power|voltage|led|rail/.test(q) ? "A) Which rail (left/right)? B) Which board (motor/PSU)? C) Do you need pin/connector IDs or just voltages?" :
-      "A) Which subsystem? B) Which lane? C) Do you need wiring or steps?";
+    
+    // Generate a conversational clarifying response
+    const clarificationPrompt = `You are a helpful arcade technician assistant. A user asked: "${query}"
+
+You don't have specific manual documentation for this exact query. Instead of giving up, ask a friendly clarifying question to help narrow down what they need.
+
+Be conversational and helpful. For example:
+- If they ask about a sensor, ask which specific sensor or which part of the machine
+- If they ask about power, ask what component or where they're measuring
+- If they're asking about a part location, ask them to describe what they're looking at
+
+Keep it short (2-3 sentences max) and friendly.`;
+
+    const clarification = await fetchJsonOrThrow("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json",
+        ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: clarificationPrompt }],
+        max_tokens: 150,
+        temperature: 0.7,
+      }),
+    }).then(d => d.choices?.[0]?.message?.content ?? "Could you provide more details about what specifically you're trying to fix or locate?");
+
     return {
-      answer: `No manual evidence found with exact specs/pages.\n\nFollow-up (choose one): ${followup}`,
+      answer: clarification,
       sources: [],
       strategy,
       chunks: topChunks,

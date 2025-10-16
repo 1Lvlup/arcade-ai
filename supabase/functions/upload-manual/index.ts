@@ -332,6 +332,20 @@ serve(async (req) => {
       throw insertError
     }
 
+    // Grant tenant access to this manual
+    const { error: accessError } = await supabase
+      .from('tenant_manual_access')
+      .insert({
+        fec_tenant_id: profile.fec_tenant_id,
+        manual_id: manual_id,
+        granted_by: user.id
+      })
+
+    if (accessError) {
+      console.error('Error granting tenant access:', accessError)
+      // Don't throw - this is not critical, just log it
+    }
+
     // Create initial processing status
     const { error: statusError } = await supabase
       .from('processing_status')

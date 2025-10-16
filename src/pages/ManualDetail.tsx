@@ -57,8 +57,6 @@ export function ManualDetail() {
   const [activeTab, setActiveTab] = useState('overview');
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [extractingOCR, setExtractingOCR] = useState(false);
-  const [resettingOCR, setResettingOCR] = useState(false);
-  const [processingAllOCR, setProcessingAllOCR] = useState(false);
 
   useEffect(() => {
     if (manualId) {
@@ -200,22 +198,35 @@ export function ManualDetail() {
     
     setExtractingOCR(true);
     try {
-      const { data, error } = await supabase.functions.invoke('extract-existing-ocr', {
+      // First, extract LlamaCloud OCR
+      const { data: extractData, error: extractError } = await supabase.functions.invoke('extract-existing-ocr', {
         body: { manual_id: manualId }
       });
 
-      if (error) throw error;
+      if (extractError) throw extractError;
 
       toast({
-        title: 'OCR Extraction Complete',
-        description: `Extracted OCR from ${data.extracted} of ${data.total_figures} figures`,
+        title: 'LlamaCloud OCR Extracted',
+        description: `Extracted ${extractData.extracted} figures. Now processing with AI OCR...`,
       });
 
-      fetchStats(); // Refresh stats
-    } catch (error) {
-      console.error('Error extracting OCR:', error);
+      // Then process remaining images with AI OCR
+      const { data: processData, error: processError } = await supabase.functions.invoke('process-all-ocr', {
+        body: { manual_id: manualId }
+      });
+
+      if (processError) throw processError;
+
       toast({
-        title: 'Extraction Failed',
+        title: 'AI OCR Processing Started',
+        description: `Processing ${processData.total_figures} images. This runs in the background.`,
+      });
+
+      fetchStats();
+    } catch (error) {
+      console.error('Error processing OCR:', error);
+      toast({
+        title: 'Processing Failed',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
@@ -224,49 +235,6 @@ export function ManualDetail() {
     }
   };
 
-  const resetAndRetryOCR = async () => {
-    if (!manualId) return;
-    
-    setResettingOCR(true);
-    try {
-      // Step 1: Reset stuck figures
-      const { data: resetData, error: resetError } = await supabase.functions.invoke('reset-ocr-status', {
-        body: { manual_id: manualId }
-      });
-
-      if (resetError) throw resetError;
-
-      toast({
-        title: 'OCR Status Reset',
-        description: `Reset ${resetData.reset_count} stuck figures to pending`,
-      });
-
-      // Step 2: Process all pending figures
-      setProcessingAllOCR(true);
-      const { data: processData, error: processError } = await supabase.functions.invoke('process-all-ocr', {
-        body: { manual_id: manualId }
-      });
-
-      if (processError) throw processError;
-
-      toast({
-        title: 'OCR Processing Started',
-        description: `Processing ${processData.total} figures. This will continue in the background.`,
-      });
-
-      fetchStats(); // Refresh stats
-    } catch (error) {
-      console.error('Error resetting and retrying OCR:', error);
-      toast({
-        title: 'Operation Failed',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
-    } finally {
-      setResettingOCR(false);
-      setProcessingAllOCR(false);
-    }
-  };
 
   const getStatusColor = () => {
     if (!processingStatus) return 'bg-muted';
@@ -387,20 +355,8 @@ export function ManualDetail() {
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mt-6">
               <Button 
-                onClick={resetAndRetryOCR}
-                disabled={resettingOCR || processingAllOCR}
-                className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white"
-              >
-                {resettingOCR || processingAllOCR ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                )}
-                {resettingOCR ? 'Resetting...' : processingAllOCR ? 'Processing...' : 'Reset & Retry OCR'}
-              </Button>
-              <Button 
                 onClick={extractOCR}
-                disabled={extractingOCR || processingStatus?.status !== 'completed'}
+                disabled={extractingOCR}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
               >
                 {extractingOCR ? (
@@ -408,7 +364,7 @@ export function ManualDetail() {
                 ) : (
                   <Zap className="h-4 w-4 mr-2" />
                 )}
-                Extract OCR from Images
+                Process Images with AI OCR
               </Button>
               <Button 
                 onClick={generateGoldenQuestions}

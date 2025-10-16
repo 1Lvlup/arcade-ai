@@ -135,13 +135,13 @@ Deno.serve(async (req) => {
           console.log(`🔢 Generated embedding`);
         }
 
-        // Update figure with OCR text and mark as completed
+        // Update figure with OCR text and mark as success
         const { error: updateError } = await supabase
           .from('figures')
           .update({
             ocr_text: extractedText,
             ocr_confidence: null, // GPT-4 Vision doesn't provide confidence scores
-            ocr_status: 'completed', // Changed from 'success' to 'completed'
+            ocr_status: 'success', // Use 'success' - the valid status value
             ocr_updated_at: new Date().toISOString(),
             ...(embedding ? { embedding_text: embedding } : {})
           })

@@ -1057,7 +1057,7 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
             
             // Update figure with caption, OCR text, embedding, and status
             const updateData: any = {
-              ocr_status: 'completed', // Mark as completed
+              ocr_status: 'success', // Mark as success (valid status)
               ocr_updated_at: new Date().toISOString()
             };
             if (caption) {

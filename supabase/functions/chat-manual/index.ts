@@ -656,9 +656,9 @@ async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: s
 
   const topChunks = chunks.slice(0, 10);
 
-  // Quality check before answering
+  // Quality check: ensure we have substantive evidence before answering
   const pages = new Set(topChunks.map(c => c.page_start).filter(Boolean));
-  const hasRealPages = pages.size >= 2 && !pages.has(1); // ignore cover/TOC p1
+  const hasRealPages = pages.size >= 2 && !pages.has(1);
   const hasSpecTokens = topChunks.some(c => looksSpecy(c.content));
   const hasGoodContent = topChunks.some(c => c.content && c.content.length > 100);
 

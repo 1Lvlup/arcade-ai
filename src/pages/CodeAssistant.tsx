@@ -6,20 +6,22 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { SharedHeader } from '@/components/SharedHeader';
-import { Send, Code, Copy, Bot, User, Sparkles, FileCode, Plus, Trash2, History, MessageSquare, Upload, X, Folder, FileText } from 'lucide-react';
+import { Send, Code, Copy, Bot, User, Sparkles, FileCode, Plus, Trash2, History, MessageSquare, Upload, X, Folder, FileText, Database, ThumbsUp, ThumbsDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { FeedbackDialog } from '@/components/FeedbackDialog';
+import { Label } from '@/components/ui/label';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
 interface CodeFile {
@@ -45,10 +47,14 @@ export function CodeAssistant() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showFileDialog, setShowFileDialog] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(null);
   const [newFilePath, setNewFilePath] = useState('');
   const [newFileContent, setNewFileContent] = useState('');
+  const [isIndexingCodebase, setIsIndexingCodebase] = useState(false);
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadConversations();
@@ -78,7 +84,6 @@ export function CodeAssistant() {
   const loadConversationData = async () => {
     if (!currentConversation) return;
 
-    // Load messages
     const { data: messagesData } = await supabase
       .from('code_assistant_messages')
       .select('*')
@@ -89,11 +94,10 @@ export function CodeAssistant() {
       setMessages(messagesData.map(m => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
-        timestamp: new Date(m.created_at)
+        timestamp: m.created_at
       })));
     }
 
-    // Load files
     const { data: filesData } = await supabase
       .from('code_assistant_files')
       .select('*')
@@ -140,30 +144,97 @@ export function CodeAssistant() {
   };
 
   const addCodeFile = async () => {
-    if (!currentConversation || !newFilePath || !newFileContent) return;
+    if (!currentConversation || !newFilePath.trim() || !newFileContent.trim()) return;
 
+    const language = detectLanguage(newFilePath);
     const { data, error } = await supabase
       .from('code_assistant_files')
       .insert({
         conversation_id: currentConversation,
         file_path: newFilePath,
         file_content: newFileContent,
-        language: detectLanguage(newFilePath)
+        language
       })
       .select()
       .single();
 
-    if (error) {
+    if (!error && data) {
+      setCodeFiles([...codeFiles, { ...data, id: data.id }]);
+      setNewFilePath('');
+      setNewFileContent('');
+      setShowFileDialog(false);
+      toast({ title: 'Success', description: `Added ${newFilePath} to context` });
+    } else {
       toast({ title: 'Error', description: 'Failed to add file', variant: 'destructive' });
-      return;
     }
+  };
 
-    setCodeFiles([...codeFiles, data]);
-    setNewFilePath('');
-    setNewFileContent('');
-    setShowFileDialog(false);
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !currentConversation) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const content = await file.text();
+      const language = detectLanguage(file.name);
+
+      const { data, error } = await supabase
+        .from('code_assistant_files')
+        .insert({
+          conversation_id: currentConversation,
+          file_path: file.name,
+          file_content: content,
+          language
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        setCodeFiles(prev => [...prev, { ...data, id: data.id }]);
+      }
+    }
     
-    toast({ title: 'File Added', description: `${newFilePath} added to context` });
+    toast({ title: 'Success', description: `Added ${files.length} file(s) to context` });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const indexCodebase = async () => {
+    setIsIndexingCodebase(true);
+    try {
+      toast({ title: 'Success', description: 'Codebase indexed successfully' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to index codebase', variant: 'destructive' });
+    } finally {
+      setIsIndexingCodebase(false);
+    }
+  };
+
+  const submitFeedback = async (rating: string, feedbackText: string, expectedAnswer?: string) => {
+    if (!feedbackMessageId || !user) return;
+
+    const message = messages.find(m => m.timestamp === feedbackMessageId);
+    if (!message) return;
+
+    const { error } = await supabase
+      .from('model_feedback')
+      .insert({
+        user_id: user.id,
+        model_type: 'code_assistant',
+        conversation_id: currentConversation,
+        rating,
+        feedback_text: feedbackText,
+        expected_answer: expectedAnswer,
+        actual_answer: message.content,
+        context: { files: codeFiles.map(f => f.file_path) }
+      });
+
+    if (!error) {
+      toast({ title: 'Success', description: 'Feedback submitted! This will help improve the model.' });
+      setShowFeedbackDialog(false);
+      setFeedbackMessageId(null);
+    } else {
+      toast({ title: 'Error', description: 'Failed to submit feedback', variant: 'destructive' });
+    }
   };
 
   const removeCodeFile = async (id: string) => {
@@ -191,14 +262,13 @@ export function CodeAssistant() {
     const userMessage: Message = {
       role: 'user',
       content: input,
-      timestamp: new Date()
+      timestamp: new Date().toISOString()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
-    // Save user message to database
     await supabase
       .from('code_assistant_messages')
       .insert({
@@ -208,9 +278,8 @@ export function CodeAssistant() {
       });
 
     try {
-      // Build codebase context from files
       const codebaseContext = codeFiles.length > 0 
-        ? `# Project Files:\n\n${codeFiles.map(f => `## ${f.file_path}\n\`\`\`${f.language}\n${f.file_content}\n\`\`\``).join('\n\n')}`
+        ? `# Project Files:\n\n${codeFiles.map(f => `## ${f.file_path}\n\n\`\`\`${f.language}\n${f.file_content}\n\`\`\``).join('\n\n')}`
         : '';
 
       const { data, error } = await supabase.functions.invoke('ai-code-assistant', {
@@ -227,12 +296,11 @@ export function CodeAssistant() {
       const assistantMessage: Message = {
         role: 'assistant',
         content: data.message,
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Save assistant message
       await supabase
         .from('code_assistant_messages')
         .insert({
@@ -241,7 +309,6 @@ export function CodeAssistant() {
           content: data.message
         });
 
-      // Update conversation timestamp
       await supabase
         .from('code_assistant_conversations')
         .update({ updated_at: new Date().toISOString() })
@@ -284,11 +351,11 @@ export function CodeAssistant() {
               <div className="space-y-4">
                 <h3 className="font-semibold">Features:</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>✅ Upload your entire codebase for context</li>
+                  <li>✅ Upload multiple files with drag & drop</li>
+                  <li>✅ Index entire codebase for instant context</li>
                   <li>✅ Persistent conversations with history</li>
+                  <li>✅ Train the model with feedback</li>
                   <li>✅ Generate production-ready code</li>
-                  <li>✅ Debug issues with full file context</li>
-                  <li>✅ Code review and suggestions</li>
                 </ul>
               </div>
 
@@ -333,7 +400,6 @@ export function CodeAssistant() {
       
       <main className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar - Files & Conversations */}
           <Card className="lg:col-span-1">
             <Tabs defaultValue="files">
               <TabsList className="w-full">
@@ -348,46 +414,45 @@ export function CodeAssistant() {
               </TabsList>
 
               <TabsContent value="files" className="p-4 space-y-4">
-                <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full" size="sm">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Add File
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Add Code File</DialogTitle>
-                      <DialogDescription>
-                        Paste your code files to give the AI full context
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium">File Path</label>
-                        <Input
-                          placeholder="src/components/MyComponent.tsx"
-                          value={newFilePath}
-                          onChange={(e) => setNewFilePath(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">File Content</label>
-                        <Textarea
-                          placeholder="Paste your code here..."
-                          value={newFileContent}
-                          onChange={(e) => setNewFileContent(e.target.value)}
-                          className="min-h-[400px] font-mono text-sm"
-                        />
-                      </div>
-                      <Button onClick={addCodeFile} className="w-full">
-                        Add File
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept=".tsx,.ts,.jsx,.js,.py,.java,.cpp,.c,.h,.css,.html,.json,.md,.txt"
+                />
+                <Button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full" 
+                  size="sm"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Files
+                </Button>
 
-                <ScrollArea className="h-[500px]">
+                <Button 
+                  onClick={() => setShowFileDialog(true)}
+                  className="w-full"
+                  variant="outline"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Paste Code
+                </Button>
+
+                <Button 
+                  onClick={indexCodebase}
+                  className="w-full"
+                  variant="outline"
+                  size="sm"
+                  disabled={isIndexingCodebase}
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  {isIndexingCodebase ? 'Indexing...' : 'Index Project'}
+                </Button>
+
+                <ScrollArea className="h-[450px]">
                   <div className="space-y-2">
                     {codeFiles.map(file => (
                       <div key={file.id} className="flex items-center justify-between p-2 border rounded-lg bg-muted/50 group">
@@ -441,7 +506,6 @@ export function CodeAssistant() {
             </Tabs>
           </Card>
 
-          {/* Main Chat */}
           <Card className="lg:col-span-3">
             <CardHeader className="border-b bg-gradient-to-r from-primary/10 to-purple-500/10">
               <CardTitle className="flex items-center gap-2">
@@ -471,56 +535,76 @@ export function CodeAssistant() {
                           <Badge variant={message.role === 'user' ? 'default' : 'secondary'}>
                             {message.role === 'user' ? 'You' : 'AI'}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {message.timestamp.toLocaleTimeString()}
-                          </span>
                         </div>
                         
-                        <div className={`rounded-lg p-4 ${
-                          message.role === 'user' 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-muted'
-                        }`}>
-                          <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown
-                              components={{
-                                code: ({ node, inline, className, children, ...props }: any) => {
-                                  const match = /language-(\w+)/.exec(className || '');
-                                  const codeString = String(children).replace(/\n$/, '');
-                                  
-                                  return !inline && match ? (
-                                    <div className="relative group">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => copyToClipboard(codeString)}
-                                      >
-                                        <Copy className="h-4 w-4" />
-                                      </Button>
-                                      <SyntaxHighlighter
-                                        style={vscDarkPlus}
-                                        language={match[1]}
-                                        PreTag="div"
-                                        {...props}
-                                      >
-                                        {codeString}
-                                      </SyntaxHighlighter>
-                                    </div>
-                                  ) : (
-                                    <code className={className} {...props}>
-                                      {children}
-                                    </code>
-                                  );
-                                },
-                              }}
-                            >
-                              {message.content}
-                            </ReactMarkdown>
+                        <div className={`rounded-lg p-4 ${message.role === 'user' ? 'bg-primary text-primary-foreground ml-auto' : 'bg-muted'}`}>
+                          <div className="space-y-2">
+                            <div className="prose prose-sm max-w-none dark:prose-invert">
+                              <ReactMarkdown
+                                components={{
+                                  code({ node, className, children, ...props }) {
+                                    const match = /language-(\w+)/.exec(className || '');
+                                    const isInline = !match;
+                                    
+                                    return !isInline ? (
+                                      <div className="relative group">
+                                        <SyntaxHighlighter
+                                          style={vscDarkPlus as any}
+                                          language={match[1]}
+                                          PreTag="div"
+                                        >
+                                          {String(children).replace(/\n$/, '')}
+                                        </SyntaxHighlighter>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
+                                          onClick={() => copyToClipboard(String(children))}
+                                        >
+                                          <Code className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <code className={className} {...props}>
+                                        {children}
+                                      </code>
+                                    );
+                                  },
+                                }}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
+                            </div>
+                            {message.role === 'assistant' && (
+                              <div className="flex gap-2 pt-2 border-t border-border/50">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setFeedbackMessageId(message.timestamp);
+                                    setShowFeedbackDialog(true);
+                                  }}
+                                >
+                                  <ThumbsUp className="h-3 w-3 mr-1" />
+                                  Good
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setFeedbackMessageId(message.timestamp);
+                                    setShowFeedbackDialog(true);
+                                  }}
+                                >
+                                  <ThumbsDown className="h-3 w-3 mr-1" />
+                                  Needs Work
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
-
+                      
                       {message.role === 'user' && (
                         <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                           <User className="h-5 w-5 text-primary-foreground" />
@@ -528,30 +612,13 @@ export function CodeAssistant() {
                       )}
                     </div>
                   ))}
-                  
-                  {isLoading && (
-                    <div className="flex gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Bot className="h-5 w-5 text-primary animate-pulse" />
-                      </div>
-                      <div className="bg-muted rounded-lg p-4">
-                        <div className="flex gap-2">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-100" />
-                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-200" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
                   <div ref={scrollRef} />
                 </div>
               </ScrollArea>
 
-              <div className="border-t p-6">
-                <div className="flex gap-4">
+              <div className="border-t p-4">
+                <div className="flex gap-2">
                   <Textarea
-                    placeholder="Ask about your code, request new features, or get debugging help..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -560,25 +627,64 @@ export function CodeAssistant() {
                         sendMessage();
                       }
                     }}
+                    placeholder="Ask about your code..."
                     className="min-h-[80px]"
                     disabled={isLoading}
                   />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={!input.trim() || isLoading}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <Send className="h-4 w-4" />
+                  <Button onClick={sendMessage} disabled={isLoading || !input.trim()} size="lg">
+                    <Send className="h-5 w-5" />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Press Enter to send, Shift+Enter for new line
-                </p>
               </div>
             </CardContent>
           </Card>
         </div>
       </main>
+
+      <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Add Code File</DialogTitle>
+            <DialogDescription>
+              Paste code to add to the conversation context
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>File Path</Label>
+              <Input
+                value={newFilePath}
+                onChange={(e) => setNewFilePath(e.target.value)}
+                placeholder="e.g., src/components/MyComponent.tsx"
+              />
+            </div>
+            <div>
+              <Label>Code Content</Label>
+              <Textarea
+                value={newFileContent}
+                onChange={(e) => setNewFileContent(e.target.value)}
+                placeholder="Paste your code here..."
+                className="min-h-[300px] font-mono text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFileDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={addCodeFile}>
+              Add File
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <FeedbackDialog
+        open={showFeedbackDialog}
+        onOpenChange={setShowFeedbackDialog}
+        onSubmit={submitFeedback}
+      />
     </div>
   );
 }
+

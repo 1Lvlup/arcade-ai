@@ -477,6 +477,39 @@ export type Database = {
         }
         Relationships: []
       }
+      indexed_codebase: {
+        Row: {
+          created_at: string | null
+          fec_tenant_id: string
+          file_content: string
+          file_path: string
+          file_type: string | null
+          id: string
+          language: string | null
+          last_modified: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fec_tenant_id?: string
+          file_content: string
+          file_path: string
+          file_type?: string | null
+          id?: string
+          language?: string | null
+          last_modified?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fec_tenant_id?: string
+          file_content?: string
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          language?: string | null
+          last_modified?: string | null
+        }
+        Relationships: []
+      }
       manual_metadata: {
         Row: {
           aliases: string[] | null
@@ -612,6 +645,54 @@ export type Database = {
           section_path?: string[] | null
           updated_at?: string | null
           version?: string
+        }
+        Relationships: []
+      }
+      model_feedback: {
+        Row: {
+          actual_answer: string | null
+          context: Json | null
+          conversation_id: string | null
+          created_at: string | null
+          expected_answer: string | null
+          fec_tenant_id: string
+          feedback_text: string | null
+          id: string
+          is_converted_to_training: boolean | null
+          model_type: string
+          query_log_id: string | null
+          rating: string
+          user_id: string
+        }
+        Insert: {
+          actual_answer?: string | null
+          context?: Json | null
+          conversation_id?: string | null
+          created_at?: string | null
+          expected_answer?: string | null
+          fec_tenant_id?: string
+          feedback_text?: string | null
+          id?: string
+          is_converted_to_training?: boolean | null
+          model_type: string
+          query_log_id?: string | null
+          rating: string
+          user_id: string
+        }
+        Update: {
+          actual_answer?: string | null
+          context?: Json | null
+          conversation_id?: string | null
+          created_at?: string | null
+          expected_answer?: string | null
+          fec_tenant_id?: string
+          feedback_text?: string | null
+          id?: string
+          is_converted_to_training?: boolean | null
+          model_type?: string
+          query_log_id?: string | null
+          rating?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -974,6 +1055,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      training_examples: {
+        Row: {
+          context: string
+          created_at: string | null
+          difficulty: string | null
+          do_instructions: string[] | null
+          dont_instructions: string[] | null
+          expected_answer: string
+          fec_tenant_id: string
+          id: string
+          is_approved: boolean | null
+          model_type: string
+          question: string
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          context: string
+          created_at?: string | null
+          difficulty?: string | null
+          do_instructions?: string[] | null
+          dont_instructions?: string[] | null
+          expected_answer: string
+          fec_tenant_id?: string
+          id?: string
+          is_approved?: boolean | null
+          model_type: string
+          question: string
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          context?: string
+          created_at?: string | null
+          difficulty?: string | null
+          do_instructions?: string[] | null
+          dont_instructions?: string[] | null
+          expected_answer?: string
+          fec_tenant_id?: string
+          id?: string
+          is_approved?: boolean | null
+          model_type?: string
+          question?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

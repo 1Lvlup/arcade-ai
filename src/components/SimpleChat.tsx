@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronDown, ChevronUp, CheckCircle2, Lightbulb, FileText, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, Lightbulb, FileText, AlertTriangle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface AnswerStep {
   step: string;
@@ -46,6 +47,8 @@ interface Message {
     sources_used: any[];
   };
   context_seen?: string;
+  query_log_id?: string;
+  feedback?: 'thumbs_up' | 'thumbs_down' | null;
 }
 
 interface SimpleChatProps {
@@ -58,6 +61,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [expandedContext, setExpandedContext] = useState<number | null>(null);
   const [expandedSources, setExpandedSources] = useState<number | null>(null);
+  const { toast } = useToast();
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -79,7 +83,9 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
         content: data.answer || 'Sorry, I could not generate a response.',
         grading: data.grading,
         metadata: data.metadata,
-        context_seen: data.context_seen
+        context_seen: data.context_seen,
+        query_log_id: data.query_log_id,
+        feedback: null
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
@@ -91,6 +97,40 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFeedback = async (index: number, rating: 'thumbs_up' | 'thumbs_down') => {
+    const message = messages[index];
+    if (message.role !== 'assistant' || !message.query_log_id) return;
+
+    try {
+      const { error } = await supabase.from('model_feedback').insert({
+        query_log_id: message.query_log_id,
+        rating,
+        model_type: 'rag_pipeline',
+        actual_answer: typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
+        context: message.metadata
+      });
+
+      if (error) throw error;
+
+      // Update the message feedback state
+      setMessages(prev => prev.map((msg, i) => 
+        i === index ? { ...msg, feedback: rating } : msg
+      ));
+
+      toast({
+        title: 'Feedback recorded',
+        description: rating === 'thumbs_up' ? 'Thanks for the positive feedback!' : 'Thanks for the feedback, we\'ll work to improve.',
+      });
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save feedback',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -238,6 +278,39 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
                 ) : (
                   <div className="text-base leading-relaxed">
                     {message.content as string}
+                  </div>
+                )}
+
+                {/* Thumbs Up/Down Buttons for Assistant Messages */}
+                {message.role === 'assistant' && (
+                  <div className="mt-3 pt-3 border-t border-primary/10 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground mr-2">Was this helpful?</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleFeedback(index, 'thumbs_up')}
+                      disabled={message.feedback !== null}
+                      className={`h-8 px-3 ${
+                        message.feedback === 'thumbs_up' 
+                          ? 'bg-green-500/20 text-green-500 border border-green-500/30' 
+                          : 'hover:bg-green-500/10 hover:text-green-500'
+                      }`}
+                    >
+                      <ThumbsUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleFeedback(index, 'thumbs_down')}
+                      disabled={message.feedback !== null}
+                      className={`h-8 px-3 ${
+                        message.feedback === 'thumbs_down' 
+                          ? 'bg-red-500/20 text-red-500 border border-red-500/30' 
+                          : 'hover:bg-red-500/10 hover:text-red-500'
+                      }`}
+                    >
+                      <ThumbsDown className="h-4 w-4" />
+                    </Button>
                   </div>
                 )}
                 

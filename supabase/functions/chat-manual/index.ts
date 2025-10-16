@@ -808,6 +808,35 @@ serve(async (req) => {
 
     const { answer, sources, strategy, chunks } = result;
 
+    // Log the query
+    let queryLogId = null;
+    try {
+      const { data: logData, error: logError } = await supabase
+        .from('query_logs')
+        .insert({
+          query_text: query,
+          normalized_query: normalizeQuery(query),
+          model_name: model,
+          retrieval_method: strategy,
+          response_text: typeof answer === 'string' ? answer : JSON.stringify(answer),
+          manual_id: manual_id || null,
+          top_doc_ids: chunks?.slice(0, 10).map(c => c.id) || [],
+          top_doc_pages: chunks?.slice(0, 10).map(c => c.page_start || 0) || [],
+          top_doc_scores: chunks?.slice(0, 10).map(c => c.rerank_score || 0) || [],
+        })
+        .select('id')
+        .single();
+
+      if (logError) {
+        console.warn('⚠️ Failed to log query:', logError);
+      } else {
+        queryLogId = logData?.id;
+        console.log('✅ Query logged with ID:', queryLogId);
+      }
+    } catch (e) {
+      console.warn('⚠️ Query logging error:', e);
+    }
+
     const metadata = {
       pipeline_version: "v3",
       manual_id: manual_id || "all_manuals",
@@ -835,6 +864,7 @@ serve(async (req) => {
         strategy,
         metadata,
         context_seen: contextSeen,
+        query_log_id: queryLogId,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

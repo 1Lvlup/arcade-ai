@@ -662,7 +662,7 @@ export type Database = {
           model_type: string
           query_log_id: string | null
           rating: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           actual_answer?: string | null
@@ -677,7 +677,7 @@ export type Database = {
           model_type: string
           query_log_id?: string | null
           rating: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           actual_answer?: string | null
@@ -692,7 +692,7 @@ export type Database = {
           model_type?: string
           query_log_id?: string | null
           rating?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

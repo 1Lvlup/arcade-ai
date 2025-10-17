@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTrainingAuth } from '@/hooks/useTrainingAuth';
 import { TrainingLogin } from '@/components/TrainingLogin';
 import { SharedHeader } from '@/components/SharedHeader';
-import { DocumentViewer } from '@/components/DocumentViewer';
+import { DocumentViewerEnhanced } from '@/components/DocumentViewerEnhanced';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -406,9 +406,9 @@ export default function TrainingInboxDetail() {
           </Card>
         </div>
 
-        {/* Document Viewer with Evidence */}
+        {/* Enhanced Document Viewer with OCR Overlay & Thumbnails */}
         {query.citations && query.citations.length > 0 && (
-          <DocumentViewer
+          <DocumentViewerEnhanced
             citations={query.citations}
             manualId={query.manual_id}
             selectedEvidence={selectedEvidence}

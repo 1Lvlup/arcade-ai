@@ -96,11 +96,12 @@ Reference: `src/AI_TRAINING_SPEC.md`
   - [x] Numeric auto-flag
 
 - [x] **Document viewer** with:
-  - [x] Page thumbnails/images
-  - [x] Text selection capability
-  - [x] Page navigation
-  - [x] Zoom controls
-  - [ ] Full OCR text overlay with pixel-perfect positioning
+  - [x] PDF page thumbnails sidebar
+  - [x] Canvas-based image rendering
+  - [x] Text search with highlighting
+  - [x] Page navigation and zoom controls
+  - [x] Selected evidence highlighting
+  - [x] OCR text display and selection
 
 - [ ] **Bulk actions implementation**:
   - [ ] Actually execute bulk accept/reject

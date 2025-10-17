@@ -20,6 +20,7 @@ import { TrainingDashboard } from "./pages/TrainingDashboard";
 import { CodeAssistant } from "./pages/CodeAssistant";
 import TrainingHub from "./pages/TrainingHub";
 import TrainingInbox from "./pages/TrainingInbox";
+import TrainingInboxDetail from "./pages/TrainingInboxDetail";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccountSettings from "./pages/AccountSettings";
 import Support from "./pages/Support";
@@ -137,6 +138,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <TrainingInbox />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/training-hub/review/:id" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <TrainingInboxDetail />
                 </AdminRoute>
               </ProtectedRoute>
             } />

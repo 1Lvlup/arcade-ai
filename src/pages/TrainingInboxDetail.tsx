@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,6 +39,12 @@ interface DetectedNumber {
   context: string;
 }
 
+interface EvidenceSpan {
+  doc: string;
+  page: number;
+  text: string;
+}
+
 export default function TrainingInboxDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -45,6 +52,7 @@ export default function TrainingInboxDetail() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState<QueryDetail | null>(null);
+  const [selectedEvidence, setSelectedEvidence] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState({
     question: '',
     expected_answer: '',
@@ -103,11 +111,31 @@ export default function TrainingInboxDetail() {
     }
   };
 
+  const toggleEvidence = (index: number) => {
+    const newSelected = new Set(selectedEvidence);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedEvidence(newSelected);
+  };
+
   const handleCreateExample = async () => {
+    // Build evidence spans from selected citations
+    const evidenceSpans: EvidenceSpan[] = Array.from(selectedEvidence).map(index => {
+      const citation = query!.citations[index];
+      return {
+        doc: query!.manual_id || 'unknown',
+        page: citation.page_start || 0,
+        text: citation.content || ''
+      };
+    });
+
     // Validate numeric verification requirement
-    const hasNumbers = /\d/.test(formData.expected_answer) || /\d/.test(formData.expected_answer);
-    if (hasNumbers && !formData.evidence_spans.trim()) {
-      toast.error('Numbers detected: Evidence spans are required for numeric claims');
+    const hasNumbers = /\d/.test(formData.expected_answer);
+    if (hasNumbers && evidenceSpans.length === 0 && !formData.evidence_spans.trim()) {
+      toast.error('Numbers detected: You must either attach evidence or edit the answer to remove numbers');
       return;
     }
 
@@ -126,7 +154,9 @@ export default function TrainingInboxDetail() {
             question: formData.question,
             expected_answer: formData.expected_answer,
             context: formData.context,
-            evidence_spans: formData.evidence_spans.trim() ? formData.evidence_spans : null,
+            evidence_spans: evidenceSpans.length > 0 
+              ? JSON.stringify(evidenceSpans) 
+              : formData.evidence_spans.trim() || null,
             tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
             difficulty: formData.difficulty,
             do_instructions: formData.do_instructions.split('\n').filter(Boolean),
@@ -141,7 +171,7 @@ export default function TrainingInboxDetail() {
       }
 
       toast.success('Training example created successfully');
-      navigate('/training/inbox');
+      navigate('/training-hub/inbox');
     } catch (error) {
       console.error('Error creating example:', error);
       toast.error('Failed to create training example');
@@ -304,6 +334,55 @@ export default function TrainingInboxDetail() {
           </Card>
         </div>
 
+        {/* Retrieved Context/Evidence */}
+        {query.citations && query.citations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Retrieved Evidence - Select to Attach</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                These chunks were retrieved by the RAG system. Check the ones that support your answer.
+                {hasNumericFlags && (
+                  <span className="text-destructive font-semibold"> At least one must be selected for numeric verification.</span>
+                )}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {query.citations.map((citation: any, index: number) => (
+                <div
+                  key={index}
+                  className={`border rounded p-4 cursor-pointer transition-colors ${
+                    selectedEvidence.has(index) ? 'border-primary bg-primary/5' : 'hover:border-primary/50'
+                  }`}
+                  onClick={() => toggleEvidence(index)}
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={selectedEvidence.has(index)}
+                      onCheckedChange={() => toggleEvidence(index)}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">
+                          {citation.manual_id || 'Unknown Manual'}
+                        </Badge>
+                        <Badge variant="secondary">
+                          Page {citation.page_start || 'N/A'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm">{citation.content}</p>
+                      {citation.menu_path && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Section: {citation.menu_path}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Create Training Example Form */}
         <Card>
           <CardHeader>
@@ -342,14 +421,17 @@ export default function TrainingInboxDetail() {
             </div>
 
             <div>
-              <Label htmlFor="evidence_spans">Evidence Spans {hasNumericFlags && <span className="text-destructive">*</span>}</Label>
+              <Label htmlFor="evidence_spans">Manual Evidence Spans (optional if citations selected above)</Label>
               <Textarea
                 id="evidence_spans"
                 value={formData.evidence_spans}
                 onChange={(e) => setFormData({ ...formData, evidence_spans: e.target.value })}
                 rows={3}
-                placeholder="e.g., Manual p.14 states 'voltage is 120V'"
+                placeholder="Additional evidence if needed, e.g., Manual p.14 states 'voltage is 120V'"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                {selectedEvidence.size} citation(s) selected above
+              </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -402,12 +484,26 @@ export default function TrainingInboxDetail() {
 
             <Button
               onClick={handleCreateExample}
-              disabled={creating || !formData.question || !formData.expected_answer}
+              disabled={
+                creating || 
+                !formData.question || 
+                !formData.expected_answer ||
+                (hasNumericFlags && selectedEvidence.size === 0 && !formData.evidence_spans.trim())
+              }
               className="w-full"
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              {creating ? 'Creating...' : 'Create Training Example'}
+              {creating ? 'Creating...' : 'Accept & Create Training Example'}
             </Button>
+
+            {hasNumericFlags && selectedEvidence.size === 0 && !formData.evidence_spans.trim() && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Numeric verification required:</strong> Select at least one evidence citation above or provide evidence spans to verify the numbers in this answer.
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </div>

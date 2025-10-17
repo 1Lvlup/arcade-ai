@@ -136,25 +136,42 @@ export function ManualDetail() {
     if (!manualId) return;
     
     try {
-      // Fetch chunks count
-      const { count: chunksCount } = await supabase
+      // Fetch chunks count - RLS policies filter by tenant automatically
+      const { count: chunksCount, error: chunksError } = await supabase
         .from('chunks_text')
         .select('*', { count: 'exact', head: true })
         .eq('manual_id', manualId);
 
+      if (chunksError) {
+        console.error('Error fetching chunks count:', chunksError);
+      }
+
       // Fetch figures count
-      const { count: figuresCount } = await supabase
+      const { count: figuresCount, error: figuresError } = await supabase
         .from('figures')
         .select('*', { count: 'exact', head: true })
         .eq('manual_id', manualId);
 
-      // TODO: Fetch questions count when implemented
-      const questionsCount = 0;
+      if (figuresError) {
+        console.error('Error fetching figures count:', figuresError);
+      }
+
+      // Fetch questions count from golden_questions
+      const { count: questionsCount, error: questionsError } = await supabase
+        .from('golden_questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('manual_id', manualId);
+
+      if (questionsError) {
+        console.error('Error fetching questions count:', questionsError);
+      }
+
+      console.log('Stats fetched:', { chunksCount, figuresCount, questionsCount });
 
       setStats({
         chunks: chunksCount || 0,
         figures: figuresCount || 0,
-        questions: questionsCount
+        questions: questionsCount || 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

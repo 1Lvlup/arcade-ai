@@ -9,15 +9,45 @@ import { TrainingLogin } from '@/components/TrainingLogin';
 
 export default function TrainingHub() {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useTrainingAuth();
+  const { isAuthenticated, logout, adminKey } = useTrainingAuth();
   const [stats, setStats] = useState({ pending: 0, verified: 0, avgQuality: 0 });
 
   useEffect(() => {
-    if (isAuthenticated) {
-      // Fetch stats - placeholder for now
-      setStats({ pending: 0, verified: 0, avgQuality: 0 });
+    if (isAuthenticated && adminKey) {
+      fetchStats();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, adminKey]);
+
+  const fetchStats = async () => {
+    try {
+      // Fetch real stats from inbox
+      const inboxRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/training-inbox?limit=1000`,
+        { headers: { 'x-admin-key': adminKey! } }
+      );
+      const inboxData = await inboxRes.json();
+      const pending = inboxData.items?.length || 0;
+
+      // Fetch verified examples count
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { count: verified } = await supabase
+        .from('training_examples')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_approved', true);
+
+      // Calculate avg quality from inbox
+      const avgQuality = inboxData.items?.reduce((sum: number, item: any) => 
+        sum + (item.quality_score || 0), 0) / (pending || 1);
+
+      setStats({ 
+        pending, 
+        verified: verified || 0, 
+        avgQuality: avgQuality || 0 
+      });
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
 
   if (!isAuthenticated) {
     return <TrainingLogin />;

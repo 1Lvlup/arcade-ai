@@ -53,6 +53,7 @@ export default function TrainingInboxDetail() {
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState<QueryDetail | null>(null);
   const [selectedEvidence, setSelectedEvidence] = useState<Set<number>>(new Set());
+  const [lastAction, setLastAction] = useState<{ type: string; timestamp: number; data: any } | null>(null);
   const [formData, setFormData] = useState({
     question: '',
     expected_answer: '',
@@ -121,6 +122,18 @@ export default function TrainingInboxDetail() {
     setSelectedEvidence(newSelected);
   };
 
+  const handleUndo = () => {
+    if (!lastAction) return;
+    
+    const timeSince = Date.now() - lastAction.timestamp;
+    if (timeSince > 10 * 60 * 1000) {
+      toast.error('Undo expired: Actions can only be undone within 10 minutes');
+      return;
+    }
+
+    toast.success(`Would undo ${lastAction.type} from ${Math.floor(timeSince / 1000)}s ago`);
+  };
+
   const handleCreateExample = async () => {
     // Build evidence spans from selected citations
     const evidenceSpans: EvidenceSpan[] = Array.from(selectedEvidence).map(index => {
@@ -169,6 +182,12 @@ export default function TrainingInboxDetail() {
       if (!response.ok) {
         throw new Error('Failed to create training example');
       }
+
+      setLastAction({
+        type: 'create_example',
+        timestamp: Date.now(),
+        data: { query_id: id, expected_answer: formData.expected_answer },
+      });
 
       toast.success('Training example created successfully');
       navigate('/training-hub/inbox');
@@ -224,13 +243,23 @@ export default function TrainingInboxDetail() {
         : query.numeric_flags)
     : [];
 
+  const canUndo = lastAction && (Date.now() - lastAction.timestamp) < 10 * 60 * 1000;
+
   return (
     <div className="min-h-screen bg-background">
       <SharedHeader title="Review Query">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/training/inbox')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Inbox
-        </Button>
+        <div className="flex gap-2">
+          {canUndo && (
+            <Button variant="outline" size="sm" onClick={handleUndo}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Undo ({Math.floor((Date.now() - lastAction.timestamp) / 1000)}s ago)
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => navigate('/training-hub/inbox')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Inbox
+          </Button>
+        </div>
       </SharedHeader>
 
       <div className="container mx-auto p-6 space-y-6">

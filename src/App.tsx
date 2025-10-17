@@ -21,6 +21,8 @@ import { CodeAssistant } from "./pages/CodeAssistant";
 import TrainingHub from "./pages/TrainingHub";
 import TrainingInbox from "./pages/TrainingInbox";
 import TrainingInboxDetail from "./pages/TrainingInboxDetail";
+import TrainingQAGeneration from "./pages/TrainingQAGeneration";
+import TrainingExport from "./pages/TrainingExport";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccountSettings from "./pages/AccountSettings";
 import Support from "./pages/Support";
@@ -145,6 +147,20 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <TrainingInboxDetail />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/training-hub/qa-generate" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <TrainingQAGeneration />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/training-hub/export" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <TrainingExport />
                 </AdminRoute>
               </ProtectedRoute>
             } />

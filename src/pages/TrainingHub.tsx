@@ -63,7 +63,7 @@ export default function TrainingHub() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/training-hub/generate')}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/training-hub/qa-generate')}>
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-primary/10">

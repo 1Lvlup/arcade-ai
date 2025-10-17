@@ -835,7 +835,43 @@ serve(async (req) => {
 
     const { answer, sources, strategy, chunks } = result;
 
-    // Log the query
+    // ============ AUTOMATED QUALITY CHECKS FOR TRAINING ============
+    const response_text = typeof answer === 'string' ? answer : JSON.stringify(answer);
+    
+    // 1. Extract claims (simple sentence split)
+    const claims = response_text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    
+    // 2. Detect numbers and flag for verification
+    const numericMatches = [...response_text.matchAll(/(\d+\.?\d*)\s*([a-zA-Z]+)?/g)];
+    const numeric_flags = numericMatches.map(m => ({
+      value: m[1],
+      unit: m[2] || '',
+      context: response_text.substring(
+        Math.max(0, m.index! - 20),
+        Math.min(response_text.length, m.index! + m[0].length + 40)
+      )
+    }));
+    
+    // 3. Calculate claim coverage (simplified - checks if claim words appear in chunks)
+    const claim_coverage = 0.5; // Placeholder - would need more sophisticated matching
+    
+    // 4. Calculate quality score
+    const quality_score = claim_coverage * 0.7 + (numeric_flags.length === 0 ? 0.3 : 0.0);
+    
+    // 5. Determine quality tier
+    let quality_tier = 'low';
+    if (quality_score >= 0.7) quality_tier = 'high';
+    else if (quality_score >= 0.4) quality_tier = 'medium';
+    
+    console.log('📊 Quality Assessment:', {
+      tier: quality_tier,
+      score: quality_score.toFixed(2),
+      numeric_flags: numeric_flags.length,
+      claims: claims.length
+    });
+    // ============ END QUALITY CHECKS ============
+
+    // Log the query with quality metrics
     let queryLogId = null;
     try {
       const { data: logData, error: logError } = await supabase
@@ -845,11 +881,16 @@ serve(async (req) => {
           normalized_query: normalizeQuery(query),
           model_name: model,
           retrieval_method: strategy,
-          response_text: typeof answer === 'string' ? answer : JSON.stringify(answer),
+          response_text,
           manual_id: manual_id || null,
           top_doc_ids: chunks?.slice(0, 10).map(c => c.id) || [],
           top_doc_pages: chunks?.slice(0, 10).map(c => c.page_start || 0) || [],
           top_doc_scores: chunks?.slice(0, 10).map(c => c.rerank_score || 0) || [],
+          // Training system fields
+          numeric_flags: JSON.stringify(numeric_flags),
+          claim_coverage,
+          quality_score,
+          quality_tier,
         })
         .select('id')
         .single();

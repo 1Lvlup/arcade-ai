@@ -325,6 +325,47 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          converted_to_training: boolean
+          created_at: string
+          fec_tenant_id: string
+          id: string
+          note: string | null
+          query_log_id: string
+          rating: string
+          user_id: string | null
+        }
+        Insert: {
+          converted_to_training?: boolean
+          created_at?: string
+          fec_tenant_id?: string
+          id?: string
+          note?: string | null
+          query_log_id: string
+          rating: string
+          user_id?: string | null
+        }
+        Update: {
+          converted_to_training?: boolean
+          created_at?: string
+          fec_tenant_id?: string
+          id?: string
+          note?: string | null
+          query_log_id?: string
+          rating?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_query_log_id_fkey"
+            columns: ["query_log_id"]
+            isOneToOne: false
+            referencedRelation: "query_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       figures: {
         Row: {
           bbox_pdf_coords: string | null

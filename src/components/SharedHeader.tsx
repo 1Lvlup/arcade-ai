@@ -87,7 +87,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/training-dashboard" className="cursor-pointer">
+                  <Link to="/training-hub" className="cursor-pointer">
                     <GraduationCap className="h-4 w-4 mr-2" />
                     Training Hub
                   </Link>

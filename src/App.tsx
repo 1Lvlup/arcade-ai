@@ -17,6 +17,8 @@ import ManualAdminEdit from "./pages/ManualAdminEdit";
 import TenantManagement from "./pages/TenantManagement";
 import { TrainingDashboard } from "./pages/TrainingDashboard";
 import { CodeAssistant } from "./pages/CodeAssistant";
+import TrainingHub from "./pages/TrainingHub";
+import TrainingInbox from "./pages/TrainingInbox";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccountSettings from "./pages/AccountSettings";
 import Support from "./pages/Support";
@@ -119,6 +121,20 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <SupportTickets />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/training-hub" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <TrainingHub />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/training-hub/inbox" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <TrainingInbox />
                 </AdminRoute>
               </ProtectedRoute>
             } />

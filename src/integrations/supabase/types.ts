@@ -793,6 +793,8 @@ export type Database = {
       }
       query_logs: {
         Row: {
+          admin_user: string | null
+          citations: Json | null
           claim_coverage: number | null
           created_at: string
           fec_tenant_id: string
@@ -803,8 +805,10 @@ export type Database = {
           image_ocr_match_ratio: number | null
           keyword_match_ratio: number | null
           manual_id: string | null
+          messages: Json | null
           model_name: string | null
           normalized_query: string | null
+          numeric_flags: Json | null
           photo_url: string | null
           quality_score: number | null
           quality_tier: string | null
@@ -822,6 +826,8 @@ export type Database = {
           vector_mean: number | null
         }
         Insert: {
+          admin_user?: string | null
+          citations?: Json | null
           claim_coverage?: number | null
           created_at?: string
           fec_tenant_id?: string
@@ -832,8 +838,10 @@ export type Database = {
           image_ocr_match_ratio?: number | null
           keyword_match_ratio?: number | null
           manual_id?: string | null
+          messages?: Json | null
           model_name?: string | null
           normalized_query?: string | null
+          numeric_flags?: Json | null
           photo_url?: string | null
           quality_score?: number | null
           quality_tier?: string | null
@@ -851,6 +859,8 @@ export type Database = {
           vector_mean?: number | null
         }
         Update: {
+          admin_user?: string | null
+          citations?: Json | null
           claim_coverage?: number | null
           created_at?: string
           fec_tenant_id?: string
@@ -861,8 +871,10 @@ export type Database = {
           image_ocr_match_ratio?: number | null
           keyword_match_ratio?: number | null
           manual_id?: string | null
+          messages?: Json | null
           model_name?: string | null
           normalized_query?: string | null
+          numeric_flags?: Json | null
           photo_url?: string | null
           quality_score?: number | null
           quality_tier?: string | null
@@ -1100,54 +1112,157 @@ export type Database = {
       }
       training_examples: {
         Row: {
+          answer: string | null
           context: string
           created_at: string | null
           difficulty: string | null
           do_instructions: string[] | null
+          doc_id: string | null
           dont_instructions: string[] | null
+          evidence_spans: Json | null
           expected_answer: string
           fec_tenant_id: string
           id: string
           is_approved: boolean | null
           model_type: string
           question: string
+          source_query_id: string | null
           tags: string[] | null
           updated_at: string | null
           user_id: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
+          answer?: string | null
           context: string
           created_at?: string | null
           difficulty?: string | null
           do_instructions?: string[] | null
+          doc_id?: string | null
           dont_instructions?: string[] | null
+          evidence_spans?: Json | null
           expected_answer: string
           fec_tenant_id?: string
           id?: string
           is_approved?: boolean | null
           model_type: string
           question: string
+          source_query_id?: string | null
           tags?: string[] | null
           updated_at?: string | null
           user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
+          answer?: string | null
           context?: string
           created_at?: string | null
           difficulty?: string | null
           do_instructions?: string[] | null
+          doc_id?: string | null
           dont_instructions?: string[] | null
+          evidence_spans?: Json | null
           expected_answer?: string
           fec_tenant_id?: string
           id?: string
           is_approved?: boolean | null
           model_type?: string
           question?: string
+          source_query_id?: string | null
           tags?: string[] | null
           updated_at?: string | null
           user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_examples_source_query_id_fkey"
+            columns: ["source_query_id"]
+            isOneToOne: false
+            referencedRelation: "query_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_exports: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          example_count: number
+          fec_tenant_id: string
+          file_url: string | null
+          filters: Json | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          example_count: number
+          fec_tenant_id?: string
+          file_url?: string | null
+          filters?: Json | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          example_count?: number
+          fec_tenant_id?: string
+          file_url?: string | null
+          filters?: Json | null
+          id?: string
+          name?: string
         }
         Relationships: []
+      }
+      training_feedback: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          details: string | null
+          feedback_type: string
+          id: string
+          photo_url: string | null
+          query_id: string | null
+          reason: string | null
+          time_to_fix_minutes: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          details?: string | null
+          feedback_type: string
+          id?: string
+          photo_url?: string | null
+          query_id?: string | null
+          reason?: string | null
+          time_to_fix_minutes?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          details?: string | null
+          feedback_type?: string
+          id?: string
+          photo_url?: string | null
+          query_id?: string | null
+          reason?: string | null
+          time_to_fix_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_feedback_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "query_logs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage_limits: {
         Row: {
@@ -1227,6 +1342,14 @@ export type Database = {
           out_manual_id: string
           out_status: string
         }[]
+      }
+      calculate_quality_metrics: {
+        Args: {
+          p_query_id: string
+          p_response_text: string
+          p_top_chunks: Json
+        }
+        Returns: Json
       }
       fn_backfill_for_manual: {
         Args: { p_manual_id: string }

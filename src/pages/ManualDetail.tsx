@@ -136,42 +136,50 @@ export function ManualDetail() {
     if (!manualId) return;
     
     try {
-      // Fetch chunks count - RLS policies filter by tenant automatically
-      const { count: chunksCount, error: chunksError } = await supabase
+      // Fetch chunks - get actual data to count (RLS might be blocking count-only queries)
+      const { data: chunksData, error: chunksError, count: chunksCountExact } = await supabase
         .from('chunks_text')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('manual_id', manualId);
 
-      if (chunksError) {
-        console.error('Error fetching chunks count:', chunksError);
-      }
+      console.log('Chunks query result:', { 
+        dataLength: chunksData?.length, 
+        countExact: chunksCountExact, 
+        error: chunksError 
+      });
+
+      const chunksCount = chunksCountExact || chunksData?.length || 0;
 
       // Fetch figures count
-      const { count: figuresCount, error: figuresError } = await supabase
+      const { data: figuresData, error: figuresError, count: figuresCountExact } = await supabase
         .from('figures')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('manual_id', manualId);
 
+      const figuresCount = figuresCountExact || figuresData?.length || 0;
+
       if (figuresError) {
-        console.error('Error fetching figures count:', figuresError);
+        console.error('Error fetching figures:', figuresError);
       }
 
       // Fetch questions count from golden_questions
-      const { count: questionsCount, error: questionsError } = await supabase
+      const { data: questionsData, error: questionsError, count: questionsCountExact } = await supabase
         .from('golden_questions')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('manual_id', manualId);
 
+      const questionsCount = questionsCountExact || questionsData?.length || 0;
+
       if (questionsError) {
-        console.error('Error fetching questions count:', questionsError);
+        console.error('Error fetching questions:', questionsError);
       }
 
-      console.log('Stats fetched:', { chunksCount, figuresCount, questionsCount });
+      console.log('Final stats:', { chunksCount, figuresCount, questionsCount });
 
       setStats({
-        chunks: chunksCount || 0,
-        figures: figuresCount || 0,
-        questions: questionsCount || 0
+        chunks: chunksCount,
+        figures: figuresCount,
+        questions: questionsCount
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

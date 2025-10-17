@@ -303,7 +303,7 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
               <Progress value={processingStatus?.progress_percent || jobStatus.progress} className="h-2" />
             </div>
 
-            {/* Real-time processing details */}
+            {/* Real-time processing details - removed chunks display as it shows stale processing_status data */}
             {processingStatus && (
               <div className="space-y-2 text-sm">
                 {processingStatus.stage && (
@@ -312,17 +312,10 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
                     <span className="capitalize">{processingStatus.stage.replace('_', ' ')}</span>
                   </div>
                 )}
-                
-                {processingStatus.total_chunks > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Text Chunks:</span>
-                    <span>{processingStatus.chunks_processed}/{processingStatus.total_chunks}</span>
-                  </div>
-                )}
 
                 {processingStatus.total_figures > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Figures:</span>
+                    <span className="text-muted-foreground">Figures Processed:</span>
                     <span>{processingStatus.figures_processed}/{processingStatus.total_figures}</span>
                   </div>
                 )}

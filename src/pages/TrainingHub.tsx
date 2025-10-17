@@ -1,15 +1,36 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SharedHeader } from '@/components/SharedHeader';
-import { AlertCircle, ClipboardCheck, FileText, Download } from 'lucide-react';
+import { AlertCircle, ClipboardCheck, FileText, Download, LogOut } from 'lucide-react';
+import { useTrainingAuth } from '@/hooks/useTrainingAuth';
+import { TrainingLogin } from '@/components/TrainingLogin';
 
 export default function TrainingHub() {
   const navigate = useNavigate();
+  const { isAuthenticated, logout } = useTrainingAuth();
+  const [stats, setStats] = useState({ pending: 0, verified: 0, avgQuality: 0 });
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Fetch stats - placeholder for now
+      setStats({ pending: 0, verified: 0, avgQuality: 0 });
+    }
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return <TrainingLogin />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <SharedHeader title="Training Hub" />
+      <SharedHeader title="Training Hub">
+        <Button variant="outline" size="sm" onClick={logout}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
+      </SharedHeader>
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
@@ -105,19 +126,19 @@ export default function TrainingHub() {
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Pending Review</CardDescription>
-                <CardTitle className="text-3xl">--</CardTitle>
+                <CardTitle className="text-3xl">{stats.pending}</CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Verified Examples</CardDescription>
-                <CardTitle className="text-3xl">--</CardTitle>
+                <CardTitle className="text-3xl">{stats.verified}</CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader className="pb-3">
-                <CardDescription>Quality Score</CardDescription>
-                <CardTitle className="text-3xl">--</CardTitle>
+                <CardDescription>Avg Quality Score</CardDescription>
+                <CardTitle className="text-3xl">{stats.avgQuality.toFixed(2)}</CardTitle>
               </CardHeader>
             </Card>
           </div>

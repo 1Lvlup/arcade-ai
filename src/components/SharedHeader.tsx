@@ -11,9 +11,10 @@ interface SharedHeaderProps {
   showBackButton?: boolean;
   backTo?: string;
   onBackClick?: () => void;
+  children?: React.ReactNode;
 }
 
-export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBackClick }: SharedHeaderProps) => {
+export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBackClick, children }: SharedHeaderProps) => {
   const { user, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -58,6 +59,8 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
           </div>
         </div>
         <div className="flex items-center space-x-4">
+          {children}
+          
           <Link to="/">
             <Button variant="minimal" size="sm">
               <Home className="h-4 w-4 mr-2" />

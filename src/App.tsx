@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ManualManagement from "./pages/ManualManagement";
+import Chat from "./pages/Chat";
 import { ManualDetail } from "./pages/ManualDetail";
 import ManualDetails from "./pages/ManualDetails";
 import VisionBoard from "./pages/VisionBoard";
@@ -51,6 +52,11 @@ const App = () => (
             <Route path="/manuals" element={
               <ProtectedRoute>
                 <ManualManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/chat" element={
+              <ProtectedRoute>
+                <Chat />
               </ProtectedRoute>
             } />
             <Route path="/manuals/:manualId" element={

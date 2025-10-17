@@ -23,6 +23,7 @@ import TrainingInbox from "./pages/TrainingInbox";
 import TrainingInboxDetail from "./pages/TrainingInboxDetail";
 import TrainingQAGeneration from "./pages/TrainingQAGeneration";
 import TrainingExport from "./pages/TrainingExport";
+import TrainingExamples from "./pages/TrainingExamples";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccountSettings from "./pages/AccountSettings";
 import Support from "./pages/Support";
@@ -161,6 +162,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <TrainingExport />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/training-hub/examples" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <TrainingExamples />
                 </AdminRoute>
               </ProtectedRoute>
             } />

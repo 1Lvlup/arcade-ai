@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Download, FileJson, FileText, Table } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 type ExportFormat = 'jsonl' | 'triples' | 'csv';
 
@@ -25,6 +26,26 @@ export default function TrainingExport() {
     tags: ''
   });
   const [exportData, setExportData] = useState<{ content: string; count: number } | null>(null);
+
+  const logExport = async (count: number, exportFormat: ExportFormat) => {
+    try {
+      const { error } = await supabase.from('training_exports').insert({
+        name: `${exportFormat.toUpperCase()} Export`,
+        example_count: count,
+        filters: {
+          model_type: filters.model_type || null,
+          difficulty: filters.difficulty || null,
+          tags: filters.tags ? filters.tags.split(',').map(t => t.trim()) : null
+        },
+        file_url: null,
+        created_by: 'admin'
+      });
+      
+      if (error) console.error('Error logging export:', error);
+    } catch (error) {
+      console.error('Error logging export:', error);
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -54,6 +75,10 @@ export default function TrainingExport() {
 
       const data = await response.json();
       setExportData(data);
+      
+      // Log export to training_exports table
+      await logExport(data.count, format);
+      
       toast.success(`Exported ${data.count} training examples`);
     } catch (error) {
       console.error('Error exporting:', error);

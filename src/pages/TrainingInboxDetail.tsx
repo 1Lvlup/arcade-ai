@@ -27,6 +27,17 @@ interface QueryDetail {
   citations: any[];
 }
 
+interface DetectedClaim {
+  text: string;
+  hasEvidence: boolean;
+}
+
+interface DetectedNumber {
+  value: string;
+  unit: string;
+  context: string;
+}
+
 export default function TrainingInboxDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -166,6 +177,22 @@ export default function TrainingInboxDetail() {
   }
 
   const hasNumericFlags = query.numeric_flags && query.numeric_flags.length > 0;
+  
+  // Extract claims (split by sentences)
+  const detectedClaims: DetectedClaim[] = query.response_text
+    .split(/[.!?]+/)
+    .filter(s => s.trim().length > 10)
+    .map(text => ({
+      text: text.trim(),
+      hasEvidence: false // TODO: check against evidence spans
+    }));
+
+  // Parse numeric flags
+  const detectedNumbers: DetectedNumber[] = hasNumericFlags
+    ? (typeof query.numeric_flags === 'string'
+        ? JSON.parse(query.numeric_flags)
+        : query.numeric_flags)
+    : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -232,6 +259,47 @@ export default function TrainingInboxDetail() {
             </CardHeader>
             <CardContent>
               <p className="text-sm whitespace-pre-wrap">{query.response_text}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detected Claims & Numbers */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Detected Claims ({detectedClaims.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {detectedClaims.map((claim, i) => (
+                <div key={i} className="p-2 bg-muted rounded text-sm">
+                  {claim.text}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Detected Numbers ({detectedNumbers.length})
+                {detectedNumbers.length > 0 && (
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {detectedNumbers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No numeric values detected</p>
+              ) : (
+                detectedNumbers.map((num, i) => (
+                  <div key={i} className="p-3 border rounded space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="destructive">{num.value} {num.unit}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Context: &quot;...{num.context}...&quot;</p>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>

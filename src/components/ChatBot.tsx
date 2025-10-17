@@ -324,20 +324,17 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   );
 
   return (
-    <Card className="border-primary/20 h-[600px] flex flex-col">
-      <CardHeader className="border-b border-border flex-shrink-0">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            <span>Arcade Fix Guru Assistant</span>
-          </div>
+    <Card className="border-primary/20 h-full flex flex-col">
+      <CardHeader className="border-b border-border flex-shrink-0 py-3 px-4">
+        <CardTitle className="flex items-center justify-between text-sm">
+          <span className="tracking-wider font-bold">LEVEL UP</span>
           <ManualSelector 
             selectedManualId={selectedManualId} 
             onManualChange={handleManualChange}
           />
         </CardTitle>
         {selectedManualId && (
-          <div className="mt-2">
+          <div className="mt-1">
             <Badge variant="outline" className="text-xs">
               Searching: {manualTitle}
             </Badge>

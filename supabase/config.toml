@@ -124,3 +124,21 @@ verify_jwt = true
 
 [functions.retry-processing]
 verify_jwt = true
+
+[functions.training-query]
+verify_jwt = false
+
+[functions.training-inbox]
+verify_jwt = false
+
+[functions.training-query-detail]
+verify_jwt = false
+
+[functions.training-create-example]
+verify_jwt = false
+
+[functions.training-generate-qa]
+verify_jwt = false
+
+[functions.training-export]
+verify_jwt = false

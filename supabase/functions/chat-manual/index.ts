@@ -466,8 +466,9 @@ async function generateAnswer(
     retrievalWeak?: boolean;
     signals?: { topScore: number; avgTop3: number; strongHits: number };
     existingWeak?: boolean;
+    stream?: boolean;
   }
-): Promise<string> {
+): Promise<string | ReadableStream> {
   let systemPrompt: string;
   let userPrompt: string;
 
@@ -548,7 +549,7 @@ ${styleHint}`;
           { role: "user", content: userPrompt },
         ],
         max_completion_tokens: 8000,
-        // GPT-5 doesn't support temperature parameter
+        stream: true,
       }
     : {
         model,
@@ -558,12 +559,13 @@ ${styleHint}`;
         ],
         max_tokens: 2000,
         temperature,
+        stream: true,
       };
 
   console.log(`📤 Calling ${url} with model ${model}`);
   console.log(`📝 Body preview:`, JSON.stringify(body).slice(0, 400));
 
-  const data = await fetchJsonOrThrow(url, {
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${openaiApiKey}`,
@@ -573,17 +575,13 @@ ${styleHint}`;
     body: JSON.stringify(body),
   });
 
-  console.log("📦 OpenAI response usage:", data.usage);
-
-  const answerText = data.choices?.[0]?.message?.content ?? "";
-
-  if (!answerText || answerText.trim() === "") {
-    console.error("❌ Empty answer from model. Response:", JSON.stringify(data, null, 2));
-    throw new Error("Model returned an empty response");
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("❌ OpenAI API error:", errorText);
+    throw new Error(`OpenAI API error: ${response.statusText}`);
   }
 
-  console.log("✅ Answer generated:", answerText.substring(0, 100) + "...");
-  return answerText;
+  return response.body;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -712,7 +710,8 @@ Keep it short (2-3 sentences max) and friendly.`;
   const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL, { 
     retrievalWeak,
     signals,
-    existingWeak: weak
+    existingWeak: weak,
+    stream: false
   });
 
   console.log("✅ [RAG V3] Pipeline complete\n");
@@ -757,13 +756,14 @@ serve(async (req) => {
   }
 
   try {
-    const { query, manual_id } = await req.json();
+    const { query, manual_id, stream } = await req.json();
     if (!query) throw new Error("Query is required");
 
     console.log("\n=================================");
     console.log("🔍 NEW CHAT REQUEST");
     console.log("Query:", query);
     console.log("Manual ID:", manual_id || "All manuals");
+    console.log("Stream:", stream || false);
     console.log("=================================\n");
 
     // Check for Rundown Mode
@@ -831,6 +831,88 @@ serve(async (req) => {
 
     // Run pipeline
     console.log("🚀 Using RAG Pipeline V3\n");
+    
+    // If streaming is requested, handle it differently
+    if (stream) {
+      console.log("📡 Starting streaming response");
+      const result = await runRagPipelineV3(query, manual_id, tenant_id, model);
+      const { sources, strategy, chunks } = result;
+      
+      // Get the answer stream
+      const answerStream = await generateAnswer(query, chunks || [], model, {
+        retrievalWeak: false,
+        stream: true
+      }) as ReadableStream;
+      
+      // Create a new stream that sends metadata first, then the answer
+      const streamWithMetadata = new ReadableStream({
+        async start(controller) {
+          // Send metadata first
+          const metadata = {
+            type: 'metadata',
+            data: {
+              sources: sources?.slice(0, 5).map(s => ({
+                page_start: s.page_start,
+                page_end: s.page_end,
+              })) || [],
+              strategy
+            }
+          };
+          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));
+          
+          // Stream the answer
+          const reader = answerStream.getReader();
+          const decoder = new TextDecoder();
+          
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              
+              const text = decoder.decode(value, { stream: true });
+              const lines = text.split('\n');
+              
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') continue;
+                  
+                  try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices?.[0]?.delta?.content;
+                    if (content) {
+                      const chunk = {
+                        type: 'content',
+                        data: content
+                      };
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
+                    }
+                  } catch (e) {
+                    // Skip invalid JSON
+                  }
+                }
+              }
+            }
+            
+            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (error) {
+            console.error('Streaming error:', error);
+            controller.error(error);
+          }
+        }
+      });
+      
+      return new Response(streamWithMetadata, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+    
     const result = await runRagPipelineV3(query, manual_id, tenant_id, model);
 
     const { answer, sources, strategy, chunks } = result;

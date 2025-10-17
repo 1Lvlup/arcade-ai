@@ -107,47 +107,87 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const query = inputValue.trim();
     setInputValue('');
     setIsLoading(true);
 
+    // Create placeholder bot message
+    const botMessageId = (Date.now() + 1).toString();
+    const botMessage: ChatMessage = {
+      id: botMessageId,
+      type: 'bot',
+      content: '',
+      timestamp: new Date(),
+      feedback: null
+    };
+    setMessages(prev => [...prev, botMessage]);
+
     try {
-      console.log('📤 Sending message to chat-manual:', { 
-        query: inputValue.trim(), 
+      console.log('📤 Sending streaming message to chat-manual:', { 
+        query, 
         manual_id: selectedManualId 
       });
 
-      const { data, error } = await supabase.functions.invoke('chat-manual', {
-        body: {
-          query: inputValue.trim(),
-          manual_id: selectedManualId ?? null
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-manual`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            query,
+            manual_id: selectedManualId ?? null,
+            stream: true
+          })
         }
-      });
+      );
 
-      console.log('📥 Response from chat-manual:', { data, error });
-      console.log('📥 Full data object:', JSON.stringify(data, null, 2));
-      console.log('📥 Answer field:', data?.answer);
-
-      if (error) {
-        console.error('❌ chat-manual error:', error);
-        throw new Error(error.message || JSON.stringify(error));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      if (!data || !data.answer) {
-        console.error('❌ No answer in response. Full data:', data);
-        throw new Error('No answer received from AI');
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let accumulatedContent = '';
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              
+              if (parsed.type === 'content') {
+                accumulatedContent += parsed.data;
+                setMessages(prev => prev.map(msg => 
+                  msg.id === botMessageId 
+                    ? { ...msg, content: accumulatedContent }
+                    : msg
+                ));
+              } else if (parsed.type === 'metadata') {
+                console.log('📊 Received metadata:', parsed.data);
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e);
+            }
+          }
+        }
       }
 
-      const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: data.answer,
-        timestamp: new Date(),
-        query_log_id: data.query_log_id,
-        feedback: null
-      };
-
-      console.log('✅ Bot message created:', botMessage);
-      setMessages(prev => [...prev, botMessage]);
+      console.log('✅ Streaming complete');
     } catch (err: any) {
       console.error('❌ chat-manual failed:', err);
       toast({
@@ -155,12 +195,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         description: err.message || 'Failed to process your question. Please try again.',
         variant: 'destructive',
       });
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: `Error: ${err.message || 'I hit an error talking to the assistant. Please try again.'}`,
-        timestamp: new Date()
-      }]);
+      setMessages(prev => prev.map(msg => 
+        msg.id === botMessageId 
+          ? { ...msg, content: `Error: ${err.message || 'I hit an error talking to the assistant. Please try again.'}` }
+          : msg
+      ));
     } finally {
       setIsLoading(false);
     }

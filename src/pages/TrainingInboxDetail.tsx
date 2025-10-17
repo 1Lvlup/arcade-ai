@@ -123,19 +123,69 @@ export default function TrainingInboxDetail() {
     setSelectedEvidence(newSelected);
   };
 
-  const handleUndo = () => {
+  const handleUndo = async () => {
     if (!lastAction) return;
-    
-    const timeSince = Date.now() - lastAction.timestamp;
-    if (timeSince > 10 * 60 * 1000) {
-      toast.error('Undo expired: Actions can only be undone within 10 minutes');
-      return;
-    }
 
-    toast.success(`Would undo ${lastAction.type} from ${Math.floor(timeSince / 1000)}s ago`);
+    try {
+      const response = await fetch(
+        'https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/training-undo',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': adminKey!
+          },
+          body: JSON.stringify({
+            action_type: lastAction.type,
+            action_data: lastAction.data,
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Undo failed');
+      }
+
+      toast.success('Action undone successfully');
+      setLastAction(null);
+      navigate('/training-hub/inbox');
+    } catch (error) {
+      console.error('Undo error:', error);
+      toast.error('Failed to undo action');
+    }
   };
 
   const handleCreateExample = async () => {
+    // Validate numeric policy
+    const hasNumbers = query?.numeric_flags && 
+      (Array.isArray(query.numeric_flags) ? query.numeric_flags.length > 0 : 
+       typeof query.numeric_flags === 'string' && JSON.parse(query.numeric_flags).length > 0);
+    
+    if (hasNumbers && selectedEvidence.size === 0) {
+      toast.error('Numeric Policy: You must select evidence containing these exact numbers before accepting');
+      return;
+    }
+
+    // If has numbers, verify evidence contains the numbers
+    if (hasNumbers && query) {
+      const detectedNumbers = typeof query.numeric_flags === 'string'
+        ? JSON.parse(query.numeric_flags)
+        : query.numeric_flags;
+      
+      const selectedCitations = Array.from(selectedEvidence).map(idx => query.citations[idx]);
+      const evidenceText = selectedCitations.map(c => c.content).join(' ').toLowerCase();
+      
+      const allNumbersFound = detectedNumbers.every((num: any) => {
+        const numberStr = num.value.toLowerCase();
+        return evidenceText.includes(numberStr);
+      });
+
+      if (!allNumbersFound) {
+        toast.error('Evidence Validation Failed: Selected evidence must contain all detected numeric values');
+        return;
+      }
+    }
+
     // Build evidence spans from selected citations
     const evidenceSpans: EvidenceSpan[] = Array.from(selectedEvidence).map(index => {
       const citation = query!.citations[index];
@@ -145,13 +195,6 @@ export default function TrainingInboxDetail() {
         text: citation.content || ''
       };
     });
-
-    // Validate numeric verification requirement
-    const hasNumbers = /\d/.test(formData.expected_answer);
-    if (hasNumbers && evidenceSpans.length === 0 && !formData.evidence_spans.trim()) {
-      toast.error('Numbers detected: You must either attach evidence or edit the answer to remove numbers');
-      return;
-    }
 
     try {
       setCreating(true);
@@ -175,7 +218,7 @@ export default function TrainingInboxDetail() {
             difficulty: formData.difficulty,
             do_instructions: formData.do_instructions.split('\n').filter(Boolean),
             dont_instructions: formData.dont_instructions.split('\n').filter(Boolean),
-            model_type: 'chat'
+            model_type: 'troubleshooting'
           })
         }
       );
@@ -184,10 +227,12 @@ export default function TrainingInboxDetail() {
         throw new Error('Failed to create training example');
       }
 
+      const result = await response.json();
+
       setLastAction({
         type: 'create_example',
         timestamp: Date.now(),
-        data: { query_id: id, expected_answer: formData.expected_answer },
+        data: { example_id: result.id, query_id: id },
       });
 
       toast.success('Training example created successfully');

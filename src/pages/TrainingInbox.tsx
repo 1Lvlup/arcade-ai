@@ -96,11 +96,53 @@ export default function TrainingInbox() {
       return;
     }
 
-    toast({
-      title: `${action} ${selectedIds.size} items`,
-      description: 'Bulk action functionality coming soon',
-    });
-    setSelectedIds(new Set());
+    // Confirmation
+    const actionText = action === 'accept' ? 'Accept' : action === 'reject' ? 'Reject' : 'Flag';
+    if (!confirm(`${actionText} ${selectedIds.size} selected items?`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/training-bulk-action`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': adminKey!,
+          },
+          body: JSON.stringify({
+            query_ids: Array.from(selectedIds),
+            action,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Bulk action failed');
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: `Bulk ${actionText} Complete`,
+        description: `Processed ${result.processed} items. ${result.succeeded} succeeded, ${result.failed} failed.`,
+      });
+
+      // Clear selection and refresh
+      setSelectedIds(new Set());
+      await fetchInbox();
+    } catch (error) {
+      console.error('Bulk action error:', error);
+      toast({
+        title: 'Error',
+        description: `Failed to ${action} items`,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleSelection = (id: string) => {

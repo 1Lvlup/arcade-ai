@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTrainingAuth } from '@/hooks/useTrainingAuth';
 import { TrainingLogin } from '@/components/TrainingLogin';
 import { SharedHeader } from '@/components/SharedHeader';
+import { DocumentViewer } from '@/components/DocumentViewer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -405,7 +406,21 @@ export default function TrainingInboxDetail() {
           </Card>
         </div>
 
-        {/* Retrieved Context/Evidence */}
+        {/* Document Viewer with Evidence */}
+        {query.citations && query.citations.length > 0 && (
+          <DocumentViewer
+            citations={query.citations}
+            manualId={query.manual_id}
+            selectedEvidence={selectedEvidence}
+            onEvidenceSelect={(citation, selectedText) => {
+              toast.success('Text selected', {
+                description: `"${selectedText.substring(0, 60)}..."`,
+              });
+            }}
+          />
+        )}
+
+        {/* Retrieved Context/Evidence - Checkbox Selection */}
         {query.citations && query.citations.length > 0 && (
           <Card>
             <CardHeader>

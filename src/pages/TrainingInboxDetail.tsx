@@ -289,12 +289,54 @@ export default function TrainingInboxDetail() {
               </div>
             </div>
 
+            {/* Detected Claims */}
+            {detectedClaims.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Detected Claims ({detectedClaims.length})</Label>
+                <div className="space-y-1">
+                  {detectedClaims.slice(0, 5).map((claim, idx) => (
+                    <div key={idx} className="text-sm p-2 bg-muted rounded-md">
+                      {claim.text}
+                    </div>
+                  ))}
+                  {detectedClaims.length > 5 && (
+                    <p className="text-xs text-muted-foreground">... and {detectedClaims.length - 5} more</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Numeric Verification Panel */}
             {hasNumericFlags && (
-              <Alert>
+              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Numbers detected:</strong> This response contains numeric values that require verification.
-                  You must provide evidence spans when creating a training example.
+                <AlertDescription className="space-y-3">
+                  <div>
+                    <strong>⚠️ Numeric Policy Violation</strong>
+                    <p className="text-sm mt-1">
+                      This response contains {detectedNumbers.length} numeric value{detectedNumbers.length !== 1 ? 's' : ''} that require verification.
+                      Per the training spec, no unverified numbers can be accepted.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Detected Numbers:</p>
+                    {detectedNumbers.map((num, idx) => (
+                      <div key={idx} className="bg-background p-2 rounded text-sm space-y-1">
+                        <div className="font-mono font-bold">{num.value}{num.unit}</div>
+                        <div className="text-xs text-muted-foreground">Context: "{num.context}"</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-background p-3 rounded space-y-2">
+                    <p className="text-sm font-medium">Resolution Options:</p>
+                    <ol className="text-xs space-y-1 list-decimal list-inside">
+                      <li>Attach evidence span from retrieved chunks that contains the exact number</li>
+                      <li>Replace answer with measurement instructions (e.g., "Use a multimeter to measure voltage at J1-3")</li>
+                      <li>Mark as "Cannot Verify" and send to development team</li>
+                    </ol>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}

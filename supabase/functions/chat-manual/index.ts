@@ -852,22 +852,65 @@ serve(async (req) => {
       )
     }));
     
-    // 3. Calculate claim coverage (simplified - checks if claim words appear in chunks)
-    const claim_coverage = 0.5; // Placeholder - would need more sophisticated matching
+    // 3. Calculate claim coverage - check if claims are supported by top chunks
+    const topChunksForCoverage = chunks?.slice(0, 3) || [];
+    let supportedClaims = 0;
     
-    // 4. Calculate quality score
-    const quality_score = claim_coverage * 0.7 + (numeric_flags.length === 0 ? 0.3 : 0.0);
+    for (const claim of claims) {
+      const claimWords = claim.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+      
+      for (const chunk of topChunksForCoverage) {
+        const chunkText = (chunk.content || '').toLowerCase();
+        const matchedWords = claimWords.filter((w: string) => chunkText.includes(w));
+        
+        // If 30%+ of claim words found in chunk, consider claim supported
+        if (claimWords.length > 0 && matchedWords.length / claimWords.length > 0.3) {
+          supportedClaims++;
+          break;
+        }
+      }
+    }
     
-    // 5. Determine quality tier
+    const claim_coverage = claims.length > 0 ? supportedClaims / claims.length : 1.0;
+    
+    // 4. Calculate quality score - composite metric per spec
+    const vectorMean = chunks && chunks.length > 0 
+      ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.score || 0), 0) / Math.min(3, chunks.length)
+      : 0;
+    const rerankMean = chunks && chunks.length > 0
+      ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.rerank_score || 0), 0) / Math.min(3, chunks.length)
+      : 0;
+    
+    const coverageWeight = 0.5;
+    const retrievalWeight = 0.3;
+    const penaltyWeight = 0.2;
+    
+    const retrievalScore = (vectorMean * 0.4 + rerankMean * 0.6);
+    const numericPenalty = numeric_flags.length > 0 ? 0.3 : 0.0;
+    
+    const quality_score = (
+      claim_coverage * coverageWeight +
+      retrievalScore * retrievalWeight -
+      numericPenalty * penaltyWeight
+    );
+    
+    // 5. Determine quality tier per spec
     let quality_tier = 'low';
-    if (quality_score >= 0.7) quality_tier = 'high';
-    else if (quality_score >= 0.4) quality_tier = 'medium';
+    if (claim_coverage >= 0.8 && numeric_flags.length === 0) {
+      quality_tier = 'high';
+    } else if (claim_coverage >= 0.5) {
+      quality_tier = 'medium';
+    }
     
     console.log('📊 Quality Assessment:', {
       tier: quality_tier,
-      score: quality_score.toFixed(2),
+      score: quality_score.toFixed(3),
+      coverage: claim_coverage.toFixed(2),
+      claims_total: claims.length,
+      claims_supported: supportedClaims,
       numeric_flags: numeric_flags.length,
-      claims: claims.length
+      vector_mean: vectorMean.toFixed(3),
+      rerank_mean: rerankMean.toFixed(3)
     });
     // ============ END QUALITY CHECKS ============
 

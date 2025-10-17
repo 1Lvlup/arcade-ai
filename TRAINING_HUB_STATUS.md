@@ -66,7 +66,7 @@ Reference: `src/AI_TRAINING_SPEC.md`
 - [x] Warning messages when numbers detected
 - [x] Policy explanation panel
 - [x] Prevent accept without verification
-- [ ] Server-side regex detection and auto-flagging
+- [x] Server-side regex detection and auto-flagging
 - [ ] Evidence span validation (contains exact number)
 
 ### Evidence Attachment
@@ -80,19 +80,19 @@ Reference: `src/AI_TRAINING_SPEC.md`
 - [x] Quality score display
 - [x] Claim coverage display  
 - [x] Numeric flags display
-- [ ] Auto claim extraction (server-side)
-- [ ] Auto claim-to-evidence matching
-- [ ] Quality tier calculation algorithm
+- [x] Auto claim extraction (server-side)
+- [x] Auto claim-to-evidence matching
+- [x] Quality tier calculation algorithm
 
 ## ❌ Not Yet Implemented
 
 ### Critical Missing Features
-- [ ] **Automated server-side checks** (per spec line 180-188):
-  - [ ] Claim extraction on POST /api/query
-  - [ ] Number detection regex
-  - [ ] Auto-claim coverage calculation
-  - [ ] Quality score composite metric
-  - [ ] Numeric auto-flag
+- [x] **Automated server-side checks** (per spec line 180-188):
+  - [x] Claim extraction on POST /api/query
+  - [x] Number detection regex
+  - [x] Auto-claim coverage calculation
+  - [x] Quality score composite metric
+  - [x] Numeric auto-flag
 
 - [ ] **Document viewer** with:
   - [ ] PDF thumbnails
@@ -130,11 +130,11 @@ From spec line 237-243:
 
 To fully complete the spec:
 
-1. **Server-side automation** (spec requirement):
-   - Implement auto claim extraction in edge function
-   - Add number detection regex
-   - Calculate quality_score properly
-   - Auto-populate numeric_flags
+1. **Server-side automation** (spec requirement): ✅ COMPLETE
+   - ✅ Auto claim extraction in edge function
+   - ✅ Number detection regex
+   - ✅ Calculate quality_score properly
+   - ✅ Auto-populate numeric_flags
 
 2. **Evidence validation**:
    - Verify evidence contains exact numbers

@@ -76,14 +76,12 @@ export default function TrainingInboxDetail() {
     try {
       setLoading(true);
       const response = await fetch(
-        'https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/training-query-detail',
+        `https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/training-query-detail?query_id=${id}`,
         {
-          method: 'POST',
+          method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
             'x-admin-key': adminKey!
-          },
-          body: JSON.stringify({ query_id: id })
+          }
         }
       );
 

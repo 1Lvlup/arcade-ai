@@ -16,7 +16,11 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
 const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
-const CHAT_MODEL = Deno.env.get("CHAT_MODEL") ?? "gpt-5-2025-08-07";
+
+// BACKEND_MODEL: Used for internal RAG operations (embeddings, etc.) - defaults to gpt-5-2025-08-07
+// The actual chat model for user responses comes from database ai_config table (chat_model)
+const BACKEND_MODEL = Deno.env.get("BACKEND_MODEL") ?? "gpt-5-2025-08-07";
+
 // tone: "conversational" | "structured"
 const ANSWER_STYLE = Deno.env.get("ANSWER_STYLE") ?? "conversational";
 // Feature flag for advanced answer style V2

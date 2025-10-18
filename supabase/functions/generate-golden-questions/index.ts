@@ -11,8 +11,9 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
-// Fixed model configuration for golden question generation
-const QUESTION_MODEL = 'gpt-5-2025-08-07';
+// Model configuration for golden question generation
+// Use BACKEND_MODEL env var to allow flexibility, default to gpt-5-2025-08-07
+const QUESTION_MODEL = Deno.env.get('BACKEND_MODEL') || 'gpt-5-2025-08-07';
 const QUESTION_MAX_TOKENS = 16000;
 
 // Build structured summary from LlamaCloud parsed data

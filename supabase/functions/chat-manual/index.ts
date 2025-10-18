@@ -66,7 +66,7 @@ async function getModelConfig(tenant_id: string) {
   const isGpt5 = model.includes("gpt-5");
   return {
     model,
-    maxTokensParam: isGpt5 ? "max_output_tokens" : "max_tokens",
+    maxTokensParam: isGpt5 ? "max_completion_tokens" : "max_tokens", // GPT-5 requires max_completion_tokens
     supportsTemperature: !isGpt5,
   };
 }

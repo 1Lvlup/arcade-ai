@@ -35,30 +35,65 @@ export default function TrainingQAGeneration() {
   const [chunks, setChunks] = useState<Array<{ chunk_text: string; page_number: number }>>([]);
   const [selectedText, setSelectedText] = useState('');
 
-  const loadManualChunks = async (selectedManualId: string) => {
+  const loadManualPDF = async (selectedManualId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('chunks_text')
-        .select('content, page_start')
+      // Get the document to find the storage path
+      const { data: doc, error: docError } = await supabase
+        .from('documents')
+        .select('source_filename, id')
         .eq('manual_id', selectedManualId)
-        .order('page_start', { ascending: true });
+        .single();
 
-      if (error) {
-        console.error('Error loading chunks:', error);
-        toast.error('Failed to load manual content');
+      if (docError) {
+        console.error('Error finding document:', docError);
+        toast.error('Failed to load manual');
         return;
       }
-      
-      if (data) {
-        const formattedChunks = data.map(d => ({
-          chunk_text: d.content || '',
-          page_number: d.page_start || 0
-        }));
-        setChunks(formattedChunks);
+
+      // Get the user's profile to construct the storage path
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('User not authenticated');
+        return;
       }
+
+      // List files in the user's directory to find the PDF
+      const { data: files, error: listError } = await supabase
+        .storage
+        .from('manuals')
+        .list(user.id);
+
+      if (listError) {
+        console.error('Error listing files:', listError);
+        toast.error('Failed to load manual files');
+        return;
+      }
+
+      // Find the matching file (look for the source_filename)
+      const matchingFile = files?.find(f => f.name.includes(doc.source_filename.replace('.pdf', '')));
+      
+      if (!matchingFile) {
+        toast.error('PDF file not found in storage');
+        return;
+      }
+
+      // Get signed URL for the PDF
+      const { data: urlData, error: urlError } = await supabase
+        .storage
+        .from('manuals')
+        .createSignedUrl(`${user.id}/${matchingFile.name}`, 3600);
+
+      if (urlError) {
+        console.error('Error getting signed URL:', urlError);
+        toast.error('Failed to load PDF');
+        return;
+      }
+
+      // Set the PDF URL for viewing
+      setChunks([{ chunk_text: urlData.signedUrl, page_number: 0 }]);
     } catch (error) {
-      console.error('Error loading chunks:', error);
-      toast.error('Failed to load manual content');
+      console.error('Error loading PDF:', error);
+      toast.error('Failed to load manual');
     }
   };
 
@@ -66,7 +101,7 @@ export default function TrainingQAGeneration() {
     if (selectedManualId && title) {
       setManualId(selectedManualId);
       setManualTitle(title);
-      loadManualChunks(selectedManualId);
+      loadManualPDF(selectedManualId);
     } else {
       setManualId('');
       setManualTitle('');
@@ -191,27 +226,20 @@ export default function TrainingQAGeneration() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1 overflow-hidden">
-                    <div 
-                      className="h-full overflow-auto border rounded-lg p-4 bg-muted/20"
-                      onMouseUp={handleTextSelection}
-                    >
-                      {chunks.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Loading manual content...</p>
-                      ) : (
-                        <div className="space-y-4">
-                          {chunks.map((chunk, idx) => (
-                            <div key={idx} className="space-y-1">
-                              <Badge variant="outline" className="text-xs">
-                                Page {chunk.page_number}
-                              </Badge>
-                              <p className="text-sm select-text whitespace-pre-wrap leading-relaxed">
-                                {chunk.chunk_text}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {chunks.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                        Loading manual...
+                      </div>
+                    ) : (
+                      <iframe
+                        src={chunks[0].chunk_text}
+                        className="w-full h-full border rounded-lg"
+                        title="Manual PDF Viewer"
+                        onLoad={() => {
+                          // PDF loaded successfully
+                        }}
+                      />
+                    )}
                     
                     {selectedText && (
                       <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">

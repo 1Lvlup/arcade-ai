@@ -28,29 +28,29 @@ export function ManualSelector({ selectedManualId, onManualChange }: ManualSelec
   const fetchProcessedManuals = async () => {
     try {
       // Get documents
-      const { data: documents, error: docsError } = await supabase
+      const { data: docs, error: directError } = await supabase
         .from('documents')
         .select('id, manual_id, title, source_filename')
         .order('title');
 
-      if (docsError) throw docsError;
+      if (directError) throw directError;
 
-      // Get chunk counts for all manuals
-      const { data: chunks, error: chunksError } = await supabase
-        .from('chunks_text')
-        .select('manual_id');
+      // Get counts separately for each manual using count query
+      const manualsWithCounts = await Promise.all(
+        (docs || []).map(async (doc) => {
+          const { count } = await supabase
+            .from('chunks_text')
+            .select('*', { count: 'exact', head: true })
+            .eq('manual_id', doc.manual_id);
+          
+          return {
+            ...doc,
+            chunk_count: count || 0
+          };
+        })
+      );
 
-      if (chunksError) throw chunksError;
-
-      // Combine data and filter only processed manuals
-      const manualsWithChunks = documents
-        ?.map(doc => ({
-          ...doc,
-          chunk_count: chunks?.filter(chunk => chunk.manual_id === doc.manual_id).length || 0
-        }))
-        .filter(manual => manual.chunk_count > 0) || [];
-
-      setManuals(manualsWithChunks);
+      setManuals(manualsWithCounts.filter(m => m.chunk_count > 0));
     } catch (error) {
       console.error('Error fetching manuals:', error);
     } finally {

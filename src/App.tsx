@@ -29,6 +29,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccountSettings from "./pages/AccountSettings";
 import Support from "./pages/Support";
 import SupportTickets from "./pages/SupportTickets";
+import QAAnalytics from "./pages/QAAnalytics";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -175,6 +176,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <TrainingExamples />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/qa-analytics" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <QAAnalytics />
                 </AdminRoute>
               </ProtectedRoute>
             } />

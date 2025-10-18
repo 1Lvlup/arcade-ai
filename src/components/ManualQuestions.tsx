@@ -54,15 +54,15 @@ export function ManualQuestions({ manualId }: ManualQuestionsProps) {
   const generateQuestions = async () => {
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-golden-questions', {
+      const { data, error } = await supabase.functions.invoke('generate-and-evaluate-questions', {
         body: { manual_id: manualId }
       });
 
       if (error) throw error;
 
       toast({
-        title: 'Questions generated',
-        description: `Generated ${data.questions?.length || 0} golden questions`,
+        title: 'Questions Generated & Evaluated',
+        description: `Created ${data.questions_generated} questions and evaluated them. Pass rate: ${data.summary?.pass_rate}%`,
       });
       
       fetchQuestions(); // Refresh the list
@@ -70,7 +70,7 @@ export function ManualQuestions({ manualId }: ManualQuestionsProps) {
       console.error('Error generating questions:', error);
       toast({
         title: 'Error generating questions',
-        description: 'Failed to generate golden questions. Please try again.',
+        description: 'Failed to generate and evaluate questions. Please try again.',
         variant: 'destructive',
       });
     } finally {

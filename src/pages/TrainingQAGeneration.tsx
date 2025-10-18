@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ManualSelector } from '@/components/ManualSelector';
-import { ArrowLeft, Sparkles, AlertCircle, Copy } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -32,8 +32,7 @@ export default function TrainingQAGeneration() {
   const [pageStart, setPageStart] = useState('');
   const [pageEnd, setPageEnd] = useState('');
   const [qaPairs, setQaPairs] = useState<QAPair[]>([]);
-  const [chunks, setChunks] = useState<Array<{ chunk_text: string; page_number: number }>>([]);
-  const [selectedText, setSelectedText] = useState('');
+  const [pdfUrl, setPdfUrl] = useState<string>('');
 
   const loadManualPDF = async (selectedManualId: string) => {
     try {
@@ -90,7 +89,7 @@ export default function TrainingQAGeneration() {
       }
 
       // Set the PDF URL for viewing
-      setChunks([{ chunk_text: urlData.signedUrl, page_number: 0 }]);
+      setPdfUrl(urlData.signedUrl);
     } catch (error) {
       console.error('Error loading PDF:', error);
       toast.error('Failed to load manual');
@@ -105,38 +104,8 @@ export default function TrainingQAGeneration() {
     } else {
       setManualId('');
       setManualTitle('');
-      setChunks([]);
+      setPdfUrl('');
     }
-  };
-
-  const handleTextSelection = () => {
-    const selection = window.getSelection();
-    const text = selection?.toString().trim();
-    
-    if (text && text.length > 10) {
-      setSelectedText(text);
-    }
-  };
-
-  const handleUseSelectedText = () => {
-    if (!selectedText) {
-      toast.error('No text selected');
-      return;
-    }
-
-    setContentText(selectedText);
-    
-    // Auto-fill page range if we can determine it
-    const matchingChunks = chunks.filter(c => c.chunk_text.includes(selectedText));
-    if (matchingChunks.length > 0) {
-      const pages = matchingChunks.map(c => c.page_number).filter(p => p != null);
-      if (pages.length > 0) {
-        setPageStart(Math.min(...pages).toString());
-        setPageEnd(Math.max(...pages).toString());
-      }
-    }
-    
-    toast.success('Text populated! Edit if needed, then generate Q&A.');
   };
 
   const handleGenerate = async () => {
@@ -196,7 +165,7 @@ export default function TrainingQAGeneration() {
         <Alert>
           <Sparkles className="h-4 w-4" />
           <AlertDescription>
-            Select a manual, highlight text, then generate Q&A pairs. The selected text will auto-populate the content field.
+            Select a manual to view it, then copy and paste content from the PDF to generate Q&A pairs.
           </AlertDescription>
         </Alert>
 
@@ -215,37 +184,19 @@ export default function TrainingQAGeneration() {
               {manualTitle && (
                 <Card className="flex-1 flex flex-col">
                   <CardHeader>
-                    <CardTitle className="text-base flex items-center justify-between">
-                      <span>{manualTitle}</span>
-                      {selectedText && (
-                        <Button size="sm" onClick={handleUseSelectedText}>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Use Selected Text
-                        </Button>
-                      )}
-                    </CardTitle>
+                    <CardTitle className="text-base">{manualTitle}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1 overflow-hidden">
-                    {chunks.length === 0 ? (
+                    {!pdfUrl ? (
                       <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
                         Loading manual...
                       </div>
                     ) : (
                       <iframe
-                        src={chunks[0].chunk_text}
+                        src={pdfUrl}
                         className="w-full h-full border rounded-lg"
                         title="Manual PDF Viewer"
-                        onLoad={() => {
-                          // PDF loaded successfully
-                        }}
                       />
-                    )}
-                    
-                    {selectedText && (
-                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
-                        <p className="font-medium mb-1">Selected Text ({selectedText.length} chars):</p>
-                        <p className="text-muted-foreground line-clamp-3">&quot;{selectedText}&quot;</p>
-                      </div>
                     )}
                   </CardContent>
                 </Card>

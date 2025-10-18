@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ManualSelector } from '@/components/ManualSelector';
-import { 
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
   MessageCircle, 
   Send, 
   Loader2, 
@@ -22,7 +24,8 @@ import {
   Save,
   History,
   Plus,
-  Trash2
+  Trash2,
+  MessageSquarePlus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -60,6 +63,15 @@ interface ChatBotProps {
   manualTitle?: string;
 }
 
+interface Conversation {
+  id: string;
+  title: string;
+  manual_id: string | null;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+}
+
 export function ChatBot({ selectedManualId: initialManualId, manualTitle: initialManualTitle }: ChatBotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -70,6 +82,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [showConversations, setShowConversations] = useState(false);
   const [savedConversations, setSavedConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -96,20 +113,55 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   useEffect(() => {
     updateWelcomeMessage();
     loadSavedConversations();
+    loadConversations();
   }, [selectedManualId, manualTitle]);
 
-  const loadSavedConversations = async () => {
+  const loadConversations = async () => {
     try {
       const { data, error } = await supabase
         .from('conversations')
         .select('*')
         .order('last_message_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
       if (error) throw error;
+      setConversations(data || []);
       setSavedConversations(data || []);
     } catch (error) {
       console.error('Error loading conversations:', error);
+    }
+  };
+
+  const loadSavedConversations = async () => {
+    await loadConversations();
+  };
+
+  const deleteConversation = async (conversationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      await loadConversations();
+      
+      if (currentConversationId === conversationId) {
+        startNewConversation();
+      }
+
+      toast({
+        title: 'Conversation deleted',
+        description: 'The conversation has been removed.',
+      });
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete conversation',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -169,6 +221,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       return;
     }
 
+    setIsSaving(true);
     try {
       const firstUserMessage = messages.find(m => m.type === 'user');
       const title = (typeof firstUserMessage?.content === 'string' 
@@ -239,6 +292,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         description: 'Failed to save conversation',
         variant: 'destructive',
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -665,23 +720,85 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             <Button
               variant="ghost"
               size="sm"
-              onClick={exportConversation}
-              disabled={messages.length <= 1}
+              onClick={saveConversation}
+              disabled={messages.length <= 1 || isSaving}
               className="h-8 px-2"
-              title="Export conversation"
+              title="Save conversation"
             >
-              <FileText className="h-4 w-4" />
+              <Save className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={generateSummary}
-              disabled={messages.length <= 1 || isLoading}
+              onClick={startNewConversation}
+              disabled={messages.length <= 1}
               className="h-8 px-2"
-              title="Generate summary"
+              title="New conversation"
             >
-              <Lightbulb className="h-4 w-4" />
+              <MessageSquarePlus className="h-4 w-4" />
             </Button>
+            <Sheet open={showHistory} onOpenChange={setShowHistory}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2"
+                  title="View conversation history"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Conversation History</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-3">
+                  {conversations.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No saved conversations yet
+                    </div>
+                  ) : (
+                    conversations.map((conv) => (
+                      <Card
+                        key={conv.id}
+                        className={`hover:border-primary/50 transition-colors cursor-pointer ${
+                          currentConversationId === conv.id ? 'border-primary' : ''
+                        }`}
+                      >
+                        <CardContent className="pt-4 pb-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div
+                              className="flex-1"
+                              onClick={() => loadConversation(conv.id)}
+                            >
+                              <div className="font-medium mb-1 line-clamp-2">
+                                {conv.title}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
+                                {new Date(conv.last_message_at).toLocaleTimeString()}
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConversationToDelete(conv.id);
+                                setShowDeleteDialog(true);
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
             <ManualSelector 
               selectedManualId={selectedManualId} 
               onManualChange={handleManualChange}
@@ -871,6 +988,31 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           </div>
         </div>
       </CardContent>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the conversation and all its messages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (conversationToDelete) {
+                  deleteConversation(conversationToDelete);
+                  setConversationToDelete(null);
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

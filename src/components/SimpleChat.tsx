@@ -71,30 +71,102 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
     setInput('');
     setIsLoading(true);
 
+    // Add placeholder for streaming response
+    const assistantMessageIndex = messages.length + 1;
+    setMessages(prev => [...prev, { 
+      role: 'assistant', 
+      content: '',
+      feedback: null
+    }]);
+
     try {
-      const { data, error } = await supabase.functions.invoke('chat-manual', {
-        body: { query: input, manual_id: manualId }
+      // Use streaming endpoint
+      const response = await fetch(
+        `https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/chat-manual`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({ 
+            query: input, 
+            manual_id: manualId,
+            stream: true 
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullResponse = '';
+      let metadata: any = null;
+
+      if (!reader) throw new Error('No reader available');
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              
+              if (parsed.type === 'metadata') {
+                metadata = parsed.data;
+              } else if (parsed.type === 'content') {
+                fullResponse += parsed.data;
+                // Update message in real-time
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[assistantMessageIndex] = {
+                    role: 'assistant',
+                    content: fullResponse,
+                    feedback: null
+                  };
+                  return newMessages;
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing SSE:', e);
+            }
+          }
+        }
+      }
+
+      // Final update with metadata
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[assistantMessageIndex] = {
+          ...newMessages[assistantMessageIndex],
+          metadata,
+        };
+        return newMessages;
       });
 
-      if (error) throw error;
-
-      const assistantMessage: Message = { 
-        role: 'assistant', 
-        content: data.answer || 'Sorry, I could not generate a response.',
-        grading: data.grading,
-        metadata: data.metadata,
-        context_seen: data.context_seen,
-        query_log_id: data.query_log_id,
-        feedback: null
-      };
-      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMessage: Message = { 
-        role: 'assistant', 
-        content: 'Sorry, there was an error processing your request.' 
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[assistantMessageIndex] = { 
+          role: 'assistant', 
+          content: 'Sorry, there was an error processing your request.' 
+        };
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }

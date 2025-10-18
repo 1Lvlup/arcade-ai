@@ -20,6 +20,8 @@ const openaiProjectId = Deno.env.get("OPENAI_PROJECT_ID");
 // BACKEND_MODEL: Used for internal RAG operations (embeddings, etc.) - defaults to gpt-5-2025-08-07
 // The actual chat model for user responses comes from database ai_config table (chat_model)
 const BACKEND_MODEL = Deno.env.get("BACKEND_MODEL") ?? "gpt-5-2025-08-07";
+// CHAT_MODEL: Fallback if database lookup fails (deprecated, use ai_config table instead)
+const CHAT_MODEL = Deno.env.get("CHAT_MODEL") ?? "gpt-5-2025-08-07";
 
 // tone: "conversational" | "structured"
 const ANSWER_STYLE = Deno.env.get("ANSWER_STYLE") ?? "conversational";

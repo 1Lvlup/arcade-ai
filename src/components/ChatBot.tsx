@@ -18,7 +18,11 @@ import {
   ChevronDown,
   ChevronUp,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Save,
+  History,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -63,6 +67,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [selectedManualId, setSelectedManualId] = useState<string | null>(initialManualId || null);
   const [manualTitle, setManualTitle] = useState<string | null>(initialManualTitle || null);
   const [expandedSources, setExpandedSources] = useState<string | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [showConversations, setShowConversations] = useState(false);
+  const [savedConversations, setSavedConversations] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -88,12 +95,164 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
   useEffect(() => {
     updateWelcomeMessage();
+    loadSavedConversations();
   }, [selectedManualId, manualTitle]);
+
+  const loadSavedConversations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*')
+        .order('last_message_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setSavedConversations(data || []);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  };
+
+  const loadConversation = async (conversationId: string) => {
+    try {
+      const { data: conversationData, error: convError } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('id', conversationId)
+        .single();
+
+      if (convError) throw convError;
+
+      const { data: messagesData, error: msgError } = await supabase
+        .from('conversation_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (msgError) throw msgError;
+
+      const loadedMessages: ChatMessage[] = messagesData.map(msg => ({
+        id: msg.id,
+        type: msg.role === 'user' ? 'user' : 'bot',
+        content: msg.content,
+        timestamp: new Date(msg.created_at),
+        query_log_id: msg.query_log_id || undefined,
+        feedback: null
+      }));
+
+      setMessages(loadedMessages);
+      setCurrentConversationId(conversationId);
+      setSelectedManualId(conversationData.manual_id);
+      setShowConversations(false);
+
+      toast({
+        title: 'Conversation loaded',
+        description: conversationData.title,
+      });
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load conversation',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const saveConversation = async () => {
+    if (messages.length <= 1) {
+      toast({
+        title: 'Nothing to save',
+        description: 'Have a conversation first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const firstUserMessage = messages.find(m => m.type === 'user');
+      const title = (typeof firstUserMessage?.content === 'string' 
+        ? firstUserMessage.content 
+        : 'Conversation'
+      ).slice(0, 50);
+      
+      let conversationId = currentConversationId;
+
+      if (!conversationId) {
+        // Create new conversation
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { data: newConv, error: convError } = await supabase
+          .from('conversations')
+          .insert([{
+            title,
+            manual_id: selectedManualId,
+            user_id: user.id,
+          }])
+          .select()
+          .single();
+
+        if (convError) throw convError;
+        conversationId = newConv.id;
+        setCurrentConversationId(conversationId);
+      } else {
+        // Update existing conversation
+        await supabase
+          .from('conversations')
+          .update({ title })
+          .eq('id', conversationId);
+      }
+
+      // Save all messages
+      const messagesToSave = messages
+        .filter(m => m.id !== 'welcome')
+        .map(m => ({
+          conversation_id: conversationId,
+          role: m.type === 'user' ? 'user' : 'assistant',
+          content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+          query_log_id: m.query_log_id || null,
+        }));
+
+      // Delete old messages and insert new ones
+      await supabase
+        .from('conversation_messages')
+        .delete()
+        .eq('conversation_id', conversationId);
+
+      const { error: msgError } = await supabase
+        .from('conversation_messages')
+        .insert(messagesToSave);
+
+      if (msgError) throw msgError;
+
+      await loadSavedConversations();
+
+      toast({
+        title: 'Conversation saved',
+        description: 'You can access it anytime',
+      });
+    } catch (error) {
+      console.error('Error saving conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save conversation',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const startNewConversation = () => {
+    setMessages([]);
+    setCurrentConversationId(null);
+    updateWelcomeMessage();
+  };
 
   const handleManualChange = (newManualId: string | null, newManualTitle: string | null) => {
     setSelectedManualId(newManualId);
     setManualTitle(newManualTitle);
     setMessages([]); // clear chat when switching manuals
+    setCurrentConversationId(null);
   };
 
   const handleSendMessage = async () => {
@@ -478,6 +637,34 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             <Button
               variant="ghost"
               size="sm"
+              onClick={startNewConversation}
+              className="h-8 px-2"
+              title="New conversation"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={saveConversation}
+              disabled={messages.length <= 1}
+              className="h-8 px-2"
+              title="Save conversation"
+            >
+              <Save className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowConversations(!showConversations)}
+              className="h-8 px-2"
+              title="View saved conversations"
+            >
+              <History className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={exportConversation}
               disabled={messages.length <= 1}
               className="h-8 px-2"
@@ -508,9 +695,70 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             </Badge>
           </div>
         )}
+        {currentConversationId && (
+          <div className="mt-1">
+            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+              Saved conversation
+            </Badge>
+          </div>
+        )}
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+        {/* Saved Conversations Sidebar */}
+        {showConversations && (
+          <div className="border-b border-border p-4 space-y-2 max-h-[200px] overflow-y-auto">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-sm">Saved Conversations</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowConversations(false)}
+              >
+                ✕
+              </Button>
+            </div>
+            {savedConversations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No saved conversations</p>
+            ) : (
+              savedConversations.map(conv => (
+                <div
+                  key={conv.id}
+                  className="flex items-start justify-between gap-2 p-2 rounded hover:bg-muted cursor-pointer transition-colors"
+                  onClick={() => loadConversation(conv.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{conv.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(conv.last_message_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await supabase.from('conversations').delete().eq('id', conv.id);
+                        await loadSavedConversations();
+                        if (currentConversationId === conv.id) {
+                          startNewConversation();
+                        }
+                        toast({ title: 'Conversation deleted' });
+                      } catch (error) {
+                        toast({ title: 'Error', description: 'Failed to delete', variant: 'destructive' });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-black">
           {messages.map((message) => (

@@ -60,7 +60,14 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
         .order('page_number', { ascending: true });
 
       if (error) throw error;
-      setFigures(data || []);
+      
+      // Filter to only show images that have text (either OCR text or caption text)
+      const figuresWithText = (data || []).filter(f => 
+        (f.ocr_text && f.ocr_text.length > 0) || 
+        (f.caption_text && f.caption_text.length > 0)
+      );
+      
+      setFigures(figuresWithText);
     } catch (error) {
       console.error('Error loading figures:', error);
     } finally {
@@ -116,7 +123,7 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
       <CardHeader>
         <CardTitle>OCR Processing Debug Panel</CardTitle>
         <CardDescription>
-          Real-time OCR extraction status for all figures. Use "Process Images with AI OCR" button above to process images.
+          Showing only images with text content (OCR or captions). Use "Process Images with AI OCR" button above to process images.
         </CardDescription>
       </CardHeader>
       <CardContent>

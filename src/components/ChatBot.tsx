@@ -410,7 +410,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 ) : isStructuredAnswer(message.content) ? (
                   renderStructuredAnswer(message.content, message.id)
                 ) : (
-                  <div className="text-sm whitespace-pre-wrap">{message.content as string}</div>
+                  <div className="text-sm whitespace-pre-wrap">
+                    {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
+                  </div>
                 )}
 
                 {/* Thumbs Up/Down for Bot Messages */}

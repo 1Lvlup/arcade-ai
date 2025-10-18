@@ -138,37 +138,40 @@ serve(async (req) => {
             role: 'system',
             content: `You are an expert at creating diagnostic test questions for technical documentation systems.
 
-Your goal: Generate realistic troubleshooting questions that will STRESS TEST a RAG system's ability to:
+Your goal: Generate realistic, DETAILED troubleshooting questions that will STRESS TEST a RAG system's ability to:
 - Find the right information across multiple pages
 - Combine information from different sections
 - Handle technical terminology correctly
 - Provide specific part numbers, voltages, and procedures
 - Give complete step-by-step answers
 
+CRITICAL: Questions should be 2-4 sentences long to provide full context and detail.
+
 QUESTION TYPES TO GENERATE (10-12 total):
 
 1. **Multi-step Troubleshooting** (3-4 questions)
    - Questions that require information from 3+ different sections
-   - Example: "Lane sensor shows error 12, what should I check and in what order?"
+   - Example: "The lane sensor is showing error code 12 and the display is flashing red. What are the possible causes for this error code, what diagnostic steps should I perform in order, and what tools will I need?"
    - Should test: retrieval quality, procedure completeness, proper sequencing
 
 2. **Specification Lookups** (2-3 questions)
    - Questions requiring exact part numbers, voltages, measurements
-   - Example: "What voltage should the motor control board output?"
+   - Example: "I need to replace the motor control board and want to verify the correct voltage output. What voltage should the motor control board output on connector J5, and what is the part number for a replacement board?"
    - Should test: specificity, citation accuracy, no hallucination
 
 3. **Complex Diagnostics** (2-3 questions)
-   - Questions about interpreting error codes or symptoms
-   - Example: "Green LED flashes 3 times then solid red - what does this mean?"
+   - Questions about interpreting error codes or symptoms with context
+   - Example: "The green LED flashes 3 times, pauses, then turns solid red and stays on. The machine was working fine yesterday. What does this error pattern mean, what components should I check, and is there anything I should verify before replacing parts?"
    - Should test: diagnostic reasoning, multi-source synthesis
 
 4. **Installation/Setup** (2-3 questions)
-   - Questions about proper installation or calibration procedures
-   - Example: "How do I properly align the ball gate sensors?"
+   - Questions about proper installation or calibration procedures with detail
+   - Example: "I'm installing new ball gate sensors for the first time. What is the proper alignment procedure, what tools do I need, what are the critical safety steps, and how do I verify they're working correctly after installation?"
    - Should test: procedure completeness, safety mentions, tool requirements
 
 QUALITY REQUIREMENTS:
-- Each question should require 4-8 sentences to answer properly
+- Each question should be 2-4 sentences providing full context and specificity
+- Each question should require 6-12 sentences to answer comprehensively
 - Include 5-7 expected_keywords that MUST appear in a good answer
 - Questions should be specific to this manual's content (use actual component names you see)
 - Vary importance: high for safety/critical, medium for routine, low for optional
@@ -283,7 +286,18 @@ ${summary.substring(0, 8000)}`
       
       console.log(`\n[${ i + 1}/${insertedQuestions.length}] "${q.question}"`);
 
-      // Call production chat-manual to get answer
+      // Call production chat-manual with explicit request for detailed answer
+      const detailedQuestion = `${q.question}\n\nPlease provide a comprehensive, detailed answer with:
+- Complete step-by-step procedures
+- Specific part numbers, voltages, and component names
+- Page references from the manual
+- Safety considerations
+- Required tools
+- Verification steps
+- What to do if the issue persists
+
+Answer in 6-12 sentences with specific citations.`;
+
       const chatResponse = await fetch(`${supabaseUrl}/functions/v1/chat-manual`, {
         method: 'POST',
         headers: {
@@ -291,7 +305,7 @@ ${summary.substring(0, 8000)}`
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: q.question,
+          message: detailedQuestion,
           manual_id,
           conversation_id: null
         })

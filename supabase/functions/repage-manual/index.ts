@@ -125,8 +125,9 @@ serve(async (req) => {
       }))
     );
 
-    // patch chunks
+    // patch chunks and figures
     for (const u of updates) {
+      // Update chunk
       await supabase
         .from("chunks_text")
         .update({
@@ -134,6 +135,18 @@ serve(async (req) => {
           page_end: u.new_page
         })
         .eq("id", u.chunk_id);
+      
+      // Update figures on the same page
+      const chunk = chunks.find(c => c.id === u.chunk_id);
+      if (chunk?.page_start) {
+        await supabase
+          .from("figures")
+          .update({
+            page_number: u.new_page
+          })
+          .eq("manual_id", manual_id)
+          .eq("page_number", Number(chunk.page_start));
+      }
     }
 
     return new Response(

@@ -87,7 +87,7 @@ async function createEmbedding(text: string) {
 }
 
 // Advanced hierarchical chunking based on document structure
-function createHierarchicalChunks(content: string, manual_id: string) {
+function createHierarchicalChunks(content: string, manual_id: string, sourceFilename?: string) {
   const chunks = [];
   const lines = content.split('\n');
   
@@ -136,16 +136,33 @@ function createHierarchicalChunks(content: string, manual_id: string) {
     if (headerMatch) {
       // Save previous chunk if it has content
       if (currentChunk.trim()) {
-        chunks.push({
-          content: currentChunk.trim(),
-          manual_id,
-          menu_path: currentSection || 'Introduction',
-          page_start: currentPage,
-          page_end: currentPage,
-          chunk_type: 'content',
-          strategy: CHUNK_STRATEGIES.HIERARCHICAL,
-          index: chunkIndex++
-        });
+      const chunkText = currentChunk.trim();
+      const chunkStartChar = content.indexOf(chunkText);
+      const chunkEndChar = chunkStartChar + chunkText.length;
+      const hasStructure = chunkText.includes('\n') || chunkText.length > 200;
+      const qualityScore = hasStructure ? 0.8 : 0.5;
+      
+      chunks.push({
+        content: chunkText,
+        manual_id,
+        menu_path: currentSection || 'Introduction',
+        page_start: currentPage,
+        page_end: currentPage,
+        chunk_type: 'content',
+        strategy: CHUNK_STRATEGIES.HIERARCHICAL,
+        index: chunkIndex,
+        chunk_id: `chunk_${manual_id}_p${currentPage}_${chunkIndex}`,
+        doc_id: manual_id,
+        doc_version: 'v1',
+        start_char: chunkStartChar >= 0 ? chunkStartChar : 0,
+        end_char: chunkEndChar,
+        section_heading: currentSection || null,
+        quality_score: qualityScore,
+        human_reviewed: false,
+        usage_count: 0,
+        source_filename: sourceFilename || null
+      });
+      chunkIndex++;
         currentChunk = '';
       }
       
@@ -175,16 +192,33 @@ function createHierarchicalChunks(content: string, manual_id: string) {
       else if (patterns.figure.test(currentChunk)) chunkType = 'figure';
       else if (patterns.circuit.test(currentChunk)) chunkType = 'circuit';
       
+      const chunkText = currentChunk.trim();
+      const chunkStartChar = content.indexOf(chunkText);
+      const chunkEndChar = chunkStartChar + chunkText.length;
+      const hasStructure = chunkText.includes('\n') || chunkText.length > 200;
+      const qualityScore = hasStructure ? 0.8 : 0.5;
+      
       chunks.push({
-        content: currentChunk.trim(),
+        content: chunkText,
         manual_id,
         menu_path: currentSection || 'General',
         page_start: currentPage,
         page_end: currentPage,
         chunk_type: chunkType,
         strategy: CHUNK_STRATEGIES.HIERARCHICAL,
-        index: chunkIndex++
+        index: chunkIndex,
+        chunk_id: `chunk_${manual_id}_p${currentPage}_${chunkIndex}`,
+        doc_id: manual_id,
+        doc_version: 'v1',
+        start_char: chunkStartChar >= 0 ? chunkStartChar : 0,
+        end_char: chunkEndChar,
+        section_heading: currentSection || null,
+        quality_score: qualityScore,
+        human_reviewed: false,
+        usage_count: 0,
+        source_filename: sourceFilename || null
       });
+      chunkIndex++;
       
       // Reset chunk without overlap to avoid duplication
       currentChunk = '';
@@ -193,15 +227,31 @@ function createHierarchicalChunks(content: string, manual_id: string) {
   
   // Save final chunk
   if (currentChunk.trim()) {
+    const chunkText = currentChunk.trim();
+    const chunkStartChar = content.indexOf(chunkText);
+    const chunkEndChar = chunkStartChar + chunkText.length;
+    const hasStructure = chunkText.includes('\n') || chunkText.length > 200;
+    const qualityScore = hasStructure ? 0.8 : 0.5;
+    
     chunks.push({
-      content: currentChunk.trim(),
+      content: chunkText,
       manual_id,
       menu_path: currentSection || 'Conclusion',
       page_start: currentPage,
       page_end: currentPage,
       chunk_type: 'content',
       strategy: CHUNK_STRATEGIES.HIERARCHICAL,
-      index: chunkIndex++
+      index: chunkIndex,
+      chunk_id: `chunk_${manual_id}_p${currentPage}_${chunkIndex}`,
+      doc_id: manual_id,
+      doc_version: 'v1',
+      start_char: chunkStartChar >= 0 ? chunkStartChar : 0,
+      end_char: chunkEndChar,
+      section_heading: currentSection || null,
+      quality_score: qualityScore,
+      human_reviewed: false,
+      usage_count: 0,
+      source_filename: sourceFilename || null
     });
   }
   
@@ -458,7 +508,7 @@ serve(async (req) => {
     
     // Create hierarchical chunks based on document structure
     console.log("🧩 Creating hierarchical chunks with semantic categorization...");
-    const allChunks = createHierarchicalChunks(markdown, document.manual_id);
+    const allChunks = createHierarchicalChunks(markdown, document.manual_id, document.source_filename);
     console.log(`📚 Created ${allChunks.length} hierarchical chunks`);
     
     // Log page number distribution for debugging
@@ -540,7 +590,19 @@ serve(async (req) => {
             menu_path: chunk.menu_path,
             embedding: embedding,
             fec_tenant_id: document.fec_tenant_id,
-            metadata: chunkMetadata
+            metadata: chunkMetadata,
+            chunk_id: chunk.chunk_id,
+            doc_id: chunk.doc_id,
+            doc_version: chunk.doc_version,
+            start_char: chunk.start_char,
+            end_char: chunk.end_char,
+            embedding_model: 'text-embedding-3-small',
+            section_heading: chunk.section_heading,
+            quality_score: chunk.quality_score,
+            human_reviewed: chunk.human_reviewed,
+            usage_count: chunk.usage_count,
+            source_filename: chunk.source_filename,
+            ingest_date: new Date().toISOString()
           };
           
           console.log("📝 Insert data:", JSON.stringify(insertData, null, 2));
@@ -814,56 +876,20 @@ serve(async (req) => {
           const storageUrl = urlData.publicUrl;
           console.log(`  🔗 Storage URL: ${storageUrl}`);
           
-          // Extract OCR text from LlamaCloud metadata if available
-          let extractedOcrText = null;
-          let extractedOcrConfidence = null;
-          
-          console.log(`  🔍 RAW IMAGE METADATA TYPE: ${typeof imageItem}`);
-          console.log(`  🔍 RAW IMAGE METADATA KEYS: ${imageItem && typeof imageItem === 'object' ? Object.keys(imageItem).join(', ') : 'N/A'}`);
-          console.log(`  🔍 HAS OCR FIELD: ${imageItem && typeof imageItem === 'object' && 'ocr' in imageItem}`);
-          console.log(`  🔍 OCR TYPE: ${imageItem && typeof imageItem === 'object' && imageItem.ocr ? typeof imageItem.ocr : 'N/A'}`);
-          console.log(`  🔍 OCR IS ARRAY: ${imageItem && typeof imageItem === 'object' && imageItem.ocr ? Array.isArray(imageItem.ocr) : 'N/A'}`);
-          console.log(`  🔍 OCR ARRAY LENGTH: ${imageItem && typeof imageItem === 'object' && imageItem.ocr && Array.isArray(imageItem.ocr) ? imageItem.ocr.length : 'N/A'}`);
-          
-          if (imageItem && typeof imageItem === 'object' && imageItem.ocr && Array.isArray(imageItem.ocr) && imageItem.ocr.length > 0) {
-            console.log(`  🔍 FIRST OCR ITEM:`, JSON.stringify(imageItem.ocr[0], null, 2));
-            
-            // Combine all OCR text segments
-            extractedOcrText = imageItem.ocr
-              .map((item: any) => item.text)
-              .filter(Boolean)
-              .join(' ');
-            
-            // Calculate average confidence
-            const confidences = imageItem.ocr
-              .map((item: any) => item.confidence)
-              .filter((c: any) => typeof c === 'number');
-            
-            if (confidences.length > 0) {
-              extractedOcrConfidence = confidences.reduce((a: number, b: number) => a + b, 0) / confidences.length;
-            }
-            
-            console.log(`  ✅ EXTRACTED OCR TEXT (${extractedOcrText?.length} chars): ${extractedOcrText?.substring(0, 100)}...`);
-            console.log(`  ✅ EXTRACTED OCR CONFIDENCE: ${extractedOcrConfidence?.toFixed(4)}`);
-          } else {
-            console.log(`  ⚠️ NO OCR DATA FOUND IN LLAMACLOUD METADATA`);
-            console.log(`  ⚠️ FULL RAW METADATA:`, JSON.stringify(imageItem, null, 2));
-          }
-          
-          // Insert figure metadata into database WITH storage_url
+          // Insert figure metadata into database
           const figureData = {
             manual_id: document.manual_id,
+            doc_id: document.manual_id,
             figure_id: imageName,
             storage_path: storagePath,
-            storage_url: storageUrl, // CRITICAL: Set this so OCR can proceed
+            storage_url: storageUrl,
             page_number: pageNumber,
             llama_asset_name: imageName,
             fec_tenant_id: document.fec_tenant_id,
             raw_image_metadata: imageItem && typeof imageItem === 'object' ? imageItem : { name: imageName },
-            // Set OCR data from LlamaCloud if available, otherwise mark as pending
-            ocr_text: extractedOcrText,
-            ocr_confidence: extractedOcrConfidence,
-            ocr_status: extractedOcrText ? 'success' : 'pending'
+            ocr_text: null,
+            ocr_confidence: null,
+            ocr_status: 'pending'
           };
           
           console.log(`  💾 Inserting figure record...`);
@@ -1146,6 +1172,31 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
           }
         } catch (ocrError) {
           console.error('❌ Error invoking OCR processing:', ocrError);
+        }
+        
+        // Trigger automatic page detection
+        try {
+          console.log('🔍 Invoking automatic page detection...');
+          const pageDetectResponse = await supabase.functions.invoke('detect-pages', {
+            body: { manual_id: document.manual_id }
+          });
+          
+          if (pageDetectResponse.error) {
+            console.error('❌ Page detection failed:', pageDetectResponse.error);
+          } else if (pageDetectResponse.data?.confidence > 0.9 && pageDetectResponse.data?.page_map) {
+            console.log(`✅ Auto-applying page remapping (confidence: ${pageDetectResponse.data.confidence})`);
+            await supabase.functions.invoke('repage-manual', {
+              body: { 
+                manual_id: document.manual_id,
+                page_map: pageDetectResponse.data.page_map,
+                auto_applied: true
+              }
+            });
+          } else {
+            console.log(`ℹ️ Confidence too low (${pageDetectResponse.data?.confidence}), skipping auto-repage`);
+          }
+        } catch (pageError) {
+          console.error('❌ Error in page detection:', pageError);
         }
       })());
     }

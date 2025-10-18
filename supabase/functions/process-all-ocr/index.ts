@@ -82,14 +82,42 @@ Deno.serve(async (req) => {
             messages: [
               {
                 role: 'system',
-                content: 'You are an OCR expert. Extract ALL text visible in the image with high accuracy. Preserve formatting, tables, and structure. Return ONLY the extracted text, nothing else.'
+                content: `You are an expert technical documentation analyzer. Extract comprehensive metadata from images.
+
+Return JSON with these fields:
+{
+  "ocr_text": "all readable text...",
+  "figure_type": "diagram|photo|table|chart|circuit|schematic|wiring_diagram|flowchart|exploded_view|illustration|mixed",
+  "text_confidence": "high|medium|low|none",
+  "detected_components": {
+    "part_numbers": ["R12", "IC555", "J5"],
+    "component_types": ["resistor", "capacitor", "connector", "IC"],
+    "measurements": ["12V", "5A", "3.3kΩ"],
+    "callout_labels": ["A", "B", "C"],
+    "wire_colors": ["red", "black"],
+    "connectors": ["J1", "P2"],
+    "safety_symbols": ["warning", "high_voltage"]
+  },
+  "semantic_tags": ["electrical", "troubleshooting", "assembly"],
+  "entities": {
+    "part_numbers": ["555-TIMER-IC"],
+    "model_numbers": ["XYZ-2000"],
+    "measurements": ["12V DC", "500mA"]
+  },
+  "technical_complexity": "simple|moderate|complex",
+  "image_quality": "sharp|acceptable|blurry|damaged",
+  "has_table": boolean,
+  "table_dimensions": "3x5 rows/cols" (if table),
+  "language": "en|es|fr|multi",
+  "notes": "any special observations"
+}`
               },
               {
                 role: 'user',
                 content: [
                   {
                     type: 'text',
-                    text: 'Extract all text from this image. Include everything you can read - labels, numbers, part names, table contents, diagrams text, etc. Preserve the structure and layout as much as possible.'
+                    text: 'Analyze this technical image comprehensively. Extract ALL text, identify components, classify the image type, detect entities, and provide quality assessment.'
                   },
                   {
                     type: 'image_url',
@@ -110,40 +138,71 @@ Deno.serve(async (req) => {
         }
 
         const visionData = await visionResponse.json();
-        const extractedText = visionData.choices[0].message.content?.trim() || '';
+        const visionResponse = JSON.parse(visionData.choices[0].message.content || '{}');
+        const extractedText = visionResponse.ocr_text?.trim() || '';
+        const hasNoText = visionResponse.text_confidence === 'none' || extractedText.length < 5;
 
         console.log(`📄 Extracted text (${extractedText.length} chars): ${extractedText.substring(0, 100)}...`);
 
-        // Generate embedding for the OCR text
-        const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openaiApiKey}`,
-            ...(openaiProjectId ? { 'OpenAI-Project': openaiProjectId } : {}),
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'text-embedding-3-small',
-            input: extractedText,
-          }),
-        });
+        // Calculate quality score (0-1)
+        const qualityScore = 
+          visionResponse.image_quality === 'sharp' ? 1.0 :
+          visionResponse.image_quality === 'acceptable' ? 0.75 :
+          visionResponse.image_quality === 'blurry' ? 0.5 : 0.25;
 
+        // Generate embedding for the extracted text if we have meaningful text
         let embedding = null;
-        if (embeddingResponse.ok) {
-          const embeddingData = await embeddingResponse.json();
-          embedding = embeddingData.data[0].embedding;
-          console.log(`🔢 Generated embedding`);
+        if (!hasNoText && extractedText.length > 10) {
+          const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+              ...(openaiProjectId ? { 'OpenAI-Project': openaiProjectId } : {}),
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'text-embedding-3-small',
+              input: extractedText,
+            }),
+          });
+
+          if (embeddingResponse.ok) {
+            const embeddingData = await embeddingResponse.json();
+            embedding = embeddingData.data[0].embedding;
+            console.log(`🔢 Generated embedding`);
+          }
         }
 
-        // Update figure with OCR text and mark as success
+        // Update the figure with comprehensive metadata
         const { error: updateError } = await supabase
           .from('figures')
           .update({
-            ocr_text: extractedText,
-            ocr_confidence: null, // GPT-4 Vision doesn't provide confidence scores
-            ocr_status: 'success', // Use 'success' - the valid status value
+            ocr_text: hasNoText ? null : extractedText,
+            ocr_confidence: hasNoText ? null : (
+              visionResponse.text_confidence === 'high' ? 0.95 : 
+              visionResponse.text_confidence === 'medium' ? 0.75 : 0.50
+            ),
+            ocr_status: hasNoText ? 'no_text' : 'success',
             ocr_updated_at: new Date().toISOString(),
-            ...(embedding ? { embedding_text: embedding } : {})
+            
+            // Comprehensive metadata from GPT-4 Vision
+            figure_type: visionResponse.figure_type,
+            detected_components: visionResponse.detected_components,
+            semantic_tags: visionResponse.semantic_tags || [],
+            entities: visionResponse.entities || {},
+            quality_score: qualityScore,
+            vision_metadata: {
+              technical_complexity: visionResponse.technical_complexity,
+              image_quality: visionResponse.image_quality,
+              has_table: visionResponse.has_table,
+              table_dimensions: visionResponse.table_dimensions,
+              language: visionResponse.language,
+              notes: visionResponse.notes,
+              processed_at: new Date().toISOString(),
+              processed_by: 'gpt-4.1-vision'
+            },
+            
+            ...(embedding && !hasNoText ? { embedding_text: embedding } : {})
           })
           .eq('id', figure.id);
 

@@ -73,46 +73,91 @@ export type Database = {
       }
       chunks_text: {
         Row: {
+          chunk_hash: string | null
+          chunk_id: string | null
           content: string
           content_hash: string | null
           created_at: string | null
+          doc_id: string | null
+          doc_version: string | null
           embedding: string | null
+          embedding_model: string | null
+          end_char: number | null
+          entities: Json | null
           fec_tenant_id: string
+          human_reviewed: boolean | null
           id: string
+          ingest_date: string | null
           manual_id: string
           menu_path: string | null
           metadata: Json | null
           page_end: number | null
           page_start: number | null
+          quality_score: number | null
+          section_heading: string | null
+          semantic_tags: string[] | null
+          source_filename: string | null
+          start_char: number | null
           text_confidence: number | null
+          usage_count: number | null
         }
         Insert: {
+          chunk_hash?: string | null
+          chunk_id?: string | null
           content: string
           content_hash?: string | null
           created_at?: string | null
+          doc_id?: string | null
+          doc_version?: string | null
           embedding?: string | null
+          embedding_model?: string | null
+          end_char?: number | null
+          entities?: Json | null
           fec_tenant_id?: string
+          human_reviewed?: boolean | null
           id?: string
+          ingest_date?: string | null
           manual_id: string
           menu_path?: string | null
           metadata?: Json | null
           page_end?: number | null
           page_start?: number | null
+          quality_score?: number | null
+          section_heading?: string | null
+          semantic_tags?: string[] | null
+          source_filename?: string | null
+          start_char?: number | null
           text_confidence?: number | null
+          usage_count?: number | null
         }
         Update: {
+          chunk_hash?: string | null
+          chunk_id?: string | null
           content?: string
           content_hash?: string | null
           created_at?: string | null
+          doc_id?: string | null
+          doc_version?: string | null
           embedding?: string | null
+          embedding_model?: string | null
+          end_char?: number | null
+          entities?: Json | null
           fec_tenant_id?: string
+          human_reviewed?: boolean | null
           id?: string
+          ingest_date?: string | null
           manual_id?: string
           menu_path?: string | null
           metadata?: Json | null
           page_end?: number | null
           page_start?: number | null
+          quality_score?: number | null
+          section_heading?: string | null
+          semantic_tags?: string[] | null
+          source_filename?: string | null
+          start_char?: number | null
           text_confidence?: number | null
+          usage_count?: number | null
         }
         Relationships: [
           {
@@ -372,12 +417,17 @@ export type Database = {
           callouts_json: Json | null
           caption_text: string | null
           created_at: string | null
+          detected_components: Json | null
+          doc_id: string | null
           dropped: boolean | null
           dropped_reason: string | null
           embedding_text: string | null
+          entities: Json | null
           fec_tenant_id: string
           figure_id: string | null
+          figure_type: string | null
           id: string
+          image_hash: string | null
           image_name: string | null
           is_visible: boolean | null
           job_id: string | null
@@ -392,11 +442,16 @@ export type Database = {
           ocr_updated_at: string | null
           page: number | null
           page_number: number | null
+          quality_score: number | null
           raw_image_metadata: Json | null
+          semantic_tags: string[] | null
           storage_path: string | null
           storage_url: string | null
           structured_json: Json | null
+          thumbnail_url: string | null
+          verified_by_human: string | null
           version: string | null
+          vision_metadata: Json | null
           vision_text: string | null
         }
         Insert: {
@@ -404,12 +459,17 @@ export type Database = {
           callouts_json?: Json | null
           caption_text?: string | null
           created_at?: string | null
+          detected_components?: Json | null
+          doc_id?: string | null
           dropped?: boolean | null
           dropped_reason?: string | null
           embedding_text?: string | null
+          entities?: Json | null
           fec_tenant_id?: string
           figure_id?: string | null
+          figure_type?: string | null
           id?: string
+          image_hash?: string | null
           image_name?: string | null
           is_visible?: boolean | null
           job_id?: string | null
@@ -424,11 +484,16 @@ export type Database = {
           ocr_updated_at?: string | null
           page?: number | null
           page_number?: number | null
+          quality_score?: number | null
           raw_image_metadata?: Json | null
+          semantic_tags?: string[] | null
           storage_path?: string | null
           storage_url?: string | null
           structured_json?: Json | null
+          thumbnail_url?: string | null
+          verified_by_human?: string | null
           version?: string | null
+          vision_metadata?: Json | null
           vision_text?: string | null
         }
         Update: {
@@ -436,12 +501,17 @@ export type Database = {
           callouts_json?: Json | null
           caption_text?: string | null
           created_at?: string | null
+          detected_components?: Json | null
+          doc_id?: string | null
           dropped?: boolean | null
           dropped_reason?: string | null
           embedding_text?: string | null
+          entities?: Json | null
           fec_tenant_id?: string
           figure_id?: string | null
+          figure_type?: string | null
           id?: string
+          image_hash?: string | null
           image_name?: string | null
           is_visible?: boolean | null
           job_id?: string | null
@@ -456,11 +526,16 @@ export type Database = {
           ocr_updated_at?: string | null
           page?: number | null
           page_number?: number | null
+          quality_score?: number | null
           raw_image_metadata?: Json | null
+          semantic_tags?: string[] | null
           storage_path?: string | null
           storage_url?: string | null
           structured_json?: Json | null
+          thumbnail_url?: string | null
+          verified_by_human?: string | null
           version?: string | null
+          vision_metadata?: Json | null
           vision_text?: string | null
         }
         Relationships: [
@@ -734,6 +809,36 @@ export type Database = {
           query_log_id?: string | null
           rating?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      page_label_map: {
+        Row: {
+          actual_page_label: string
+          confidence: number
+          created_at: string | null
+          detection_method: string | null
+          id: string
+          manual_id: string
+          sequential_page: number
+        }
+        Insert: {
+          actual_page_label: string
+          confidence?: number
+          created_at?: string | null
+          detection_method?: string | null
+          id?: string
+          manual_id: string
+          sequential_page: number
+        }
+        Update: {
+          actual_page_label?: string
+          confidence?: number
+          created_at?: string | null
+          detection_method?: string | null
+          id?: string
+          manual_id?: string
+          sequential_page?: number
         }
         Relationships: []
       }

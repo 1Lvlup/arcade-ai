@@ -138,17 +138,17 @@ Return JSON with these fields:
         }
 
         const visionData = await visionResponse.json();
-        const visionResponse = JSON.parse(visionData.choices[0].message.content || '{}');
-        const extractedText = visionResponse.ocr_text?.trim() || '';
-        const hasNoText = visionResponse.text_confidence === 'none' || extractedText.length < 5;
+        const visionResult = JSON.parse(visionData.choices[0].message.content || '{}');
+        const extractedText = visionResult.ocr_text?.trim() || '';
+        const hasNoText = visionResult.text_confidence === 'none' || extractedText.length < 5;
 
         console.log(`📄 Extracted text (${extractedText.length} chars): ${extractedText.substring(0, 100)}...`);
 
         // Calculate quality score (0-1)
         const qualityScore = 
-          visionResponse.image_quality === 'sharp' ? 1.0 :
-          visionResponse.image_quality === 'acceptable' ? 0.75 :
-          visionResponse.image_quality === 'blurry' ? 0.5 : 0.25;
+          visionResult.image_quality === 'sharp' ? 1.0 :
+          visionResult.image_quality === 'acceptable' ? 0.75 :
+          visionResult.image_quality === 'blurry' ? 0.5 : 0.25;
 
         // Generate embedding for the extracted text if we have meaningful text
         let embedding = null;
@@ -179,25 +179,25 @@ Return JSON with these fields:
           .update({
             ocr_text: hasNoText ? null : extractedText,
             ocr_confidence: hasNoText ? null : (
-              visionResponse.text_confidence === 'high' ? 0.95 : 
-              visionResponse.text_confidence === 'medium' ? 0.75 : 0.50
+              visionResult.text_confidence === 'high' ? 0.95 : 
+              visionResult.text_confidence === 'medium' ? 0.75 : 0.50
             ),
             ocr_status: hasNoText ? 'no_text' : 'success',
             ocr_updated_at: new Date().toISOString(),
             
             // Comprehensive metadata from GPT-4 Vision
-            figure_type: visionResponse.figure_type,
-            detected_components: visionResponse.detected_components,
-            semantic_tags: visionResponse.semantic_tags || [],
-            entities: visionResponse.entities || {},
+            figure_type: visionResult.figure_type,
+            detected_components: visionResult.detected_components,
+            semantic_tags: visionResult.semantic_tags || [],
+            entities: visionResult.entities || {},
             quality_score: qualityScore,
             vision_metadata: {
-              technical_complexity: visionResponse.technical_complexity,
-              image_quality: visionResponse.image_quality,
-              has_table: visionResponse.has_table,
-              table_dimensions: visionResponse.table_dimensions,
-              language: visionResponse.language,
-              notes: visionResponse.notes,
+              technical_complexity: visionResult.technical_complexity,
+              image_quality: visionResult.image_quality,
+              has_table: visionResult.has_table,
+              table_dimensions: visionResult.table_dimensions,
+              language: visionResult.language,
+              notes: visionResult.notes,
               processed_at: new Date().toISOString(),
               processed_by: 'gpt-4.1-vision'
             },

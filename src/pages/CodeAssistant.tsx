@@ -199,11 +199,56 @@ export function CodeAssistant() {
   };
 
   const indexCodebase = async () => {
+    if (!currentConversation) return;
+    
     setIsIndexingCodebase(true);
     try {
-      toast({ title: 'Success', description: 'Codebase indexed successfully' });
+      // Fetch all indexed codebase files
+      const { data: indexedFiles, error } = await supabase
+        .from('indexed_codebase')
+        .select('*');
+
+      if (error) throw error;
+
+      if (!indexedFiles || indexedFiles.length === 0) {
+        toast({ 
+          title: 'No files found', 
+          description: 'No indexed files available. Upload files to get started.',
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      // Add all indexed files to the conversation context
+      const filesToAdd = indexedFiles.map(file => ({
+        conversation_id: currentConversation,
+        file_path: file.file_path,
+        file_content: file.file_content,
+        language: file.language || detectLanguage(file.file_path)
+      }));
+
+      const { data: addedFiles, error: insertError } = await supabase
+        .from('code_assistant_files')
+        .insert(filesToAdd)
+        .select();
+
+      if (insertError) throw insertError;
+
+      if (addedFiles) {
+        setCodeFiles(prev => [...prev, ...addedFiles]);
+      }
+
+      toast({ 
+        title: 'Success', 
+        description: `Indexed ${indexedFiles.length} files from your codebase` 
+      });
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to index codebase', variant: 'destructive' });
+      console.error('Error indexing codebase:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to index codebase', 
+        variant: 'destructive' 
+      });
     } finally {
       setIsIndexingCodebase(false);
     }

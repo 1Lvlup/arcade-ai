@@ -11,8 +11,9 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
-// Fixed model configuration for grading
-const GRADER_MODEL = 'gpt-5-2025-08-07';
+// Model configuration for grading golden questions
+// Use BACKEND_MODEL env var to allow flexibility, default to gpt-5-2025-08-07
+const GRADER_MODEL = Deno.env.get('BACKEND_MODEL') || 'gpt-5-2025-08-07';
 const GRADER_MAX_TOKENS = 800;
 
 // Quality metrics calculation

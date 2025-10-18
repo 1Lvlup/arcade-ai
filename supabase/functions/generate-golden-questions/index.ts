@@ -186,58 +186,59 @@ serve(async (req) => {
       messages: [
         {
           role: 'system',
-          content: `You are an AI quality engineer testing RAG retrieval systems. Generate questions that will REVEAL WEAKNESSES in chunking and parsing.
+          content: `You are a technician who writes realistic troubleshooting questions that users would actually ask about this arcade manual.
 
-GOAL: Create questions that test if the manual was split well and can be searched effectively.
+GOAL: Generate natural questions that real technicians and operators would ask when working on this equipment.
 
-STRATEGIC QUESTION TYPES:
+QUESTION TYPES TO GENERATE:
 
-1. **Cross-Reference Tests** (3-4 questions)
-   - Require info from multiple sections (tests chunk boundaries)
-   - Example: "What tools needed for installing main power supply?"
-   - Expected keywords should span different sections
+1. **Common Troubleshooting** (3-4 questions)
+   - Real problems technicians encounter daily
+   - Example: "Monitor won't turn on, what should I check first?"
+   - Focus on symptoms users actually report
 
-2. **Specific Component Queries** (2-3 questions)  
-   - Target exact part numbers, voltages, dimensions
-   - Example: "What's the voltage spec for the 12V rail?"
-   - Tests if technical specs survived chunking
+2. **Part Specifications** (2-3 questions)  
+   - Questions about specific components and their specs
+   - Example: "What voltage does the power supply output?"
+   - Keep it practical and relevant to repairs
 
-3. **Procedural Step Tests** (2-3 questions)
-   - Multi-step processes (assembly, calibration, diagnostics)
-   - Example: "How do I calibrate ball sensors from factory reset?"
-   - Tests if procedures stayed intact across chunks
+3. **Maintenance Procedures** (2-3 questions)
+   - Routine maintenance and calibration tasks
+   - Example: "How often should I clean the coin mechanism?"
+   - Focus on preventive maintenance
 
-4. **Figure/Diagram Tests** (1-2 questions)
-   - Reference diagrams, wiring charts, callouts
-   - Example: "Which connector is J7 on the main board?"
-   - Tests if figure captions were indexed properly
+4. **Installation & Setup** (1-2 questions)
+   - Questions about initial setup or part replacement
+   - Example: "How do I install a new marquee light?"
+   - Real scenarios from installation/upgrade work
 
-5. **Error Code Lookups** (1-2 questions)
-   - Specific error codes and their solutions
-   - Example: "What does error code E12 mean?"
-   - Tests table parsing and keyword extraction
+5. **Error Codes & Diagnostics** (1-2 questions)
+   - Questions about specific error messages or diagnostic modes
+   - Example: "What does the flashing red LED mean?"
+   - Based on actual error reporting
 
 QUALITY RULES:
-- Maximum 12 words per question
-- Include 3-5 expected_keywords that MUST appear in a good answer
-- Mix high/medium importance (avoid all "high")
-- Be specific with component names, part numbers, values
+- Write questions naturally, as a technician would ask them
+- Keep questions under 15 words
+- Include 3-5 expected_keywords that should appear in a good answer
+- Mix importance levels (high for safety/critical issues, medium/low for routine tasks)
+- Use specific component names from the manual when relevant
 
 Return valid JSON:
 {
   "questions": [
     {
-      "question": "short, technical query under 12 words",
+      "question": "natural question a technician would ask",
       "type": "troubleshooting|setup|maintenance|specifications|safety",
-      "category": "two-word category",
+      "category": "two-word category describing the topic",
       "importance": "high|medium|low",
       "expected_keywords": ["keyword1", "keyword2", "keyword3"],
-      "explanation": "what this tests about RAG quality"
+      "explanation": "why this question is important for technicians"
     }
   ]
 }
 
-Generate 10-12 strategically designed test questions.`
+Generate 10-12 realistic questions that technicians would actually ask.`
         },
         {
           role: 'user',

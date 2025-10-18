@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, CheckCircle2, XCircle, Clock, Zap } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 interface OCRDebugData {
   id: string;
@@ -27,8 +25,6 @@ interface OCRDebugPanelProps {
 export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
   const [figures, setFigures] = useState<OCRDebugData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [extracting, setExtracting] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     loadFigures();
@@ -72,66 +68,6 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
     }
   };
 
-  const extractExistingOCR = async () => {
-    setExtracting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('extract-existing-ocr', {
-        body: { manual_id: manualId }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'OCR Extraction Complete',
-        description: `Extracted OCR from ${data.extracted} of ${data.total_figures} figures`,
-      });
-
-      // Reload figures
-      loadFigures();
-    } catch (error) {
-      console.error('Error extracting OCR:', error);
-      toast({
-        title: 'Extraction Failed',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
-    } finally {
-      setExtracting(false);
-    }
-  };
-
-  const processAllOCR = async () => {
-    setExtracting(true);
-    try {
-      toast({
-        title: 'Processing Started',
-        description: 'Running OCR on all images without text. This may take several minutes...',
-      });
-
-      const { data, error } = await supabase.functions.invoke('process-all-ocr', {
-        body: { manual_id: manualId }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'OCR Processing Complete',
-        description: `Successfully processed ${data.successful} of ${data.total_figures} figures`,
-      });
-
-      // Reload figures
-      loadFigures();
-    } catch (error) {
-      console.error('Error processing OCR:', error);
-      toast({
-        title: 'Processing Failed',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
-    } finally {
-      setExtracting(false);
-    }
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -178,55 +114,10 @@ export function OCRDebugPanel({ manualId }: OCRDebugPanelProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>OCR Processing Debug Panel</CardTitle>
-            <CardDescription>
-              Real-time OCR extraction status for all figures
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            {stats.withLlamaOCRButNoText > 0 && (
-              <Button 
-                onClick={extractExistingOCR} 
-                disabled={extracting}
-                variant="outline"
-                size="sm"
-              >
-                {extracting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Extracting...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 mr-2" />
-                    Extract LlamaCloud OCR ({stats.withLlamaOCRButNoText})
-                  </>
-                )}
-              </Button>
-            )}
-            {stats.needsOCR > 0 && (
-              <Button 
-                onClick={processAllOCR} 
-                disabled={extracting}
-                variant="default"
-              >
-                {extracting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 mr-2" />
-                    Process All Images ({stats.needsOCR})
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
+        <CardTitle>OCR Processing Debug Panel</CardTitle>
+        <CardDescription>
+          Real-time OCR extraction status for all figures. Use "Process Images with AI OCR" button above to process images.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {/* Stats Summary */}

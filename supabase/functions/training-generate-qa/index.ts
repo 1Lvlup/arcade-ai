@@ -54,7 +54,7 @@ serve(async (req) => {
       });
     }
 
-    // Call OpenAI to generate Q&A pairs
+    // Call OpenAI to generate Q&A pairs using structured output
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -68,6 +68,37 @@ serve(async (req) => {
           { role: 'user', content: `Content from pages ${page_start}-${page_end}:\n\n${content}` }
         ],
         max_completion_tokens: 2000,
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'generate_qa_pairs',
+              description: 'Generate Q&A pairs from documentation content',
+              parameters: {
+                type: 'object',
+                properties: {
+                  qa_pairs: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        question: { type: 'string' },
+                        answer: { type: 'string' },
+                        page_refs: { type: 'array', items: { type: 'number' } },
+                        category: { type: 'string' }
+                      },
+                      required: ['question', 'answer', 'page_refs', 'category'],
+                      additionalProperties: false
+                    }
+                  }
+                },
+                required: ['qa_pairs'],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: 'function', function: { name: 'generate_qa_pairs' } }
       }),
     });
 
@@ -81,13 +112,22 @@ serve(async (req) => {
     }
 
     const aiResponse = await response.json();
-    const qaText = aiResponse.choices[0].message.content;
+    const toolCall = aiResponse.choices[0].message.tool_calls?.[0];
+    
+    if (!toolCall || toolCall.function.name !== 'generate_qa_pairs') {
+      console.error('No tool call in response:', JSON.stringify(aiResponse));
+      return new Response(JSON.stringify({ error: 'Invalid AI response format' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     let qaPairs;
     try {
-      qaPairs = JSON.parse(qaText);
+      const args = JSON.parse(toolCall.function.arguments);
+      qaPairs = args.qa_pairs;
     } catch (e) {
-      console.error('Failed to parse OpenAI response as JSON:', qaText);
+      console.error('Failed to parse tool call arguments:', toolCall.function.arguments);
       return new Response(JSON.stringify({ error: 'Invalid AI response format' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

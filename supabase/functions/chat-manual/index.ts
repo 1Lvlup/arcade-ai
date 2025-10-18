@@ -853,6 +853,28 @@ serve(async (req) => {
       const result = await runRagPipelineV3(query, manual_id, tenant_id, model);
       const { sources, strategy, chunks } = result;
       
+      // Log the query to get query_log_id for feedback
+      let queryLogId = null;
+      try {
+        const { data: logData, error: logError } = await supabase
+          .from('query_logs')
+          .insert({
+            query_text: query,
+            manual_id: manual_id || null,
+            fec_tenant_id: tenant_id || null,
+            retrieval_method: strategy,
+            model_name: model,
+          })
+          .select('id')
+          .single();
+
+        if (!logError && logData) {
+          queryLogId = logData.id;
+        }
+      } catch (e) {
+        console.error('Error logging query:', e);
+      }
+      
       // Get the answer stream
       const answerStream = await generateAnswer(query, chunks || [], model, {
         retrievalWeak: false,
@@ -862,7 +884,7 @@ serve(async (req) => {
       // Create a new stream that sends metadata first, then the answer
       const streamWithMetadata = new ReadableStream({
         async start(controller) {
-          // Send metadata first
+          // Send metadata first (including query_log_id for feedback)
           const metadata = {
             type: 'metadata',
             data: {
@@ -870,7 +892,8 @@ serve(async (req) => {
                 page_start: s.page_start,
                 page_end: s.page_end,
               })) || [],
-              strategy
+              strategy,
+              query_log_id: queryLogId
             }
           };
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));

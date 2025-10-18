@@ -153,6 +153,7 @@ export function SimpleChat({ manualId }: SimpleChatProps) {
         newMessages[assistantMessageIndex] = {
           ...newMessages[assistantMessageIndex],
           metadata,
+          query_log_id: metadata?.query_log_id,
         };
         return newMessages;
       });

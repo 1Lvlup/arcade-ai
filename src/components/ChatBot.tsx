@@ -171,7 +171,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               const parsed = JSON.parse(data);
               
               if (parsed.type === 'content') {
-                accumulatedContent += parsed.data;
+                // Ensure data is always a string
+                const contentChunk = typeof parsed.data === 'string' 
+                  ? parsed.data 
+                  : JSON.stringify(parsed.data);
+                accumulatedContent += contentChunk;
                 setMessages(prev => prev.map(msg => 
                   msg.id === botMessageId 
                     ? { ...msg, content: accumulatedContent }

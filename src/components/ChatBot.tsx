@@ -123,9 +123,18 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     setMessages(prev => [...prev, botMessage]);
 
     try {
+      // Build conversation history for context
+      const conversationHistory = messages
+        .filter(m => m.type === 'user' || m.type === 'bot')
+        .map(m => ({
+          role: m.type === 'user' ? 'user' : 'assistant',
+          content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+        }));
+
       console.log('📤 Sending streaming message to chat-manual:', { 
         query, 
-        manual_id: selectedManualId 
+        manual_id: selectedManualId,
+        history_length: conversationHistory.length
       });
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -140,7 +149,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           body: JSON.stringify({
             query,
             manual_id: selectedManualId ?? null,
-            stream: true
+            stream: true,
+            messages: conversationHistory
           })
         }
       );
@@ -366,15 +376,130 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     </div>
   );
 
+  const exportConversation = () => {
+    const exportData = messages
+      .filter(m => m.id !== 'welcome')
+      .map(m => ({
+        role: m.type === 'user' ? 'User' : 'Assistant',
+        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content, null, 2),
+        timestamp: m.timestamp.toLocaleString()
+      }));
+
+    const exportText = exportData
+      .map(m => `[${m.timestamp}] ${m.role}:\n${m.content}\n`)
+      .join('\n---\n\n');
+
+    const blob = new Blob([exportText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `conversation-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Conversation exported',
+      description: 'Your conversation has been downloaded as a text file.',
+    });
+  };
+
+  const generateSummary = async () => {
+    if (messages.length <= 1) {
+      toast({
+        title: 'Not enough content',
+        description: 'Have a conversation first to generate a summary.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const conversationText = messages
+        .filter(m => m.id !== 'welcome')
+        .map(m => `${m.type === 'user' ? 'User' : 'Assistant'}: ${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`)
+        .join('\n\n');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-manual`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            query: `Please provide a concise summary report of this conversation, highlighting: 1) Main issues discussed, 2) Key solutions provided, 3) Important technical details mentioned, 4) Any unresolved items:\n\n${conversationText}`,
+            manual_id: selectedManualId ?? null,
+            stream: false
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to generate summary');
+      }
+
+      const data = await response.json();
+      const summaryMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'bot',
+        content: `📊 **Conversation Summary**\n\n${data.response || data.content || 'Summary generated.'}`,
+        timestamp: new Date(),
+        feedback: null
+      };
+
+      setMessages(prev => [...prev, summaryMessage]);
+      toast({
+        title: 'Summary generated',
+        description: 'AI has summarized the conversation.',
+      });
+    } catch (error) {
+      console.error('Summary generation failed:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate summary. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Card className="border-primary/20 h-full flex flex-col">
       <CardHeader className="border-b border-border flex-shrink-0 py-3 px-4">
         <CardTitle className="flex items-center justify-between text-sm">
           <span className="tracking-wider font-bold">LEVEL UP</span>
-          <ManualSelector 
-            selectedManualId={selectedManualId} 
-            onManualChange={handleManualChange}
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={exportConversation}
+              disabled={messages.length <= 1}
+              className="h-8 px-2"
+              title="Export conversation"
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={generateSummary}
+              disabled={messages.length <= 1 || isLoading}
+              className="h-8 px-2"
+              title="Generate summary"
+            >
+              <Lightbulb className="h-4 w-4" />
+            </Button>
+            <ManualSelector 
+              selectedManualId={selectedManualId} 
+              onManualChange={handleManualChange}
+            />
+          </div>
         </CardTitle>
         {selectedManualId && (
           <div className="mt-1">

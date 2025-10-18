@@ -482,6 +482,7 @@ async function generateAnswer(
     signals?: { topScore: number; avgTop3: number; strongHits: number };
     existingWeak?: boolean;
     stream?: boolean;
+    conversationHistory?: Array<{ role: string; content: string }>;
   }
 ): Promise<string | ReadableStream> {
   let systemPrompt: string;
@@ -556,25 +557,26 @@ ${styleHint}`;
   const url = "https://api.openai.com/v1/chat/completions";
   const temperature = ANSWER_STYLE === "conversational" ? 0.4 : 0.1;
 
+  // Build messages array with conversation history
+  const conversationMessages = [
+    { role: "system", content: systemPrompt },
+    ...(opts?.conversationHistory || []),
+    { role: "user", content: userPrompt },
+  ];
+
   const body: any = isGpt5(model)
     ? {
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        messages: conversationMessages,
         max_completion_tokens: 8000,
-        stream: true,
+        stream: opts?.stream !== false,
       }
     : {
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        messages: conversationMessages,
         max_tokens: 2000,
         temperature,
-        stream: true,
+        stream: opts?.stream !== false,
       };
 
   console.log(`📤 Calling ${url} with model ${model}`);
@@ -632,7 +634,13 @@ function buildFallbackFor(query: string) {
 // ─────────────────────────────────────────────────────────────────────────
 // Pipeline
 // ─────────────────────────────────────────────────────────────────────────
-async function runRagPipelineV3(query: string, manual_id?: string, tenant_id?: string, model?: string) {
+async function runRagPipelineV3(
+  query: string, 
+  manual_id?: string, 
+  tenant_id?: string, 
+  model?: string,
+  conversationHistory?: Array<{ role: string; content: string }>
+) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
   const { results: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
@@ -726,7 +734,8 @@ Keep it short (2-3 sentences max) and friendly.`;
     retrievalWeak,
     signals,
     existingWeak: weak,
-    stream: false
+    stream: false,
+    conversationHistory
   });
 
   console.log("✅ [RAG V3] Pipeline complete\n");
@@ -850,7 +859,7 @@ serve(async (req) => {
     // If streaming is requested, handle it differently
     if (stream) {
       console.log("📡 Starting streaming response");
-      const result = await runRagPipelineV3(query, manual_id, tenant_id, model);
+      const result = await runRagPipelineV3(query, manual_id, tenant_id, model, messages);
       const { sources, strategy, chunks } = result;
       
       // Log the query to get query_log_id for feedback
@@ -875,10 +884,11 @@ serve(async (req) => {
         console.error('Error logging query:', e);
       }
       
-      // Get the answer stream
+      // Get the answer stream with conversation history
       const answerStream = await generateAnswer(query, chunks || [], model, {
         retrievalWeak: false,
-        stream: true
+        stream: true,
+        conversationHistory: messages
       }) as ReadableStream;
       
       // Create a new stream that sends metadata first, then the answer
@@ -951,7 +961,7 @@ serve(async (req) => {
       });
     }
     
-    const result = await runRagPipelineV3(query, manual_id, tenant_id, model);
+    const result = await runRagPipelineV3(query, manual_id, tenant_id, model, messages);
 
     const { answer, sources, strategy, chunks } = result;
 

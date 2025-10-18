@@ -459,13 +459,19 @@ export function CodeAssistant() {
               </TabsList>
 
               <TabsContent value="files" className="p-4 space-y-4">
+                <div className="bg-muted/50 p-3 rounded-lg mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    Upload or paste your code files to give the AI context about your project
+                  </p>
+                </div>
+
                 <input
                   ref={fileInputRef}
                   type="file"
                   multiple
                   onChange={handleFileSelect}
                   className="hidden"
-                  accept=".tsx,.ts,.jsx,.js,.py,.java,.cpp,.c,.h,.css,.html,.json,.md,.txt"
+                  accept=".tsx,.ts,.jsx,.js,.py,.java,.cpp,.c,.h,.css,.html,.json,.md,.txt,.sql,.toml,.yml,.yaml"
                 />
                 <Button 
                   onClick={() => fileInputRef.current?.click()}
@@ -484,17 +490,6 @@ export function CodeAssistant() {
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Paste Code
-                </Button>
-
-                <Button 
-                  onClick={indexCodebase}
-                  className="w-full"
-                  variant="outline"
-                  size="sm"
-                  disabled={isIndexingCodebase}
-                >
-                  <Database className="h-4 w-4 mr-2" />
-                  {isIndexingCodebase ? 'Indexing...' : 'Index Project'}
                 </Button>
 
                 <ScrollArea className="h-[450px]">

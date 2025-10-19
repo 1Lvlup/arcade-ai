@@ -230,9 +230,50 @@ const Index = () => {
           </div>
 
           <div className="flex items-center justify-center mt-20">
-            <Button onClick={handleStartGeneralChat} size="xl" className="primary-gradient hover-lift px-16 py-8 text-xl font-semibold">
-              Launch Arcade Intelligence
-              <ArrowRight className="h-6 w-6 ml-3" />
+            <Button 
+              onClick={handleStartGeneralChat} 
+              size="xl" 
+              className="primary-gradient hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden"
+              style={{
+                boxShadow: `
+                  0 0 30px hsl(185 85% 55% / 0.6),
+                  0 0 60px hsl(185 85% 55% / 0.4),
+                  0 0 100px hsl(185 85% 55% / 0.3),
+                  0 10px 30px rgba(0, 0, 0, 0.5),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
+                `,
+                transform: 'perspective(1000px) translateZ(0)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = `
+                  0 0 40px hsl(185 85% 55% / 0.8),
+                  0 0 80px hsl(185 85% 55% / 0.6),
+                  0 0 120px hsl(185 85% 55% / 0.4),
+                  0 15px 40px rgba(0, 0, 0, 0.6),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.4)
+                `;
+                e.currentTarget.style.transform = 'perspective(1000px) translateZ(10px) scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = `
+                  0 0 30px hsl(185 85% 55% / 0.6),
+                  0 0 60px hsl(185 85% 55% / 0.4),
+                  0 0 100px hsl(185 85% 55% / 0.3),
+                  0 10px 30px rgba(0, 0, 0, 0.5),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
+                `;
+                e.currentTarget.style.transform = 'perspective(1000px) translateZ(0)';
+              }}
+            >
+              <span className="relative z-10 flex items-center gap-3">
+                Launch Arcade Intelligence
+                <ArrowRight className="h-7 w-7 group-hover:translate-x-1 transition-transform" />
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 animate-pulse opacity-50"></div>
             </Button>
           </div>
         </section>
@@ -462,9 +503,50 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center justify-center">
-            <Button onClick={handleStartGeneralChat} size="xl" className="primary-gradient hover-lift px-16 py-8 text-xl font-semibold">
-              Launch Arcade Intelligence
-              <ArrowRight className="h-6 w-6 ml-3" />
+            <Button 
+              onClick={handleStartGeneralChat} 
+              size="xl" 
+              className="primary-gradient hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden"
+              style={{
+                boxShadow: `
+                  0 0 30px hsl(185 85% 55% / 0.6),
+                  0 0 60px hsl(185 85% 55% / 0.4),
+                  0 0 100px hsl(185 85% 55% / 0.3),
+                  0 10px 30px rgba(0, 0, 0, 0.5),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
+                `,
+                transform: 'perspective(1000px) translateZ(0)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = `
+                  0 0 40px hsl(185 85% 55% / 0.8),
+                  0 0 80px hsl(185 85% 55% / 0.6),
+                  0 0 120px hsl(185 85% 55% / 0.4),
+                  0 15px 40px rgba(0, 0, 0, 0.6),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.4)
+                `;
+                e.currentTarget.style.transform = 'perspective(1000px) translateZ(10px) scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = `
+                  0 0 30px hsl(185 85% 55% / 0.6),
+                  0 0 60px hsl(185 85% 55% / 0.4),
+                  0 0 100px hsl(185 85% 55% / 0.3),
+                  0 10px 30px rgba(0, 0, 0, 0.5),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
+                `;
+                e.currentTarget.style.transform = 'perspective(1000px) translateZ(0)';
+              }}
+            >
+              <span className="relative z-10 flex items-center gap-3">
+                Launch Arcade Intelligence
+                <ArrowRight className="h-7 w-7 group-hover:translate-x-1 transition-transform" />
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 animate-pulse opacity-50"></div>
             </Button>
           </div>
         </section>

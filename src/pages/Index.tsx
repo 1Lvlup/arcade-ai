@@ -193,37 +193,37 @@ const Index = () => {
           </div>
           
           {/* Certification/Achievement Badges */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-4xl mx-auto">
-            <div className="stat-card p-8 rounded-2xl hover-glow hover-lift">
-              <div className="flex flex-col items-center gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl mx-auto">
+            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift">
+              <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10">
-                  <CheckCircle className="h-8 w-8 text-primary" />
+                  <CheckCircle className="h-10 w-10 text-primary" />
                 </div>
-                <div className="text-center">
-                  <div className="font-bold text-lg text-primary">ISO 27001 Certified</div>
-                  <div className="text-sm text-muted-foreground mt-1">Enterprise Security Standard</div>
+                <div className="text-center space-y-3">
+                  <div className="font-bold text-2xl text-primary">Built For Real Arcades</div>
+                  <div className="text-base text-muted-foreground leading-relaxed">Built by the kind of guy who used to call tech support—and hated it.</div>
                 </div>
               </div>
             </div>
-            <div className="stat-card p-8 rounded-2xl hover-glow hover-lift">
-              <div className="flex flex-col items-center gap-4">
+            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift">
+              <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10">
-                  <TrendingUp className="h-8 w-8 text-primary" />
+                  <TrendingUp className="h-10 w-10 text-primary" />
                 </div>
-                <div className="text-center">
-                  <div className="font-bold text-lg text-primary">400% ROI Average</div>
-                  <div className="text-sm text-muted-foreground mt-1">Proven Return on Investment</div>
+                <div className="text-center space-y-3">
+                  <div className="font-bold text-2xl text-primary">The More Arcades Connect, The Smarter Everyone Gets</div>
+                  <div className="text-base text-muted-foreground leading-relaxed">One connected intelligence, powered by every arcade that joins</div>
                 </div>
               </div>
             </div>
-            <div className="stat-card p-8 rounded-2xl hover-glow hover-lift">
-              <div className="flex flex-col items-center gap-4">
+            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift">
+              <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10">
-                  <Zap className="h-8 w-8 text-primary" />
+                  <Zap className="h-10 w-10 text-primary" />
                 </div>
-                <div className="text-center">
-                  <div className="font-bold text-lg text-primary">Real-time Processing</div>
-                  <div className="text-sm text-muted-foreground mt-1">Instant Troubleshooting - Get answers 24/7, even when support's closed or senior techs are off-shift.</div>
+                <div className="text-center space-y-3">
+                  <div className="font-bold text-2xl text-primary">Real-time Processing</div>
+                  <div className="text-base text-muted-foreground leading-relaxed">Instant Troubleshooting - Get answers 24/7, even when support's closed or senior techs are off-shift.</div>
                 </div>
               </div>
             </div>

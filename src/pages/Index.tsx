@@ -151,7 +151,9 @@ const Index = () => {
         <section className="text-center py-24">
           <div className="space-y-16">
             <div className="space-y-12">
-              <div className="caption-text text-primary/80 text-base tracking-widest uppercase font-mono bg-slate-700 mx-0 px-px my-0 py-[5px] rounded-sm"> — LEVEL UP IS THE AI TECHNICIAN THAT UNDERSTANDS YOUR GAMES AS DEEPLY AS THE ENGINEERS WHO BUILT THEM —</div>
+              <div className="caption-text text-primary/80 text-base tracking-widest uppercase font-mono rounded-lg">
+                Next-Generation AI Platform
+              </div>
               <h1 className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text" data-text="LEVEL UP" style={{
               textShadow: `
                     /* Enhanced glow layers */
@@ -184,7 +186,7 @@ const Index = () => {
                 LEVEL UP
               </h1>
             </div>
-            <p className="body-text md:text-xl text-muted-foreground max-w-5xl mx-auto leading-relaxed font-body text-2xl">
+            <p className="body-text text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto leading-relaxed font-body">
               Revolutionary AI platform specifically designed for arcade technicians and operators. 
               Transform complex technical manuals into instant, intelligent assistance.
             </p>
@@ -198,19 +200,19 @@ const Index = () => {
                   <CheckCircle className="h-8 w-8 text-primary" />
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-lg text-primary">Built For Real Arcades</div>
-                  <div className="text-sm text-muted-foreground mt-1">Built on the technical DNA of every arcade machine</div>
+                  <div className="font-bold text-lg text-primary">ISO 27001 Certified</div>
+                  <div className="text-sm text-muted-foreground mt-1">Enterprise Security Standard</div>
                 </div>
               </div>
             </div>
-            <div className="stat-card p-8 rounded-2xl hover-glow hover-lift mx-0 px-[34px]">
+            <div className="stat-card p-8 rounded-2xl hover-glow hover-lift">
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 rounded-full bg-primary/10">
                   <TrendingUp className="h-8 w-8 text-primary" />
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-lg text-primary">Fix Games Faster</div>
-                  <div className="text-sm text-muted-foreground mt-1 rounded-lg my-[13px] mx-[2px] px-[30px] bg-stone-950"> Average Repair Time ↓ 60 % </div>
+                  <div className="font-bold text-lg text-primary">400% ROI Average</div>
+                  <div className="text-sm text-muted-foreground mt-1">Proven Return on Investment</div>
                 </div>
               </div>
             </div>
@@ -221,7 +223,10 @@ const Index = () => {
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-lg text-primary">Real-time Processing</div>
-                  <div className="text-sm text-muted-foreground mt-1">Instant Technical Support</div>
+                  <div className="text-sm text-muted-foreground mt-1">Always On
+
+Instant Troubleshooting
+Get answers 24/7, even when support’s closed or senior techs are off-shift.</div>
                 </div>
               </div>
             </div>

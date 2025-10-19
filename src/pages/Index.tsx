@@ -223,10 +223,7 @@ const Index = () => {
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-lg text-primary">Real-time Processing</div>
-                  <div className="text-sm text-muted-foreground mt-1">Always On
-
-Instant Troubleshooting
-Get answers 24/7, even when support’s closed or senior techs are off-shift.</div>
+                  <div className="text-sm text-muted-foreground mt-1">Instant Troubleshooting - Get answers 24/7, even when support's closed or senior techs are off-shift.</div>
                 </div>
               </div>
             </div>

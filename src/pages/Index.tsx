@@ -229,16 +229,11 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mt-20">
+          <div className="flex items-center justify-center mt-20">
             <Button onClick={handleStartGeneralChat} size="xl" className="primary-gradient hover-lift px-16 py-8 text-xl font-semibold">
-              Launch AI Assistant
+              Launch Arcade Intelligence
               <ArrowRight className="h-6 w-6 ml-3" />
             </Button>
-            <Link to="/manuals">
-              <Button variant="outline" size="xl" className="hover-glow px-16 py-8 text-xl font-semibold border-2 border-primary">
-                Browse Manuals
-              </Button>
-            </Link>
           </div>
         </section>
 
@@ -466,16 +461,11 @@ const Index = () => {
               and troubleshooting processes with our AI-powered platform.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+          <div className="flex items-center justify-center">
             <Button onClick={handleStartGeneralChat} size="xl" className="primary-gradient hover-lift px-16 py-8 text-xl font-semibold">
-              Start Free Trial
+              Launch Arcade Intelligence
               <ArrowRight className="h-6 w-6 ml-3" />
             </Button>
-            <Link to="/manuals">
-              <Button variant="outline" size="xl" className="hover-glow px-16 py-8 text-xl font-semibold border-2 border-primary">
-                Explore Platform
-              </Button>
-            </Link>
           </div>
         </section>
 

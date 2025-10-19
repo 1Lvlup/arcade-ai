@@ -780,7 +780,7 @@ serve(async (req) => {
   }
 
   try {
-    const { query, manual_id, stream } = await req.json();
+    const { query, manual_id, stream, messages } = await req.json();
     if (!query) throw new Error("Query is required");
 
     console.log("\n=================================");

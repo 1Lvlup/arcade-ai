@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Lock } from 'lucide-react';
 import { ProcessingMonitor } from './ProcessingMonitor';
 
 interface UploadStatus {
@@ -27,8 +27,37 @@ export function ManualUpload() {
   const [title, setTitle] = useState('');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ status: 'idle' });
   const [processingJobs, setProcessingJobs] = useState<ProcessingJob[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [checkingAdmin, setCheckingAdmin] = useState<boolean>(true);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        setCheckingAdmin(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+
+        if (error) throw error;
+        setIsAdmin(data || false);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      } finally {
+        setCheckingAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -164,6 +193,46 @@ export function ManualUpload() {
         return null;
     }
   };
+
+  if (checkingAdmin) {
+    return (
+      <Card className="border-primary/20">
+        <CardContent className="py-12">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">Checking permissions...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Card className="border-primary/20">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Lock className="h-5 w-5 text-muted-foreground" />
+            <span>Upload Manual</span>
+          </CardTitle>
+          <CardDescription>
+            Administrator access required
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="py-12">
+          <div className="text-center space-y-4">
+            <Lock className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div>
+              <p className="text-foreground font-medium">Admin Only</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Manual uploading is restricted to administrators.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>

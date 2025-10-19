@@ -141,7 +141,7 @@ const Index = () => {
     description: "Seamless integration with existing enterprise workflows"
   }];
   return <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="IntelliCore" />
+      <SharedHeader title="Arcade Intelligence" />
 
       <main className="container mx-auto px-8 py-24 max-w-[2000px]">
         {/* Hero Section */}

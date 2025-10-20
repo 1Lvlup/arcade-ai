@@ -151,7 +151,7 @@ const Index = () => {
         <section className="text-center py-24">
           <div className="space-y-16">
             <div className="space-y-12">
-              <div className="caption-text text-primary/80 text-base tracking-widest uppercase font-mono rounded-lg">
+              <div className="caption-text text-orange/80 text-base tracking-widest uppercase font-mono rounded-lg">
                 Next-Generation AI Platform
               </div>
               <h1 className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text" data-text="LEVEL UP" style={{
@@ -232,48 +232,15 @@ const Index = () => {
           <div className="flex items-center justify-center mt-20">
             <Button 
               onClick={handleStartGeneralChat} 
+              variant="orange"
               size="xl" 
-              className="primary-gradient hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden"
-              style={{
-                boxShadow: `
-                  0 0 30px hsl(185 85% 55% / 0.6),
-                  0 0 60px hsl(185 85% 55% / 0.4),
-                  0 0 100px hsl(185 85% 55% / 0.3),
-                  0 10px 30px rgba(0, 0, 0, 0.5),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
-                `,
-                transform: 'perspective(1000px) translateZ(0)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = `
-                  0 0 40px hsl(185 85% 55% / 0.8),
-                  0 0 80px hsl(185 85% 55% / 0.6),
-                  0 0 120px hsl(185 85% 55% / 0.4),
-                  0 15px 40px rgba(0, 0, 0, 0.6),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.4)
-                `;
-                e.currentTarget.style.transform = 'perspective(1000px) translateZ(10px) scale(1.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = `
-                  0 0 30px hsl(185 85% 55% / 0.6),
-                  0 0 60px hsl(185 85% 55% / 0.4),
-                  0 0 100px hsl(185 85% 55% / 0.3),
-                  0 10px 30px rgba(0, 0, 0, 0.5),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
-                `;
-                e.currentTarget.style.transform = 'perspective(1000px) translateZ(0)';
-              }}
+              className="hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-3">
                 Launch Arcade Intelligence
                 <ArrowRight className="h-7 w-7 group-hover:translate-x-1 transition-transform" />
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 animate-pulse opacity-50"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
             </Button>
           </div>
         </section>
@@ -282,17 +249,17 @@ const Index = () => {
         <section className="py-24">
           <div className="premium-card p-12 rounded-3xl relative">
             {/* Connecting lines */}
-            <div className="absolute top-1/2 left-[33%] w-[10%] h-0.5 bg-gradient-to-r from-primary/50 to-primary/30 hidden lg:block"></div>
-            <div className="absolute top-1/2 right-[33%] w-[10%] h-0.5 bg-gradient-to-l from-primary/50 to-primary/30 hidden lg:block"></div>
+            <div className="absolute top-1/2 left-[33%] w-[10%] h-0.5 bg-gradient-to-r from-orange/50 to-orange/30 hidden lg:block"></div>
+            <div className="absolute top-1/2 right-[33%] w-[10%] h-0.5 bg-gradient-to-l from-orange/50 to-orange/30 hidden lg:block"></div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center relative">
               {/* Left Side - Revenue Stats */}
-              <div className="stat-card p-10 rounded-2xl hover-lift">
+              <div className="stat-card p-10 rounded-2xl hover-lift group">
                 <div className="space-y-6">
-                  <div className="p-4 rounded-full bg-primary/10 inline-flex">
-                    <TrendingUp className="h-8 w-8 text-primary" />
+                  <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
+                    <TrendingUp className="h-8 w-8 text-orange" />
                   </div>
-                  <h3 className="text-3xl font-tech font-bold text-primary">$350 / week</h3>
+                  <h3 className="text-3xl font-tech font-bold text-orange">$350 / week</h3>
                   <p className="text-lg text-muted-foreground font-body">
                     Average revenue per arcade game
                   </p>
@@ -385,11 +352,11 @@ const Index = () => {
         {/* Core Features */}
         <section className="py-24">
           <div className="text-center mb-20">
-            <div className="caption-text text-primary/80 mb-6 text-sm tracking-widest uppercase font-mono">
+            <div className="caption-text text-orange/80 mb-6 text-sm tracking-widest uppercase font-mono">
               Core Features
             </div>
             <h2 className="text-5xl md:text-7xl font-tech font-black text-foreground mb-8 tracking-wider">
-              Arcade AI Solutions
+              Arcade AI <span className="text-orange">Solutions</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed font-body">
               Purpose-built AI tools designed specifically for arcade technicians, operators, 
@@ -398,23 +365,23 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {coreFeatures.map((feature, index) => <div key={index} className="tech-card hover:border-primary/40 p-10 rounded-3xl transition-all duration-300 hover-lift">
+            {coreFeatures.map((feature, index) => <div key={index} className="tech-card hover:border-orange/40 p-10 rounded-3xl transition-all duration-300 hover-lift group">
                 <div className="space-y-8">
                   <div className="flex items-start justify-between">
-                    <div className="p-5 rounded-2xl bg-primary/10">
-                      <div className="text-primary">
+                    <div className="p-5 rounded-2xl bg-primary/10 group-hover:bg-orange/10 transition-colors">
+                      <div className="text-primary group-hover:text-orange transition-colors">
                         {feature.icon}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="px-4 py-2 rounded-full bg-primary/10">
-                        <span className="font-mono text-xs text-primary uppercase tracking-wider font-semibold">{feature.status}</span>
+                      <div className="px-4 py-2 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
+                        <span className="font-mono text-xs text-primary group-hover:text-orange uppercase tracking-wider font-semibold transition-colors">{feature.status}</span>
                       </div>
-                      <div className="font-mono text-xs text-primary mt-2 font-medium">{feature.metrics}</div>
+                      <div className="font-mono text-xs text-primary group-hover:text-orange mt-2 font-medium transition-colors">{feature.metrics}</div>
                     </div>
                   </div>
                   <div className="space-y-6">
-                    <h3 className="text-2xl font-tech font-bold text-primary tracking-wide">{feature.title}</h3>
+                    <h3 className="text-2xl font-tech font-bold text-primary group-hover:text-orange tracking-wide transition-colors">{feature.title}</h3>
                     <p className="text-muted-foreground leading-relaxed text-base font-body">
                       {feature.description}
                     </p>
@@ -438,11 +405,11 @@ const Index = () => {
         {/* Capabilities Grid */}
         <section className="py-24">
           <div className="text-center mb-20">
-            <div className="caption-text text-primary/80 mb-6 text-sm tracking-widest uppercase font-mono">
+            <div className="caption-text text-orange/80 mb-6 text-sm tracking-widest uppercase font-mono">
               Advanced Capabilities
             </div>
             <h2 className="text-5xl md:text-7xl font-tech font-black text-foreground mb-8 tracking-wider">
-              Professional Features
+              Professional <span className="text-orange">Features</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed font-body">
               Enterprise-grade capabilities designed to meet the demanding requirements 
@@ -451,14 +418,14 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl">
+            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl group">
                 <div className="space-y-8">
-                  <div className="p-5 rounded-2xl bg-primary/10 inline-flex">
-                    <div className="text-primary">
+                  <div className="p-5 rounded-2xl bg-primary/10 inline-flex group-hover:bg-orange/10 transition-colors">
+                    <div className="text-primary group-hover:text-orange transition-colors">
                       {capability.icon}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-tech font-bold text-foreground tracking-wide">{capability.title}</h3>
+                  <h3 className="text-2xl font-tech font-bold text-foreground group-hover:text-orange tracking-wide transition-colors">{capability.title}</h3>
                   <p className="text-muted-foreground leading-relaxed text-base font-body">
                     {capability.description}
                   </p>
@@ -499,11 +466,11 @@ const Index = () => {
           </div>
           
           <div className="text-center mb-12">
-            <div className="caption-text text-primary/80 mb-4 text-sm tracking-widest uppercase font-mono">
+            <div className="caption-text text-orange/80 mb-4 text-sm tracking-widest uppercase font-mono">
               Simple, Transparent Pricing
             </div>
             <h2 className="text-4xl md:text-6xl font-tech font-black text-foreground mb-6 tracking-wider">
-              Choose Your <span className="text-primary">Level Up</span> Plan
+              Choose Your <span className="text-orange">Level Up</span> Plan
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed font-body">
               Built for busy FEC technicians who want less paperwork and faster fixes
@@ -511,11 +478,11 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
-            <div className="premium-card hover-lift p-8 rounded-3xl border-2 border-transparent hover:border-primary/30 transition-all">
+            <div className="premium-card hover-lift p-8 rounded-3xl border-2 border-transparent hover:border-orange/30 transition-all group">
               <div className="text-center space-y-4">
                 <h3 className="text-3xl font-bold text-foreground">Starter</h3>
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-extrabold text-primary">$299</span>
+                  <span className="text-5xl font-extrabold text-primary group-hover:text-orange transition-colors">$299</span>
                   <span className="text-xl text-muted-foreground">/ month</span>
                 </div>
                 <p className="text-sm text-muted-foreground italic">(or $2,990/yr — 2 months free)</p>
@@ -598,11 +565,11 @@ const Index = () => {
         {/* CTA Section */}
         <section className="text-center py-24">
           <div className="mb-16">
-            <div className="caption-text text-primary/80 mb-6 text-sm tracking-widest uppercase font-mono">
+            <div className="caption-text text-orange/80 mb-6 text-sm tracking-widest uppercase font-mono">
               Get Started Today
             </div>
             <h2 className="text-5xl md:text-7xl font-tech font-black text-foreground mb-8 tracking-wider">
-              Ready to Transform Your Arcade Operations?
+              Ready to Transform Your <span className="text-orange">Arcade Operations</span>?
             </h2>
             <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed font-body">
               Join arcade professionals who've already revolutionized their technical support 

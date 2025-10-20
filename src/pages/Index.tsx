@@ -274,24 +274,15 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Center - Scrolling Testimonials */}
-              <div className="tech-card p-8 rounded-2xl overflow-hidden relative z-10">
-                <div className="space-y-6 animate-fade-in">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground text-lg">Mike Rodriguez</div>
-                      <div className="text-base text-muted-foreground">Arcade Operations Manager</div>
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground leading-relaxed italic text-lg">
-                    "Before Level Up, our average game downtime was 8-12 days. Now we fix issues in under 2 hours. That is literally saving us thousands per incident."
+              {/* Center - Key Message */}
+              <div className="tech-card p-10 rounded-2xl relative z-10 flex items-center justify-center">
+                <div className="text-center space-y-4">
+                  <p className="text-2xl font-tech font-bold text-orange leading-relaxed">
+                    With Level Up: issues are fixed in hours, not months.
                   </p>
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => <div key={i} className="text-primary text-xl">★</div>)}
-                  </div>
+                  <p className="text-xl text-muted-foreground font-body leading-relaxed">
+                    Less downtime. More revenue. Happier guests.
+                  </p>
                 </div>
               </div>
 
@@ -307,14 +298,6 @@ const Index = () => {
                     </p>
                     <p className="text-lg text-muted-foreground font-body">
                       That's <span className="text-destructive font-semibold text-2xl">$8,400 lost</span> per game.
-                    </p>
-                  </div>
-                  <div className="pt-4 border-t border-primary/20 space-y-2">
-                    <p className="text-lg text-primary font-semibold">
-                      With Level Up: issues are fixed in hours, not months.
-                    </p>
-                    <p className="text-lg text-muted-foreground">
-                      Less downtime. More revenue. Happier guests.
                     </p>
                   </div>
                 </div>

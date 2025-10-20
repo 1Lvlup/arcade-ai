@@ -488,6 +488,119 @@ const Index = () => {
             </Card>
           </section>}
 
+        {/* Pricing Teaser */}
+        <section className="py-20 relative">
+          <div className="absolute inset-0 -z-10">
+            <div className="absolute inset-0"
+                 style={{
+                   background: "radial-gradient(1000px 500px at 50% 50%, rgba(0,245,255,0.12), rgba(0,0,0,0) 70%)",
+                 }}
+            />
+          </div>
+          
+          <div className="text-center mb-12">
+            <div className="caption-text text-primary/80 mb-4 text-sm tracking-widest uppercase font-mono">
+              Simple, Transparent Pricing
+            </div>
+            <h2 className="text-4xl md:text-6xl font-tech font-black text-foreground mb-6 tracking-wider">
+              Choose Your <span className="text-primary">Level Up</span> Plan
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed font-body">
+              Built for busy FEC technicians who want less paperwork and faster fixes
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
+            <div className="premium-card hover-lift p-8 rounded-3xl border-2 border-transparent hover:border-primary/30 transition-all">
+              <div className="text-center space-y-4">
+                <h3 className="text-3xl font-bold text-foreground">Starter</h3>
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-5xl font-extrabold text-primary">$299</span>
+                  <span className="text-xl text-muted-foreground">/ month</span>
+                </div>
+                <p className="text-sm text-muted-foreground italic">(or $2,990/yr — 2 months free)</p>
+                <ul className="text-left space-y-3 pt-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">Up to <strong className="text-foreground">40 games</strong></span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">Unlimited tech accounts</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">Instant AI troubleshooting</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">Email support (24hr)</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="premium-card hover-lift p-8 rounded-3xl border-2 border-primary/50 hover:border-primary transition-all relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold"
+                   style={{
+                     background: "linear-gradient(90deg, rgba(0,245,255,0.2), rgba(0,245,255,0.05))",
+                     border: "1px solid rgba(0,245,255,0.45)",
+                     color: "white",
+                   }}>
+                Recommended
+              </div>
+              <div className="text-center space-y-4">
+                <h3 className="text-3xl font-bold text-foreground">Pro</h3>
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-5xl font-extrabold text-primary">$499</span>
+                  <span className="text-xl text-muted-foreground">/ month</span>
+                </div>
+                <p className="text-sm text-muted-foreground italic">(or $2,500/yr — save $3,488)</p>
+                <ul className="text-left space-y-3 pt-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">Everything in Starter</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">Up to <strong className="text-foreground">100 games</strong></span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">Priority support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">Early access to new modules</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Link to="/pricing">
+              <Button 
+                size="lg" 
+                className="primary-gradient hover-lift px-12 py-6 text-lg font-bold"
+                style={{
+                  boxShadow: `
+                    0 0 20px hsl(185 85% 55% / 0.5),
+                    0 0 40px hsl(185 85% 55% / 0.3),
+                    0 5px 20px rgba(0, 0, 0, 0.4)
+                  `,
+                }}
+              >
+                View Full Pricing Details
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <p className="mt-4 text-sm text-muted-foreground">
+              30-day risk-free • No setup fees • Cancel anytime
+            </p>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="text-center py-24">
           <div className="mb-16">

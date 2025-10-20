@@ -30,6 +30,7 @@ import AccountSettings from "./pages/AccountSettings";
 import Support from "./pages/Support";
 import SupportTickets from "./pages/SupportTickets";
 import QAAnalytics from "./pages/QAAnalytics";
+import Pricing from "./pages/Pricing";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -120,6 +121,11 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/pricing" element={
+              <ProtectedRoute>
+                <Pricing />
+              </ProtectedRoute>
+            } />
             <Route path="/account-settings" element={
               <ProtectedRoute>
                 <AccountSettings />

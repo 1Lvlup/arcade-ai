@@ -40,21 +40,21 @@
     --brand-black: 210 20% 5%;       /* #0B0E11 */
     --brand-dark-blue: 210 33% 9%;   /* #101820 */
     --brand-teal: 183 100% 50%;      /* #00F5FF Teal */
-    --brand-orange: 24 100% 50%;     /* #FF6600 Orange */
+    --brand-orange: 24 100% 54%;     /* #FF7A1A Orange */
     --brand-white: 0 0% 100%;        /* #FFFFFF White */
     --brand-dim-gray: 200 8% 69%;    /* #A9B2B7 Dim gray */
     
     /* Brand shadows and glows */
     --shadow-teal: 0 0 25px hsl(183 100% 50% / 0.4);
     --shadow-teal-strong: 0 0 60px hsl(183 100% 50% / 0.6);
-    --shadow-orange: 0 0 25px hsl(24 100% 50% / 0.4);
-    --shadow-orange-strong: 0 0 60px hsl(24 100% 50% / 0.6);
+    --shadow-orange: 0 0 25px hsl(24 100% 54% / 0.4);
+    --shadow-orange-strong: 0 0 60px hsl(24 100% 54% / 0.6);
     --glow-teal: 0 0 40px hsl(183 100% 50% / 0.5);
-    --glow-orange: 0 0 40px hsl(24 100% 50% / 0.5);
+    --glow-orange: 0 0 40px hsl(24 100% 54% / 0.5);
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(183 100% 50%), hsl(183 100% 45%));
-    --gradient-orange: linear-gradient(135deg, hsl(24 100% 50%), hsl(24 100% 45%));
+    --gradient-orange: linear-gradient(135deg, hsl(24 100% 54%), hsl(24 100% 49%));
     --gradient-tech: linear-gradient(135deg, hsl(210 33% 9%), hsl(210 20% 5%));
   }
 
@@ -96,7 +96,8 @@
   
   body {
     @apply bg-background text-foreground;
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Inter', 'Space Grotesk', sans-serif;
+    line-height: 1.6;
     background: linear-gradient(135deg, hsl(210 20% 5%) 0%, hsl(210 33% 9%) 100%);
     background-image: 
       linear-gradient(90deg, transparent 48%, hsl(183 100% 50% / 0.05) 49%, hsl(183 100% 50% / 0.05) 51%, transparent 52%),
@@ -106,6 +107,7 @@
     background-repeat: repeat, repeat;
     background-attachment: fixed;
     position: relative;
+    font-variant-numeric: tabular-nums;
   }
   
   body::before {
@@ -138,15 +140,18 @@
   }
   
   .text-tech-xl {
-    @apply font-tech text-5xl md:text-6xl lg:text-7xl font-bold tracking-wider;
+    @apply font-tech text-5xl md:text-6xl lg:text-7xl font-bold;
+    letter-spacing: 0.02em;
   }
   
   .text-tech-lg {
-    @apply font-tech text-3xl md:text-4xl font-semibold tracking-wide;
+    @apply font-tech text-3xl md:text-4xl font-semibold;
+    letter-spacing: 0.02em;
   }
   
   .text-tech-base {
-    @apply font-tech text-xl md:text-2xl font-medium tracking-wide;
+    @apply font-tech text-xl md:text-2xl font-medium;
+    letter-spacing: 0.02em;
   }
   
   /* Enhanced glows and effects */
@@ -163,7 +168,7 @@
   
   .stat-card {
     background: hsl(0 0% 0%);
-    border: 1px solid hsl(24 100% 50%);
+    border: 1px solid hsl(24 100% 54%);
     backdrop-filter: blur(12px);
     position: relative;
     box-shadow: 
@@ -180,7 +185,7 @@
     box-shadow: 
       0 0 30px hsl(183 100% 50% / 0.6),
       0 0 50px hsl(183 100% 50% / 0.4);
-    border-color: hsl(24 100% 50%);
+    border-color: hsl(24 100% 54%);
   }
   
   .hover-lift {
@@ -194,7 +199,7 @@
   
   .premium-card {
     background: hsl(0 0% 0%);
-    border: 1px solid hsl(24 100% 50%);
+    border: 1px solid hsl(24 100% 54%);
     position: relative;
     box-shadow: 
       0 0 20px hsl(183 100% 50% / 0.2),
@@ -280,17 +285,17 @@
   /* Orange accent buttons */
   .btn-orange {
     background: var(--gradient-orange);
-    border: 1px solid hsl(24 100% 50%);
+    border: 1px solid hsl(24 100% 54%);
     color: hsl(0 0% 100%);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
     transition: all 0.3s ease;
-    box-shadow: 0 0 20px hsl(24 100% 50% / 0.35);
+    box-shadow: 0 0 20px hsl(24 100% 54% / 0.35);
   }
   
   .btn-orange:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 30px hsl(24 100% 50% / 0.5);
+    box-shadow: 0 0 30px hsl(24 100% 54% / 0.5);
   }
   
   /* Custom scrollbar for tech theme */
@@ -396,11 +401,6 @@
   .glitch-text {
     position: relative;
     color: hsl(0 0% 100%);
-    text-shadow: 
-      0 0 20px hsl(183 100% 50% / 0.8),
-      0 0 40px hsl(183 100% 50% / 0.6),
-      0 0 60px hsl(183 100% 50% / 0.4),
-      0 0 80px hsl(183 100% 50% / 0.2);
   }
   
   .glitch-text::before,

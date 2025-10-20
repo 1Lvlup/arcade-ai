@@ -151,18 +151,23 @@ const Index = () => {
         <section className="text-center py-24">
           <div className="space-y-16">
             <div className="space-y-12">
-              <div className="caption-text text-orange/80 text-base tracking-widest uppercase font-mono rounded-lg">
-                Next-Generation AI Platform
+              <div className="caption-text text-base tracking-widest uppercase font-mono rounded-lg" style={{
+                color: 'hsl(24 100% 54%)',
+                textShadow: '0 0 1px hsl(0 0% 100%), 0 0 2px hsl(0 0% 100%)',
+                WebkitTextStroke: '0.5px hsl(0 0% 100%)'
+              }}>
+                The future of arcade tech—built by all of us.
               </div>
-              <h1 className="font-tech font-black text-8xl md:text-9xl text-white tracking-widest glitch-text" data-text="LEVEL UP" style={{
+              <h1 className="font-tech font-black text-8xl md:text-9xl text-white glitch-text" data-text="LEVEL UP" style={{
+              letterSpacing: '0.02em',
               textShadow: `
                     /* Enhanced glow layers */
-                    0 0 15px hsl(185 85% 55% / 1),
-                    0 0 30px hsl(185 85% 55% / 0.9),
-                    0 0 50px hsl(185 85% 55% / 0.8),
-                    0 0 70px hsl(185 85% 55% / 0.7),
-                    0 0 100px hsl(185 85% 55% / 0.6),
-                    0 0 130px hsl(185 85% 55% / 0.5),
+                    0 0 15px hsl(183 100% 50% / 1),
+                    0 0 30px hsl(183 100% 50% / 0.9),
+                    0 0 50px hsl(183 100% 50% / 0.8),
+                    0 0 70px hsl(183 100% 50% / 0.7),
+                    0 0 100px hsl(183 100% 50% / 0.6),
+                    0 0 130px hsl(183 100% 50% / 0.5),
                     /* Dramatic 3D bevel effect - light top-left */
                     -3px -3px 0 rgba(255, 255, 255, 0.3),
                     -6px -6px 0 rgba(255, 255, 255, 0.2),
@@ -180,15 +185,14 @@ const Index = () => {
                     /* Deep shadow */
                     24px 24px 40px rgba(0, 0, 0, 0.9),
                     30px 30px 60px rgba(0, 0, 0, 0.7)
-                  `,
-              WebkitTextStroke: '2px hsl(185 85% 55% / 0.4)'
+                   `,
+              WebkitTextStroke: '2px hsl(183 100% 50% / 0.4)'
             }}>
                 LEVEL UP
               </h1>
             </div>
-            <p className="body-text text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto leading-relaxed font-body">
-              Revolutionary AI platform specifically designed for arcade technicians and operators. 
-              Transform complex technical manuals into instant, intelligent assistance.
+            <p className="body-text text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body" style={{ lineHeight: '1.6' }}>
+              Revolutionary AI platform specifically designed for arcade technicians and operators.
             </p>
           </div>
           
@@ -313,7 +317,7 @@ const Index = () => {
         {/* Performance Stats Section */}
         <section className="py-24">
           <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-4 tracking-wider">Platform Performance</h2>
+            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-4" style={{ letterSpacing: '0.02em' }}>Platform <span className="text-orange">Performance</span></h2>
             <p className="text-xl text-muted-foreground font-body">Industry-leading metrics that power your arcade operations</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -472,7 +476,7 @@ const Index = () => {
                   <span className="text-5xl font-extrabold text-primary group-hover:text-orange transition-colors">$299</span>
                   <span className="text-xl text-muted-foreground">/ month</span>
                 </div>
-                <p className="text-sm text-muted-foreground italic">(or $2,990/yr — 2 months free)</p>
+                <p className="text-sm text-muted-foreground italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $2,700/yr — 3 months free)</p>
                 <ul className="text-left space-y-3 pt-6">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -509,7 +513,7 @@ const Index = () => {
                   <span className="text-5xl font-extrabold text-orange">$499</span>
                   <span className="text-xl text-muted-foreground">/ month</span>
                 </div>
-                <p className="text-sm text-muted-foreground italic">(or $2,500/yr — save $3,488)</p>
+                <p className="text-sm text-muted-foreground italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $4,500/yr — 3 months free)</p>
                 <ul className="text-left space-y-3 pt-6">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -566,48 +570,15 @@ const Index = () => {
           <div className="flex items-center justify-center">
             <Button 
               onClick={handleStartGeneralChat} 
+              variant="orange"
               size="xl" 
-              className="primary-gradient hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden"
-              style={{
-                boxShadow: `
-                  0 0 30px hsl(185 85% 55% / 0.6),
-                  0 0 60px hsl(185 85% 55% / 0.4),
-                  0 0 100px hsl(185 85% 55% / 0.3),
-                  0 10px 30px rgba(0, 0, 0, 0.5),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
-                `,
-                transform: 'perspective(1000px) translateZ(0)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = `
-                  0 0 40px hsl(185 85% 55% / 0.8),
-                  0 0 80px hsl(185 85% 55% / 0.6),
-                  0 0 120px hsl(185 85% 55% / 0.4),
-                  0 15px 40px rgba(0, 0, 0, 0.6),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.4)
-                `;
-                e.currentTarget.style.transform = 'perspective(1000px) translateZ(10px) scale(1.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = `
-                  0 0 30px hsl(185 85% 55% / 0.6),
-                  0 0 60px hsl(185 85% 55% / 0.4),
-                  0 0 100px hsl(185 85% 55% / 0.3),
-                  0 10px 30px rgba(0, 0, 0, 0.5),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
-                `;
-                e.currentTarget.style.transform = 'perspective(1000px) translateZ(0)';
-              }}
+              className="hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-3">
                 Launch Arcade Intelligence
                 <ArrowRight className="h-7 w-7 group-hover:translate-x-1 transition-transform" />
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 animate-pulse opacity-50"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
             </Button>
           </div>
         </section>

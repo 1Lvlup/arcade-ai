@@ -40,16 +40,21 @@
     --brand-black: 0 0% 3%;          /* Near black */
     --brand-dark-blue: 210 50% 8%;   /* Dark blue */
     --brand-cyan: 185 85% 55%;       /* Cyan */
+    --brand-orange: 18 100% 50%;     /* Orange accent */
     --brand-white: 0 0% 100%;        /* White */
     
     /* Brand shadows and glows */
     --shadow-cyan: 0 0 25px hsl(185 85% 55% / 0.4);
     --shadow-cyan-strong: 0 0 60px hsl(185 85% 55% / 0.6);
+    --shadow-orange: 0 0 25px hsl(18 100% 50% / 0.4);
+    --shadow-orange-strong: 0 0 60px hsl(18 100% 50% / 0.6);
     --glow-cyan: 0 0 40px hsl(185 85% 55% / 0.5);
+    --glow-orange: 0 0 40px hsl(18 100% 50% / 0.5);
     --glow-blue-soft: 0 0 30px hsl(210 50% 50% / 0.4);
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(185 85% 55%), hsl(185 85% 45%));
+    --gradient-orange: linear-gradient(135deg, hsl(18 100% 50%), hsl(18 100% 45%));
     --gradient-tech: linear-gradient(135deg, hsl(210 50% 8%), hsl(0 0% 3%));
   }
 
@@ -270,6 +275,22 @@
     background: hsl(185 85% 55% / 0.1);
     transform: translateY(-2px);
     box-shadow: 0 0 20px hsl(185 85% 55% / 0.4);
+  }
+  
+  /* Orange accent buttons */
+  .btn-orange {
+    background: var(--gradient-orange);
+    border: 1px solid hsl(18 100% 50%);
+    color: hsl(0 0% 100%);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px hsl(18 100% 50% / 0.35);
+  }
+  
+  .btn-orange:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px hsl(18 100% 50% / 0.5);
   }
   
   /* Custom scrollbar for tech theme */

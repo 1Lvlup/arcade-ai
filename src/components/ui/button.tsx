@@ -18,6 +18,7 @@ const buttonVariants = cva(
         premium: "primary-gradient text-primary-foreground shadow-glow hover:shadow-dramatic",
         minimal: "bg-transparent text-foreground hover:glass-card border border-border hover:border-primary/30",
         professional: "bg-foreground text-background hover:bg-foreground/90 shadow-soft",
+        orange: "btn-orange text-white",
       },
       size: {
         default: "h-12 px-6 py-3 rounded-xl",

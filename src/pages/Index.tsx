@@ -194,13 +194,13 @@ const Index = () => {
           
           {/* Certification/Achievement Badges */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl mx-auto">
-            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift">
+            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift group">
               <div className="flex flex-col items-center gap-6">
-                <div className="p-4 rounded-full bg-primary/10">
-                  <CheckCircle className="h-10 w-10 text-primary" />
+                <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
+                  <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-primary">Built For Real Arcades</div>
+                  <div className="font-bold text-2xl text-primary group-hover:text-orange transition-colors">Built For Real Arcades</div>
                   <div className="text-base text-muted-foreground leading-relaxed">Built by the kind of guy who used to call tech support—and hated it.</div>
                 </div>
               </div>
@@ -216,13 +216,13 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift">
+            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift group">
               <div className="flex flex-col items-center gap-6">
-                <div className="p-4 rounded-full bg-primary/10">
-                  <Zap className="h-10 w-10 text-primary" />
+                <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
+                  <Zap className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-primary">Real-time Processing</div>
+                  <div className="font-bold text-2xl text-primary group-hover:text-orange transition-colors">Real-time Processing</div>
                   <div className="text-base text-muted-foreground leading-relaxed">Instant Troubleshooting - Get answers 24/7, even when support's closed or senior techs are off-shift.</div>
                 </div>
               </div>
@@ -540,11 +540,11 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="premium-card hover-lift p-8 rounded-3xl border-2 border-primary/50 hover:border-primary transition-all relative">
+            <div className="premium-card hover-lift p-8 rounded-3xl border-2 border-orange/50 hover:border-orange transition-all relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold"
                    style={{
-                     background: "linear-gradient(90deg, rgba(0,245,255,0.2), rgba(0,245,255,0.05))",
-                     border: "1px solid rgba(0,245,255,0.45)",
+                     background: "linear-gradient(90deg, rgba(255,102,0,0.2), rgba(255,102,0,0.05))",
+                     border: "1px solid rgba(255,102,0,0.45)",
                      color: "white",
                    }}>
                 Recommended
@@ -552,7 +552,7 @@ const Index = () => {
               <div className="text-center space-y-4">
                 <h3 className="text-3xl font-bold text-foreground">Pro</h3>
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-extrabold text-primary">$499</span>
+                  <span className="text-5xl font-extrabold text-orange">$499</span>
                   <span className="text-xl text-muted-foreground">/ month</span>
                 </div>
                 <p className="text-sm text-muted-foreground italic">(or $2,500/yr — save $3,488)</p>
@@ -581,15 +581,9 @@ const Index = () => {
           <div className="text-center">
             <Link to="/pricing">
               <Button 
+                variant="orange"
                 size="lg" 
-                className="primary-gradient hover-lift px-12 py-6 text-lg font-bold"
-                style={{
-                  boxShadow: `
-                    0 0 20px hsl(185 85% 55% / 0.5),
-                    0 0 40px hsl(185 85% 55% / 0.3),
-                    0 5px 20px rgba(0, 0, 0, 0.4)
-                  `,
-                }}
+                className="hover-lift px-12 py-6 text-lg font-bold"
               >
                 View Full Pricing Details
                 <ArrowRight className="ml-2 h-5 w-5" />

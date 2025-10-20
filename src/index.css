@@ -6,86 +6,86 @@
 @layer base {
   :root {
     /* Brand colors - Cyan Tech Theme */
-    --background: 0 0% 3%;           /* Near black background */
-    --foreground: 0 0% 100%;         /* White text */
+    --background: 210 20% 5%;        /* #0B0E11 */
+    --foreground: 0 0% 100%;         /* #FFFFFF White text */
     
-    --card: 210 50% 8%;              /* Dark card background */
-    --card-foreground: 185 85% 55%;  /* Cyan text on cards */
+    --card: 216 11% 8%;              /* #121418 Dark card background */
+    --card-foreground: 183 100% 50%; /* #00F5FF Cyan text on cards */
     
-    --popover: 210 50% 8%;
-    --popover-foreground: 185 85% 55%;
+    --popover: 216 11% 8%;
+    --popover-foreground: 183 100% 50%;
     
-    --primary: 185 85% 55%;          /* Cyan primary */
+    --primary: 183 100% 50%;         /* #00F5FF Cyan primary */
     --primary-foreground: 0 0% 0%;
     
-    --secondary: 210 50% 8%;         /* Dark blue secondary */
-    --secondary-foreground: 185 85% 55%;
+    --secondary: 216 11% 8%;         /* #121418 Dark blue secondary */
+    --secondary-foreground: 183 100% 50%;
     
-    --muted: 210 50% 10%;
-    --muted-foreground: 185 85% 65%;
+    --muted: 216 11% 10%;
+    --muted-foreground: 0 0% 70%;    /* #B3B3B3 Gray text */
     
-    --accent: 185 85% 55%;           /* Cyan accent */
+    --accent: 183 100% 50%;          /* #00F5FF Cyan accent */
     --accent-foreground: 0 0% 0%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 185 85% 55% / 0.3;     /* Cyan borders */
-    --input: 210 50% 8%;
-    --ring: 185 85% 55%;             /* Cyan ring */
+    --border: 183 100% 50% / 0.3;    /* #00F5FF Cyan borders */
+    --input: 216 11% 8%;
+    --ring: 183 100% 50%;            /* #00F5FF Cyan ring */
     
     --radius: 0.75rem;
     
     /* Brand color tokens */
-    --brand-black: 0 0% 3%;          /* Near black */
-    --brand-dark-blue: 210 50% 8%;   /* Dark blue */
-    --brand-cyan: 185 85% 55%;       /* Cyan */
-    --brand-orange: 18 100% 50%;     /* Orange accent */
-    --brand-white: 0 0% 100%;        /* White */
+    --brand-black: 210 20% 5%;       /* #0B0E11 */
+    --brand-dark-blue: 216 11% 8%;   /* #121418 */
+    --brand-cyan: 183 100% 50%;      /* #00F5FF Cyan */
+    --brand-orange: 24 100% 50%;     /* #FF6600 Orange accent */
+    --brand-white: 0 0% 100%;        /* #FFFFFF White */
     
     /* Brand shadows and glows */
-    --shadow-cyan: 0 0 25px hsl(185 85% 55% / 0.4);
-    --shadow-cyan-strong: 0 0 60px hsl(185 85% 55% / 0.6);
-    --shadow-orange: 0 0 25px hsl(18 100% 50% / 0.4);
-    --shadow-orange-strong: 0 0 60px hsl(18 100% 50% / 0.6);
-    --glow-cyan: 0 0 40px hsl(185 85% 55% / 0.5);
-    --glow-orange: 0 0 40px hsl(18 100% 50% / 0.5);
-    --glow-blue-soft: 0 0 30px hsl(210 50% 50% / 0.4);
+    --shadow-cyan: 0 0 25px hsl(183 100% 50% / 0.4);
+    --shadow-cyan-strong: 0 0 60px hsl(183 100% 50% / 0.6);
+    --shadow-orange: 0 0 25px hsl(24 100% 50% / 0.4);
+    --shadow-orange-strong: 0 0 60px hsl(24 100% 50% / 0.6);
+    --glow-cyan: 0 0 40px hsl(183 100% 50% / 0.5);
+    --glow-orange: 0 0 40px hsl(24 100% 50% / 0.5);
+    --glow-blue-soft: 0 0 30px hsl(216 11% 50% / 0.4);
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(185 85% 55%), hsl(185 85% 45%));
-    --gradient-orange: linear-gradient(135deg, hsl(18 100% 50%), hsl(18 100% 45%));
-    --gradient-tech: linear-gradient(135deg, hsl(210 50% 8%), hsl(0 0% 3%));
+    --gradient-primary: linear-gradient(135deg, hsl(183 100% 50%), hsl(183 100% 45%));
+    --gradient-orange: linear-gradient(135deg, hsl(24 100% 50%), hsl(24 100% 45%));
+    --gradient-tech: linear-gradient(135deg, hsl(216 11% 8%), hsl(210 20% 5%));
   }
 
   .dark {
-    --background: 0 0% 3%;
+    --background: 210 20% 5%;
     --foreground: 0 0% 100%;
     
-    --card: 210 50% 8%;
-    --card-foreground: 185 85% 55%;
+    --card: 216 11% 8%;
+    --card-foreground: 183 100% 50%;
     
-    --popover: 210 50% 8%;
-    --popover-foreground: 185 85% 55%;
+    --popover: 216 11% 8%;
+    --popover-foreground: 183 100% 50%;
     
-    --primary: 185 85% 55%;
+    --primary: 183 100% 50%;
     --primary-foreground: 0 0% 0%;
     
-    --secondary: 210 50% 8%;
-    --secondary-foreground: 185 85% 55%;
+    --secondary: 216 11% 8%;
+    --secondary-foreground: 183 100% 50%;
     
-    --muted: 210 50% 10%;
-    --muted-foreground: 185 85% 65%;
+    --muted: 216 11% 10%;
+    --muted-foreground: 0 0% 70%;
     
-    --accent: 185 85% 55%;
+    --accent: 183 100% 50%;
     --accent-foreground: 0 0% 0%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 185 85% 55% / 0.3;
-    --input: 210 50% 8%;
-    --ring: 185 85% 55%;
+    --border: 183 100% 50% / 0.3;
+    --input: 216 11% 8%;
+    --ring: 183 100% 50%;
   }
 }
 
@@ -99,8 +99,8 @@
     font-family: 'Space Grotesk', sans-serif;
     background-color: hsl(var(--background));
     background-image: 
-      linear-gradient(90deg, transparent 48%, hsl(185 85% 55% / 0.05) 49%, hsl(185 85% 55% / 0.05) 51%, transparent 52%),
-      linear-gradient(0deg, transparent 48%, hsl(185 85% 55% / 0.05) 49%, hsl(185 85% 55% / 0.05) 51%, transparent 52%);
+      linear-gradient(90deg, transparent 48%, hsl(183 100% 50% / 0.05) 49%, hsl(183 100% 50% / 0.05) 51%, transparent 52%),
+      linear-gradient(0deg, transparent 48%, hsl(183 100% 50% / 0.05) 49%, hsl(183 100% 50% / 0.05) 51%, transparent 52%);
     background-size: 80px 80px, 80px 80px;
     background-position: 0 0, 0 0;
     background-repeat: repeat, repeat;
@@ -116,8 +116,8 @@
     right: 0;
     bottom: 0;
     background: 
-      radial-gradient(circle at 20% 30%, hsl(185 85% 55% / 0.15) 0%, transparent 30%),
-      radial-gradient(circle at 80% 70%, hsl(210 50% 50% / 0.1) 0%, transparent 25%);
+      radial-gradient(circle at 20% 30%, hsl(183 100% 50% / 0.15) 0%, transparent 30%),
+      radial-gradient(circle at 80% 70%, hsl(216 11% 50% / 0.1) 0%, transparent 25%);
     pointer-events: none;
     z-index: 0;
   }
@@ -156,20 +156,20 @@
   
   .mesh-gradient {
     background: 
-      radial-gradient(circle at 20% 80%, hsl(185 85% 55% / 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, hsl(210 50% 50% / 0.12) 0%, transparent 50%),
-      hsl(0 0% 3%);
+      radial-gradient(circle at 20% 80%, hsl(183 100% 50% / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(216 11% 50% / 0.12) 0%, transparent 50%),
+      hsl(210 20% 5%);
   }
   
   .stat-card {
     background: hsl(0 0% 0%);
-    border: 1px solid hsl(18 100% 50%);
+    border: 1px solid hsl(24 100% 50%);
     backdrop-filter: blur(12px);
     position: relative;
     box-shadow: 
-      0 0 20px hsl(185 85% 55% / 0.3),
-      0 0 40px hsl(185 85% 55% / 0.15),
-      inset 0 0 30px hsl(185 85% 55% / 0.08);
+      0 0 20px hsl(183 100% 50% / 0.3),
+      0 0 40px hsl(183 100% 50% / 0.15),
+      inset 0 0 30px hsl(183 100% 50% / 0.08);
   }
   
   .hover-glow {
@@ -178,9 +178,9 @@
   
   .hover-glow:hover {
     box-shadow: 
-      0 0 30px hsl(185 85% 55% / 0.6),
-      0 0 50px hsl(185 85% 55% / 0.4);
-    border-color: hsl(18 100% 50%);
+      0 0 30px hsl(183 100% 50% / 0.6),
+      0 0 50px hsl(183 100% 50% / 0.4);
+    border-color: hsl(24 100% 50%);
   }
   
   .hover-lift {
@@ -194,12 +194,12 @@
   
   .premium-card {
     background: hsl(0 0% 0%);
-    border: 1px solid hsl(18 100% 50%);
+    border: 1px solid hsl(24 100% 50%);
     position: relative;
     box-shadow: 
-      0 0 20px hsl(185 85% 55% / 0.2),
-      0 0 40px hsl(185 85% 55% / 0.1),
-      inset 0 0 30px hsl(185 85% 55% / 0.08);
+      0 0 20px hsl(183 100% 50% / 0.2),
+      0 0 40px hsl(183 100% 50% / 0.1),
+      inset 0 0 30px hsl(183 100% 50% / 0.08);
   }
   
   .gradient-tech {
@@ -207,39 +207,39 @@
   }
   
   .border-glow {
-    border: 1px solid hsl(185 85% 55%);
-    box-shadow: 0 0 15px hsl(185 85% 55% / 0.5);
+    border: 1px solid hsl(183 100% 50%);
+    box-shadow: 0 0 15px hsl(183 100% 50% / 0.5);
   }
   
   .border-tech {
-    border: 1px solid hsl(185 85% 55% / 0.3);
-    box-shadow: inset 0 0 10px hsl(185 85% 55% / 0.1);
+    border: 1px solid hsl(183 100% 50% / 0.3);
+    box-shadow: inset 0 0 10px hsl(183 100% 50% / 0.1);
   }
   
   .text-glow {
     text-shadow: 
-      0 0 20px hsl(185 85% 55% / 0.8),
-      0 0 40px hsl(185 85% 55% / 0.6),
-      0 0 60px hsl(185 85% 55% / 0.4);
+      0 0 20px hsl(183 100% 50% / 0.8),
+      0 0 40px hsl(183 100% 50% / 0.6),
+      0 0 60px hsl(183 100% 50% / 0.4);
   }
   
   .tech-card {
     @apply rounded-xl backdrop-blur-sm;
     background: hsl(0 0% 0%);
-    border: 1px solid hsl(18 100% 50%);
+    border: 1px solid hsl(24 100% 50%);
     position: relative;
     box-shadow: 
-      0 0 20px hsl(185 85% 55% / 0.2),
-      0 0 40px hsl(185 85% 55% / 0.1),
-      inset 0 0 30px hsl(185 85% 55% / 0.08);
+      0 0 20px hsl(183 100% 50% / 0.2),
+      0 0 40px hsl(183 100% 50% / 0.1),
+      inset 0 0 30px hsl(183 100% 50% / 0.08);
   }
   
   .tech-card:hover {
-    border-color: hsl(18 100% 50%);
+    border-color: hsl(24 100% 50%);
     box-shadow: 
-      0 0 30px hsl(185 85% 55% / 0.4),
-      0 0 60px hsl(185 85% 55% / 0.2),
-      inset 0 0 40px hsl(185 85% 55% / 0.12);
+      0 0 30px hsl(183 100% 50% / 0.4),
+      0 0 60px hsl(183 100% 50% / 0.2),
+      inset 0 0 40px hsl(183 100% 50% / 0.12);
   }
   
   .nav-tech {
@@ -248,49 +248,49 @@
   }
   
   .btn-tech {
-    background: linear-gradient(135deg, hsl(185 85% 55%) 0%, hsl(185 85% 45%) 100%);
-    border: 1px solid hsl(185 85% 55%);
+    background: linear-gradient(135deg, hsl(183 100% 50%) 0%, hsl(183 100% 45%) 100%);
+    border: 1px solid hsl(183 100% 50%);
     color: hsl(0 0% 0%);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
     transition: all 0.3s ease;
-    box-shadow: 0 0 20px hsl(185 85% 55% / 0.5);
+    box-shadow: 0 0 20px hsl(183 100% 50% / 0.5);
   }
   
   .btn-tech:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px hsl(185 85% 55% / 0.7);
+    box-shadow: 0 10px 25px hsl(183 100% 50% / 0.7);
   }
   
   .btn-tech-outline {
     background: transparent;
-    border: 2px solid hsl(185 85% 55%);
-    color: hsl(185 85% 55%);
+    border: 2px solid hsl(183 100% 50%);
+    color: hsl(183 100% 50%);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 500;
     transition: all 0.3s ease;
   }
   
   .btn-tech-outline:hover {
-    background: hsl(185 85% 55% / 0.1);
+    background: hsl(183 100% 50% / 0.1);
     transform: translateY(-2px);
-    box-shadow: 0 0 20px hsl(185 85% 55% / 0.4);
+    box-shadow: 0 0 20px hsl(183 100% 50% / 0.4);
   }
   
   /* Orange accent buttons */
   .btn-orange {
     background: var(--gradient-orange);
-    border: 1px solid hsl(18 100% 50%);
+    border: 1px solid hsl(24 100% 50%);
     color: hsl(0 0% 100%);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
     transition: all 0.3s ease;
-    box-shadow: 0 0 20px hsl(18 100% 50% / 0.35);
+    box-shadow: 0 0 20px hsl(24 100% 50% / 0.35);
   }
   
   .btn-orange:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 30px hsl(18 100% 50% / 0.5);
+    box-shadow: 0 0 30px hsl(24 100% 50% / 0.5);
   }
   
   /* Custom scrollbar for tech theme */
@@ -397,10 +397,10 @@
     position: relative;
     color: hsl(0 0% 100%);
     text-shadow: 
-      0 0 20px hsl(185 85% 55% / 0.8),
-      0 0 40px hsl(185 85% 55% / 0.6),
-      0 0 60px hsl(185 85% 55% / 0.4),
-      0 0 80px hsl(185 85% 55% / 0.2);
+      0 0 20px hsl(183 100% 50% / 0.8),
+      0 0 40px hsl(183 100% 50% / 0.6),
+      0 0 60px hsl(183 100% 50% / 0.4),
+      0 0 80px hsl(183 100% 50% / 0.2);
   }
   
   .glitch-text::before,
@@ -420,8 +420,8 @@
     color: hsl(0 0% 100%);
     transform: translate(-8px, -6px);
     text-shadow: 
-      2px 0 hsl(185 85% 55% / 0.5),
-      0 0 20px hsl(185 85% 55% / 0.3);
+      2px 0 hsl(183 100% 50% / 0.5),
+      0 0 20px hsl(183 100% 50% / 0.3);
   }
   
   .glitch-text::after {
@@ -429,7 +429,7 @@
     color: hsl(0 0% 100%);
     transform: translate(8px, 6px);
     text-shadow: 
-      -2px 0 hsl(185 85% 55% / 0.5),
-      0 0 20px hsl(185 85% 55% / 0.3);
+      -2px 0 hsl(183 100% 50% / 0.5),
+      0 0 20px hsl(183 100% 50% / 0.3);
   }
 }

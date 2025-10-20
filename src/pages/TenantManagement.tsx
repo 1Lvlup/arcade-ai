@@ -96,6 +96,22 @@ export default function TenantManagement() {
     }));
   };
 
+  const selectAllManuals = () => {
+    const allSelected: TenantAccess = {};
+    manuals.forEach(m => {
+      allSelected[m.manual_id] = true;
+    });
+    setTenantAccess(allSelected);
+  };
+
+  const deselectAllManuals = () => {
+    const allDeselected: TenantAccess = {};
+    manuals.forEach(m => {
+      allDeselected[m.manual_id] = false;
+    });
+    setTenantAccess(allDeselected);
+  };
+
   const saveChanges = async () => {
     if (!selectedTenant) return;
 
@@ -201,16 +217,32 @@ export default function TenantManagement() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="font-semibold">Manual Access</h3>
-                      <Button onClick={saveChanges} disabled={saving}>
-                        {saving ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          'Save Changes'
-                        )}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={selectAllManuals}
+                        >
+                          Select All
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={deselectAllManuals}
+                        >
+                          Deselect All
+                        </Button>
+                        <Button onClick={saveChanges} disabled={saving}>
+                          {saving ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            'Save Changes'
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                       {manuals.map(manual => (

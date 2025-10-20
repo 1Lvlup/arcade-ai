@@ -11,12 +11,12 @@ const ManualManagement = () => {
         <div className="section-spacing space-y-12">
           <div className="text-center section-spacing">
             <div className="space-y-12">
-              <div className="caption-text text-primary/80 mb-8">
+              <div className="caption-text text-orange/80 mb-8">
                 Advanced Processing
               </div>
               <h1 className="display-heading text-7xl md:text-8xl text-foreground leading-none">
                 Document<br />
-                <span className="text-primary brand-glow">Intelligence</span>
+                <span className="text-orange brand-glow">Intelligence</span>
               </h1>
               <p className="body-text text-2xl text-muted-foreground max-w-5xl mx-auto mt-16">
                 Transform complex documents into actionable intelligence with our proprietary AI engine. 
@@ -38,26 +38,26 @@ const ManualManagement = () => {
             </div>
             <div className="grid grid-cols-4 gap-4">
               <div className="text-center space-y-2">
-                <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto">
-                  <span className="premium-text text-sm text-primary">1</span>
+                <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto border border-orange/30">
+                  <span className="premium-text text-sm text-orange">1</span>
                 </div>
                 <p className="caption-text text-xs text-muted-foreground">Upload</p>
               </div>
               <div className="text-center space-y-2">
-                <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto">
-                  <span className="premium-text text-sm text-primary">2</span>
+                <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto border border-orange/30">
+                  <span className="premium-text text-sm text-orange">2</span>
                 </div>
                 <p className="caption-text text-xs text-muted-foreground">AI Analysis</p>
               </div>
               <div className="text-center space-y-2">
-                <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto">
-                  <span className="premium-text text-sm text-primary">3</span>
+                <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto border border-orange/30">
+                  <span className="premium-text text-sm text-orange">3</span>
                 </div>
                 <p className="caption-text text-xs text-muted-foreground">Semantic Processing</p>
               </div>
               <div className="text-center space-y-2">
-                <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto">
-                  <span className="premium-text text-sm text-primary">4</span>
+                <div className="glass-card w-10 h-10 rounded-xl flex items-center justify-center mx-auto border border-orange/30">
+                  <span className="premium-text text-sm text-orange">4</span>
                 </div>
                 <p className="caption-text text-xs text-muted-foreground">Intelligent Search</p>
               </div>

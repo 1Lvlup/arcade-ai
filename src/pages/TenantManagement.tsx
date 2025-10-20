@@ -182,9 +182,9 @@ export default function TenantManagement() {
     <div className="min-h-screen arcade-bg">
       <SharedHeader title="Tenant Management" />
       <div className="container mx-auto p-6 space-y-6">
-        <Card>
+        <Card className="border-l-4 border-l-orange/50">
           <CardHeader>
-            <CardTitle>Tenant Manual Access Management</CardTitle>
+            <CardTitle className="text-orange">Tenant Manual Access Management</CardTitle>
             <CardDescription>
               Assign which manuals each tenant can access
             </CardDescription>
@@ -193,12 +193,12 @@ export default function TenantManagement() {
             <div className="grid md:grid-cols-3 gap-6">
               {/* Tenant List */}
               <div className="space-y-2">
-                <h3 className="font-semibold mb-4">Select Tenant</h3>
+                <h3 className="font-semibold mb-4 text-orange">Select Tenant</h3>
                 <div className="space-y-1 max-h-[600px] overflow-y-auto">
                   {tenants.map(tenant => (
                     <Button
                       key={tenant.id}
-                      variant={selectedTenant === tenant.id ? 'default' : 'outline'}
+                      variant={selectedTenant === tenant.id ? 'orange' : 'outline'}
                       className="w-full justify-start"
                       onClick={() => setSelectedTenant(tenant.id)}
                     >
@@ -216,7 +216,7 @@ export default function TenantManagement() {
                 {selectedTenant ? (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <h3 className="font-semibold">Manual Access</h3>
+                      <h3 className="font-semibold text-orange">Manual Access</h3>
                       <div className="flex gap-2">
                         <Button 
                           variant="outline" 
@@ -232,7 +232,7 @@ export default function TenantManagement() {
                         >
                           Deselect All
                         </Button>
-                        <Button onClick={saveChanges} disabled={saving}>
+                        <Button onClick={saveChanges} disabled={saving} variant="orange">
                           {saving ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

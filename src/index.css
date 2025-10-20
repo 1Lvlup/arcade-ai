@@ -163,12 +163,12 @@
   
   .stat-card {
     background: hsl(0 0% 0%);
-    border: 2px solid hsl(185 85% 55% / 0.4);
+    border: 2px solid hsl(18 100% 50% / 0.3);
     backdrop-filter: blur(12px);
     position: relative;
     box-shadow: 
-      0 0 20px hsl(185 85% 55% / 0.4),
-      0 0 40px hsl(185 85% 55% / 0.2),
+      0 0 20px hsl(18 100% 50% / 0.3),
+      0 0 40px hsl(18 100% 50% / 0.15),
       inset 0 0 30px hsl(185 85% 55% / 0.08);
   }
   
@@ -178,9 +178,9 @@
   
   .hover-glow:hover {
     box-shadow: 
-      0 0 30px hsl(185 85% 55% / 0.6),
-      0 0 50px hsl(185 85% 55% / 0.4);
-    border-color: hsl(185 85% 55% / 0.8);
+      0 0 30px hsl(18 100% 50% / 0.6),
+      0 0 50px hsl(18 100% 50% / 0.4);
+    border-color: hsl(18 100% 50% / 0.8);
   }
   
   .hover-lift {
@@ -194,11 +194,12 @@
   
   .premium-card {
     background: hsl(0 0% 0%);
-    border: 1px solid hsl(185 85% 55% / 0.4);
+    border: 1px solid hsl(185 85% 55% / 0.3);
+    border-left: 3px solid hsl(18 100% 50% / 0.5);
     position: relative;
     box-shadow: 
-      0 0 20px hsl(185 85% 55% / 0.3),
-      0 0 40px hsl(185 85% 55% / 0.15),
+      0 0 20px hsl(185 85% 55% / 0.2),
+      0 0 40px hsl(185 85% 55% / 0.1),
       inset 0 0 30px hsl(185 85% 55% / 0.08);
   }
   
@@ -226,19 +227,22 @@
   .tech-card {
     @apply rounded-xl backdrop-blur-sm;
     background: hsl(0 0% 0%);
-    border: 1px solid hsl(185 85% 55% / 0.4);
+    border: 1px solid hsl(185 85% 55% / 0.3);
+    border-bottom: 2px solid hsl(18 100% 50% / 0.4);
     position: relative;
     box-shadow: 
-      0 0 20px hsl(185 85% 55% / 0.3),
-      0 0 40px hsl(185 85% 55% / 0.15),
+      0 0 20px hsl(185 85% 55% / 0.2),
+      0 0 40px hsl(185 85% 55% / 0.1),
       inset 0 0 30px hsl(185 85% 55% / 0.08);
   }
   
   .tech-card:hover {
-    border-color: hsl(185 85% 55% / 0.6);
+    border-color: hsl(185 85% 55% / 0.5);
+    border-bottom-color: hsl(18 100% 50% / 0.8);
     box-shadow: 
-      0 0 30px hsl(185 85% 55% / 0.5),
-      0 0 60px hsl(185 85% 55% / 0.3),
+      0 0 30px hsl(185 85% 55% / 0.4),
+      0 0 60px hsl(185 85% 55% / 0.2),
+      0 0 20px hsl(18 100% 50% / 0.3),
       inset 0 0 40px hsl(185 85% 55% / 0.12);
   }
   

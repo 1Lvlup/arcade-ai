@@ -35,7 +35,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
   };
 
   return (
-    <header className="border-b border-border bg-background/95 backdrop-blur-sm">
+    <header className="border-b border-border bg-background/95 backdrop-blur-sm border-t-2 border-t-orange/30">
       <div className="container mx-auto px-6 py-6 flex items-center justify-between">
         <div className="flex items-center space-x-6">
           {showBackButton && (
@@ -54,7 +54,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
             )
           )}
           <div className="flex items-center space-x-3">
-            <Brain className="h-7 w-7 text-primary" />
+            <Brain className="h-7 w-7 text-orange" />
             <h1 className="text-2xl font-tech font-bold text-foreground">{title}</h1>
           </div>
         </div>

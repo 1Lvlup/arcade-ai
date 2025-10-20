@@ -260,14 +260,14 @@ const Index = () => {
                     <TrendingUp className="h-8 w-8 text-orange" />
                   </div>
                   <h3 className="text-3xl font-tech font-bold text-orange">$350 / week</h3>
-                  <p className="text-lg text-muted-foreground font-body">
+                  <p className="text-lg text-muted-foreground font-body leading-relaxed">
                     Average revenue per arcade game
                   </p>
-                  <div className="pt-4 border-t border-primary/20 space-y-3">
+                  <div className="pt-4 border-t border-primary/20 space-y-4">
                     <p className="text-lg text-muted-foreground leading-relaxed">
                       When just 3–4 games are down, that's ≈ <span className="text-destructive font-semibold">$1,200 lost</span> in a single week.
                     </p>
-                    <p className="text-lg text-muted-foreground">
+                    <p className="text-lg text-muted-foreground leading-relaxed">
                       Every hour a game sits idle, money bleeds away.
                     </p>
                   </div>
@@ -287,17 +287,21 @@ const Index = () => {
               </div>
 
               {/* Right Side - Cost of Downtime */}
-              <div className="stat-card p-10 rounded-2xl hover-lift">
+              <div className="stat-card p-10 rounded-2xl hover-lift group">
                 <div className="space-y-6">
-                  <div className="p-4 rounded-full bg-destructive/10 inline-flex">
-                    <Clock className="h-8 w-8 text-destructive" />
+                  <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
+                    <Clock className="h-8 w-8 text-orange" />
                   </div>
-                  <div className="space-y-4">
-                    <p className="text-lg text-muted-foreground font-body leading-relaxed">
-                      Let's be real — when a machine's down and it's not an easy fix, it can stay offline for 3–6 months.
+                  <h3 className="text-3xl font-tech font-bold text-orange">3-6 months</h3>
+                  <p className="text-lg text-muted-foreground font-body leading-relaxed">
+                    Average downtime for complex repairs
+                  </p>
+                  <div className="pt-4 border-t border-primary/20 space-y-4">
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      When a machine's down and it's not an easy fix, it can stay offline for months.
                     </p>
-                    <p className="text-lg text-muted-foreground font-body">
-                      That's <span className="text-destructive font-semibold text-2xl">$8,400 lost</span> per game.
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      That's <span className="text-destructive font-semibold">$8,400 lost</span> per game.
                     </p>
                   </div>
                 </div>

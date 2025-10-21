@@ -722,9 +722,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   };
 
   return (
-    <Card className="tech-card h-full flex flex-col">
-      <CardHeader className="border-b border-primary/20 flex-shrink-0 py-3 px-4">
-        <CardTitle className="flex items-center justify-between text-sm">
+    <Card className="tech-card h-full flex flex-col w-full mx-0 rounded-none border-x-0">
+      <CardHeader className="border-b border-primary/20 flex-shrink-0 py-5 px-6">
+        <CardTitle className="flex items-center justify-between text-base">
           <span className="tracking-wider font-bold text-white">LEVEL UP</span>
           <div className="flex items-center gap-2">
             <Button
@@ -762,10 +762,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                   size="sm"
                   onClick={saveConversation}
                   disabled={messages.length <= 1 || isSaving}
-                  className="h-8 px-2"
+                  className="h-10 px-3"
                   title="Save conversation"
                 >
-                  <Save className="h-4 w-4" />
+                  <Save className="h-5 w-5" />
                 </Button>
               </>
             )}
@@ -774,10 +774,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               size="sm"
               onClick={startNewConversation}
               disabled={messages.length <= 1}
-              className="h-8 px-2"
+              className="h-10 px-3"
               title="New conversation"
             >
-              <MessageSquarePlus className="h-4 w-4" />
+              <MessageSquarePlus className="h-5 w-5" />
             </Button>
             {user && (
               <Sheet open={showHistory} onOpenChange={setShowHistory}>
@@ -785,10 +785,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-2"
+                    className="h-10 px-3"
                     title="View conversation history"
                   >
-                    <History className="h-4 w-4" />
+                    <History className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
               <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
@@ -850,15 +850,15 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           </div>
         </CardTitle>
         {selectedManualId && (
-          <div className="mt-1">
-            <Badge variant="outline" className="text-xs">
+          <div className="mt-2">
+            <Badge variant="outline" className="text-sm px-3 py-1">
               Searching: {manualTitle}
             </Badge>
           </div>
         )}
         {currentConversationId && (
-          <div className="mt-1">
-            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+          <div className="mt-2">
+            <Badge variant="outline" className="text-sm px-3 py-1 bg-primary/10 text-primary border-primary/30">
               Saved conversation
             </Badge>
           </div>
@@ -868,9 +868,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Saved Conversations Sidebar */}
         {showConversations && (
-          <div className="border-b border-border p-4 space-y-2 max-h-[200px] overflow-y-auto">
+          <div className="border-b border-border p-6 space-y-2 max-h-[200px] overflow-y-auto">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm">Saved Conversations</h3>
+              <h3 className="font-semibold text-base">Saved Conversations</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -921,14 +921,14 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         )}
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" style={{ background: 'hsl(210 20% 5%)' }}>
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 min-h-0" style={{ background: 'hsl(210 20% 5%)' }}>
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 font-sans text-white ${
+                className={`max-w-[85%] rounded-lg p-5 font-sans text-white ${
                   message.type === 'user'
                     ? 'border border-orange/30'
                     : 'border border-primary/30'
@@ -938,53 +938,53 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 }}
               >
                 {message.type === 'user' && (
-                  <div className="flex items-center space-x-2 mb-2">
-                    <User className="h-4 w-4" />
-                    <span className="text-xs opacity-70">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <User className="h-5 w-5" />
+                    <span className="text-sm opacity-70">
                       {message.timestamp.toLocaleTimeString()}
                     </span>
                   </div>
                 )}
                 
                 {message.type === 'user' ? (
-                  <div className="text-sm whitespace-pre-wrap">{message.content as string}</div>
+                  <div className="text-base whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
                 ) : isStructuredAnswer(message.content) ? (
                   renderStructuredAnswer(message.content, message.id)
                 ) : (
-                  <div className="text-sm whitespace-pre-wrap">
+                  <div className="text-base whitespace-pre-wrap leading-relaxed">
                     {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
                   </div>
                 )}
 
                 {/* Thumbs Up/Down for Bot Messages */}
                 {message.type === 'bot' && (
-                  <div className="mt-3 pt-3 border-t border-primary/10 flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground mr-2">Was this helpful?</span>
+                  <div className="mt-4 pt-4 border-t border-primary/10 flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground mr-2">Was this helpful?</span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleFeedback(message.id, 'thumbs_up')}
                       disabled={message.feedback !== null}
-                      className={`h-8 px-3 ${
+                      className={`h-9 px-4 ${
                         message.feedback === 'thumbs_up' 
                           ? 'bg-green-500/20 text-green-500 border border-green-500/30' 
                           : 'hover:bg-green-500/10 hover:text-green-500'
                       }`}
                     >
-                      <ThumbsUp className="h-4 w-4" />
+                      <ThumbsUp className="h-5 w-5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleFeedback(message.id, 'thumbs_down')}
                       disabled={message.feedback !== null}
-                      className={`h-8 px-3 ${
+                      className={`h-9 px-4 ${
                         message.feedback === 'thumbs_down' 
                           ? 'bg-red-500/20 text-red-500 border border-red-500/30' 
                           : 'hover:bg-red-500/10 hover:text-red-500'
                       }`}
                     >
-                      <ThumbsDown className="h-4 w-4" />
+                      <ThumbsDown className="h-5 w-5" />
                     </Button>
                   </div>
                 )}
@@ -994,11 +994,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className="rounded-lg p-3 border border-primary/30" style={{ background: 'hsl(210 33% 9%)' }}>
-                <div className="flex items-center space-x-2">
-                  <Bot className="h-4 w-4 text-primary" />
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="text-sm text-white">Thinking...</span>
+              <div className="rounded-lg p-5 border border-primary/30" style={{ background: 'hsl(210 33% 9%)' }}>
+                <div className="flex items-center space-x-3">
+                  <Bot className="h-5 w-5 text-primary" />
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="text-base text-white">Thinking...</span>
                 </div>
               </div>
             </div>
@@ -1008,30 +1008,31 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         </div>
         
         {/* Input Area */}
-        <div className="border-t border-border p-4 flex-shrink-0">
-          <div className="flex space-x-2">
+        <div className="border-t border-border px-6 py-5 flex-shrink-0">
+          <div className="flex space-x-3">
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask me about arcade machine troubleshooting..."
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 text-base h-12"
             />
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isLoading}
-              size="sm"
+              size="lg"
               variant="orange"
+              className="h-12 px-6"
             >
               {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <Send className="h-4 w-4" />
+                <Send className="h-5 w-5" />
               )}
             </Button>
           </div>
-          <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
+          <div className="text-sm text-muted-foreground mt-3 flex items-center justify-between">
             <span>Press Enter to send • Shift+Enter for new line</span>
             {!user && (
               <span className="text-orange-500 font-medium">

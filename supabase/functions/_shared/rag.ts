@@ -54,9 +54,10 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
   if (textError) console.error('❌ Error fetching text chunks:', textError);
 
   // Query figures directly (in case chunk IDs include figure IDs)
+  // Get comprehensive metadata for filtering
   let figureQuery = db
     .from('figures')
-    .select('id, manual_id, page_number, storage_url, kind, image_name')
+    .select('id, manual_id, page_number, storage_url, kind, image_name, caption_text, ocr_text, semantic_tags, detected_components, figure_type, keywords')
     .in('id', chunkIds)
     .not('storage_url', 'is', null);
   
@@ -103,11 +104,41 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
     ).join(', ')
   );
 
-  // Only use figures that were actually returned by search (in chunkIds)
-  // This ensures only relevant images are shown, not all images from relevant pages
-  const allImages = figureChunks ?? [];
+  // Filter images by relevance using metadata, captions, OCR text
+  const allImages = (figureChunks ?? []).filter(img => {
+    // Must have storage URL
+    if (!img.storage_url) {
+      console.log(`❌ Skipping image: no storage_url`);
+      return false;
+    }
+    
+    // Check if image has meaningful content (caption, OCR, or metadata)
+    const hasCaption = img.caption_text && img.caption_text.length > 10;
+    const hasOCR = img.ocr_text && img.ocr_text.length > 5;
+    const hasMetadata = (img.semantic_tags && img.semantic_tags.length > 0) || 
+                        (img.keywords && img.keywords.length > 0) ||
+                        (img.detected_components && Object.keys(img.detected_components || {}).length > 0);
+    const hasType = img.kind || img.figure_type;
+    
+    const isRelevant = hasCaption || hasOCR || hasMetadata || hasType;
+    
+    // Log each image for debugging
+    if (isRelevant) {
+      const relevanceReasons = [
+        hasCaption && 'caption',
+        hasOCR && 'OCR',
+        hasMetadata && 'metadata',
+        hasType && 'type'
+      ].filter(Boolean).join(', ');
+      console.log(`✅ Including image: ${img.manual_id} p${img.page_number} - ${img.kind || img.figure_type || 'Unknown'} (${relevanceReasons})`);
+    } else {
+      console.log(`❌ Skipping image: ${img.manual_id} p${img.page_number} - no caption, OCR, or metadata`);
+    }
+    
+    return isRelevant;
+  });
   
-  console.log(`🖼️ Using ${allImages.length} relevant figures from search results`);
+  console.log(`🖼️ Using ${allImages.length} relevant figures with metadata (filtered from ${figureChunks?.length || 0})`);
 
   // Build citations array
   const citations: string[] = [];

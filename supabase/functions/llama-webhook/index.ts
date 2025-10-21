@@ -812,15 +812,26 @@ serve(async (req) => {
             return null;
           }
           
-          // Extract page number from filename
-          // Handles formats like: page_3.jpg, page_3_text_1.jpg, img_p0_1.png, p3_image.png
+          // Extract page number and metadata from LlamaCloud image naming
+          // LlamaCloud formats: img_p{page}_{index}.png (e.g., img_p0_1.png, img_p12_3.png)
           let pageNumber: number | null = null;
-          const pageMatch = imageName.match(/(?:page|p)[_-]?(\d+)/i);
-          if (pageMatch) {
-            pageNumber = parseInt(pageMatch[1], 10);
-            console.log(`  📄 Extracted page number: ${pageNumber}`);
+          let figureLabel: string | null = null;
+          
+          // Try LlamaCloud format: img_p{page}_{index}
+          const llamaMatch = imageName.match(/img_p(\d+)_(\d+)/i);
+          if (llamaMatch) {
+            pageNumber = parseInt(llamaMatch[1], 10) + 1; // LlamaCloud is 0-indexed
+            figureLabel = `Figure ${llamaMatch[2]}`;
+            console.log(`  📄 Extracted page ${pageNumber}, ${figureLabel}`);
           } else {
-            console.log(`  ⚠️ Could not extract page number from: ${imageName}`);
+            // Fallback formats
+            const pageMatch = imageName.match(/(?:page|p)[_-]?(\d+)/i);
+            if (pageMatch) {
+              pageNumber = parseInt(pageMatch[1], 10);
+              console.log(`  📄 Extracted page number: ${pageNumber}`);
+            } else {
+              console.log(`  ⚠️ Could not extract page number from: ${imageName}`);
+            }
           }
           
           // Download image from LlamaCloud API
@@ -876,7 +887,11 @@ serve(async (req) => {
           const storageUrl = urlData.publicUrl;
           console.log(`  🔗 Storage URL: ${storageUrl}`);
           
-          // Insert figure metadata into database
+          // Extract additional metadata from image object if available
+          const topics: string[] = [];
+          const component: string | null = null;
+          
+          // Insert figure metadata into database with all required fields
           const figureData = {
             manual_id: document.manual_id,
             doc_id: document.manual_id,
@@ -884,6 +899,10 @@ serve(async (req) => {
             storage_path: storagePath,
             storage_url: storageUrl,
             page_number: pageNumber,
+            figure_label: figureLabel,
+            topics: topics,
+            component: component,
+            file_path: storagePath,
             llama_asset_name: imageName,
             fec_tenant_id: document.fec_tenant_id,
             raw_image_metadata: imageItem && typeof imageItem === 'object' ? imageItem : { name: imageName },

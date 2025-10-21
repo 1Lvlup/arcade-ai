@@ -254,12 +254,12 @@ serve(async (req) => {
     formData.append('page_suffix', '<!-- Page {pageNumber} End -->')
     formData.append('page_separator', '______________________________')
     
-    // OCR / Layout
-    formData.append('disable_ocr', 'false')
+    // OCR / Layout - CRITICAL: Disable LlamaCloud OCR, preserve headers/footers for page numbers
+    formData.append('disable_ocr', 'true')  // We do our own OCR with GPT-4.1 Vision
     formData.append('extract_layout', 'true')
     formData.append('preserve_layout_alignment_across_pages', 'true')
-    formData.append('hide_headers', 'true')
-    formData.append('hide_footers', 'true')
+    formData.append('hide_headers', 'false')  // KEEP headers - they have page numbers!
+    formData.append('hide_footers', 'false')  // KEEP footers - they have page numbers!
     formData.append('ignore_document_elements_for_layout_detection', 'true')
     
     // Tables
@@ -275,7 +275,7 @@ serve(async (req) => {
     formData.append('specialized_image_parsing', 'true')
     formData.append('precise_bounding_box', 'true')
     formData.append('inline_images_in_markdown', 'true')
-    formData.append('return_image_ocr', 'true')
+    formData.append('return_image_ocr', 'false')  // Don't want LlamaCloud OCR
     formData.append('return_images', 'true')
     
     // Caching/behavior

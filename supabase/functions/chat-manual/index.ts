@@ -570,7 +570,7 @@ ${styleHint}`;
         model,
         input: conversationInput, // Responses API uses "input"
         max_output_tokens: 8000, // Responses API uses "max_output_tokens"
-        reasoning: { effort: "medium" }, // Responses API supports reasoning
+        // reasoning parameter removed - not supported by gpt-5-chat-latest on Responses API
         stream: true, // Explicitly true
         store: true, // Enable stateful context for better performance
       }

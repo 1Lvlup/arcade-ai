@@ -884,14 +884,13 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 font-sans ${
+                className={`max-w-[80%] rounded-lg p-3 font-sans text-white ${
                   message.type === 'user'
-                    ? 'text-white border border-orange/30'
+                    ? 'border border-orange/30'
                     : 'border border-primary/30'
                 }`}
                 style={{
-                  background: message.type === 'user' ? 'hsl(24 100% 54%)' : 'hsl(210 33% 9%)',
-                  color: message.type === 'user' ? 'white' : 'hsl(183 100% 50%)'
+                  background: message.type === 'user' ? 'hsl(24 100% 54%)' : 'hsl(210 33% 9%)'
                 }}
               >
                 {message.type === 'user' && (
@@ -955,7 +954,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 <div className="flex items-center space-x-2">
                   <Bot className="h-4 w-4 text-primary" />
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="text-sm text-primary">Thinking...</span>
+                  <span className="text-sm text-white">Thinking...</span>
                 </div>
               </div>
             </div>

@@ -67,7 +67,7 @@ serve(async (req) => {
           { role: 'system', content: QA_GENERATION_PROMPT },
           { role: 'user', content: `Content from pages ${page_start}-${page_end}:\n\n${content}` }
         ],
-        max_completion_tokens: 2000,
+        max_completion_tokens: 8000,
         tools: [
           {
             type: 'function',

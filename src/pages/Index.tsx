@@ -129,10 +129,8 @@ const Index = () => {
               letterSpacing: '0.02em',
               color: 'hsl(183 100% 50%)',
               textShadow: `
-                0 0 20px hsl(183 100% 50% / 1),
-                0 0 40px hsl(183 100% 50% / 0.8),
-                0 0 60px hsl(183 100% 50% / 0.6),
-                0 0 80px hsl(183 100% 50% / 0.4)
+                0 0 15px hsl(183 100% 50% / 0.5),
+                0 0 30px hsl(183 100% 50% / 0.3)
               `
             }}>
                 LEVEL UP

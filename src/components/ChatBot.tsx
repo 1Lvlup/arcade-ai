@@ -64,6 +64,13 @@ interface ChatMessage {
     url: string;
     title: string;
   }>;
+  pastMatches?: Array<{
+    conversation_id: string;
+    title: string;
+    date: string;
+    preview: string;
+    solution: string;
+  }>;
 }
 
 interface ChatBotProps {
@@ -361,6 +368,28 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     setInputValue('');
     setIsLoading(true);
 
+    // Auto-save conversation when user sends first message
+    if (user && !currentConversationId && messages.length === 1) {
+      const title = query.slice(0, 50);
+      try {
+        const { data: newConv, error } = await supabase
+          .from('conversations')
+          .insert([{
+            title,
+            manual_id: selectedManualId,
+            user_id: user.id,
+          }])
+          .select()
+          .single();
+        
+        if (!error && newConv) {
+          setCurrentConversationId(newConv.id);
+        }
+      } catch (err) {
+        console.error('Failed to create conversation:', err);
+      }
+    }
+
     // Increment guest message count
     if (!user) {
       const newCount = guestMessageCount + 1;
@@ -380,6 +409,25 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     setMessages(prev => [...prev, botMessage]);
 
     try {
+      // Search past conversations for similar questions (if logged in)
+      if (user) {
+        try {
+          const { data: searchData } = await supabase.functions.invoke('search-past-conversations', {
+            body: { query, user_id: user.id }
+          });
+          
+          if (searchData?.matches && searchData.matches.length > 0) {
+            setMessages(prev => prev.map(msg => 
+              msg.id === botMessageId 
+                ? { ...msg, pastMatches: searchData.matches }
+                : msg
+            ));
+          }
+        } catch (err) {
+          console.warn('Past conversation search failed:', err);
+        }
+      }
+
       // Build conversation history for context
       const conversationHistory = messages
         .filter(m => m.type === 'user' || m.type === 'bot')
@@ -467,6 +515,26 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       }
 
       console.log('✅ Streaming complete');
+
+      // Auto-save message after completion for logged-in users
+      if (user && currentConversationId) {
+        try {
+          await supabase.from('conversation_messages').insert([
+            {
+              conversation_id: currentConversationId,
+              role: 'user',
+              content: query,
+            },
+            {
+              conversation_id: currentConversationId,
+              role: 'assistant',
+              content: accumulatedContent,
+            }
+          ]);
+        } catch (err) {
+          console.error('Failed to auto-save messages:', err);
+        }
+      }
     } catch (err: any) {
       console.error('❌ chat-manual failed:', err);
       toast({
@@ -966,6 +1034,35 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 ) : (
                   <div className="text-base whitespace-pre-wrap leading-relaxed">
                     {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
+                  </div>
+                )}
+
+                {/* Past conversation matches */}
+                {message.type === 'bot' && message.pastMatches && message.pastMatches.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-blue-500/20 bg-blue-500/5 -mx-6 px-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <History className="h-5 w-5 text-blue-500" />
+                      <div className="text-sm font-semibold text-blue-500">
+                        You've asked about this before
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {message.pastMatches.map((match, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => loadConversation(match.conversation_id)}
+                          className="w-full text-left p-4 rounded-lg bg-background/50 border border-blue-500/20 hover:border-blue-500/40 transition-colors"
+                        >
+                          <div className="text-sm font-medium mb-1">{match.title}</div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            {new Date(match.date).toLocaleDateString()}
+                          </div>
+                          <div className="text-xs text-blue-500 italic">
+                            "{match.preview}..."
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 

@@ -153,7 +153,7 @@ export default function TrainingQAGeneration() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Q&A Generation">
         <Button variant="ghost" size="sm" onClick={() => navigate('/training')}>
           <ArrowLeft className="h-4 w-4 mr-2" />

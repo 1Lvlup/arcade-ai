@@ -167,7 +167,7 @@ export function TrainingDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Model Training Dashboard" showBackButton={true} backTo="/" />
       
       <main className="container mx-auto px-6 py-8">

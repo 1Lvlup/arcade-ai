@@ -170,7 +170,7 @@ export default function AIConfiguration() {
 
   if (isLoading) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader 
         title="AI Configuration" 
         showBackButton={true}
@@ -184,7 +184,7 @@ export default function AIConfiguration() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="AI Configuration" />
       
       <div className="container mx-auto p-6">

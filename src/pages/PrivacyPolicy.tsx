@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen professional-bg">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Privacy Policy" showBackButton={true} backTo="/" />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl">

@@ -287,7 +287,7 @@ export function ManualDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen mesh-gradient">
         <SharedHeader title="Loading Manual..." showBackButton={true} backTo="/manuals" />
         <main className="container mx-auto px-6 py-8">
           <div className="flex items-center justify-center py-20">
@@ -301,7 +301,7 @@ export function ManualDetail() {
 
   if (!manual) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen mesh-gradient">
         <SharedHeader title="Manual Not Found" showBackButton={true} backTo="/manuals" />
         <main className="container mx-auto px-6 py-8">
           <Card className="border-destructive bg-card">
@@ -316,7 +316,7 @@ export function ManualDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader 
         title={manual.title} 
         showBackButton={true} 

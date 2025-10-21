@@ -378,7 +378,7 @@ export function CodeAssistant() {
 
   if (!currentConversation) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen mesh-gradient">
         <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
         
         <main className="container mx-auto px-6 py-8">
@@ -440,7 +440,7 @@ export function CodeAssistant() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
       
       <main className="container mx-auto px-6 py-8">

@@ -168,7 +168,7 @@ export default function TrainingInbox() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Training Inbox" showBackButton backTo="/training-hub" />
       
       <main className="container mx-auto px-4 py-8">

@@ -59,7 +59,7 @@ export default function ManualDetails() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Manual Analysis" showBackButton={true} backTo="/manuals" />
       
       {/* Action Bar */}

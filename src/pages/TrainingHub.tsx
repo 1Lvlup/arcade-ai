@@ -54,7 +54,7 @@ export default function TrainingHub() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Training Hub">
         <Button variant="outline" size="sm" onClick={logout}>
           <LogOut className="h-4 w-4 mr-2" />

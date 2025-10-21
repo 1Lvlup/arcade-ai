@@ -249,7 +249,7 @@ export default function TrainingInboxDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen mesh-gradient">
         <SharedHeader title="Loading..." />
         <div className="container mx-auto p-6">
           <p className="text-muted-foreground">Loading query details...</p>
@@ -260,7 +260,7 @@ export default function TrainingInboxDetail() {
 
   if (!query) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen mesh-gradient">
         <SharedHeader title="Not Found" />
         <div className="container mx-auto p-6">
           <p className="text-destructive">Query not found</p>
@@ -290,7 +290,7 @@ export default function TrainingInboxDetail() {
   const canUndo = lastAction && (Date.now() - lastAction.timestamp) < 10 * 60 * 1000;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Review Query">
         <div className="flex gap-2">
           {canUndo && (

@@ -295,7 +295,7 @@ const VisionBoard = () => {
   };
 
   return (
-    <div className="min-h-screen arcade-bg">
+    <div className="min-h-screen mesh-gradient">
       {/* Header */}
       <header className="border-b border-primary/20 bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

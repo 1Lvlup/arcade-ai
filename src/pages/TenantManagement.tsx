@@ -172,14 +172,14 @@ export default function TenantManagement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen arcade-bg flex items-center justify-center">
+      <div className="min-h-screen mesh-gradient flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen arcade-bg">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Tenant Management" />
       <div className="container mx-auto p-6 space-y-6">
         <Card className="border-l-4 border-l-orange/50">

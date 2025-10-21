@@ -78,7 +78,7 @@ export default function Support() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col mesh-gradient">
       <SharedHeader title="Support" />
       <main className="flex-1 container max-w-3xl mx-auto px-4 py-8">
         <Card>

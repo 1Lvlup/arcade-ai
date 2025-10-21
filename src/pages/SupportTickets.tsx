@@ -110,7 +110,7 @@ export default function SupportTickets() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col mesh-gradient">
         <SharedHeader title="Support Tickets" />
         <main className="flex-1 container mx-auto px-4 py-8">
           <p>Loading tickets...</p>
@@ -120,7 +120,7 @@ export default function SupportTickets() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col mesh-gradient">
       <SharedHeader title="Support Tickets" />
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Support Tickets</h1>

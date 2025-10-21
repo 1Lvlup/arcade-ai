@@ -198,7 +198,7 @@ export default function QAAnalytics() {
   const interpretation = getGradeInterpretation();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Q&A Analytics" />
       
       <div className="container mx-auto px-4 py-8 space-y-6">

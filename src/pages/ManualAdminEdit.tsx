@@ -163,7 +163,7 @@ const ManualAdminEdit = () => {
   };
 
   return (
-    <div className="min-h-screen arcade-bg">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Manual Editor" />
       
       <main className="container mx-auto py-8 px-4 max-w-4xl">

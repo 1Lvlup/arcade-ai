@@ -113,7 +113,7 @@ export default function TrainingExport() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Export Training Data">
         <Button variant="ghost" size="sm" onClick={() => navigate('/training-hub')}>
           <ArrowLeft className="h-4 w-4 mr-2" />

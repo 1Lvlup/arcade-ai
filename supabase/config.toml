@@ -145,3 +145,6 @@ verify_jwt = false
 
 [functions.search-past-conversations]
 verify_jwt = true
+
+[functions.structured-csv-import]
+verify_jwt = true

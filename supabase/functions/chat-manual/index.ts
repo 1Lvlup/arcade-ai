@@ -901,9 +901,9 @@ serve(async (req) => {
           
           if (chunkIds.length > 0) {
             try {
-              const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds);
+              const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, manual_id);
               thumbnails = imgs || [];
-              console.log(`🖼️ Retrieved ${thumbnails.length} images`);
+              console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${manual_id || 'all'}`);
             } catch (e) {
               console.error('Error fetching images:', e);
             }

@@ -38,13 +38,13 @@ export function pageAwareChunk(markdown: string, meta: {
 }
 
 // --- Build citations + thumbnails from used chunk IDs ---
-export async function buildCitationsAndImages(db: any, chunkIds: string[]) {
+export async function buildCitationsAndImages(db: any, chunkIds: string[], manualId?: string) {
   if (!chunkIds || chunkIds.length === 0) {
     console.log('🖼️ No chunk IDs provided for image retrieval');
     return { citations: [], thumbnails: [] };
   }
 
-  console.log(`🔍 Building citations for ${chunkIds.length} chunk IDs`);
+  console.log(`🔍 Building citations for ${chunkIds.length} chunk IDs${manualId ? ` (manual: ${manualId})` : ' (all manuals)'}`);
 
   // Query text chunks to get page ranges and manual IDs
   const { data: textChunks, error: textError } = await db
@@ -54,11 +54,19 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[]) {
   if (textError) console.error('❌ Error fetching text chunks:', textError);
 
   // Query figures directly (in case chunk IDs include figure IDs)
-  const { data: figureChunks, error: figError } = await db
+  let figureQuery = db
     .from('figures')
     .select('id, manual_id, page_number, storage_url, kind, image_name')
     .in('id', chunkIds)
     .not('storage_url', 'is', null);
+  
+  // CRITICAL: Filter by manual_id if provided to prevent cross-manual contamination
+  if (manualId) {
+    figureQuery = figureQuery.eq('manual_id', manualId);
+    console.log(`🔒 Filtering figures by manual_id: ${manualId}`);
+  }
+  
+  const { data: figureChunks, error: figError } = await figureQuery;
   if (figError) console.error('❌ Error fetching figure chunks:', figError);
 
   console.log(`📄 Found ${textChunks?.length || 0} text chunks, ${figureChunks?.length || 0} figure chunks`);

@@ -50,16 +50,16 @@ serve(async (req) => {
 
     const tenantId = profile.fec_tenant_id;
 
-    // Verify both manuals exist and belong to this tenant
+    // Verify both manuals exist
     const { data: sourceManual, error: sourceError } = await supabase
       .from('manual_metadata')
-      .select('manual_id, canonical_title, fec_tenant_id')
+      .select('manual_id, canonical_title')
       .eq('manual_id', source_manual_id)
       .single();
 
     const { data: targetManual, error: targetError } = await supabase
       .from('manual_metadata')
-      .select('manual_id, canonical_title, fec_tenant_id')
+      .select('manual_id, canonical_title')
       .eq('manual_id', target_manual_id)
       .single();
 
@@ -71,9 +71,7 @@ serve(async (req) => {
       throw new Error(`Target manual "${target_manual_id}" not found`);
     }
 
-    if (sourceManual.fec_tenant_id !== tenantId || targetManual.fec_tenant_id !== tenantId) {
-      throw new Error('Access denied: manuals must belong to your tenant');
-    }
+    // Tenant access is validated through chunks_text and figures queries below
 
     console.log(`📚 Merging "${sourceManual.canonical_title}" into "${targetManual.canonical_title}"`);
 

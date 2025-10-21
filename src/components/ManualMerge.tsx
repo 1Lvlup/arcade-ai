@@ -66,7 +66,7 @@ export function ManualMerge() {
       setResult(data);
       toast({
         title: 'Merge successful!',
-        description: `Merged ${data.merged_chunks} chunks, ${data.merged_figures} figures, ${data.added_qa} QA pairs`,
+        description: `Added ${data.merged_chunks} chunks, ${data.merged_figures} figures, ${data.added_qa} QA pairs. Updated ${data.updated_figures} existing figures.`,
       });
     } catch (error: any) {
       console.error('Merge error:', error);
@@ -157,12 +157,13 @@ export function ManualMerge() {
           <div className="mt-4 rounded-md bg-green-50 dark:bg-green-950 p-4">
             <h4 className="font-semibold text-green-900 dark:text-green-100">Merge Results</h4>
             <ul className="mt-2 space-y-1 text-sm text-green-800 dark:text-green-200">
-              <li>✓ Merged {result.merged_chunks} text chunks</li>
-              <li>✓ Merged {result.merged_figures} figures</li>
-              <li>✓ Added {result.added_qa} QA pairs</li>
+              <li>✓ Added {result.merged_chunks} new text chunks (skipped {result.skipped_chunk_duplicates} duplicates)</li>
+              <li>✓ Added {result.merged_figures} new figures, enriched {result.updated_figures} existing (skipped {result.skipped_figure_duplicates} duplicates)</li>
+              <li>✓ Added {result.added_qa} QA pairs (skipped {result.skipped_qa_duplicates} duplicates)</li>
+              <li className="font-semibold pt-1">Total: {result.total_items_merged} items merged</li>
             </ul>
             <p className="mt-2 text-xs text-green-700 dark:text-green-300">
-              Manual ID: {result.target_manual_id}
+              Merged "{result.source_manual_title}" into "{result.target_manual_title}"
             </p>
           </div>
         )}

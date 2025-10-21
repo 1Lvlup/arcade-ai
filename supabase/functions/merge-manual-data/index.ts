@@ -27,156 +27,300 @@ serve(async (req) => {
 
     const { source_manual_id, target_manual_id } = await req.json();
 
-    console.log(`🔄 Merging manual ${source_manual_id} into ${target_manual_id}`);
+    if (!source_manual_id || !target_manual_id) {
+      throw new Error('Both source_manual_id and target_manual_id are required');
+    }
+
+    if (source_manual_id === target_manual_id) {
+      throw new Error('Source and target cannot be the same manual');
+    }
+
+    console.log(`🔄 Starting merge: ${source_manual_id} -> ${target_manual_id}`);
 
     // Get tenant context
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('fec_tenant_id')
       .eq('user_id', user.id)
       .single();
 
-    if (!profile) throw new Error('Profile not found');
+    if (profileError || !profile) {
+      throw new Error('User profile not found');
+    }
 
     const tenantId = profile.fec_tenant_id;
 
-    let mergedChunks = 0;
-    let mergedFigures = 0;
-    let addedQA = 0;
+    // Verify both manuals exist and belong to this tenant
+    const { data: sourceManual, error: sourceError } = await supabase
+      .from('manual_metadata')
+      .select('manual_id, canonical_title, fec_tenant_id')
+      .eq('manual_id', source_manual_id)
+      .single();
 
-    // 1. Merge chunks - deduplicate by content similarity
+    const { data: targetManual, error: targetError } = await supabase
+      .from('manual_metadata')
+      .select('manual_id, canonical_title, fec_tenant_id')
+      .eq('manual_id', target_manual_id)
+      .single();
+
+    if (sourceError || !sourceManual) {
+      throw new Error(`Source manual "${source_manual_id}" not found`);
+    }
+
+    if (targetError || !targetManual) {
+      throw new Error(`Target manual "${target_manual_id}" not found`);
+    }
+
+    if (sourceManual.fec_tenant_id !== tenantId || targetManual.fec_tenant_id !== tenantId) {
+      throw new Error('Access denied: manuals must belong to your tenant');
+    }
+
+    console.log(`📚 Merging "${sourceManual.canonical_title}" into "${targetManual.canonical_title}"`);
+
+    let mergedChunks = 0;
+    let skippedChunkDuplicates = 0;
+    let mergedFigures = 0;
+    let updatedFigures = 0;
+    let skippedFigureDuplicates = 0;
+    let addedQA = 0;
+    let skippedQADuplicates = 0;
+
+    // 1. MERGE TEXT CHUNKS - Enhanced deduplication
     console.log('📝 Merging text chunks...');
-    const { data: sourceChunks } = await supabase
+    const { data: sourceChunks, error: sourceChunksError } = await supabase
       .from('chunks_text')
       .select('*')
       .eq('manual_id', source_manual_id)
       .eq('fec_tenant_id', tenantId);
 
-    const { data: targetChunks } = await supabase
+    if (sourceChunksError) {
+      console.error('Error fetching source chunks:', sourceChunksError);
+      throw new Error('Failed to fetch source chunks');
+    }
+
+    const { data: targetChunks, error: targetChunksError } = await supabase
       .from('chunks_text')
-      .select('id, content, page_start, page_end')
+      .select('id, content, page_start, page_end, menu_path, metadata')
       .eq('manual_id', target_manual_id)
       .eq('fec_tenant_id', tenantId);
 
-    for (const sourceChunk of sourceChunks || []) {
-      // Check if similar chunk exists (same page range or similar content)
-      const isDuplicate = targetChunks?.some(tc => 
-        (tc.page_start === sourceChunk.page_start && tc.page_end === sourceChunk.page_end) ||
-        (tc.content === sourceChunk.content)
-      );
+    if (targetChunksError) {
+      console.error('Error fetching target chunks:', targetChunksError);
+      throw new Error('Failed to fetch target chunks');
+    }
+
+    console.log(`  Source: ${sourceChunks?.length || 0} chunks | Target: ${targetChunks?.length || 0} chunks`);
+
+    for (const chunk of sourceChunks || []) {
+      // Enhanced duplicate detection
+      const isDuplicate = targetChunks?.some((tc) => {
+        // Exact content match
+        const exactMatch = tc.content.trim() === chunk.content.trim();
+        
+        // Page range overlap with similar content
+        const pageOverlap = chunk.page_start && tc.page_start &&
+                             chunk.page_end && tc.page_end &&
+                             !(chunk.page_end < tc.page_start || chunk.page_start > tc.page_end);
+        
+        const contentStartSimilar = tc.content.substring(0, 200).trim() === 
+                                     chunk.content.substring(0, 200).trim();
+        
+        return exactMatch || (pageOverlap && contentStartSimilar);
+      });
 
       if (!isDuplicate) {
-        // Insert new chunk with target manual_id
-        await supabase
+        const { error } = await supabase
           .from('chunks_text')
           .insert({
-            ...sourceChunk,
-            id: undefined,
             manual_id: target_manual_id,
-            created_at: undefined,
+            fec_tenant_id: tenantId,
+            content: chunk.content,
+            page_start: chunk.page_start,
+            page_end: chunk.page_end,
+            menu_path: chunk.menu_path,
+            embedding: chunk.embedding,
+            metadata: { ...(chunk.metadata || {}), merged_from: source_manual_id },
+            tags: chunk.tags,
           });
-        mergedChunks++;
+
+        if (error) {
+          console.error('Error inserting chunk:', error);
+        } else {
+          mergedChunks++;
+        }
       } else {
         // Update existing chunk with richer metadata if source has more
         const existingChunk = targetChunks?.find(tc => 
-          tc.page_start === sourceChunk.page_start && tc.page_end === sourceChunk.page_end
+          tc.content.trim() === chunk.content.trim() ||
+          (tc.page_start === chunk.page_start && tc.page_end === chunk.page_end)
         );
         
-        if (existingChunk && sourceChunk.metadata && Object.keys(sourceChunk.metadata).length > 0) {
+        if (existingChunk && chunk.metadata && Object.keys(chunk.metadata).length > 0) {
           await supabase
             .from('chunks_text')
             .update({
               metadata: {
                 ...(existingChunk.metadata || {}),
-                ...sourceChunk.metadata
+                ...(chunk.metadata || {}),
+                enriched_from: source_manual_id
               }
             })
             .eq('id', existingChunk.id);
         }
+        skippedChunkDuplicates++;
       }
     }
 
-    // 2. Merge figures - combine metadata for same page/label
+    console.log(`  ✓ Added ${mergedChunks} new chunks, skipped ${skippedChunkDuplicates} duplicates`);
+
+    // 2. MERGE FIGURES - Enhanced with storage path handling
     console.log('🖼️  Merging figures...');
-    const { data: sourceFigures } = await supabase
+    const { data: sourceFigures, error: sourceFiguresError } = await supabase
       .from('figures')
       .select('*')
       .eq('manual_id', source_manual_id)
       .eq('fec_tenant_id', tenantId);
 
-    const { data: targetFigures } = await supabase
+    if (sourceFiguresError) {
+      console.error('Error fetching source figures:', sourceFiguresError);
+      throw new Error('Failed to fetch source figures');
+    }
+
+    const { data: targetFigures, error: targetFiguresError } = await supabase
       .from('figures')
       .select('*')
       .eq('manual_id', target_manual_id)
       .eq('fec_tenant_id', tenantId);
 
-    for (const sourceFigure of sourceFigures || []) {
-      // Find matching figure by page and label
-      const matchingFigure = targetFigures?.find(tf =>
-        tf.page_number === sourceFigure.page_number &&
-        (tf.figure_label === sourceFigure.figure_label || 
-         tf.storage_path === sourceFigure.storage_path)
-      );
+    if (targetFiguresError) {
+      console.error('Error fetching target figures:', targetFiguresError);
+      throw new Error('Failed to fetch target figures');
+    }
 
-      if (matchingFigure) {
-        // Merge metadata
-        await supabase
-          .from('figures')
-          .update({
-            caption_text: sourceFigure.caption_text || matchingFigure.caption_text,
-            component: sourceFigure.component || matchingFigure.component,
-            topics: sourceFigure.topics || matchingFigure.topics,
-            detected_components: {
-              ...(matchingFigure.detected_components || {}),
-              ...(sourceFigure.detected_components || {})
-            },
-            keywords: Array.from(new Set([
-              ...(matchingFigure.keywords || []),
-              ...(sourceFigure.keywords || [])
-            ])),
-            vision_metadata: {
-              ...(matchingFigure.vision_metadata || {}),
-              ...(sourceFigure.vision_metadata || {}),
-              merged_from_csv: true
-            }
-          })
-          .eq('id', matchingFigure.id);
-        mergedFigures++;
-      } else if (sourceFigure.storage_path) {
-        // Add new figure
-        await supabase
+    console.log(`  Source: ${sourceFigures?.length || 0} figures | Target: ${targetFigures?.length || 0} figures`);
+
+    for (const fig of sourceFigures || []) {
+      // Enhanced matching by page, label, and storage path
+      const matchingFig = targetFigures?.find((tf) => {
+        const pageMatch = tf.page_number === fig.page_number;
+        const labelMatch = tf.figure_label && fig.figure_label && 
+                            tf.figure_label === fig.figure_label;
+        const pathSimilar = tf.storage_path && fig.storage_path &&
+                             (tf.storage_path === fig.storage_path ||
+                              tf.storage_path.split('/').pop() === fig.storage_path.split('/').pop());
+        
+        return pageMatch && (labelMatch || pathSimilar);
+      });
+
+      if (matchingFig) {
+        // Merge/enrich existing figure if source has better data
+        const needsUpdate = (fig.ocr_text && !matchingFig.ocr_text) ||
+                             (fig.caption_text && !matchingFig.caption_text) ||
+                             (fig.component && !matchingFig.component) ||
+                             (fig.detected_components && Object.keys(fig.detected_components || {}).length > 0);
+
+        if (needsUpdate) {
+          const { error } = await supabase
+            .from('figures')
+            .update({
+              caption_text: fig.caption_text || matchingFig.caption_text,
+              ocr_text: fig.ocr_text || matchingFig.ocr_text,
+              component: fig.component || matchingFig.component,
+              topics: fig.topics || matchingFig.topics,
+              detected_components: {
+                ...(matchingFig.detected_components || {}),
+                ...(fig.detected_components || {})
+              },
+              keywords: Array.from(new Set([
+                ...(matchingFig.keywords || []),
+                ...(fig.keywords || [])
+              ])),
+              vision_metadata: {
+                ...(matchingFig.vision_metadata || {}),
+                ...(fig.vision_metadata || {}),
+                merged_from_csv: true
+              },
+              ocr_status: fig.ocr_text ? 'success' : matchingFig.ocr_status,
+            })
+            .eq('id', matchingFig.id);
+
+          if (!error) {
+            updatedFigures++;
+          } else {
+            console.error('Error updating figure:', error);
+          }
+        } else {
+          skippedFigureDuplicates++;
+        }
+      } else if (fig.storage_path) {
+        // Insert new figure
+        const { error } = await supabase
           .from('figures')
           .insert({
-            ...sourceFigure,
-            id: undefined,
             manual_id: target_manual_id,
-            created_at: undefined,
+            fec_tenant_id: tenantId,
+            page_number: fig.page_number,
+            figure_label: fig.figure_label,
+            storage_path: fig.storage_path,
+            caption_text: fig.caption_text,
+            ocr_text: fig.ocr_text,
+            component: fig.component,
+            topics: fig.topics,
+            detected_components: fig.detected_components,
+            keywords: fig.keywords,
+            vision_metadata: { ...(fig.vision_metadata || {}), merged_from: source_manual_id },
+            bounding_box: fig.bounding_box,
+            ocr_status: fig.ocr_status || 'pending',
           });
-        mergedFigures++;
+
+        if (error) {
+          console.error('Error inserting figure:', error);
+        } else {
+          mergedFigures++;
+        }
       }
     }
 
-    // 3. Add QA pairs (unlikely to have duplicates)
+    console.log(`  ✓ Added ${mergedFigures} new, updated ${updatedFigures}, skipped ${skippedFigureDuplicates} duplicates`);
+
+    // 3. ADD QA PAIRS - Check both manual_qa and golden_questions tables
     console.log('❓ Adding QA pairs...');
-    const { data: sourceQA } = await supabase
+    
+    // Try manual_qa first
+    const { data: sourceQA_manual, error: qaError1 } = await supabase
+      .from('manual_qa')
+      .select('*')
+      .eq('manual_id', source_manual_id)
+      .eq('fec_tenant_id', tenantId);
+
+    // Try golden_questions as fallback
+    const { data: sourceQA_golden, error: qaError2 } = await supabase
       .from('golden_questions')
       .select('*')
       .eq('manual_id', source_manual_id)
       .eq('fec_tenant_id', tenantId);
 
-    for (const qa of sourceQA || []) {
-      // Check for duplicate questions
-      const { data: existing } = await supabase
-        .from('golden_questions')
-        .select('id')
-        .eq('manual_id', target_manual_id)
-        .eq('question', qa.question)
-        .eq('fec_tenant_id', tenantId)
-        .single();
+    const sourceQA = sourceQA_manual || sourceQA_golden || [];
+    const qaTable = sourceQA_manual ? 'manual_qa' : 'golden_questions';
 
-      if (!existing) {
-        await supabase
-          .from('golden_questions')
+    console.log(`  Source: ${sourceQA.length} QA pairs from ${qaTable}`);
+
+    const { data: targetQA } = await supabase
+      .from(qaTable)
+      .select('question')
+      .eq('manual_id', target_manual_id)
+      .eq('fec_tenant_id', tenantId);
+
+    const existingQuestions = new Set(
+      targetQA?.map((q) => q.question.toLowerCase().trim().replace(/[^\w\s]/g, '')) || []
+    );
+
+    for (const qa of sourceQA) {
+      const normalizedQuestion = qa.question.toLowerCase().trim().replace(/[^\w\s]/g, '');
+      
+      if (!existingQuestions.has(normalizedQuestion)) {
+        const { error } = await supabase
+          .from(qaTable)
           .insert({
             ...qa,
             id: undefined,
@@ -184,11 +328,21 @@ serve(async (req) => {
             created_at: undefined,
             updated_at: undefined,
           });
-        addedQA++;
+
+        if (error) {
+          console.error('Error inserting QA pair:', error);
+        } else {
+          addedQA++;
+          existingQuestions.add(normalizedQuestion);
+        }
+      } else {
+        skippedQADuplicates++;
       }
     }
 
-    // 4. Enrich target manual metadata
+    console.log(`  ✓ Added ${addedQA} new pairs, skipped ${skippedQADuplicates} duplicates`);
+
+    // 4. ENRICH MANUAL METADATA
     console.log('📋 Enriching manual metadata...');
     const { data: sourceMeta } = await supabase
       .from('manual_metadata')
@@ -203,46 +357,52 @@ serve(async (req) => {
       .single();
 
     if (sourceMeta && targetMeta) {
+      const mergedTags = Array.from(new Set([...(targetMeta.tags || []), ...(sourceMeta.tags || [])]));
+      const mergedAliases = Array.from(new Set([...(targetMeta.aliases || []), ...(sourceMeta.aliases || [])]));
+      const maxPageCount = Math.max(sourceMeta.page_count || 0, targetMeta.page_count || 0);
+      const mergedNotes = [targetMeta.notes, `Merged from ${source_manual_id}`, sourceMeta.notes]
+        .filter(Boolean)
+        .join('\n\n');
+
       await supabase
         .from('manual_metadata')
         .update({
           manufacturer: sourceMeta.manufacturer || targetMeta.manufacturer,
           version: sourceMeta.version || targetMeta.version,
           platform: sourceMeta.platform || targetMeta.platform,
-          notes: [targetMeta.notes, sourceMeta.notes].filter(Boolean).join('\n\n'),
-          tags: Array.from(new Set([
-            ...(targetMeta.tags || []),
-            ...(sourceMeta.tags || [])
-          ])),
-          aliases: Array.from(new Set([
-            ...(targetMeta.aliases || []),
-            ...(sourceMeta.aliases || [])
-          ]))
+          tags: mergedTags,
+          aliases: mergedAliases,
+          page_count: maxPageCount,
+          notes: mergedNotes,
+          quality_score: Math.max(sourceMeta.quality_score || 0, targetMeta.quality_score || 0),
+          updated_at: new Date().toISOString(),
         })
         .eq('manual_id', target_manual_id);
+
+      console.log('  ✓ Metadata enriched successfully');
     }
 
-    // 5. Optionally delete source manual if merge is complete
-    console.log('🗑️  Cleaning up source manual (optional)...');
-    // Uncomment to delete source after merge:
-    // await supabase.from('documents').delete().eq('manual_id', source_manual_id);
-    // await supabase.from('chunks_text').delete().eq('manual_id', source_manual_id);
-    // await supabase.from('figures').delete().eq('manual_id', source_manual_id);
-    // await supabase.from('golden_questions').delete().eq('manual_id', source_manual_id);
-    // await supabase.from('manual_metadata').delete().eq('manual_id', source_manual_id);
+    const result = {
+      success: true,
+      source_manual_id,
+      source_manual_title: sourceManual.canonical_title,
+      target_manual_id,
+      target_manual_title: targetManual.canonical_title,
+      merged_chunks: mergedChunks,
+      skipped_chunk_duplicates: skippedChunkDuplicates,
+      merged_figures: mergedFigures,
+      updated_figures: updatedFigures,
+      skipped_figure_duplicates: skippedFigureDuplicates,
+      added_qa: addedQA,
+      skipped_qa_duplicates: skippedQADuplicates,
+      total_items_merged: mergedChunks + mergedFigures + updatedFigures + addedQA,
+      message: 'Manual data merged successfully'
+    };
 
-    console.log(`✅ Merge complete!`);
+    console.log('✅ Merge complete:', result);
     
     return new Response(
-      JSON.stringify({
-        success: true,
-        source_manual_id,
-        target_manual_id,
-        merged_chunks: mergedChunks,
-        merged_figures: mergedFigures,
-        added_qa: addedQA,
-        message: 'Manual data merged successfully'
-      }),
+      JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

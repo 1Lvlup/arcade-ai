@@ -142,3 +142,6 @@ verify_jwt = false
 
 [functions.training-export]
 verify_jwt = false
+
+[functions.search-past-conversations]
+verify_jwt = true

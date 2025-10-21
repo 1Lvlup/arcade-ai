@@ -122,42 +122,11 @@ const Index = () => {
         <section className="text-center py-24">
           <div className="space-y-16">
             <div className="space-y-12">
-              <div className="caption-text text-base tracking-widest uppercase font-mono rounded-lg" style={{
-                color: 'hsl(24 100% 54%)',
-                textShadow: '0 0 1px hsl(0 0% 100%), 0 0 2px hsl(0 0% 100%)',
-                WebkitTextStroke: '0.5px hsl(0 0% 100%)'
-              }}>
+              <div className="caption-text text-base tracking-widest uppercase font-mono rounded-lg text-white">
                 The future of arcade tech—built by all of us.
               </div>
-              <h1 className="font-tech font-black text-8xl md:text-9xl text-white glitch-text" data-text="LEVEL UP" style={{
-              letterSpacing: '0.02em',
-              textShadow: `
-                    /* Enhanced glow layers */
-                    0 0 15px hsl(183 100% 50% / 1),
-                    0 0 30px hsl(183 100% 50% / 0.9),
-                    0 0 50px hsl(183 100% 50% / 0.8),
-                    0 0 70px hsl(183 100% 50% / 0.7),
-                    0 0 100px hsl(183 100% 50% / 0.6),
-                    0 0 130px hsl(183 100% 50% / 0.5),
-                    /* Dramatic 3D bevel effect - light top-left */
-                    -3px -3px 0 rgba(255, 255, 255, 0.3),
-                    -6px -6px 0 rgba(255, 255, 255, 0.2),
-                    -9px -9px 0 rgba(255, 255, 255, 0.15),
-                    -12px -12px 0 rgba(255, 255, 255, 0.1),
-                    -15px -15px 0 rgba(255, 255, 255, 0.05),
-                    /* Dramatic 3D depth - dark bottom-right */
-                    3px 3px 0 rgba(0, 0, 0, 0.5),
-                    6px 6px 0 rgba(0, 0, 0, 0.55),
-                    9px 9px 0 rgba(0, 0, 0, 0.6),
-                    12px 12px 0 rgba(0, 0, 0, 0.65),
-                    15px 15px 0 rgba(0, 0, 0, 0.7),
-                    18px 18px 0 rgba(0, 0, 0, 0.75),
-                    21px 21px 0 rgba(0, 0, 0, 0.8),
-                    /* Deep shadow */
-                    24px 24px 40px rgba(0, 0, 0, 0.9),
-                    30px 30px 60px rgba(0, 0, 0, 0.7)
-                   `,
-              WebkitTextStroke: '2px hsl(183 100% 50% / 0.4)'
+              <h1 className="font-tech font-black text-8xl md:text-9xl text-white" data-text="LEVEL UP" style={{
+              letterSpacing: '0.02em'
             }}>
                 LEVEL UP
               </h1>

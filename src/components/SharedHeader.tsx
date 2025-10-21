@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown, Code } from 'lucide-react';
+import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown, Code, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useState, useEffect } from 'react';
@@ -77,6 +77,12 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                <DropdownMenuItem asChild>
+                  <Link to="/manuals" className="cursor-pointer">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Documents
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/manual-admin" className="cursor-pointer">
                     <Database className="h-4 w-4 mr-2" />

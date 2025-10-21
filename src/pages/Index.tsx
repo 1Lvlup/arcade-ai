@@ -125,8 +125,28 @@ const Index = () => {
               <div className="caption-text text-base tracking-widest uppercase font-mono rounded-lg text-white">
                 The future of arcade tech—built by all of us.
               </div>
-              <h1 className="font-tech font-black text-8xl md:text-9xl text-white" data-text="LEVEL UP" style={{
-              letterSpacing: '0.02em'
+              <h1 className="font-tech font-black text-8xl md:text-9xl" data-text="LEVEL UP" style={{
+              letterSpacing: '0.02em',
+              color: 'hsl(183 100% 50%)',
+              textShadow: `
+                /* Teal glow layers */
+                0 0 20px hsl(183 100% 50% / 1),
+                0 0 40px hsl(183 100% 50% / 0.8),
+                0 0 60px hsl(183 100% 50% / 0.6),
+                0 0 80px hsl(183 100% 50% / 0.4),
+                /* 3D bevel - light from top-left */
+                -2px -2px 0 rgba(255, 255, 255, 0.3),
+                -4px -4px 0 rgba(255, 255, 255, 0.2),
+                -6px -6px 0 rgba(255, 255, 255, 0.1),
+                /* 3D depth - dark from bottom-right */
+                2px 2px 0 rgba(0, 0, 0, 0.6),
+                4px 4px 0 rgba(0, 0, 0, 0.5),
+                6px 6px 0 rgba(0, 0, 0, 0.4),
+                8px 8px 0 rgba(0, 0, 0, 0.3),
+                10px 10px 0 rgba(0, 0, 0, 0.2),
+                /* Deep shadow */
+                12px 12px 20px rgba(0, 0, 0, 0.8)
+              `
             }}>
                 LEVEL UP
               </h1>

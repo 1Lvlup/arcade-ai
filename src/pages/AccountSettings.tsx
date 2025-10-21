@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
+import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,13 +19,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { User, Lock, Mail, Trash2 } from 'lucide-react';
+import { User, Lock, Mail, Trash2, CreditCard, ExternalLink } from 'lucide-react';
 
 export default function AccountSettings() {
   const { user, updatePassword, signOut } = useAuth();
   const { toast } = useToast();
+  const { isSubscribed, currentTier, subscriptionEnd, isLoading: subscriptionLoading } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   // Password update states
   const [currentPassword, setCurrentPassword] = useState('');
@@ -102,11 +105,96 @@ export default function AccountSettings() {
     setLoading(false);
   };
 
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to open customer portal',
+        variant: 'destructive',
+      });
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const getTierInfo = () => {
+    if (!currentTier) return null;
+    const tierConfig = SUBSCRIPTION_TIERS[currentTier];
+    return {
+      name: tierConfig.name,
+      price: tierConfig.price,
+      interval: tierConfig.interval,
+    };
+  };
+
   return (
     <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Account Settings" showBackButton={true} backTo="/" />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
+        {/* Subscription Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              Subscription
+            </CardTitle>
+            <CardDescription>Manage your subscription plan</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {subscriptionLoading ? (
+              <p className="text-sm text-muted-foreground">Loading subscription status...</p>
+            ) : isSubscribed && getTierInfo() ? (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Current Plan</span>
+                    <span className="text-lg font-bold text-primary">
+                      {getTierInfo()?.name} - ${getTierInfo()?.price}/{getTierInfo()?.interval === 'month' ? 'mo' : 'yr'}
+                    </span>
+                  </div>
+                  {subscriptionEnd && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Renews On</span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(subscriptionEnd).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <Button 
+                  onClick={handleManageSubscription} 
+                  disabled={portalLoading}
+                  className="w-full"
+                >
+                  {portalLoading ? 'Loading...' : 'Manage Subscription'}
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Update payment method, cancel, or change your plan
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  You don't have an active subscription
+                </p>
+                <Button onClick={() => window.location.href = '/pricing'} className="w-full">
+                  View Plans
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
         {/* Account Information */}
         <Card>
           <CardHeader>

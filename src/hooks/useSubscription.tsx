@@ -4,17 +4,33 @@ import { useAuth } from './useAuth';
 
 // Subscription tier mapping
 export const SUBSCRIPTION_TIERS = {
-  starter: {
+  starter_monthly: {
     price_id: "price_1SKUjFKhihueLCnLfOqSs9Xp",
     product_id: "prod_TH2o40xyLhZB3Q",
     name: "Starter",
     price: 299,
+    interval: "month" as const,
   },
-  pro: {
+  starter_annual: {
+    price_id: "price_1SKUluKhihueLCnL4FT7gd6V",
+    product_id: "prod_TH2rySLECEcx2t",
+    name: "Starter",
+    price: 2690,
+    interval: "year" as const,
+  },
+  pro_monthly: {
     price_id: "price_1SKUjNKhihueLCnLrK00qXZw",
     product_id: "prod_TH2puHgfpJb01a",
     name: "Pro",
     price: 499,
+    interval: "month" as const,
+  },
+  pro_annual: {
+    price_id: "price_1SKUm5KhihueLCnLMWXVyvOD",
+    product_id: "prod_TH2raTObixduym",
+    name: "Pro",
+    price: 4490,
+    interval: "year" as const,
   }
 } as const;
 

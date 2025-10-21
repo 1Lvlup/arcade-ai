@@ -2,6 +2,10 @@ import React, { useMemo, useState } from "react";
 import { SharedHeader } from "@/components/SharedHeader";
 import { Footer } from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Pricing Page
@@ -11,7 +15,46 @@ import { useNavigate } from "react-router-dom";
  */
 export default function Pricing() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [annual, setAnnual] = useState(true);
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handleCheckout = async (tier: 'starter' | 'pro') => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to subscribe',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+      return;
+    }
+
+    const priceKey = `${tier}_${annual ? 'annual' : 'monthly'}` as keyof typeof SUBSCRIPTION_TIERS;
+    const priceId = SUBSCRIPTION_TIERS[priceKey].price_id;
+
+    setLoading(tier);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to start checkout',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(null);
+    }
+  };
 
   const themeVars: React.CSSProperties = {
     // @ts-ignore
@@ -134,8 +177,10 @@ export default function Pricing() {
             cadence={plans.starter.cadence}
             subNote={plans.starter.subNote}
             features={plans.starter.features}
-            buttonLabel="Start Starter Plan"
+            buttonLabel={loading === 'starter' ? 'Loading...' : 'Start Starter Plan'}
             highlight={false}
+            onButtonClick={() => handleCheckout('starter')}
+            disabled={loading === 'starter'}
           />
 
           {/* Pro (featured) */}
@@ -145,8 +190,10 @@ export default function Pricing() {
             cadence={plans.pro.cadence}
             subNote={plans.pro.subNote}
             features={plans.pro.features}
-            buttonLabel="Upgrade to Pro"
+            buttonLabel={loading === 'pro' ? 'Loading...' : 'Upgrade to Pro'}
             highlight={true}
+            onButtonClick={() => handleCheckout('pro')}
+            disabled={loading === 'pro'}
           />
 
           {/* Add-On */}
@@ -203,8 +250,10 @@ function PlanCard(props: {
   features: (string | JSX.Element)[];
   buttonLabel: string;
   highlight?: boolean;
+  onButtonClick?: () => void;
+  disabled?: boolean;
 }) {
-  const { title, priceMain, cadence, subNote, features, buttonLabel, highlight } = props;
+  const { title, priceMain, cadence, subNote, features, buttonLabel, highlight, onButtonClick, disabled } = props;
   return (
     <div
       className={[
@@ -269,9 +318,11 @@ function PlanCard(props: {
       </ul>
 
       <button
+        onClick={onButtonClick}
+        disabled={disabled}
         className="mt-7 w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition
                    hover:shadow-[0_0_28px_rgba(255,102,0,0.45)]
-                   focus:outline-none"
+                   focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
         style={{
           backgroundColor: "var(--accent-orange)",
           boxShadow: "0 0 22px rgba(255,102,0,0.35)",

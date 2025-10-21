@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { ManualSelector } from '@/components/ManualSelector';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -25,9 +26,11 @@ import {
   History,
   Plus,
   Trash2,
-  MessageSquarePlus
+  MessageSquarePlus,
+  LogIn
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface AnswerStep {
   step: string;
@@ -73,6 +76,8 @@ interface Conversation {
 }
 
 export function ChatBot({ selectedManualId: initialManualId, manualTitle: initialManualTitle }: ChatBotProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -87,6 +92,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -117,6 +123,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   }, [selectedManualId, manualTitle]);
 
   const loadConversations = async () => {
+    if (!user) return; // Only load conversations for logged-in users
+    
     try {
       const { data, error } = await supabase
         .from('conversations')
@@ -212,6 +220,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   };
 
   const saveConversation = async () => {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
     if (messages.length <= 1) {
       toast({
         title: 'Nothing to save',
@@ -233,9 +246,6 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
       if (!conversationId) {
         // Create new conversation
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
-
         const { data: newConv, error: convError } = await supabase
           .from('conversations')
           .insert([{
@@ -708,25 +718,29 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             >
               <Save className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowConversations(!showConversations)}
-              className="h-8 px-2"
-              title="View saved conversations"
-            >
-              <History className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={saveConversation}
-              disabled={messages.length <= 1 || isSaving}
-              className="h-8 px-2"
-              title="Save conversation"
-            >
-              <Save className="h-4 w-4" />
-            </Button>
+            {user && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowConversations(!showConversations)}
+                  className="h-8 px-2"
+                  title="View saved conversations"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={saveConversation}
+                  disabled={messages.length <= 1 || isSaving}
+                  className="h-8 px-2"
+                  title="Save conversation"
+                >
+                  <Save className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -737,17 +751,18 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             >
               <MessageSquarePlus className="h-4 w-4" />
             </Button>
-            <Sheet open={showHistory} onOpenChange={setShowHistory}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2"
-                  title="View conversation history"
-                >
-                  <History className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
+            {user && (
+              <Sheet open={showHistory} onOpenChange={setShowHistory}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2"
+                    title="View conversation history"
+                  >
+                    <History className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
               <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>Conversation History</SheetTitle>
@@ -799,6 +814,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 </div>
               </SheetContent>
             </Sheet>
+            )}
             <ManualSelector 
               selectedManualId={selectedManualId} 
               onManualChange={handleManualChange}
@@ -1013,6 +1029,26 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               className="bg-destructive hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <LogIn className="h-5 w-5 text-primary" />
+              Login Required
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Please log in to save conversations and access history. You can continue chatting as a guest, but your conversations won't be saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continue as Guest</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate('/auth')}>
+              Go to Login
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -39,22 +39,45 @@ export function pageAwareChunk(markdown: string, meta: {
 
 // --- Build citations + thumbnails from used chunk IDs ---
 export async function buildCitationsAndImages(db: any, chunkIds: string[]) {
-  const { data: chunks, error } = await db
+  if (!chunkIds || chunkIds.length === 0) {
+    return { citations: [], thumbnails: [] };
+  }
+
+  // Query text chunks to get page ranges
+  const { data: textChunks, error: textError } = await db
     .from('chunks_text')
     .select('id, manual_id, doc_version, page_start, page_end')
-    .in('id', chunkIds);  // use the UUID primary key
-  if (error) throw error;
+    .in('id', chunkIds);
+  if (textError) console.error('Error fetching text chunks:', textError);
 
+  // Query figures directly (in case chunk IDs include figure IDs)
+  const { data: figureChunks, error: figError } = await db
+    .from('figures')
+    .select('id, manual_id, page_number')
+    .in('id', chunkIds);
+  if (figError) console.error('Error fetching figure chunks:', figError);
+
+  // Build map of pages from both sources
   const pages = new Map<string, { manual_id: string; page: number }>();
-  for (const c of chunks ?? []) {
+  
+  // Add pages from text chunks
+  for (const c of textChunks ?? []) {
     for (let p = c.page_start; p <= c.page_end; p++) {
       pages.set(`${c.manual_id}:p${p}`, { manual_id: c.manual_id, page: p });
+    }
+  }
+  
+  // Add pages from figure chunks
+  for (const f of figureChunks ?? []) {
+    if (f.page_number) {
+      pages.set(`${f.manual_id}:p${f.page_number}`, { manual_id: f.manual_id, page: f.page_number });
     }
   }
 
   const plist = Array.from(pages.values());
   let images: any[] = [];
-  if (plist.length) {
+  
+  if (plist.length > 0) {
     const manualIds = [...new Set(plist.map(p => p.manual_id))];
     const pageNumbers = [...new Set(plist.map(p => p.page))];
     
@@ -64,9 +87,15 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[]) {
       .in('manual_id', manualIds)
       .in('page_number', pageNumbers)
       .not('storage_url', 'is', null);
-    if (e2) throw e2;
-    images = data ?? [];
+    
+    if (e2) {
+      console.error('Error fetching figures:', e2);
+    } else {
+      images = data ?? [];
+    }
   }
+
+  console.log(`📊 buildCitationsAndImages: ${chunkIds.length} chunk IDs → ${pages.size} pages → ${images.length} images`);
 
   return {
     citations: Array.from(pages.keys()), // ["manual-id:p57", ...]

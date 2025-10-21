@@ -557,7 +557,6 @@ ${styleHint}`;
 
   // Use Responses API for better performance and caching
   const url = "https://api.openai.com/v1/responses";
-  const temperature = ANSWER_STYLE === "conversational" ? 0.4 : 0.1;
 
   // Build input array with conversation history (Responses API uses "input" instead of "messages")
   const conversationInput = [
@@ -572,15 +571,14 @@ ${styleHint}`;
         input: conversationInput, // Responses API uses "input"
         max_output_tokens: 8000, // Responses API uses "max_output_tokens"
         reasoning: { effort: "medium" }, // Responses API supports reasoning
-        stream: opts?.stream !== false,
+        stream: true, // Explicitly true
         store: true, // Enable stateful context for better performance
       }
     : {
         model,
         input: conversationInput, // Responses API uses "input"
         max_output_tokens: 2000,
-        temperature,
-        stream: opts?.stream !== false,
+        stream: true, // Explicitly true
         store: true,
       };
 

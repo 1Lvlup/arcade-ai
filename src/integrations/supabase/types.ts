@@ -491,6 +491,7 @@ export type Database = {
           bbox_pdf_coords: string | null
           callouts_json: Json | null
           caption_text: string | null
+          component: string | null
           created_at: string | null
           detected_components: Json | null
           doc_id: string | null
@@ -500,7 +501,9 @@ export type Database = {
           entities: Json | null
           fec_tenant_id: string
           figure_id: string | null
+          figure_label: string | null
           figure_type: string | null
+          file_path: string | null
           id: string
           image_hash: string | null
           image_name: string | null
@@ -524,6 +527,7 @@ export type Database = {
           storage_url: string | null
           structured_json: Json | null
           thumbnail_url: string | null
+          topics: string[] | null
           verified_by_human: string | null
           version: string | null
           vision_metadata: Json | null
@@ -533,6 +537,7 @@ export type Database = {
           bbox_pdf_coords?: string | null
           callouts_json?: Json | null
           caption_text?: string | null
+          component?: string | null
           created_at?: string | null
           detected_components?: Json | null
           doc_id?: string | null
@@ -542,7 +547,9 @@ export type Database = {
           entities?: Json | null
           fec_tenant_id?: string
           figure_id?: string | null
+          figure_label?: string | null
           figure_type?: string | null
+          file_path?: string | null
           id?: string
           image_hash?: string | null
           image_name?: string | null
@@ -566,6 +573,7 @@ export type Database = {
           storage_url?: string | null
           structured_json?: Json | null
           thumbnail_url?: string | null
+          topics?: string[] | null
           verified_by_human?: string | null
           version?: string | null
           vision_metadata?: Json | null
@@ -575,6 +583,7 @@ export type Database = {
           bbox_pdf_coords?: string | null
           callouts_json?: Json | null
           caption_text?: string | null
+          component?: string | null
           created_at?: string | null
           detected_components?: Json | null
           doc_id?: string | null
@@ -584,7 +593,9 @@ export type Database = {
           entities?: Json | null
           fec_tenant_id?: string
           figure_id?: string | null
+          figure_label?: string | null
           figure_type?: string | null
+          file_path?: string | null
           id?: string
           image_hash?: string | null
           image_name?: string | null
@@ -608,6 +619,7 @@ export type Database = {
           storage_url?: string | null
           structured_json?: Json | null
           thumbnail_url?: string | null
+          topics?: string[] | null
           verified_by_human?: string | null
           version?: string | null
           vision_metadata?: Json | null

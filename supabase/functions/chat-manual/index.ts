@@ -570,6 +570,7 @@ ${styleHint}`;
         model,
         messages: conversationMessages,
         max_completion_tokens: 8000,
+        reasoning: { effort: "medium" },
         stream: opts?.stream !== false,
       }
     : {

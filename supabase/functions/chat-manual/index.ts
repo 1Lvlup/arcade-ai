@@ -601,7 +601,72 @@ ${styleHint}`;
     throw new Error(`OpenAI API error: ${response.statusText}`);
   }
 
-  return response.body;
+  // Transform Responses API stream to Chat Completions API format
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  
+  const transformedStream = new ReadableStream({
+    async start(controller) {
+      let buffer = "";
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          
+          // Keep the last incomplete line in the buffer
+          buffer = lines.pop() || "";
+          
+          for (const line of lines) {
+            if (!line.trim() || line.startsWith(':')) continue;
+            
+            if (line.startsWith('event:')) {
+              // Skip event lines, we'll process the data lines
+              continue;
+            }
+            
+            if (line.startsWith('data: ')) {
+              const dataContent = line.slice(6);
+              
+              if (dataContent === '[DONE]') {
+                // Transform to Chat Completions format
+                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+                continue;
+              }
+              
+              try {
+                const parsed = JSON.parse(dataContent);
+                
+                // Transform Responses API format to Chat Completions format
+                if (parsed.delta) {
+                  const transformed = {
+                    choices: [{
+                      delta: {
+                        content: parsed.delta
+                      }
+                    }]
+                  };
+                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
+                }
+              } catch (e) {
+                console.error('Error parsing Responses API data:', e);
+              }
+            }
+          }
+        }
+        
+        controller.close();
+      } catch (error) {
+        console.error('Stream transformation error:', error);
+        controller.error(error);
+      }
+    }
+  });
+
+  return transformedStream;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

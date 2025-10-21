@@ -198,36 +198,36 @@ const Index = () => {
           
           {/* Certification/Achievement Badges */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl mx-auto">
-            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift group">
+            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-primary group-hover:text-orange transition-colors">Built For Real Arcades</div>
-                  <div className="text-base text-muted-foreground leading-relaxed">Built by the kind of guy who used to call tech support—and hated it.</div>
+                  <div className="font-bold text-2xl text-foreground">Built For Real Arcades</div>
+                  <div className="text-base text-primary leading-relaxed">Built by the kind of guy who used to call tech support—and hated it.</div>
                 </div>
               </div>
             </div>
-            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift">
+            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10">
                   <TrendingUp className="h-10 w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-primary">The More Arcades Connect, The Smarter Everyone Gets</div>
-                  <div className="text-base text-muted-foreground leading-relaxed">One connected intelligence, powered by every arcade that joins</div>
+                  <div className="font-bold text-2xl text-foreground">The More Arcades Connect, The Smarter Everyone Gets</div>
+                  <div className="text-base text-primary leading-relaxed">One connected intelligence, powered by every arcade that joins</div>
                 </div>
               </div>
             </div>
-            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift group">
+            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <Zap className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-primary group-hover:text-orange transition-colors">Real-time Processing</div>
-                  <div className="text-base text-muted-foreground leading-relaxed">Instant Troubleshooting - Get answers 24/7, even when support's closed or senior techs are off-shift.</div>
+                  <div className="font-bold text-2xl text-foreground">Real-time Processing</div>
+                  <div className="text-base text-primary leading-relaxed">Instant Troubleshooting - Get answers 24/7, even when support's closed or senior techs are off-shift.</div>
                 </div>
               </div>
             </div>
@@ -258,20 +258,20 @@ const Index = () => {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center relative">
               {/* Left Side - Revenue Stats */}
-              <div className="stat-card p-10 rounded-2xl hover-lift group">
+              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
                 <div className="space-y-6">
                   <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-8 w-8 text-orange" />
                   </div>
-                  <h3 className="text-3xl font-tech font-bold text-orange">$350 / week</h3>
-                  <p className="text-lg text-muted-foreground font-body leading-relaxed">
+                  <h3 className="text-3xl font-tech font-bold text-foreground">$350 / week</h3>
+                  <p className="text-lg text-primary font-body leading-relaxed">
                     Average revenue per arcade game
                   </p>
                   <div className="pt-4 border-t border-primary/20 space-y-4">
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <p className="text-lg text-primary leading-relaxed">
                       When just 3–4 games are down, that's ≈ <span className="text-destructive font-semibold">$1,200 lost</span> in a single week.
                     </p>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <p className="text-lg text-primary leading-relaxed">
                       Every hour a game sits idle, money bleeds away.
                     </p>
                   </div>
@@ -291,20 +291,20 @@ const Index = () => {
               </div>
 
               {/* Right Side - Cost of Downtime */}
-              <div className="stat-card p-10 rounded-2xl hover-lift group">
+              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
                 <div className="space-y-6">
                   <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Clock className="h-8 w-8 text-orange" />
                   </div>
-                  <h3 className="text-3xl font-tech font-bold text-orange">3-6 months</h3>
-                  <p className="text-lg text-muted-foreground font-body leading-relaxed">
+                  <h3 className="text-3xl font-tech font-bold text-foreground">3-6 months</h3>
+                  <p className="text-lg text-primary font-body leading-relaxed">
                     Average downtime for complex repairs
                   </p>
                   <div className="pt-4 border-t border-primary/20 space-y-4">
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <p className="text-lg text-primary leading-relaxed">
                       When a machine's down and it's not an easy fix, it can stay offline for months.
                     </p>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <p className="text-lg text-primary leading-relaxed">
                       That's <span className="text-destructive font-semibold">$8,400 lost</span> per game.
                     </p>
                   </div>
@@ -321,7 +321,7 @@ const Index = () => {
             <p className="text-xl text-muted-foreground font-body">Industry-leading metrics that power your arcade operations</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center">
+            {stats.map((stat, index) => <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
                 <div className="flex flex-col items-center space-y-6">
                   <div className="p-4 rounded-full bg-primary/10">
                     <div className="text-primary">
@@ -329,10 +329,10 @@ const Index = () => {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <div className="text-4xl md:text-5xl font-bold text-primary">{stat.value}</div>
+                    <div className="text-4xl md:text-5xl font-bold text-foreground">{stat.value}</div>
                     <div className="space-y-2">
                       <div className="font-semibold text-lg text-foreground">{stat.label}</div>
-                      <div className="text-sm text-muted-foreground">{stat.description}</div>
+                      <div className="text-sm text-primary">{stat.description}</div>
                     </div>
                   </div>
                 </div>
@@ -356,7 +356,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {coreFeatures.map((feature, index) => <div key={index} className="tech-card hover:border-orange/40 p-10 rounded-3xl transition-all duration-300 hover-lift group">
+            {coreFeatures.map((feature, index) => <div key={index} className="tech-card p-10 rounded-3xl transition-all duration-300 hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
                 <div className="space-y-8">
                   <div className="flex items-start justify-between">
                     <div className="p-5 rounded-2xl bg-primary/10 group-hover:bg-orange/10 transition-colors">
@@ -372,17 +372,17 @@ const Index = () => {
                     </div>
                   </div>
                   <div className="space-y-6">
-                    <h3 className="text-2xl font-tech font-bold text-primary group-hover:text-orange tracking-wide transition-colors">{feature.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed text-base font-body">
+                    <h3 className="text-2xl font-tech font-bold text-foreground tracking-wide">{feature.title}</h3>
+                    <p className="text-primary leading-relaxed text-base font-body">
                       {feature.description}
                     </p>
                   </div>
                   <div className="pt-6">
-                    {feature.onClick ? <Button onClick={feature.onClick} className="w-full btn-tech py-4 text-lg font-semibold">
+                    {feature.onClick ? <Button onClick={feature.onClick} variant="orange" className="w-full py-4 text-lg font-semibold">
                         Launch Assistant
                         <ArrowRight className="h-5 w-5 ml-2" />
                       </Button> : <Link to={feature.link!}>
-                        <Button variant="outline" className="w-full btn-tech-outline py-4 text-lg font-semibold">
+                        <Button variant="orange" className="w-full py-4 text-lg font-semibold">
                           Access Platform
                           <ArrowRight className="h-5 w-5 ml-2" />
                         </Button>
@@ -409,15 +409,15 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl group">
+            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
                 <div className="space-y-8">
                   <div className="p-5 rounded-2xl bg-primary/10 inline-flex group-hover:bg-orange/10 transition-colors">
                     <div className="text-primary group-hover:text-orange transition-colors">
                       {capability.icon}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-tech font-bold text-foreground group-hover:text-orange tracking-wide transition-colors">{capability.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed text-base font-body">
+                  <h3 className="text-2xl font-tech font-bold text-foreground tracking-wide">{capability.title}</h3>
+                  <p className="text-primary leading-relaxed text-base font-body">
                     {capability.description}
                   </p>
                 </div>
@@ -469,36 +469,36 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
-            <div className="premium-card hover-lift p-8 rounded-3xl border-2 border-transparent hover:border-orange/30 transition-all group">
+            <div className="premium-card hover-lift p-8 rounded-3xl border-2 transition-all group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
               <div className="text-center space-y-4">
                 <h3 className="text-3xl font-bold text-foreground">Starter</h3>
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-extrabold text-primary group-hover:text-orange transition-colors">$299</span>
-                  <span className="text-xl text-muted-foreground">/ month</span>
+                  <span className="text-5xl font-extrabold text-foreground">$299</span>
+                  <span className="text-xl text-primary">/ month</span>
                 </div>
-                <p className="text-sm text-muted-foreground italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $2,700/yr — 3 months free)</p>
+                <p className="text-sm text-primary italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $2,700/yr — 3 months free)</p>
                 <ul className="text-left space-y-3 pt-6">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">Up to <strong className="text-foreground">40 games</strong></span>
+                    <span className="text-primary">Up to <strong className="text-foreground">40 games</strong></span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">Unlimited tech accounts</span>
+                    <span className="text-primary">Unlimited tech accounts</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">Instant AI troubleshooting</span>
+                    <span className="text-primary">Instant AI troubleshooting</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">Email support (24hr)</span>
+                    <span className="text-primary">Email support (24hr)</span>
                   </li>
                 </ul>
               </div>
             </div>
 
-            <div className="premium-card hover-lift p-8 rounded-3xl border-2 border-orange/50 hover:border-orange transition-all relative">
+            <div className="premium-card hover-lift p-8 rounded-3xl border-2 transition-all relative" style={{ borderColor: 'hsl(183 100% 50% / 0.5)' }}>
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold"
                    style={{
                      background: "linear-gradient(90deg, rgba(255,102,0,0.2), rgba(255,102,0,0.05))",
@@ -510,26 +510,26 @@ const Index = () => {
               <div className="text-center space-y-4">
                 <h3 className="text-3xl font-bold text-foreground">Pro</h3>
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-extrabold text-orange">$499</span>
-                  <span className="text-xl text-muted-foreground">/ month</span>
+                  <span className="text-5xl font-extrabold text-foreground">$499</span>
+                  <span className="text-xl text-primary">/ month</span>
                 </div>
-                <p className="text-sm text-muted-foreground italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $4,500/yr — 3 months free)</p>
+                <p className="text-sm text-primary italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $4,500/yr — 3 months free)</p>
                 <ul className="text-left space-y-3 pt-6">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">Everything in Starter</span>
+                    <span className="text-primary">Everything in Starter</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">Up to <strong className="text-foreground">100 games</strong></span>
+                    <span className="text-primary">Up to <strong className="text-foreground">100 games</strong></span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">Priority support</span>
+                    <span className="text-primary">Priority support</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">Early access to new modules</span>
+                    <span className="text-primary">Early access to new modules</span>
                   </li>
                 </ul>
               </div>

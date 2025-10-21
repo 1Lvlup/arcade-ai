@@ -38,7 +38,7 @@ export default function Pricing() {
           : `(or $${starterAnnual.toLocaleString()}/yr — 3 months free)`,
         features: [
           "1 FEC location included",
-          "Up to " + emphasized("40 games"),
+          "Up to 40 games",
           "Unlimited tech accounts",
           "Instant AI troubleshooting access",
           "Email support (24 hr response)",
@@ -54,7 +54,7 @@ export default function Pricing() {
           : `(or $${proAnnual.toLocaleString()}/yr — 3 months free)`,
         features: [
           "Everything in Starter",
-          "Up to " + emphasized("100 games"),
+          "Unlimited games",
           "Priority email & chat support",
           "Early access to new modules",
           strike("Repair Ticket Handler (Add-On)"),

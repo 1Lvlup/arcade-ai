@@ -76,8 +76,7 @@ serve(async (req) => {
       .from('tenant_manual_access')
       .insert({
         fec_tenant_id: tenantId,
-        manual_id: manualId,
-        access_level: 'full'
+        manual_id: manualId
       });
 
     if (accessError) throw accessError;

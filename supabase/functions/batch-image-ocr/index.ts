@@ -137,7 +137,7 @@ serve(async (req) => {
               voltages: metadata.voltages || []
             },
             embedding_text: embedding,
-            ocr_status: 'completed',
+            ocr_status: 'success',
             ocr_updated_at: new Date().toISOString()
           })
           .eq('manual_id', manual_id)

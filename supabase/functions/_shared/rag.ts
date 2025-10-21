@@ -56,8 +56,9 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[]) {
   // Query figures directly (in case chunk IDs include figure IDs)
   const { data: figureChunks, error: figError } = await db
     .from('figures')
-    .select('id, manual_id, page_number')
-    .in('id', chunkIds);
+    .select('id, manual_id, page_number, storage_url, kind, image_name')
+    .in('id', chunkIds)
+    .not('storage_url', 'is', null);
   if (figError) console.error('❌ Error fetching figure chunks:', figError);
 
   console.log(`📄 Found ${textChunks?.length || 0} text chunks, ${figureChunks?.length || 0} figure chunks`);
@@ -94,28 +95,11 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[]) {
     ).join(', ')
   );
 
-  // Fetch images for each manual separately to prevent cross-contamination
-  let allImages: any[] = [];
+  // Only use figures that were actually returned by search (in chunkIds)
+  // This ensures only relevant images are shown, not all images from relevant pages
+  const allImages = figureChunks ?? [];
   
-  for (const [manualId, pages] of pagesByManual.entries()) {
-    const pageNumbers = Array.from(pages);
-    
-    const { data, error } = await db
-      .from('figures')
-      .select('manual_id,page_number,image_name,storage_url,kind')
-      .eq('manual_id', manualId)  // Strict filter per manual
-      .in('page_number', pageNumbers)
-      .not('storage_url', 'is', null);
-    
-    if (error) {
-      console.error(`❌ Error fetching figures for ${manualId}:`, error);
-    } else if (data && data.length > 0) {
-      console.log(`🖼️ Found ${data.length} images for ${manualId} on pages [${pageNumbers.slice(0, 5).join(', ')}...]`);
-      allImages = allImages.concat(data);
-    } else {
-      console.log(`⚠️ No images found for ${manualId} (checked ${pageNumbers.length} pages)`);
-    }
-  }
+  console.log(`🖼️ Using ${allImages.length} relevant figures from search results`);
 
   // Build citations array
   const citations: string[] = [];

@@ -555,33 +555,36 @@ ${styleHint}`;
   
   console.log(`🤖 Generating answer with model: ${model}`);
 
-  const url = "https://api.openai.com/v1/chat/completions";
+  // Use Responses API for better performance and caching
+  const url = "https://api.openai.com/v1/responses";
   const temperature = ANSWER_STYLE === "conversational" ? 0.4 : 0.1;
 
-  // Build messages array with conversation history
-  const conversationMessages = [
+  // Build input array with conversation history (Responses API uses "input" instead of "messages")
+  const conversationInput = [
     { role: "system", content: systemPrompt },
     ...(opts?.conversationHistory || []),
     { role: "user", content: userPrompt },
   ];
 
-  // NOTE: reasoning parameter removed - not supported by gpt-5-chat-latest on Chat Completions API
   const body: any = isGpt5(model)
     ? {
         model,
-        messages: conversationMessages,
-        max_completion_tokens: 8000,
+        input: conversationInput, // Responses API uses "input"
+        max_output_tokens: 8000, // Responses API uses "max_output_tokens"
+        reasoning: { effort: "medium" }, // Responses API supports reasoning
         stream: opts?.stream !== false,
+        store: true, // Enable stateful context for better performance
       }
     : {
         model,
-        messages: conversationMessages,
-        max_tokens: 2000,
+        input: conversationInput, // Responses API uses "input"
+        max_output_tokens: 2000,
         temperature,
         stream: opts?.stream !== false,
+        store: true,
       };
 
-  console.log(`📤 Calling ${url} with model ${model}`);
+  console.log(`📤 [Responses API] Calling ${url} with model ${model}`);
   console.log(`📝 Body preview:`, JSON.stringify(body).slice(0, 400));
 
   const response = await fetch(url, {

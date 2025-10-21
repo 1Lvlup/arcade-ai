@@ -5,4 +5,15 @@
 // This backup preserves the working state before experimenting with OpenAI Responses API
 // To restore: copy this file back to index.ts
 
+// CHANGES MADE IN MIGRATION TO RESPONSES API:
+// 1. Endpoint: /v1/chat/completions → /v1/responses
+// 2. Parameter: messages → input
+// 3. Parameter: max_completion_tokens → max_output_tokens
+// 4. Added: store: true (for stateful context and better caching)
+//
+// Expected benefits:
+// - 3% better performance with GPT-5
+// - 40-80% cost reduction from improved caching
+// - Future-proofed for upcoming models
+
 // See chat-manual/index.ts for the current implementation

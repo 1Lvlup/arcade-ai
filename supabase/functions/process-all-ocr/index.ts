@@ -182,7 +182,7 @@ Return JSON with these fields:
               visionResult.text_confidence === 'high' ? 0.95 : 
               visionResult.text_confidence === 'medium' ? 0.75 : 0.50
             ),
-            ocr_status: hasNoText ? 'no_text' : 'success',
+            ocr_status: hasNoText ? 'no_text' : 'completed',
             ocr_updated_at: new Date().toISOString(),
             
             // Comprehensive metadata from GPT-4 Vision

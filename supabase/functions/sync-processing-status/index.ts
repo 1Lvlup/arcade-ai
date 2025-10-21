@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       .from('figures')
       .select('*', { count: 'exact', head: true })
       .eq('manual_id', manual_id)
-      .eq('ocr_status', 'completed');
+      .in('ocr_status', ['completed', 'no_text']);
 
     const actualChunks = chunkCount?.length ?? 0;
     const actualTotalFigures = totalFigures?.length ?? 0;
@@ -58,8 +58,7 @@ Deno.serve(async (req) => {
       - Figures OCR completed: ${actualFiguresProcessed}
     `);
 
-    // Determine status - progress is ONLY for LlamaCloud upload/processing
-    // OCR is tracked separately and doesn't affect main progress
+    // Determine status and progress
     let newStatus = 'processing';
     let newStage = 'unknown';
     let currentTask = '';
@@ -71,11 +70,27 @@ Deno.serve(async (req) => {
       currentTask = 'Waiting for LlamaCloud to begin processing';
       progressPercent = 10;
     } else if (actualChunks > 0 || actualTotalFigures > 0) {
-      // If we have chunks or figures, LlamaCloud processing is complete (100%)
-      newStatus = 'completed';
-      newStage = 'completed';
-      currentTask = `Upload complete: ${actualChunks} text chunks, ${actualTotalFigures} images extracted`;
-      progressPercent = 100;
+      // LlamaCloud has delivered chunks/figures
+      if (actualTotalFigures === 0) {
+        // No images, just text - we're done
+        newStatus = 'completed';
+        newStage = 'completed';
+        currentTask = `Upload complete: ${actualChunks} text chunks extracted`;
+        progressPercent = 100;
+      } else if (actualFiguresProcessed >= actualTotalFigures) {
+        // All images have OCR completed
+        newStatus = 'completed';
+        newStage = 'completed';
+        currentTask = `Processing complete: ${actualChunks} text chunks, ${actualTotalFigures} images with OCR`;
+        progressPercent = 100;
+      } else {
+        // OCR still in progress
+        newStatus = 'processing';
+        newStage = 'ocr_processing';
+        currentTask = `Processing OCR: ${actualFiguresProcessed}/${actualTotalFigures} figures completed`;
+        // Progress: 90% base + up to 10% for OCR completion
+        progressPercent = 90 + Math.round((actualFiguresProcessed / actualTotalFigures) * 10);
+      }
     }
 
     // Update processing_status with actual values

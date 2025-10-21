@@ -104,7 +104,7 @@ export function ManualMerge() {
                 {isLoading ? (
                   <div className="p-2 text-sm text-muted-foreground">Loading manuals...</div>
                 ) : (
-                  manuals?.map((manual) => (
+                  manuals?.filter(m => m.manual_id && m.manual_id.trim() !== '').map((manual) => (
                     <SelectItem key={manual.manual_id} value={manual.manual_id}>
                       {manual.canonical_title} {manual.version && `(${manual.version})`}
                     </SelectItem>
@@ -124,7 +124,7 @@ export function ManualMerge() {
                 {isLoading ? (
                   <div className="p-2 text-sm text-muted-foreground">Loading manuals...</div>
                 ) : (
-                  manuals?.map((manual) => (
+                  manuals?.filter(m => m.manual_id && m.manual_id.trim() !== '').map((manual) => (
                     <SelectItem key={manual.manual_id} value={manual.manual_id}>
                       {manual.canonical_title} {manual.version && `(${manual.version})`}
                     </SelectItem>

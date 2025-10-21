@@ -59,6 +59,11 @@ interface ChatMessage {
   timestamp: Date;
   query_log_id?: string;
   feedback?: 'thumbs_up' | 'thumbs_down' | null;
+  thumbnails?: Array<{
+    page_id: string;
+    url: string;
+    title: string;
+  }>;
 }
 
 interface ChatBotProps {
@@ -445,6 +450,14 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 ));
               } else if (parsed.type === 'metadata') {
                 console.log('📊 Received metadata:', parsed.data);
+                // Store thumbnails from metadata
+                if (parsed.data?.thumbnails) {
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === botMessageId 
+                      ? { ...msg, thumbnails: parsed.data.thumbnails }
+                      : msg
+                  ));
+                }
               }
             } catch (e) {
               console.error('Failed to parse SSE data:', e);
@@ -953,6 +966,32 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 ) : (
                   <div className="text-base whitespace-pre-wrap leading-relaxed">
                     {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
+                  </div>
+                )}
+
+                {/* Display thumbnails/images */}
+                {message.type === 'bot' && message.thumbnails && message.thumbnails.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-primary/10">
+                    <div className="text-sm font-semibold text-primary mb-3">
+                      Reference Images
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {message.thumbnails.map((thumb, idx) => (
+                        <div key={idx} className="tech-card bg-background/50 overflow-hidden">
+                          <img 
+                            src={thumb.url} 
+                            alt={thumb.title}
+                            className="w-full h-auto object-contain bg-background/20"
+                            onError={(e) => {
+                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23888"%3EImage unavailable%3C/text%3E%3C/svg%3E';
+                            }}
+                          />
+                          <div className="p-3 text-xs text-muted-foreground">
+                            {thumb.title}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

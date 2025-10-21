@@ -684,10 +684,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   };
 
   return (
-    <Card className="border-primary/20 h-full flex flex-col">
-      <CardHeader className="border-b border-border flex-shrink-0 py-3 px-4">
+    <Card className="tech-card h-full flex flex-col">
+      <CardHeader className="border-b border-primary/20 flex-shrink-0 py-3 px-4">
         <CardTitle className="flex items-center justify-between text-sm">
-          <span className="tracking-wider font-bold">LEVEL UP</span>
+          <span className="tracking-wider font-bold text-white">LEVEL UP</span>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -877,7 +877,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         )}
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-black">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" style={{ background: 'hsl(210 20% 5%)' }}>
           {messages.map((message) => (
             <div
               key={message.id}
@@ -886,9 +886,13 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               <div
                 className={`max-w-[80%] rounded-lg p-3 font-sans ${
                   message.type === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    ? 'text-white border border-orange/30'
+                    : 'border border-primary/30'
                 }`}
+                style={{
+                  background: message.type === 'user' ? 'hsl(24 100% 54%)' : 'hsl(210 33% 9%)',
+                  color: message.type === 'user' ? 'white' : 'hsl(183 100% 50%)'
+                }}
               >
                 {message.type === 'user' && (
                   <div className="flex items-center space-x-2 mb-2">
@@ -947,11 +951,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-muted rounded-lg p-3">
+              <div className="rounded-lg p-3 border border-primary/30" style={{ background: 'hsl(210 33% 9%)' }}>
                 <div className="flex items-center space-x-2">
                   <Bot className="h-4 w-4 text-primary" />
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Thinking...</span>
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-sm text-primary">Thinking...</span>
                 </div>
               </div>
             </div>
@@ -975,6 +979,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isLoading}
               size="sm"
+              variant="orange"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

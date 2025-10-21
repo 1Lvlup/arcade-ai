@@ -33,8 +33,8 @@ const ManualManagement = () => {
           </div>
 
           <div className="mt-12 space-y-12">
-            <BulkManualImport />
             <StructuredCSVImport />
+            <BulkManualImport />
           </div>
 
           <div className="premium-card p-6 rounded-2xl mt-24">

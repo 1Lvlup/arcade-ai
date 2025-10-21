@@ -135,10 +135,10 @@ export function BulkManualImport() {
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Database className="h-5 w-5 text-primary" />
-          <span>Bulk Import Pre-Parsed Manuals</span>
+          <span>Legacy JSON Import</span>
         </CardTitle>
         <CardDescription>
-          Upload pre-parsed and chunked manual data with associated images
+          For pre-parsed JSON format only. Use "Structured CSV Import" above for CSV files.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

@@ -135,23 +135,38 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
     
     const isRelevant = hasCaption || hasOCR || hasMetadata || hasType;
     
-    // Log each image for debugging
-    if (isRelevant) {
-      const relevanceReasons = [
-        hasCaption && 'caption',
-        hasOCR && 'OCR',
-        hasMetadata && 'metadata',
-        hasType && 'type'
-      ].filter(Boolean).join(', ');
-      console.log(`✅ Including image: ${img.manual_id} p${img.page_number} - ${img.kind || img.figure_type || 'Unknown'} (${relevanceReasons})`);
-    } else {
-      console.log(`❌ Skipping image: ${img.manual_id} p${img.page_number} - no caption, OCR, or metadata`);
-    }
-    
     return isRelevant;
   });
   
-  console.log(`🖼️ Using ${allImages.length} relevant figures with metadata (filtered from ${figureChunks?.length || 0})`);
+  // Score and limit images to top 5 most relevant
+  const scoredImages = allImages.map(img => {
+    let score = 0;
+    
+    // Prioritize images with captions (most relevant)
+    if (img.caption_text && img.caption_text.length > 20) score += 5;
+    else if (img.caption_text) score += 3;
+    
+    // Images with OCR are likely important diagrams/tables
+    if (img.ocr_text && img.ocr_text.length > 20) score += 4;
+    else if (img.ocr_text) score += 2;
+    
+    // Images with metadata
+    if (img.semantic_tags && img.semantic_tags.length > 0) score += 2;
+    if (img.keywords && img.keywords.length > 0) score += 2;
+    if (img.detected_components && Object.keys(img.detected_components || {}).length > 0) score += 1;
+    
+    // Specific figure types are more relevant
+    if (img.kind === 'diagram' || img.kind === 'schematic' || img.kind === 'table') score += 3;
+    
+    return { ...img, score };
+  });
+  
+  // Sort by score descending and take top 5
+  const topImages = scoredImages
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+  
+  console.log(`🖼️ Filtered to top ${topImages.length} images (from ${allImages.length} relevant, ${figureChunks?.length || 0} total)`);
 
   // Build citations array
   const citations: string[] = [];
@@ -161,11 +176,11 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
     }
   }
 
-  console.log(`✅ Total: ${citations.length} citations, ${allImages.length} images`);
+  console.log(`✅ Total: ${citations.length} citations, ${topImages.length} images`);
 
   return {
     citations,
-    thumbnails: allImages.map(img => ({
+    thumbnails: topImages.map(img => ({
       page_id: `${img.manual_id}:p${img.page_number}`,
       url: img.storage_url,
       title: `${img.kind || 'Figure'} · ${img.manual_id} p.${img.page_number}`,

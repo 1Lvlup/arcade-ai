@@ -14,9 +14,26 @@ interface ChunkData {
   embedding?: number[];
 }
 
+interface FigureData {
+  image_name: string;
+  page_number: number;
+  caption_text?: string;
+  ocr_text?: string;
+  figure_type?: string;
+  kind?: string;
+  semantic_tags?: string[];
+  keywords?: string[];
+  detected_components?: Record<string, any>;
+  quality_score?: number;
+  storage_path?: string;
+  embedding_text?: number[];
+  [key: string]: any;
+}
+
 interface ImportRequest {
   manual_id: string;
   chunks: ChunkData[];
+  figures?: FigureData[];
   metadata?: {
     canonical_title?: string;
     platform?: string;
@@ -83,10 +100,10 @@ Deno.serve(async (req) => {
     // Set tenant context for RLS
     await supabase.rpc('set_tenant_context', { tenant_id: tenantId });
 
-    const { manual_id, chunks, metadata, images }: ImportRequest = await req.json();
+    const { manual_id, chunks, figures, metadata, images }: ImportRequest = await req.json();
 
     console.log(`Starting bulk import for manual: ${manual_id}`);
-    console.log(`Chunks to import: ${chunks.length}, Images: ${images || 0}`);
+    console.log(`Chunks to import: ${chunks.length}, Figures: ${figures?.length || 0}, Images: ${images || 0}`);
 
     // 1. Create/update manual metadata
     if (metadata && metadata.canonical_title) {
@@ -188,7 +205,72 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. Create tenant manual access
+    // 4. Import figures with metadata
+    let figuresCreated = 0;
+    if (figures && figures.length > 0) {
+      for (const figure of figures) {
+        try {
+          // Generate embedding for caption+OCR if not provided
+          let embedding = figure.embedding_text;
+          
+          if (!embedding && openaiKey) {
+            const textToEmbed = [figure.caption_text, figure.ocr_text].filter(Boolean).join('\n\n');
+            if (textToEmbed) {
+              const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${openaiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'text-embedding-3-small',
+                  input: textToEmbed.slice(0, 8000),
+                }),
+              });
+
+              if (embeddingResponse.ok) {
+                const embeddingData = await embeddingResponse.json();
+                embedding = embeddingData.data[0].embedding;
+              }
+            }
+          }
+
+          const storage_path = figure.storage_path || `${manual_id}/${figure.image_name}`;
+          const storage_url = `${supabaseUrl}/storage/v1/object/public/postparse/${storage_path}`;
+
+          const { error: figError } = await supabase
+            .from('figures')
+            .insert({
+              manual_id,
+              image_name: figure.image_name,
+              page_number: figure.page_number,
+              caption_text: figure.caption_text,
+              ocr_text: figure.ocr_text,
+              figure_type: figure.figure_type,
+              kind: figure.kind || 'diagram',
+              semantic_tags: figure.semantic_tags,
+              keywords: figure.keywords,
+              detected_components: figure.detected_components,
+              quality_score: figure.quality_score,
+              storage_path,
+              storage_url,
+              embedding_text: embedding,
+              ocr_status: figure.ocr_text ? 'completed' : 'pending',
+              fec_tenant_id: tenantId
+            });
+
+          if (figError) {
+            console.error('Figure insert error:', figError);
+          } else {
+            figuresCreated++;
+          }
+        } catch (figErr) {
+          console.error('Error processing figure:', figErr);
+        }
+      }
+    }
+
+    // 5. Create tenant manual access
     const { error: accessError } = await supabase
       .from('tenant_manual_access')
       .upsert({
@@ -206,6 +288,8 @@ Deno.serve(async (req) => {
       manual_id,
       chunks_created: chunksCreated,
       total_chunks: chunks.length,
+      figures_created: figuresCreated,
+      total_figures: figures?.length || 0,
       images_expected: images || 0,
       status: 'success'
     };

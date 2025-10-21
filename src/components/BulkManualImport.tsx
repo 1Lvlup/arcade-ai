@@ -82,6 +82,7 @@ export function BulkManualImport() {
           body: {
             manual_id: chunksFile.manual_id,
             chunks: chunksData.chunks || chunksData,
+            figures: chunksData.figures || [],
             metadata: chunksData.metadata || {},
             images: manualImages.length
           }
@@ -106,7 +107,7 @@ export function BulkManualImport() {
         importResults.push({
           manual_id: chunksFile.manual_id,
           status: 'success',
-          message: `Imported ${data.chunks_created} chunks, ${manualImages.length} images`
+          message: `Imported ${data.chunks_created} chunks, ${data.figures_created || 0} figures with metadata, ${manualImages.length} images`
         });
 
       } catch (error) {
@@ -257,7 +258,23 @@ export function BulkManualImport() {
       "content": "text content",
       "page_start": 1,
       "page_end": 2,
-      "menu_path": "Section > Subsection"
+      "menu_path": "Section > Subsection",
+      "embedding": [0.1, 0.2, ...] // optional
+    }
+  ],
+  "figures": [
+    {
+      "image_name": "image.png",
+      "page_number": 5,
+      "caption_text": "Gate system diagram",
+      "ocr_text": "Text from image",
+      "figure_type": "diagram",
+      "kind": "schematic",
+      "semantic_tags": ["gates", "wiring"],
+      "keywords": ["J1", "J2", "5V"],
+      "detected_components": {"connectors": ["J1"]},
+      "quality_score": 0.95,
+      "embedding_text": [0.1, ...] // optional
     }
   ]
 }`}

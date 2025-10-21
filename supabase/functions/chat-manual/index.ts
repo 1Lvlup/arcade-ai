@@ -4,6 +4,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { computeSignals, shapeMessages } from "../_shared/answerStyle.ts";
+import { buildCitationsAndImages } from "../_shared/rag.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -894,7 +895,21 @@ serve(async (req) => {
       // Create a new stream that sends metadata first, then the answer
       const streamWithMetadata = new ReadableStream({
         async start(controller) {
-          // Send metadata first (including query_log_id for feedback)
+          // Build citations and retrieve images based on chunks used
+          const chunkIds = (chunks || []).map(c => c.id).filter(Boolean);
+          let thumbnails: any[] = [];
+          
+          if (chunkIds.length > 0) {
+            try {
+              const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds);
+              thumbnails = imgs || [];
+              console.log(`🖼️ Retrieved ${thumbnails.length} images`);
+            } catch (e) {
+              console.error('Error fetching images:', e);
+            }
+          }
+          
+          // Send metadata first (including query_log_id for feedback and thumbnails)
           const metadata = {
             type: 'metadata',
             data: {
@@ -903,7 +918,8 @@ serve(async (req) => {
                 page_end: s.page_end,
               })) || [],
               strategy,
-              query_log_id: queryLogId
+              query_log_id: queryLogId,
+              thumbnails
             }
           };
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));

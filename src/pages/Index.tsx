@@ -76,14 +76,6 @@ const Index = () => {
         <Footer />
       </div>;
   }
-  const coreFeatures = [{
-    icon: <BookOpen className="h-8 w-8" />,
-    title: "Intelligent Document Processing",
-    description: "Transform complex documents into actionable insights with our proprietary AI engine",
-    status: "Market Leading",
-    metrics: "10x Faster",
-    link: "/manuals"
-  }];
   const stats = [{
     value: "2.3ms",
     label: "Response Time",
@@ -319,55 +311,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Core Features */}
-        <section className="py-24">
-          <div className="text-center mb-20">
-            <div className="caption-text text-orange/80 mb-6 text-sm tracking-widest uppercase font-mono">
-              Core Features
-            </div>
-            <h2 className="text-5xl md:text-7xl font-tech font-black text-foreground mb-8 tracking-wider">
-              Arcade AI <span className="text-orange">Solutions</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed font-body">
-              Purpose-built AI tools designed specifically for arcade technicians, operators, 
-              and enthusiasts to solve complex technical challenges instantly.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {coreFeatures.map((feature, index) => <div key={index} className="tech-card p-10 rounded-3xl transition-all duration-300 hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
-                <div className="space-y-8">
-                  <div className="flex items-start justify-between">
-                    <div className="p-5 rounded-2xl bg-primary/10 group-hover:bg-orange/10 transition-colors">
-                      <div className="text-primary group-hover:text-orange transition-colors">
-                        {feature.icon}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="px-4 py-2 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
-                        <span className="font-mono text-xs text-primary group-hover:text-orange uppercase tracking-wider font-semibold transition-colors">{feature.status}</span>
-                      </div>
-                      <div className="font-mono text-xs text-primary group-hover:text-orange mt-2 font-medium transition-colors">{feature.metrics}</div>
-                    </div>
-                  </div>
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-tech font-bold text-foreground tracking-wide">{feature.title}</h3>
-                    <p className="text-primary leading-relaxed text-base font-body">
-                      {feature.description}
-                    </p>
-                  </div>
-                  <div className="pt-6">
-                    <Link to={feature.link!}>
-                      <Button variant="orange" className="w-full py-4 text-lg font-semibold">
-                        Access Platform
-                        <ArrowRight className="h-5 w-5 ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>)}
-          </div>
-        </section>
 
         {/* Capabilities Grid */}
         <section className="py-24">

@@ -118,6 +118,38 @@ export default function AccountSettings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="user-id" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                User ID
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="user-id"
+                  type="text"
+                  value={user?.id || ''}
+                  disabled
+                  className="bg-muted font-mono text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(user?.id || '');
+                    toast({
+                      title: 'Copied!',
+                      description: 'User ID copied to clipboard',
+                    });
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Use this ID to assign admin role in the database
+              </p>
+            </div>
+            
+            <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
                 Email Address

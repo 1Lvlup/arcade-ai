@@ -40,69 +40,100 @@ export function pageAwareChunk(markdown: string, meta: {
 // --- Build citations + thumbnails from used chunk IDs ---
 export async function buildCitationsAndImages(db: any, chunkIds: string[]) {
   if (!chunkIds || chunkIds.length === 0) {
+    console.log('🖼️ No chunk IDs provided for image retrieval');
     return { citations: [], thumbnails: [] };
   }
 
-  // Query text chunks to get page ranges
+  console.log(`🔍 Building citations for ${chunkIds.length} chunk IDs`);
+
+  // Query text chunks to get page ranges and manual IDs
   const { data: textChunks, error: textError } = await db
     .from('chunks_text')
     .select('id, manual_id, doc_version, page_start, page_end')
     .in('id', chunkIds);
-  if (textError) console.error('Error fetching text chunks:', textError);
+  if (textError) console.error('❌ Error fetching text chunks:', textError);
 
   // Query figures directly (in case chunk IDs include figure IDs)
   const { data: figureChunks, error: figError } = await db
     .from('figures')
     .select('id, manual_id, page_number')
     .in('id', chunkIds);
-  if (figError) console.error('Error fetching figure chunks:', figError);
+  if (figError) console.error('❌ Error fetching figure chunks:', figError);
 
-  // Build map of pages from both sources
-  const pages = new Map<string, { manual_id: string; page: number }>();
+  console.log(`📄 Found ${textChunks?.length || 0} text chunks, ${figureChunks?.length || 0} figure chunks`);
+
+  // Build map of pages PER MANUAL (prevent cross-contamination)
+  const pagesByManual = new Map<string, Set<number>>();
   
   // Add pages from text chunks
   for (const c of textChunks ?? []) {
+    if (!pagesByManual.has(c.manual_id)) {
+      pagesByManual.set(c.manual_id, new Set());
+    }
+    const pages = pagesByManual.get(c.manual_id)!;
     for (let p = c.page_start; p <= c.page_end; p++) {
-      pages.set(`${c.manual_id}:p${p}`, { manual_id: c.manual_id, page: p });
+      if (p && p > 0 && p < 1000) { // Sanity check: ignore invalid page numbers
+        pages.add(p);
+      }
     }
   }
   
   // Add pages from figure chunks
   for (const f of figureChunks ?? []) {
-    if (f.page_number) {
-      pages.set(`${f.manual_id}:p${f.page_number}`, { manual_id: f.manual_id, page: f.page_number });
+    if (f.page_number && f.page_number > 0 && f.page_number < 1000) {
+      if (!pagesByManual.has(f.manual_id)) {
+        pagesByManual.set(f.manual_id, new Set());
+      }
+      pagesByManual.get(f.manual_id)!.add(f.page_number);
     }
   }
 
-  const plist = Array.from(pages.values());
-  let images: any[] = [];
+  console.log(`📑 Page map by manual:`, 
+    Array.from(pagesByManual.entries()).map(([mid, pages]) => 
+      `${mid}: ${pages.size} pages`
+    ).join(', ')
+  );
+
+  // Fetch images for each manual separately to prevent cross-contamination
+  let allImages: any[] = [];
   
-  if (plist.length > 0) {
-    const manualIds = [...new Set(plist.map(p => p.manual_id))];
-    const pageNumbers = [...new Set(plist.map(p => p.page))];
+  for (const [manualId, pages] of pagesByManual.entries()) {
+    const pageNumbers = Array.from(pages);
     
-    const { data, error: e2 } = await db
+    const { data, error } = await db
       .from('figures')
       .select('manual_id,page_number,image_name,storage_url,kind')
-      .in('manual_id', manualIds)
+      .eq('manual_id', manualId)  // Strict filter per manual
       .in('page_number', pageNumbers)
       .not('storage_url', 'is', null);
     
-    if (e2) {
-      console.error('Error fetching figures:', e2);
+    if (error) {
+      console.error(`❌ Error fetching figures for ${manualId}:`, error);
+    } else if (data && data.length > 0) {
+      console.log(`🖼️ Found ${data.length} images for ${manualId} on pages [${pageNumbers.slice(0, 5).join(', ')}...]`);
+      allImages = allImages.concat(data);
     } else {
-      images = data ?? [];
+      console.log(`⚠️ No images found for ${manualId} (checked ${pageNumbers.length} pages)`);
     }
   }
 
-  console.log(`📊 buildCitationsAndImages: ${chunkIds.length} chunk IDs → ${pages.size} pages → ${images.length} images`);
+  // Build citations array
+  const citations: string[] = [];
+  for (const [manualId, pages] of pagesByManual.entries()) {
+    for (const page of pages) {
+      citations.push(`${manualId}:p${page}`);
+    }
+  }
+
+  console.log(`✅ Total: ${citations.length} citations, ${allImages.length} images`);
 
   return {
-    citations: Array.from(pages.keys()), // ["manual-id:p57", ...]
-    thumbnails: images.map(img => ({
+    citations,
+    thumbnails: allImages.map(img => ({
       page_id: `${img.manual_id}:p${img.page_number}`,
       url: img.storage_url,
-      title: `${img.kind || 'Figure'} · p.${img.page_number}`
+      title: `${img.kind || 'Figure'} · ${img.manual_id} p.${img.page_number}`,
+      manual_id: img.manual_id
     }))
   };
 }

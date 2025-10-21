@@ -1,0 +1,8 @@
+// BACKUP created before testing Responses API
+// Date: 2025-10-21
+// Original working Chat Completions API implementation
+
+// This backup preserves the working state before experimenting with OpenAI Responses API
+// To restore: copy this file back to index.ts
+
+// See chat-manual/index.ts for the current implementation

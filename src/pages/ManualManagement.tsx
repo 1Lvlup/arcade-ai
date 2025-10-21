@@ -2,6 +2,7 @@ import { ManualUpload } from '@/components/ManualUpload';
 import { ManualsList } from '@/components/ManualsList';
 import { BulkManualImport } from '@/components/BulkManualImport';
 import { StructuredCSVImport } from '@/components/StructuredCSVImport';
+import { ManualMerge } from '@/components/ManualMerge';
 import { SharedHeader } from '@/components/SharedHeader';
 
 const ManualManagement = () => {
@@ -35,6 +36,7 @@ const ManualManagement = () => {
           <div className="mt-12 space-y-12">
             <StructuredCSVImport />
             <BulkManualImport />
+            <ManualMerge />
           </div>
 
           <div className="premium-card p-6 rounded-2xl mt-24">

@@ -151,3 +151,6 @@ verify_jwt = true
 
 [functions.batch-image-ocr]
 verify_jwt = true
+
+[functions.merge-manual-data]
+verify_jwt = true

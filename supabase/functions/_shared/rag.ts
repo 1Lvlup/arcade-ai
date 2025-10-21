@@ -53,24 +53,37 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
     .in('id', chunkIds);
   if (textError) console.error('❌ Error fetching text chunks:', textError);
 
-  // Query figures directly (in case chunk IDs include figure IDs)
-  // Get comprehensive metadata for filtering
-  let figureQuery = db
-    .from('figures')
-    .select('id, manual_id, page_number, storage_url, kind, image_name, caption_text, ocr_text, semantic_tags, detected_components, figure_type, keywords')
-    .in('id', chunkIds)
-    .not('storage_url', 'is', null);
-  
-  // CRITICAL: Filter by manual_id if provided to prevent cross-manual contamination
-  if (manualId) {
-    figureQuery = figureQuery.eq('manual_id', manualId);
-    console.log(`🔒 Filtering figures by manual_id: ${manualId}`);
+  // Build page ranges from text chunks first
+  const pageRanges: Array<{ manual_id: string, pages: number[] }> = [];
+  for (const c of textChunks ?? []) {
+    const pages: number[] = [];
+    for (let p = c.page_start; p <= c.page_end; p++) {
+      if (p && p > 0 && p < 1000) pages.push(p);
+    }
+    if (pages.length > 0) {
+      pageRanges.push({ manual_id: c.manual_id, pages });
+    }
   }
-  
-  const { data: figureChunks, error: figError } = await figureQuery;
-  if (figError) console.error('❌ Error fetching figure chunks:', figError);
 
-  console.log(`📄 Found ${textChunks?.length || 0} text chunks, ${figureChunks?.length || 0} figure chunks`);
+  console.log(`📄 Found ${textChunks?.length || 0} text chunks covering ${pageRanges.length} page ranges`);
+
+  // Query figures based on the pages referenced in the chunks
+  let figureChunks: any[] = [];
+  
+  for (const range of pageRanges) {
+    let figureQuery = db
+      .from('figures')
+      .select('id, manual_id, page_number, storage_url, kind, image_name, caption_text, ocr_text, semantic_tags, detected_components, figure_type, keywords')
+      .eq('manual_id', range.manual_id)
+      .in('page_number', range.pages)
+      .not('storage_url', 'is', null);
+    
+    const { data: figs, error: figError } = await figureQuery;
+    if (figError) console.error(`❌ Error fetching figures for ${range.manual_id}:`, figError);
+    if (figs) figureChunks.push(...figs);
+  }
+
+  console.log(`📄 Found ${figureChunks.length} figure chunks from ${pageRanges.length} page ranges`);
 
   // Build map of pages PER MANUAL (prevent cross-contamination)
   const pagesByManual = new Map<string, Set<number>>();

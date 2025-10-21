@@ -209,11 +209,14 @@ const Index = () => {
               onClick={handleStartGeneralChat} 
               variant="orange"
               size="xl" 
-              className="hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden"
+              className="hover-lift px-32 py-12 text-3xl font-bold relative group overflow-hidden"
+              style={{
+                boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
+              }}
             >
               <span className="relative z-10 flex items-center gap-3">
                 Launch Arcade Intelligence
-                <ArrowRight className="h-7 w-7 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="h-8 w-8 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
             </Button>

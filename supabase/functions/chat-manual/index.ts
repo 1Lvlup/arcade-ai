@@ -555,12 +555,11 @@ ${styleHint}`;
   
   console.log(`🤖 Generating answer with model: ${model}`);
 
-  // Use Responses API for better performance and caching
-  const url = "https://api.openai.com/v1/responses";
+  const url = "https://api.openai.com/v1/chat/completions";
   const temperature = ANSWER_STYLE === "conversational" ? 0.4 : 0.1;
 
-  // Build input array with conversation history (Responses API uses "input" instead of "messages")
-  const conversationInput = [
+  // Build messages array with conversation history
+  const conversationMessages = [
     { role: "system", content: systemPrompt },
     ...(opts?.conversationHistory || []),
     { role: "user", content: userPrompt },
@@ -569,22 +568,20 @@ ${styleHint}`;
   const body: any = isGpt5(model)
     ? {
         model,
-        input: conversationInput, // Responses API uses "input"
-        max_output_tokens: 8000, // Responses API uses "max_output_tokens"
+        messages: conversationMessages,
+        max_completion_tokens: 8000,
         reasoning: { effort: "medium" },
         stream: opts?.stream !== false,
-        store: true, // Enable stateful context for better performance
       }
     : {
         model,
-        input: conversationInput, // Responses API uses "input"
-        max_output_tokens: 2000, // Use max_output_tokens for consistency
+        messages: conversationMessages,
+        max_tokens: 2000,
         temperature,
         stream: opts?.stream !== false,
-        store: true,
       };
 
-  console.log(`📤 [Responses API] Calling ${url} with model ${model}`);
+  console.log(`📤 Calling ${url} with model ${model}`);
   console.log(`📝 Body preview:`, JSON.stringify(body).slice(0, 400));
 
   const response = await fetch(url, {

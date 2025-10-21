@@ -77,33 +77,12 @@ const Index = () => {
       </div>;
   }
   const coreFeatures = [{
-    icon: <Brain className="h-8 w-8" />,
-    title: "Advanced AI Assistant",
-    description: "Breakthrough conversational AI delivering enterprise-grade intelligence and precision",
-    status: "Production Ready",
-    metrics: "99.9% Uptime",
-    onClick: handleStartGeneralChat
-  }, {
-    icon: <Code className="h-8 w-8" />,
-    title: "AI Code Assistant",
-    description: "Generate code, debug issues, and get coding help with AI-powered development tools",
-    status: "Developer Tool",
-    metrics: "Real-time Help",
-    link: "/code-assistant"
-  }, {
     icon: <BookOpen className="h-8 w-8" />,
     title: "Intelligent Document Processing",
     description: "Transform complex documents into actionable insights with our proprietary AI engine",
     status: "Market Leading",
     metrics: "10x Faster",
     link: "/manuals"
-  }, {
-    icon: <Eye className="h-8 w-8" />,
-    title: "Strategic Analytics Dashboard",
-    description: "Real-time business intelligence powered by predictive AI algorithms",
-    status: "Industry First",
-    metrics: "94% Accuracy",
-    link: "/vision-board"
   }];
   const stats = [{
     value: "2.3ms",
@@ -378,15 +357,12 @@ const Index = () => {
                     </p>
                   </div>
                   <div className="pt-6">
-                    {feature.onClick ? <Button onClick={feature.onClick} variant="orange" className="w-full py-4 text-lg font-semibold">
-                        Launch Assistant
+                    <Link to={feature.link!}>
+                      <Button variant="orange" className="w-full py-4 text-lg font-semibold">
+                        Access Platform
                         <ArrowRight className="h-5 w-5 ml-2" />
-                      </Button> : <Link to={feature.link!}>
-                        <Button variant="orange" className="w-full py-4 text-lg font-semibold">
-                          Access Platform
-                          <ArrowRight className="h-5 w-5 ml-2" />
-                        </Button>
-                      </Link>}
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>)}

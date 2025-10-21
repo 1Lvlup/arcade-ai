@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown } from 'lucide-react';
+import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown, Code } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useState, useEffect } from 'react';
@@ -97,9 +97,15 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link to="/code-assistant" className="cursor-pointer">
+                    <Code className="h-4 w-4 mr-2" />
+                    AI Code Assistant
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/vision-board" className="cursor-pointer">
                     <BarChart3 className="h-4 w-4 mr-2" />
-                    Analytics
+                    Strategic Analytics Dashboard
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

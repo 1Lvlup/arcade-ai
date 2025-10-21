@@ -40,37 +40,40 @@ export function pageAwareChunk(markdown: string, meta: {
 // --- Build citations + thumbnails from used chunk IDs ---
 export async function buildCitationsAndImages(db: any, chunkIds: string[]) {
   const { data: chunks, error } = await db
-    .from('rag_chunks')
-    .select('id, manual_id, version, page_start, page_end')
+    .from('chunks_text')
+    .select('id, manual_id, doc_version, page_start, page_end')
     .in('id', chunkIds);  // use the UUID primary key
   if (error) throw error;
 
-  const pages = new Map<string, { manual_id: string; version: string; page: number }>();
+  const pages = new Map<string, { manual_id: string; page: number }>();
   for (const c of chunks ?? []) {
     for (let p = c.page_start; p <= c.page_end; p++) {
-      pages.set(`${c.manual_id}@${c.version}:p${p}`, { manual_id: c.manual_id, version: c.version, page: p });
+      pages.set(`${c.manual_id}:p${p}`, { manual_id: c.manual_id, page: p });
     }
   }
 
   const plist = Array.from(pages.values());
   let images: any[] = [];
   if (plist.length) {
+    const manualIds = [...new Set(plist.map(p => p.manual_id))];
+    const pageNumbers = [...new Set(plist.map(p => p.page))];
+    
     const { data, error: e2 } = await db
       .from('figures')
-      .select('manual_id,version,page,image_name,storage_url,kind')
-      .in('manual_id', plist.map(p => p.manual_id))
-      .in('version',   plist.map(p => p.version))
-      .in('page',      plist.map(p => p.page));
+      .select('manual_id,page_number,image_name,storage_url,kind')
+      .in('manual_id', manualIds)
+      .in('page_number', pageNumbers)
+      .not('storage_url', 'is', null);
     if (e2) throw e2;
     images = data ?? [];
   }
 
   return {
-    citations: Array.from(pages.keys()), // ["kkosi-vr@1.0.0:p57", ...]
+    citations: Array.from(pages.keys()), // ["manual-id:p57", ...]
     thumbnails: images.map(img => ({
-      page_id: `${img.manual_id}@${img.version}:p${img.page}`,
+      page_id: `${img.manual_id}:p${img.page_number}`,
       url: img.storage_url,
-      title: `${img.kind} · p.${img.page}`
+      title: `${img.kind || 'Figure'} · p.${img.page_number}`
     }))
   };
 }

@@ -25,10 +25,8 @@ export default function Pricing() {
   const plans = useMemo(() => {
     const starterMonthly = 299;
     const proMonthly = 499;
-    const annualDiscount = 2500; // Fixed annual price for Pro
-
-    const starterAnnual = starterMonthly * 10; // 2 months free
-    const proAnnual = annualDiscount;
+    const starterAnnual = 2700; // 3 months free
+    const proAnnual = 4500; // 3 months free
 
     return {
       starter: {
@@ -36,8 +34,8 @@ export default function Pricing() {
         priceMain: annual ? `$${starterAnnual.toLocaleString()}` : `$${starterMonthly}`,
         cadence: annual ? "/ yr" : "/ mo",
         subNote: annual
-          ? "(2 months free)"
-          : `(or $${starterAnnual.toLocaleString()}/yr — 2 months free)`,
+          ? "(3 months free)"
+          : `(or $${starterAnnual.toLocaleString()}/yr — 3 months free)`,
         features: [
           "1 FEC location included",
           "Up to " + emphasized("40 games"),
@@ -52,8 +50,8 @@ export default function Pricing() {
         priceMain: annual ? `$${proAnnual.toLocaleString()}` : `$${proMonthly}`,
         cadence: annual ? "/ yr" : "/ mo",
         subNote: annual
-          ? "(save $3,488)"
-          : `(or $${proAnnual.toLocaleString()}/yr — save $3,488)`,
+          ? "(3 months free)"
+          : `(or $${proAnnual.toLocaleString()}/yr — 3 months free)`,
         features: [
           "Everything in Starter",
           "Up to " + emphasized("100 games"),
@@ -64,8 +62,8 @@ export default function Pricing() {
       },
       addon: {
         title: "Repair Ticket Handler Add-On",
-        priceMain: annual ? "+$1,188" : "+$99",
-        cadence: annual ? "/ yr per FEC" : " / mo per FEC",
+        priceMain: "$99",
+        cadence: "one-time setup",
         subNote: "(optional)",
         bullets: [
           "Create & close tickets in seconds",
@@ -120,7 +118,7 @@ export default function Pricing() {
             />
             <ToggleButton
               label="Annual"
-              sub="(2 months free)"
+              sub="(3 months free)"
               active={annual}
               onClick={() => setAnnual(true)}
             />

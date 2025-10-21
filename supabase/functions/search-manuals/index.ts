@@ -74,7 +74,8 @@ async function generateHypotheticalAnswer(query: string): Promise<string> {
       ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-mini',
+      max_completion_tokens: 500,
       messages: [
         {
           role: 'system',
@@ -110,7 +111,8 @@ async function rerankResults(query: string, results: any[]): Promise<any[]> {
         ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
       },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-mini',
+      max_completion_tokens: 200,
       messages: [
         {
           role: 'system',

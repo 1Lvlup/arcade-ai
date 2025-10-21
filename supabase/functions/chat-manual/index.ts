@@ -709,10 +709,9 @@ Keep it short (2-3 sentences max) and friendly.`;
         ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4.1-mini",
+        max_completion_tokens: 150,
         messages: [{ role: "user", content: clarificationPrompt }],
-        max_tokens: 150,
-        temperature: 0.7,
       }),
     }).then(d => d.choices?.[0]?.message?.content ?? "Could you provide more details about what specifically you're trying to fix or locate?");
 

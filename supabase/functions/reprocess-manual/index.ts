@@ -113,7 +113,8 @@ Return as JSON only.`;
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4.1-mini',
+            max_completion_tokens: 500,
             messages: [
               {
                 role: 'user',
@@ -167,7 +168,7 @@ Return as JSON only.`;
           processedFigures++;
         }
 
-        // Rate limit: 3 requests per second for gpt-4o-mini
+        // Rate limit: 3 requests per second for gpt-4.1-mini
         await new Promise(resolve => setTimeout(resolve, 350));
 
       } catch (error) {
@@ -214,9 +215,9 @@ Text: ${chunk.content.substring(0, 2000)}`;
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4.1-mini',
+            max_completion_tokens: 500,
             messages: [{ role: 'user', content: nerPrompt }],
-            max_tokens: 500
           }),
         });
 

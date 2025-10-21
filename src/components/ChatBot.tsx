@@ -93,8 +93,23 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [showLimitReached, setShowLimitReached] = useState(false);
+  const [guestMessageCount, setGuestMessageCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const GUEST_MESSAGE_LIMIT = 5;
+
+  // Load guest message count from localStorage on mount
+  useEffect(() => {
+    if (!user) {
+      const stored = localStorage.getItem('guest_message_count');
+      setGuestMessageCount(stored ? parseInt(stored, 10) : 0);
+    } else {
+      setGuestMessageCount(0);
+      localStorage.removeItem('guest_message_count');
+    }
+  }, [user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -323,6 +338,12 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
+    // Check guest user message limit
+    if (!user && guestMessageCount >= GUEST_MESSAGE_LIMIT) {
+      setShowLimitReached(true);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -334,6 +355,13 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     const query = inputValue.trim();
     setInputValue('');
     setIsLoading(true);
+
+    // Increment guest message count
+    if (!user) {
+      const newCount = guestMessageCount + 1;
+      setGuestMessageCount(newCount);
+      localStorage.setItem('guest_message_count', newCount.toString());
+    }
 
     // Create placeholder bot message
     const botMessageId = (Date.now() + 1).toString();
@@ -1003,8 +1031,13 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               )}
             </Button>
           </div>
-          <div className="text-xs text-muted-foreground mt-2">
-            Press Enter to send • Shift+Enter for new line
+          <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
+            <span>Press Enter to send • Shift+Enter for new line</span>
+            {!user && (
+              <span className="text-orange-500 font-medium">
+                {guestMessageCount}/{GUEST_MESSAGE_LIMIT} free questions used
+              </span>
+            )}
           </div>
         </div>
       </CardContent>
@@ -1034,21 +1067,21 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt}>
+      <AlertDialog open={showLimitReached} onOpenChange={setShowLimitReached}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <LogIn className="h-5 w-5 text-primary" />
-              Login Required
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Free Question Limit Reached
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Please log in to save conversations and access history. You can continue chatting as a guest, but your conversations won't be saved.
+              You've used all {GUEST_MESSAGE_LIMIT} free questions. To continue getting AI assistance, please choose a plan that fits your needs.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Continue as Guest</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate('/auth')}>
-              Go to Login
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate('/pricing')}>
+              View Plans
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

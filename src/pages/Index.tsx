@@ -68,7 +68,7 @@ const Index = () => {
     window.history.pushState({}, '', newUrl.toString());
   };
   if (showChat) {
-    return <div className="min-h-screen professional-bg flex flex-col">
+    return <div className="min-h-screen mesh-gradient flex flex-col">
         <SharedHeader title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} showBackButton={true} backTo="/" onBackClick={handleBackToHome} />
         <main className="container mx-auto px-4 py-8 flex-1">
           <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />

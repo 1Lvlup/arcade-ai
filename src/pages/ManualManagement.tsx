@@ -1,5 +1,6 @@
 import { ManualUpload } from '@/components/ManualUpload';
 import { ManualsList } from '@/components/ManualsList';
+import { BulkManualImport } from '@/components/BulkManualImport';
 import { SharedHeader } from '@/components/SharedHeader';
 
 const ManualManagement = () => {
@@ -28,6 +29,10 @@ const ManualManagement = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
             <ManualUpload />
             <ManualsList />
+          </div>
+
+          <div className="mt-12">
+            <BulkManualImport />
           </div>
 
           <div className="premium-card p-6 rounded-2xl mt-24">

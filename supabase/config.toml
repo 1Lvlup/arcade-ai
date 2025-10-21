@@ -148,3 +148,6 @@ verify_jwt = true
 
 [functions.structured-csv-import]
 verify_jwt = true
+
+[functions.batch-image-ocr]
+verify_jwt = true

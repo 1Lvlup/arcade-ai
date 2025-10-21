@@ -191,6 +191,22 @@ serve(async (req) => {
     }
 
     console.log(`✅ Import complete: ${chunksCount} chunks, ${figuresCount} figures, ${qaCount} QA pairs`);
+    
+    // 7. Trigger OCR processing for all figures if any were imported
+    if (figuresCount > 0) {
+      console.log(`🔍 Triggering OCR processing for ${figuresCount} figures...`);
+      
+      // Invoke OCR processing in background (don't wait for it)
+      supabase.functions.invoke('process-all-ocr', {
+        body: { manual_id: manualId }
+      }).then(({ data: ocrData, error: ocrError }) => {
+        if (ocrError) {
+          console.error('OCR trigger error:', ocrError);
+        } else {
+          console.log('✅ OCR processing started:', ocrData);
+        }
+      });
+    }
 
     return new Response(
       JSON.stringify({
@@ -198,7 +214,8 @@ serve(async (req) => {
         manual_id: manualId,
         chunks_count: chunksCount,
         figures_count: figuresCount,
-        qa_count: qaCount
+        qa_count: qaCount,
+        ocr_triggered: figuresCount > 0
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

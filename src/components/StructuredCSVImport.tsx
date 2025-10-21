@@ -71,9 +71,25 @@ export const StructuredCSVImport = () => {
       // Upload images if provided
       if (imageFiles && imageFiles.length > 0) {
         try {
-          const imageResult = await uploadImages(imageFiles, manualId);
-          importResults.push({ type: 'images', success: true, count: imageResult.count });
-          toast.success(`Uploaded ${imageResult.count} images`);
+          const uploadResult = await uploadImages(imageFiles, manualId);
+          importResults.push({ type: 'images', success: true, count: uploadResult.count });
+          toast.success(`Uploaded ${uploadResult.count} images`);
+
+          // Trigger OCR processing for uploaded images
+          toast.info('Starting OCR and captioning for images...');
+          const { data: ocrData, error: ocrError } = await supabase.functions.invoke('batch-image-ocr', {
+            body: {
+              manual_id: manualId,
+              image_paths: uploadResult.paths
+            }
+          });
+
+          if (ocrError) {
+            console.error('OCR processing error:', ocrError);
+            toast.warning('Images uploaded but OCR processing failed');
+          } else {
+            toast.success(`OCR complete: ${ocrData.processed} images processed`);
+          }
         } catch (imgError: any) {
           importResults.push({ type: 'images', success: false, error: imgError.message });
           toast.error(`Image upload failed: ${imgError.message}`);
@@ -150,6 +166,8 @@ export const StructuredCSVImport = () => {
 
   const uploadImages = async (files: FileList, manualId: string) => {
     let count = 0;
+    const paths: string[] = [];
+    
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileName = file.name;
@@ -163,8 +181,9 @@ export const StructuredCSVImport = () => {
 
       if (error) throw error;
       count++;
+      paths.push(path);
     }
-    return { count };
+    return { count, paths };
   };
 
   return (

@@ -279,7 +279,7 @@ serve(async (req) => {
                 caption_text: captionText,
                 ocr_text: ocrText,
                 embedding_text: embedding,
-                ocr_status: 'completed',
+                ocr_status: 'success',
                 ocr_updated_at: new Date().toISOString()
               })
               .eq('id', figure.id);

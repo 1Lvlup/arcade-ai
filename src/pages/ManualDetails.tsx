@@ -78,8 +78,28 @@ export default function ManualDetails() {
     }
   });
 
+  const processCaptionsMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('process-figure-captions', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['figures', manualId] });
+      toast.success(`✅ Captions processed: ${data.processed}/${data.total} figures updated`);
+    },
+    onError: (error: Error) => {
+      toast.error(`❌ Caption processing failed: ${error.message}`);
+    }
+  });
+
   const figuresWithoutOcr = figures?.filter(f => !f.ocr_text).length || 0;
   const figuresWithOcr = figures?.filter(f => f.ocr_text).length || 0;
+  const figuresWithoutCaptions = figures?.filter(f => !f.caption_text).length || 0;
+  const figuresWithCaptions = figures?.filter(f => f.caption_text).length || 0;
 
   return (
     <div className="min-h-screen mesh-gradient">
@@ -159,6 +179,30 @@ export default function ManualDetails() {
                 </div>
               </div>
             </div>
+            
+            {/* Caption Processing Button */}
+            {figuresWithoutCaptions > 0 && (
+              <div className="mt-4 p-4 border border-blue-500/20 rounded-lg bg-blue-500/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-mono text-sm text-blue-400 mb-1">
+                      🎨 Caption Generation Available
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {figuresWithoutCaptions} figures need AI-generated captions. This will enable image search.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => processCaptionsMutation.mutate()}
+                    disabled={processCaptionsMutation.isPending}
+                    className="btn-tech"
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    {processCaptionsMutation.isPending ? 'Processing...' : 'Generate Captions'}
+                  </Button>
+                </div>
+              </div>
+            )}
             
             {/* OCR Processing Button */}
             {figuresWithoutOcr > 0 && (

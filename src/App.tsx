@@ -33,6 +33,7 @@ import QAAnalytics from "./pages/QAAnalytics";
 import Pricing from "./pages/Pricing";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
+import ReIngestManual from "./pages/ReIngestManual";
 
 const queryClient = new QueryClient();
 
@@ -189,6 +190,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <QAAnalytics />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/reingest-manual" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <ReIngestManual />
                 </AdminRoute>
               </ProtectedRoute>
             } />

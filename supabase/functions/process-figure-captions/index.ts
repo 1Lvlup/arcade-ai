@@ -83,8 +83,8 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-4.1',
-              max_completion_tokens: 500,
+              model: 'gpt-4o',
+              max_tokens: 500,
               messages: [
                 {
                   role: 'system',
@@ -108,7 +108,9 @@ serve(async (req) => {
           });
 
           if (!captionResponse.ok) {
-            throw new Error(`Caption API error: ${captionResponse.status}`);
+            const errorText = await captionResponse.text();
+            console.error(`Caption API error for figure ${figure.id}: ${captionResponse.status} - ${errorText}`);
+            throw new Error(`Caption API error: ${captionResponse.status} - ${errorText.substring(0, 200)}`);
           }
 
           const captionData = await captionResponse.json();

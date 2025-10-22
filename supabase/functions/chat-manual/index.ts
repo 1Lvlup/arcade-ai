@@ -213,7 +213,7 @@ async function createEmbedding(text: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Search for relevant chunks using hybrid approach
+// Search using unified search endpoint with Cohere reranking
 // ─────────────────────────────────────────────────────────────────────────
 async function searchChunks(query: string, manual_id?: string, tenant_id?: string) {
   const startTime = Date.now();
@@ -222,12 +222,60 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   const keywords = keywordLine(expanded);
   const hybridQuery = keywords ? `${expanded}\nKeywords: ${keywords}` : expanded;
 
-  console.log("🔍 Starting hybrid search:", query.substring(0, 120));
+  console.log("🔍 Using unified search:", query.substring(0, 120));
   if (keywords) console.log("🔑 Keywords:", keywords);
 
-  const queryEmbedding = await createEmbedding(hybridQuery);
-  console.log("✅ Created query embedding");
+  try {
+    // Call unified search function
+    const searchResponse = await supabase.functions.invoke('search-unified', {
+      body: {
+        query: hybridQuery,
+        manual_id: manual_id,
+        tenant_id: tenant_id,
+        top_k: 60,
+      },
+    });
 
+    if (searchResponse.error) {
+      console.error("❌ Unified search error:", searchResponse.error);
+      // Fallback to direct vector search
+      return await fallbackVectorSearch(hybridQuery, manual_id, tenant_id);
+    }
+
+    const { results = [] } = searchResponse.data || {};
+    console.log(`✅ Unified search returned ${results.length} results in ${Date.now() - startTime}ms`);
+
+    // Normalize DB rows
+    function normalizeRow(r: any) {
+      const t =
+        typeof r.content === "string"
+          ? r.content
+          : typeof r.chunk_text === "string"
+            ? r.chunk_text
+            : typeof r.text === "string"
+              ? r.text
+              : JSON.stringify(r.content ?? r.chunk_text ?? r.text ?? "");
+      return { ...r, content: t };
+    }
+
+    const finalCandidates = results.map(normalizeRow);
+
+  // Apply spec bias
+  let candidatesBiased = boostSpecCandidates(finalCandidates, query);
+
+  // Weak-evidence fallback: if almost none look "specy", requery with expansion
+  const specish = candidatesBiased.filter(r => looksSpecy(r.content)).length;
+  if (candidatesBiased.length < 3 || specish < 2) {
+    const expandedQ = expandIfWeak(query);
+  return finalCandidates;
+}
+
+// Fallback to direct vector search if unified endpoint fails
+async function fallbackVectorSearch(query: string, manual_id?: string, tenant_id?: string) {
+  console.log("⚠️ Using fallback vector search");
+  
+  const queryEmbedding = await createEmbedding(query);
+  
   const { data: vectorResults, error: vectorError } = await supabase.rpc("match_chunks_improved", {
     query_embedding: queryEmbedding,
     top_k: 60,
@@ -238,9 +286,9 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
 
   if (vectorError) {
     console.error("❌ Vector search error:", vectorError);
+    return [];
   }
 
-  // normalize DB rows -> { content: string, ... }
   function normalizeRow(r: any) {
     const t =
       typeof r.content === "string"
@@ -254,104 +302,9 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
   }
 
   const candidates = (vectorResults || []).map(normalizeRow);
-  console.log(`📊 Vector search found ${candidates.length} results`);
-
-  // 1) Scoring nudge: prefer specs/wiring; demote front-matter
-  function scoreNudge(c: any) {
-    const h = `${c.menu_path || ""} ${c.heading || ""} ${c.content || ""}`.toLowerCase();
-    let bonus = 0;
-    if (/(wiring|pinout|connector|i\/o|spec|voltage|power|fuse|header|schematic|troubleshooting)/.test(h)) bonus += 0.20;
-    if (/(cover|table of contents|front matter|copyright)/.test(h)) bonus -= 0.40;
-    return bonus;
-  }
-  const nudged = (candidates || []).map(c => ({ ...c, score: (c.score ?? 0) + scoreNudge(c) }));
-  nudged.sort((a,b)=> (b.rerank_score ?? b.score ?? 0) - (a.rerank_score ?? a.score ?? 0));
-  const finalCandidates = nudged;
-
-  // Apply spec bias
-  let candidatesBiased = boostSpecCandidates(finalCandidates, query);
-
-  // Weak-evidence fallback: if almost none look "specy", requery with expansion
-  const specish = candidatesBiased.filter(r => looksSpecy(r.content)).length;
-  if (candidatesBiased.length < 3 || specish < 2) {
-    const expandedQ = expandIfWeak(query);
-    const qe = await createEmbedding(expandedQ);
-    const { data: vec2 } = await supabase.rpc("match_chunks_improved", {
-      query_embedding: qe, 
-      top_k: 60, 
-      min_score: 0.3, 
-      manual: manual_id, 
-      tenant_id
-    });
-    const more = (vec2 || []).map(normalizeRow);
-    candidatesBiased = boostSpecCandidates([...candidatesBiased, ...more], expandedQ);
-  }
-
-  const strategy = candidatesBiased.length > 0 ? "vector" : "none";
-
-  // Cohere rerank
-  let finalResults: any[] = [];
-  if (candidatesBiased.length > 0) {
-    try {
-      const cohereApiKey = Deno.env.get("COHERE_API_KEY");
-      if (!cohereApiKey) {
-        console.warn("⚠️ COHERE_API_KEY not found, skipping rerank");
-        finalResults = candidatesBiased.slice(0, 10);
-      } else {
-        console.log("🔄 Reranking with Cohere...");
-        const truncatedDocs = candidatesBiased.map((c) => {
-          const s = typeof c.content === "string" ? c.content : JSON.stringify(c.content ?? "");
-          return s.length > 1500 ? s.slice(0, 1500) : s;
-        });
-
-        const cohereRes = await fetch("https://api.cohere.ai/v2/rerank", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${cohereApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "rerank-v3.5",
-            query: expanded ?? query,
-            documents: truncatedDocs,
-            top_n: Math.min(10, truncatedDocs.length),
-          }),
-        });
-
-        if (!cohereRes.ok) {
-          const errorText = await cohereRes.text();
-          console.error("❌ Cohere rerank failed:", cohereRes.status, errorText.slice(0, 500));
-          finalResults = candidates.slice(0, 10);
-        } else {
-          const rerank = await cohereRes.json();
-          finalResults = (rerank.results || [])
-            .filter((r: any) => Number.isInteger(r.index) && candidatesBiased[r.index])
-            .map((r: any) => ({
-              ...candidatesBiased[r.index],
-              rerank_score: typeof r.relevance_score === "number" ? r.relevance_score : undefined,
-              original_score: candidatesBiased[r.index].score,
-            }));
-
-          if (finalResults.length < 10) {
-            const seen = new Set(
-              finalResults.map((x) => x.id ?? `${x.page_start}:${x.page_end}:${(x.content || "").slice(0, 40)}`),
-            );
-            for (const c of candidatesBiased) {
-              const key = c.id ?? `${c.page_start}:${c.page_end}:${(c.content || "").slice(0, 40)}`;
-              if (!seen.has(key)) {
-                finalResults.push(c);
-                if (finalResults.length >= 10) break;
-              }
-            }
-          }
-          console.log(`✅ Reranked to top ${finalResults.length} results`);
-        }
-      }
-    } catch (error) {
-      console.error("❌ Rerank error:", error);
-      finalResults = candidatesBiased.slice(0, 10);
-    }
-  }
+  console.log(`📊 Fallback returned ${candidates.length} results`);
+  
+  return candidates.slice(0, 10);
 
   const searchTime = Date.now() - startTime;
   console.log(`⏱️ Search completed in ${searchTime}ms`);

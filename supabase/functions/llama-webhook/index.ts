@@ -174,10 +174,10 @@ function createHierarchicalChunks(content: string, manual_id: string, sourceFile
     // Add content to current chunk
     currentChunk += line + '\n';
     
-    // Create chunks based on content type and size
+    // OPTIMIZED: Smaller chunks (400-600 chars) with overlap for better precision
     const shouldChunk = 
-      currentChunk.length > 1500 || // Larger chunks for better context
-      (currentChunk.length > 800 && line === '') || // Natural breaks
+      currentChunk.length > 600 || // Smaller chunks for precision
+      (currentChunk.length > 400 && line === '') || // Natural breaks at paragraphs
       patterns.troubleshootingSection.test(line) || // Important sections
       patterns.partsList.test(line) ||
       patterns.procedure.test(line);
@@ -198,8 +198,13 @@ function createHierarchicalChunks(content: string, manual_id: string, sourceFile
       const hasStructure = chunkText.includes('\n') || chunkText.length > 200;
       const qualityScore = hasStructure ? 0.8 : 0.5;
       
+      // Include section heading in chunk for better context
+      const finalContent = currentSection && !chunkText.toLowerCase().includes(currentSection.toLowerCase())
+        ? `[${currentSection}]\n\n${chunkText}`
+        : chunkText;
+      
       chunks.push({
-        content: chunkText,
+        content: finalContent,
         manual_id,
         menu_path: currentSection || 'General',
         page_start: currentPage,
@@ -220,8 +225,15 @@ function createHierarchicalChunks(content: string, manual_id: string, sourceFile
       });
       chunkIndex++;
       
-      // Reset chunk without overlap to avoid duplication
-      currentChunk = '';
+      // OPTIMIZED: Keep 135 chars overlap for context continuity
+      const overlapSize = 135;
+      if (currentChunk.length > overlapSize) {
+        const lastSentence = currentChunk.lastIndexOf('. ', currentChunk.length - overlapSize);
+        const overlapStart = lastSentence > 0 ? lastSentence + 2 : Math.max(0, currentChunk.length - overlapSize);
+        currentChunk = currentChunk.substring(overlapStart);
+      } else {
+        currentChunk = '';
+      }
     }
   }
   

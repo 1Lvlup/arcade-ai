@@ -310,6 +310,22 @@ export function ManualImages({ manualId }: ManualImagesProps) {
       const zip = new JSZip();
       const imageFolder = zip.folder('manual-images');
 
+      // Create CSV manifest
+      const csvHeader = 'Filename,Page,Figure ID,Caption,OCR Text,Keywords\n';
+      const csvRows = figures.map(figure => {
+        const filename = `page-${figure.page_number || 'unknown'}_${figure.figure_id || figure.id}.png`;
+        const page = figure.page_number || 'unknown';
+        const figureId = figure.figure_id || figure.id;
+        const caption = (figure.caption_text || '').replace(/"/g, '""'); // Escape quotes
+        const ocr = (figure.ocr_text || '').replace(/"/g, '""');
+        const keywords = (figure.keywords || []).join('; ');
+        
+        return `"${filename}","${page}","${figureId}","${caption}","${ocr}","${keywords}"`;
+      }).join('\n');
+      
+      const csvContent = csvHeader + csvRows;
+      zip.file('manifest.csv', csvContent);
+
       // Download all images and add to zip
       for (const figure of figures) {
         try {
@@ -340,7 +356,7 @@ export function ManualImages({ manualId }: ManualImagesProps) {
 
       toast({
         title: 'Export complete',
-        description: `Downloaded ${figures.length} images as a zip file`,
+        description: `Downloaded ${figures.length} images with CSV manifest`,
       });
     } catch (error) {
       console.error('Error exporting images:', error);

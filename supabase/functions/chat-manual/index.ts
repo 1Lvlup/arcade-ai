@@ -307,9 +307,6 @@ async function fallbackVectorSearch(query: string, manual_id?: string, tenant_id
   return candidates.slice(0, 10);
 }
 
-  return { results: finalResults, strategy };
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // Text normalization helpers
 // ─────────────────────────────────────────────────────────────────────────

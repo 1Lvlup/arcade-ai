@@ -39,7 +39,13 @@ serve(async (req) => {
       .eq('manual_id', manual_id)
       .single();
 
-    // Get all figures without captions for this manual
+    // Get total figures count for this manual
+    const { count: totalFigures } = await supabase
+      .from('figures')
+      .select('*', { count: 'exact', head: true })
+      .eq('manual_id', manual_id);
+
+    // Get figures that still need captions
     const { data: figures, error: fetchError } = await supabase
       .from('figures')
       .select('id, storage_url, page_number, image_name')
@@ -49,21 +55,48 @@ serve(async (req) => {
 
     if (fetchError) throw fetchError;
 
+    // Get count of already captioned figures
+    const { count: captionedCount } = await supabase
+      .from('figures')
+      .select('*', { count: 'exact', head: true })
+      .eq('manual_id', manual_id)
+      .not('caption_text', 'is', null);
+
+    const alreadyCaptioned = captionedCount || 0;
+    const total = totalFigures || 0;
+
     if (!figures || figures.length === 0) {
+      // Mark as complete
+      await supabase
+        .from('processing_status')
+        .upsert({
+          manual_id,
+          job_id: `caption-${manual_id}-complete`,
+          status: 'completed',
+          stage: 'caption_complete',
+          current_task: `All ${total} figures captioned`,
+          total_figures: total,
+          figures_processed: total,
+          progress_percent: 100,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'manual_id'
+        });
+
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: 'All figures already have captions',
-          processed: 0,
-          total: 0
+          processed: total,
+          total: total
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`📊 Found ${figures.length} figures needing captions`);
+    console.log(`📊 Found ${figures.length} figures needing captions (${alreadyCaptioned}/${total} already done)`);
 
-    // Initialize or update processing status
+    // Update processing status to continue from where we left off
     await supabase
       .from('processing_status')
       .upsert({
@@ -71,10 +104,11 @@ serve(async (req) => {
         job_id: `caption-${manual_id}-${Date.now()}`,
         status: 'processing',
         stage: 'caption_generation',
-        current_task: 'Generating figure captions',
-        total_figures: figures.length,
-        figures_processed: 0,
-        progress_percent: 0
+        current_task: `Resuming: ${alreadyCaptioned}/${total} complete`,
+        total_figures: total,
+        figures_processed: alreadyCaptioned,
+        progress_percent: Math.round((alreadyCaptioned / total) * 100),
+        updated_at: new Date().toISOString()
       }, {
         onConflict: 'manual_id'
       });
@@ -82,7 +116,7 @@ serve(async (req) => {
     // Start background processing
     const processInBackground = async () => {
       const BATCH_SIZE = 5;
-      let processed = 0;
+      let batchProcessed = 0;
       let succeeded = 0;
       let failed = 0;
 
@@ -203,7 +237,7 @@ serve(async (req) => {
 
         // Count results
         batchResults.forEach(result => {
-          processed++;
+          batchProcessed++;
           if (result.status === 'fulfilled' && result.value.success) {
             succeeded++;
           } else {
@@ -211,34 +245,39 @@ serve(async (req) => {
           }
         });
 
+        // Calculate total progress including already captioned
+        const totalProcessed = alreadyCaptioned + succeeded;
+        const progressPercent = Math.round((totalProcessed / total) * 100);
+        
         // Update progress in database
-        const progressPercent = Math.round((processed / figures.length) * 100);
         await supabase
           .from('processing_status')
           .update({
-            figures_processed: processed,
+            figures_processed: totalProcessed,
             progress_percent: progressPercent,
+            current_task: `Processing: ${totalProcessed}/${total} complete`,
             updated_at: new Date().toISOString()
           })
           .eq('manual_id', manual_id);
 
-        console.log(`📊 Progress: ${processed}/${figures.length} (✅ ${succeeded} success, ❌ ${failed} failed)`);
+        console.log(`📊 Progress: ${totalProcessed}/${total} (this batch: ${batchProcessed}/${figures.length}, ✅ ${succeeded} success, ❌ ${failed} failed)`);
       }
 
       // Mark as complete
+      const finalProcessed = alreadyCaptioned + succeeded;
       await supabase
         .from('processing_status')
         .update({
           status: 'completed',
           stage: 'caption_complete',
-          figures_processed: processed,
+          figures_processed: finalProcessed,
           progress_percent: 100,
-          current_task: `Completed: ${succeeded} captions generated, ${failed} failed`,
+          current_task: `Completed: ${finalProcessed}/${total} figures captioned (${succeeded} in this run, ${failed} failed)`,
           updated_at: new Date().toISOString()
         })
         .eq('manual_id', manual_id);
 
-      console.log(`🎉 Caption processing complete: ${succeeded}/${figures.length} figures processed`);
+      console.log(`🎉 Caption processing complete: ${finalProcessed}/${total} total (${succeeded} in this run)`);
     };
 
     // Use waitUntil to process in background
@@ -248,8 +287,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Caption processing started in background',
-        total: figures.length,
+        message: `Caption processing started in background (${alreadyCaptioned}/${total} already complete)`,
+        total: total,
+        remaining: figures.length,
+        already_captioned: alreadyCaptioned,
         status: 'processing'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

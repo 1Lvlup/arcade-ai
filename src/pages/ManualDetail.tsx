@@ -66,6 +66,7 @@ export function ManualDetail() {
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [extractingOCR, setExtractingOCR] = useState(false);
   const [processingCaptions, setProcessingCaptions] = useState(false);
+  const [captionProgress, setCaptionProgress] = useState<{ current: number; total: number } | null>(null);
 
   useEffect(() => {
     if (manualId) {
@@ -235,10 +236,34 @@ export function ManualDetail() {
     if (!manualId) return;
     
     setProcessingCaptions(true);
+    
+    // Set initial progress
+    setCaptionProgress({
+      current: stats.figuresWithCaptions,
+      total: stats.figures
+    });
+
+    // Start polling for progress
+    const pollInterval = setInterval(async () => {
+      const { data: figuresData } = await supabase
+        .from('figures')
+        .select('id, caption_text', { count: 'exact' })
+        .eq('manual_id', manualId);
+
+      const figuresWithCaptions = figuresData?.filter(f => f.caption_text).length || 0;
+      
+      setCaptionProgress({
+        current: figuresWithCaptions,
+        total: stats.figures
+      });
+    }, 3000); // Poll every 3 seconds
+
     try {
       const { data, error } = await supabase.functions.invoke('process-figure-captions', {
         body: { manual_id: manualId }
       });
+
+      clearInterval(pollInterval);
 
       if (error) throw error;
 
@@ -249,6 +274,7 @@ export function ManualDetail() {
 
       fetchStats();
     } catch (error) {
+      clearInterval(pollInterval);
       console.error('Error processing captions:', error);
       toast({
         title: 'Caption Processing Failed',
@@ -257,6 +283,7 @@ export function ManualDetail() {
       });
     } finally {
       setProcessingCaptions(false);
+      setCaptionProgress(null);
     }
   };
 
@@ -418,6 +445,24 @@ export function ManualDetail() {
                 <div className="text-muted-foreground font-medium text-lg">Golden Questions</div>
               </div>
             </div>
+
+            {/* Caption Progress */}
+            {captionProgress && (
+              <div className="mb-4 p-4 bg-card border border-primary/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-foreground">
+                    Generating Captions: {captionProgress.current} / {captionProgress.total}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {Math.round((captionProgress.current / captionProgress.total) * 100)}%
+                  </span>
+                </div>
+                <Progress 
+                  value={(captionProgress.current / captionProgress.total) * 100} 
+                  className="h-2"
+                />
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mt-6">

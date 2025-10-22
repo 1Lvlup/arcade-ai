@@ -1185,15 +1185,15 @@ Start your caption with "[Page ${pageNum || 'Unknown'}]" followed by a detailed 
       .eq('job_id', jobId);
 
     console.log(`✅ LlamaCloud processing complete: ${processedCount} chunks, ${figuresProcessed} figures stored`);
-    console.log(`🔄 Triggering OCR as separate background process (doesn't affect upload progress)...`);
+    console.log(`🔄 Triggering caption+OCR generation as separate background process (doesn't affect upload progress)...`);
     
     // Trigger OCR processing in background as a separate task (doesn't affect main upload progress)
     if (figuresProcessed > 0) {
       EdgeRuntime.waitUntil((async () => {
         try {
-          console.log(`🤖 Invoking process-all-ocr for manual: ${document.manual_id}`);
+          console.log(`🤖 Invoking process-figure-captions for manual: ${document.manual_id}`);
           
-          const ocrResponse = await supabase.functions.invoke('process-all-ocr', {
+          const ocrResponse = await supabase.functions.invoke('process-figure-captions', {
             body: { manual_id: document.manual_id }
           });
           

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Calendar, Search, Activity, Database, Eye, Trash2, RefreshCw, ListOrdered } from 'lucide-react';
+import { FileText, Calendar, Search, Activity, Database, Eye, Trash2, RefreshCw, ListOrdered, Wand2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Manual {
@@ -30,6 +30,7 @@ export function ManualsList() {
   const [deletingManualId, setDeletingManualId] = useState<string | null>(null);
   const [retryingManualId, setRetryingManualId] = useState<string | null>(null);
   const [repagingManualId, setRepagingManualId] = useState<string | null>(null);
+  const [processingCaptionsManualId, setProcessingCaptionsManualId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -202,6 +203,35 @@ export function ManualsList() {
       });
     } finally {
       setRepagingManualId(null);
+    }
+  };
+
+  const processCaptions = async (manual: Manual) => {
+    setProcessingCaptionsManualId(manual.manual_id);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('process-figure-captions', {
+        body: { manual_id: manual.manual_id }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Caption & OCR processing started',
+        description: 'Processing captions and OCR for all images in background',
+      });
+      fetchManuals();
+    } catch (error) {
+      console.error('Error processing captions:', error);
+      toast({
+        title: 'Error processing captions',
+        description: 'Failed to start caption & OCR processing. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessingCaptionsManualId(null);
     }
   };
 
@@ -393,20 +423,37 @@ export function ManualsList() {
                       )}
                       
                       {status.status === 'processed' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={repagingManualId === manual.manual_id}
-                          onClick={() => repageManual(manual)}
-                          className="h-8 px-3"
-                        >
-                          {repagingManualId === manual.manual_id ? (
-                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary mr-1.5" />
-                          ) : (
-                            <ListOrdered className="h-3.5 w-3.5 mr-1.5" />
-                          )}
-                          Repage
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={repagingManualId === manual.manual_id}
+                            onClick={() => repageManual(manual)}
+                            className="h-8 px-3"
+                          >
+                            {repagingManualId === manual.manual_id ? (
+                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary mr-1.5" />
+                            ) : (
+                              <ListOrdered className="h-3.5 w-3.5 mr-1.5" />
+                            )}
+                            Repage
+                          </Button>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={processingCaptionsManualId === manual.manual_id}
+                            onClick={() => processCaptions(manual)}
+                            className="h-8 px-3"
+                          >
+                            {processingCaptionsManualId === manual.manual_id ? (
+                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary mr-1.5" />
+                            ) : (
+                              <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                            )}
+                            Caption & OCR
+                          </Button>
+                        </>
                       )}
                       
                       <AlertDialog>

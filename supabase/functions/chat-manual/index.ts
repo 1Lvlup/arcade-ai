@@ -239,7 +239,9 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
     if (searchResponse.error) {
       console.error("❌ Unified search error:", searchResponse.error);
       // Fallback to direct vector search
-      return await fallbackVectorSearch(hybridQuery, manual_id, tenant_id);
+      const fallbackResults = await fallbackVectorSearch(hybridQuery, manual_id, tenant_id);
+      console.log(`⏱️ Fallback search completed in ${Date.now() - startTime}ms`);
+      return { finalResults: fallbackResults, strategy: "fallback_vector" };
     }
 
     const { results = [] } = searchResponse.data || {};
@@ -258,16 +260,14 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
       return { ...r, content: t };
     }
 
-    const finalCandidates = results.map(normalizeRow);
-
-  // Apply spec bias
-  let candidatesBiased = boostSpecCandidates(finalCandidates, query);
-
-  // Weak-evidence fallback: if almost none look "specy", requery with expansion
-  const specish = candidatesBiased.filter(r => looksSpecy(r.content)).length;
-  if (candidatesBiased.length < 3 || specish < 2) {
-    const expandedQ = expandIfWeak(query);
-  return finalCandidates;
+    const finalResults = results.map(normalizeRow);
+    return { finalResults, strategy: "unified_vector_rerank" };
+  } catch (error) {
+    console.error("❌ Search error:", error);
+    const fallbackResults = await fallbackVectorSearch(hybridQuery, manual_id, tenant_id);
+    console.log(`⏱️ Error fallback completed in ${Date.now() - startTime}ms`);
+    return { finalResults: fallbackResults, strategy: "error_fallback" };
+  }
 }
 
 // Fallback to direct vector search if unified endpoint fails
@@ -305,9 +305,7 @@ async function fallbackVectorSearch(query: string, manual_id?: string, tenant_id
   console.log(`📊 Fallback returned ${candidates.length} results`);
   
   return candidates.slice(0, 10);
-
-  const searchTime = Date.now() - startTime;
-  console.log(`⏱️ Search completed in ${searchTime}ms`);
+}
 
   return { results: finalResults, strategy };
 }
@@ -664,8 +662,8 @@ async function runRagPipelineV3(
 ) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
-  const { results: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
-  console.log(`📊 Retrieved ${chunks.length} chunks after reranking`);
+  const { finalResults: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
+  console.log(`📊 Retrieved ${chunks.length} chunks (strategy: ${strategy})`);
 
   if (!chunks || chunks.length === 0) {
     const fallback = buildFallbackFor(query);

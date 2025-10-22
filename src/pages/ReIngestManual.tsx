@@ -7,45 +7,67 @@ import { Loader2 } from "lucide-react";
 import { SharedHeader } from "@/components/SharedHeader";
 
 const ReIngestManual = () => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [isProcessingChunks, setIsProcessingChunks] = useState(false);
+  const [isProcessingFigures, setIsProcessingFigures] = useState(false);
+  const [chunkResult, setChunkResult] = useState<any>(null);
+  const [figureResult, setFigureResult] = useState<any>(null);
   const { toast } = useToast();
 
   const MANUAL_ID = "down-the-clown-combined-10-21-25-current";
 
-  const handleReIngest = async () => {
-    setIsProcessing(true);
-    setResult(null);
+  const handleReIngestChunks = async () => {
+    setIsProcessingChunks(true);
+    setChunkResult(null);
 
     try {
-      // Step 1: Re-chunk
-      const { data: chunkData, error: chunkError } = await supabase.functions.invoke('reingest-manual', {
+      const { data, error } = await supabase.functions.invoke('reingest-manual', {
         body: { manual_id: MANUAL_ID, step: 'chunks' }
       });
 
-      if (chunkError) throw chunkError;
+      if (error) throw error;
 
-      // Step 2: Re-embed figures in background
-      const { data: figureData, error: figureError } = await supabase.functions.invoke('reingest-manual', {
-        body: { manual_id: MANUAL_ID, step: 'figures' }
-      });
-
-      if (figureError) throw figureError;
-
-      setResult({ ...chunkData, figures_started: figureData });
+      setChunkResult(data);
       toast({
-        title: "Re-ingestion Started",
-        description: `Created ${chunkData.chunks_created} chunks. Figure embedding running in background.`,
+        title: "Chunks Re-ingested",
+        description: `Created ${data.chunks_created} chunks with validated page numbers`,
       });
     } catch (error: any) {
-      console.error('Re-ingestion error:', error);
+      console.error('Chunks error:', error);
       toast({
-        title: "Re-ingestion Failed",
+        title: "Chunks Failed",
         description: error.message,
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(false);
+      setIsProcessingChunks(false);
+    }
+  };
+
+  const handleReIngestFigures = async () => {
+    setIsProcessingFigures(true);
+    setFigureResult(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('reingest-manual', {
+        body: { manual_id: MANUAL_ID, step: 'figures' }
+      });
+
+      if (error) throw error;
+
+      setFigureResult(data);
+      toast({
+        title: "Figures Re-embedding Started",
+        description: `Processing ${data.total_figures} figures in background`,
+      });
+    } catch (error: any) {
+      console.error('Figures error:', error);
+      toast({
+        title: "Figures Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingFigures(false);
     }
   };
 
@@ -61,37 +83,58 @@ const ReIngestManual = () => {
               This will re-process the manual with validated chunking and figure embeddings
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
               <p><strong>Manual ID:</strong> {MANUAL_ID}</p>
               <p><strong>What this does:</strong></p>
               <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Sets page_count from existing chunks</li>
-                <li>Re-chunks to 350-450 chars with validation</li>
-                <li>Generates new embeddings for all chunks</li>
-                <li>Re-embeds figures with ±2 page context</li>
-                <li>Backfills metadata (manufacturer, platform, etc.)</li>
+                <li><strong>Step 1 (Chunks):</strong> Re-chunks text to 350-450 chars with page validation</li>
+                <li><strong>Step 2 (Figures):</strong> Re-embeds all figures with ±2 page context</li>
               </ul>
             </div>
 
-            <Button
-              onClick={handleReIngest}
-              disabled={isProcessing}
-              className="w-full"
-              size="lg"
-            >
-              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isProcessing ? "Processing..." : "Start Re-Ingestion"}
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={handleReIngestChunks}
+                disabled={isProcessingChunks}
+                className="w-full"
+                size="lg"
+                variant="default"
+              >
+                {isProcessingChunks && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isProcessingChunks ? "Processing Chunks..." : "Step 1: Re-Ingest Chunks"}
+              </Button>
 
-            {result && (
+              <Button
+                onClick={handleReIngestFigures}
+                disabled={isProcessingFigures}
+                className="w-full"
+                size="lg"
+                variant="secondary"
+              >
+                {isProcessingFigures && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isProcessingFigures ? "Starting..." : "Step 2: Re-Embed Figures"}
+              </Button>
+            </div>
+
+            {chunkResult && (
               <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg space-y-2">
-                <p className="font-semibold text-green-900 dark:text-green-100">✅ Success!</p>
+                <p className="font-semibold text-green-900 dark:text-green-100">✅ Chunks Complete!</p>
                 <div className="text-sm text-green-800 dark:text-green-200 space-y-1">
-                  <p>Page Count: {result.page_count}</p>
-                  <p>Chunks Created: {result.chunks_created}</p>
-                  <p>Figures Re-embedded: {result.figures_reembedded}</p>
-                  <p>Metadata Backfilled: {result.metadata_backfilled?.total || 0} records</p>
+                  <p>Page Count: {chunkResult.page_count}</p>
+                  <p>Chunks Created: {chunkResult.chunks_created}</p>
+                  <p>Metadata Backfilled: {chunkResult.metadata_backfilled?.total || 0} records</p>
+                </div>
+              </div>
+            )}
+
+            {figureResult && (
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg space-y-2">
+                <p className="font-semibold text-blue-900 dark:text-blue-100">✅ Figures Started!</p>
+                <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                  <p>{figureResult.message}</p>
+                  <p>Total Figures: {figureResult.total_figures}</p>
+                  <p className="text-xs mt-2">Processing in background - check edge function logs for progress</p>
                 </div>
               </div>
             )}

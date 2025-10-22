@@ -88,7 +88,7 @@ serve(async (req) => {
       throw new Error('Manual not found');
     }
 
-    // Get figure details including any existing OCR text
+    // Get figure details
     const { data: figure, error: figureError } = await supabase
       .from('figures')
       .select('figure_id, page_number, ocr_text, keywords')
@@ -99,7 +99,41 @@ serve(async (req) => {
       throw new Error('Figure not found');
     }
 
+    // Get page context (section/headings) to improve caption quality
+    let pageContext = '';
+    if (figure.page_number) {
+      const { data: pageData } = await supabase
+        .from('manual_pages')
+        .select('section_path, headings')
+        .eq('manual_id', manual_id)
+        .eq('page', figure.page_number)
+        .single();
+
+      if (pageData) {
+        const section = pageData.section_path?.join(' > ') || '';
+        const headings = pageData.headings?.join(', ') || '';
+        pageContext = `Section: ${section || 'N/A'}\nPage headings: ${headings || 'N/A'}`;
+      }
+    }
+
+    // Get surrounding text chunks for additional context
+    let textContext = '';
+    if (figure.page_number) {
+      const { data: nearbyChunks } = await supabase
+        .from('chunks_text')
+        .select('content')
+        .eq('manual_id', manual_id)
+        .gte('page_start', Math.max(1, figure.page_number - 1))
+        .lte('page_end', figure.page_number + 1)
+        .limit(3);
+
+      if (nearbyChunks && nearbyChunks.length > 0) {
+        textContext = nearbyChunks.map(c => c.content).join('\n').substring(0, 500);
+      }
+    }
+
     console.log('👁️ Analyzing image with GPT-4 Vision for caption AND OCR...');
+    console.log('📍 Page context:', pageContext || 'None');
 
     // Use GPT-4.1 Vision to analyze the image and extract both caption and OCR
     const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
@@ -114,6 +148,10 @@ serve(async (req) => {
     
     console.log('🔑 Using OpenAI Project ID:', openaiProjectId ? 'SET' : 'NOT SET');
     
+    const contextPrompt = pageContext || textContext 
+      ? `\n\nContext from page ${figure.page_number}:\n${pageContext}\n\nNearby text: ${textContext.substring(0, 300)}...`
+      : '';
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -126,15 +164,16 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a technical documentation specialist analyzing arcade manual images. You will provide TWO things:
+            content: `You are a technical arcade technician analyzing service manual images. Generate captions that help techs quickly understand what they're looking at.
 
-1. CAPTION: A brief, accurate description (2-3 sentences max) of what the image shows
-2. OCR: Extract ALL visible text from the image exactly as it appears
+IMPORTANT RULES:
+1. CAPTION: Write a practical, tech-focused description (2-3 sentences). Use the manual context to understand what section this image supports. Be specific about what's shown and its purpose in servicing/troubleshooting.
+2. OCR: Extract ALL visible text exactly as it appears. If there's no readable text, return empty string for ocr_text.
 
-Return your response as JSON with this structure:
+Return JSON:
 {
-  "caption": "Brief description here...",
-  "ocr_text": "All extracted text here..."
+  "caption": "Practical description referencing the section/topic...",
+  "ocr_text": "All text here or empty string if no text"
 }`
           },
           {
@@ -142,11 +181,11 @@ Return your response as JSON with this structure:
             content: [
               {
                 type: 'text',
-                text: `Analyze this image from "${manual.title}" (page ${figure.page_number || 'Unknown'}).
+                text: `Analyze this image from "${manual.title}" (page ${figure.page_number || 'Unknown'}).${contextPrompt}
 
-Provide:
-1. A concise caption describing what's shown and its purpose
-2. All visible text extracted exactly as it appears (preserve line breaks with \\n)
+Generate:
+1. A caption that references the section topic and describes what's shown and why it matters for servicing
+2. OCR extraction of all visible text (return empty string if no text found)
 
 Return as JSON with "caption" and "ocr_text" fields.`
               },

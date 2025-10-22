@@ -33,6 +33,12 @@ async function createEmbedding(text: string): Promise<number[]> {
   return data.data[0].embedding;
 }
 
+// Check if query is asking for visual content
+function isVisualQuery(query: string): boolean {
+  const lowerQuery = query.toLowerCase();
+  return /\b(diagram|show|illustration|schematic|drawing|image|picture|figure)\b/.test(lowerQuery);
+}
+
 // Rerank results using Cohere
 async function rerankResults(query: string, documents: any[]): Promise<any[]> {
   if (!COHERE_API_KEY || documents.length === 0) {
@@ -67,11 +73,32 @@ async function rerankResults(query: string, documents: any[]): Promise<any[]> {
 
     const data = await response.json();
     
+    // Detect if this is a visual query
+    const isVisual = isVisualQuery(query);
+    const FIGURE_BOOST = 0.12; // 12% boost for figures on visual queries
+    
     // Map reranked indices back to original documents with scores
-    const reranked = data.results.map((result: any) => ({
-      ...documents[result.index],
-      rerank_score: result.relevance_score,
-    }));
+    let reranked = data.results.map((result: any) => {
+      const doc = documents[result.index];
+      let finalScore = result.relevance_score;
+      
+      // Apply figure boost for visual queries
+      if (isVisual && doc.content_type === 'figure') {
+        finalScore = finalScore * (1 + FIGURE_BOOST);
+        console.log(`🖼️ Boosted figure p${doc.page_start} score: ${result.relevance_score.toFixed(3)} → ${finalScore.toFixed(3)}`);
+      }
+      
+      return {
+        ...doc,
+        rerank_score: finalScore,
+      };
+    });
+    
+    // Re-sort after applying figure boost
+    if (isVisual) {
+      reranked = reranked.sort((a, b) => (b.rerank_score || 0) - (a.rerank_score || 0));
+      console.log(`🎯 Applied figure boost (query contains visual keywords)`);
+    }
 
     console.log(`✅ Reranked ${reranked.length} results (top score: ${reranked[0]?.rerank_score?.toFixed(3)})`);
     return reranked;

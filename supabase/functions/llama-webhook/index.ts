@@ -976,89 +976,111 @@ serve(async (req) => {
           return;
         }
         
-        // Process all figures - generate captions using LlamaCloud OCR as context
-        console.log(`🤖 Generating captions for ${insertedFigureIds.length} figures (using LlamaCloud OCR as context)`);
+        // Process all figures in parallel batches for speed and reliability
+        console.log(`🤖 Generating captions + embeddings for ${insertedFigureIds.length} figures in batches of 5`);
         
-        for (const figureInfo of insertedFigureIds) {
-          // Get the figure's OCR text from database (populated by LlamaCloud)
-          const { data: figureData } = await supabase
-            .from('figures')
-            .select('ocr_text')
-            .eq('id', figureInfo.id)
-            .single();
+        const BATCH_SIZE = 5; // Process 5 figures at a time
+        let processed = 0;
+        let succeeded = 0;
+        let failed = 0;
+        
+        for (let i = 0; i < insertedFigureIds.length; i += BATCH_SIZE) {
+          const batch = insertedFigureIds.slice(i, i + BATCH_SIZE);
           
-          const llamaOcr = figureData?.ocr_text || null;
-          try {
-            console.log(`🤖 Generating AI caption and OCR for: ${figureInfo.figureName}`);
-            
-            // Get public URL for the image
-            const { data: publicUrlData } = supabase.storage
-              .from('postparse')
-              .getPublicUrl(`${document.manual_id}/${figureInfo.figureName}`);
-            
-            const imagePublicUrl = publicUrlData.publicUrl;
-            
-            // Use LlamaCloud OCR from database (retrieved above)
-            const ocrText = llamaOcr;
-            
-            // Call GPT-4.1 Vision ONLY for caption generation (not OCR - LlamaCloud handles that)
-            const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openaiApiKey}`,
-                'OpenAI-Project': openaiProjectId,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'gpt-4.1',
-                max_completion_tokens: 500,
-                messages: [
-                  {
-                    role: 'system',
-                    content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Create detailed, accurate captions for images from technical manuals focusing on components, connections, troubleshooting value, and maintenance procedures.'
-                  },
-                  {
-                    role: 'user',
-                    content: [
-                      {
-                        type: 'text',
-                        text: `Analyze this image from an arcade game manual and provide a detailed technical caption.
+          // Process batch in parallel
+          const batchResults = await Promise.allSettled(batch.map(async (figureInfo) => {
+            try {
+              // Get the figure's OCR text from database (populated by LlamaCloud)
+              const { data: figureData } = await supabase
+                .from('figures')
+                .select('ocr_text, page_number')
+                .eq('id', figureInfo.id)
+                .single();
+              
+              const llamaOcr = figureData?.ocr_text || null;
+              const pageNum = figureData?.page_number || null;
+              
+              // Get public URL for the image
+              const { data: publicUrlData } = supabase.storage
+                .from('postparse')
+                .getPublicUrl(`${document.manual_id}/${figureInfo.figureName}`);
+              
+              const imagePublicUrl = publicUrlData.publicUrl;
+              
+              // Get context from ±2 pages for better captions
+              let textContext = '';
+              if (pageNum) {
+                const { data: nearbyChunks } = await supabase
+                  .from('chunks_text')
+                  .select('content, section_heading')
+                  .eq('manual_id', document.manual_id)
+                  .gte('page_start', Math.max(1, pageNum - 2))
+                  .lte('page_end', pageNum + 2)
+                  .order('page_start', { ascending: true })
+                  .limit(6);
+                
+                if (nearbyChunks?.length) {
+                  textContext = nearbyChunks
+                    .map(c => c.section_heading ? `[${c.section_heading}]\n${c.content}` : c.content)
+                    .join('\n\n')
+                    .substring(0, 600);
+                }
+              }
+              
+              // Call GPT-4.1 Vision for caption (with context)
+              const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${openaiApiKey}`,
+                  'OpenAI-Project': openaiProjectId,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'gpt-4.1',
+                  max_completion_tokens: 500,
+                  messages: [
+                    {
+                      role: 'system',
+                      content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Create detailed, accurate captions for images from technical manuals focusing on components, connections, troubleshooting value, and maintenance procedures.'
+                    },
+                    {
+                      role: 'user',
+                      content: [
+                        {
+                          type: 'text',
+                          text: `Analyze this image from an arcade game manual and provide a detailed technical caption.
 
 Manual: ${document.title}
 Figure ID: ${figureInfo.figureName}
-Page: ${figureInfo.page_number || 'Unknown'}
-${ocrText ? `\nOCR Text from image: ${ocrText.substring(0, 300)}` : ''}
+Page: ${pageNum || 'Unknown'}
+${llamaOcr ? `\nOCR Text: ${llamaOcr.substring(0, 300)}` : ''}
+${textContext ? `\nNearby content: ${textContext.substring(0, 300)}` : ''}
 
-Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed by a detailed technical description that helps technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
-                      },
-                      {
-                        type: 'image_url',
-                        image_url: {
-                          url: imagePublicUrl
+Start your caption with "[Page ${pageNum || 'Unknown'}]" followed by a detailed technical description that helps technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
+                        },
+                        {
+                          type: 'image_url',
+                          image_url: { url: imagePublicUrl }
                         }
-                      }
-                    ]
-                  }
-                ],
-              }),
-            });
-            
-            let caption = null;
-            
-            if (captionResponse.ok) {
-              const captionData = await captionResponse.json();
-              caption = captionData.choices[0].message.content;
-              console.log(`✅ Caption generated for ${figureInfo.figureName}`);
-            } else {
-              console.error(`❌ Caption API error for ${figureInfo.figureName}:`, captionResponse.status);
-            }
-            
-            // CRITICAL: Generate embedding from combined LlamaCloud OCR + GPT caption
-            let embedding = null;
-            const combinedText = `${caption || ''}\n\n${ocrText || ''}`.trim();
-            
-            if (combinedText.length > 0) {
-              try {
+                      ]
+                    }
+                  ],
+                }),
+              });
+              
+              let caption = null;
+              if (captionResponse.ok) {
+                const captionData = await captionResponse.json();
+                caption = captionData.choices[0].message.content;
+              } else {
+                throw new Error(`Caption API error: ${captionResponse.status}`);
+              }
+              
+              // CRITICAL: Generate embedding from caption + LlamaCloud OCR
+              let embedding = null;
+              const combinedText = `${caption || ''}\n\n${llamaOcr || ''}`.trim();
+              
+              if (combinedText.length > 0) {
                 const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
                   method: 'POST',
                   headers: {
@@ -1068,47 +1090,54 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
                   },
                   body: JSON.stringify({
                     model: 'text-embedding-3-small',
-                    input: combinedText.substring(0, 8000) // Limit to token constraints
+                    input: combinedText.substring(0, 8000)
                   })
                 });
                 
                 if (embeddingResponse.ok) {
                   const embeddingData = await embeddingResponse.json();
                   embedding = embeddingData.data[0].embedding;
-                  console.log(`  🔢 Generated embedding from caption + OCR for ${figureInfo.figureName}`);
                 } else {
-                  console.error(`  ⚠️ Embedding generation failed (${embeddingResponse.status})`);
+                  console.warn(`⚠️ Embedding failed for ${figureInfo.figureName}: ${embeddingResponse.status}`);
                 }
-              } catch (embError) {
-                console.error(`  ⚠️ Embedding error:`, embError);
               }
+              
+              // Update figure with caption AND embedding together
+              const updateData: any = {
+                caption_text: caption,
+                vision_text: caption,
+                embedding_text: embedding,
+                ocr_status: 'success',
+                ocr_updated_at: new Date().toISOString()
+              };
+              
+              await supabase
+                .from('figures')
+                .update(updateData)
+                .eq('id', figureInfo.id);
+              
+              return { success: true, figureName: figureInfo.figureName, hasEmbedding: !!embedding };
+              
+            } catch (error) {
+              console.error(`❌ Error processing ${figureInfo.figureName}:`, error);
+              return { success: false, figureName: figureInfo.figureName, error: error instanceof Error ? error.message : String(error) };
             }
-            
-            // Update figure with caption AND embedding together
-            const updateData: any = {
-              ocr_status: 'success',
-              ocr_updated_at: new Date().toISOString()
-            };
-            if (caption) {
-              updateData.caption_text = caption;
-              updateData.vision_text = caption;
+          }));
+          
+          // Count successes/failures
+          batchResults.forEach(result => {
+            processed++;
+            if (result.status === 'fulfilled' && result.value.success) {
+              succeeded++;
+            } else {
+              failed++;
             }
-            if (embedding) {
-              updateData.embedding_text = embedding; // CRITICAL for semantic search
-            }
-            
-            await supabase
-              .from('figures')
-              .update(updateData)
-              .eq('id', figureInfo.id);
-            
-            console.log(`✅ Updated ${figureInfo.figureName} with caption: ${!!caption}, embedding: ${!!embedding} (OCR from LlamaCloud)`);
-            
-          } catch (captionError) {
-            console.error(`❌ Error processing ${figureInfo.figureName}:`, captionError);
-          }
+          });
+          
+          console.log(`📊 Progress: ${processed}/${insertedFigureIds.length} (✅ ${succeeded} success, ❌ ${failed} failed)`);
         }
-        console.log(`🎉 Background caption and embedding processing complete for ${insertedFigureIds.length} images`);
+        
+        console.log(`🎉 Background processing complete: ${succeeded}/${insertedFigureIds.length} figures with captions+embeddings, ${failed} failed`);
       })());
     }
 

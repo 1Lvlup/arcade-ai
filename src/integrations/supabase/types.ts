@@ -1024,6 +1024,84 @@ export type Database = {
           },
         ]
       }
+      query_feedback: {
+        Row: {
+          actual_behavior: string | null
+          created_at: string
+          description: string
+          expected_behavior: string | null
+          fec_tenant_id: string
+          id: string
+          issue_type: string
+          manual_id: string | null
+          query_log_id: string | null
+          query_text: string | null
+          reported_by: string | null
+          reported_pages: string[] | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_behavior?: string | null
+          created_at?: string
+          description: string
+          expected_behavior?: string | null
+          fec_tenant_id: string
+          id?: string
+          issue_type: string
+          manual_id?: string | null
+          query_log_id?: string | null
+          query_text?: string | null
+          reported_by?: string | null
+          reported_pages?: string[] | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_behavior?: string | null
+          created_at?: string
+          description?: string
+          expected_behavior?: string | null
+          fec_tenant_id?: string
+          id?: string
+          issue_type?: string
+          manual_id?: string | null
+          query_log_id?: string | null
+          query_text?: string | null
+          reported_by?: string | null
+          reported_pages?: string[] | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "query_feedback_fec_tenant_id_fkey"
+            columns: ["fec_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "fec_tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "query_feedback_query_log_id_fkey"
+            columns: ["query_log_id"]
+            isOneToOne: false
+            referencedRelation: "query_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       query_logs: {
         Row: {
           admin_user: string | null

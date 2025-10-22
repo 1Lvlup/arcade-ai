@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ManualSelector } from '@/components/ManualSelector';
+import { DetailedFeedbackDialog } from '@/components/DetailedFeedbackDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import {
@@ -27,7 +28,8 @@ import {
   Plus,
   Trash2,
   MessageSquarePlus,
-  LogIn
+  LogIn,
+  Flag
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -109,6 +111,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showLimitReached, setShowLimitReached] = useState(false);
   const [guestMessageCount, setGuestMessageCount] = useState(0);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [selectedMessageForFeedback, setSelectedMessageForFeedback] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -1060,35 +1064,51 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                   </div>
                 )}
 
-                {/* Thumbs Up/Down for Bot Messages */}
+                {/* Thumbs Up/Down + Report Issue for Bot Messages */}
                 {message.type === 'bot' && (
-                  <div className="mt-4 pt-4 border-t border-primary/10 flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground mr-2">Was this helpful?</span>
+                  <div className="mt-4 pt-4 border-t border-primary/10 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground mr-2">Was this helpful?</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFeedback(message.id, 'thumbs_up')}
+                        disabled={message.feedback !== null}
+                        className={`h-9 px-4 ${
+                          message.feedback === 'thumbs_up' 
+                            ? 'bg-green-500/20 text-green-500 border border-green-500/30' 
+                            : 'hover:bg-green-500/10 hover:text-green-500'
+                        }`}
+                      >
+                        <ThumbsUp className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFeedback(message.id, 'thumbs_down')}
+                        disabled={message.feedback !== null}
+                        className={`h-9 px-4 ${
+                          message.feedback === 'thumbs_down' 
+                            ? 'bg-red-500/20 text-red-500 border border-red-500/30' 
+                            : 'hover:bg-red-500/10 hover:text-red-500'
+                        }`}
+                      >
+                        <ThumbsDown className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    
+                    {/* Report Issue Button */}
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => handleFeedback(message.id, 'thumbs_up')}
-                      disabled={message.feedback !== null}
-                      className={`h-9 px-4 ${
-                        message.feedback === 'thumbs_up' 
-                          ? 'bg-green-500/20 text-green-500 border border-green-500/30' 
-                          : 'hover:bg-green-500/10 hover:text-green-500'
-                      }`}
+                      onClick={() => {
+                        setSelectedMessageForFeedback(message);
+                        setFeedbackDialogOpen(true);
+                      }}
+                      className="h-8 text-xs hover:bg-orange-500/10 hover:text-orange-500 hover:border-orange-500/30"
                     >
-                      <ThumbsUp className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleFeedback(message.id, 'thumbs_down')}
-                      disabled={message.feedback !== null}
-                      className={`h-9 px-4 ${
-                        message.feedback === 'thumbs_down' 
-                          ? 'bg-red-500/20 text-red-500 border border-red-500/30' 
-                          : 'hover:bg-red-500/10 hover:text-red-500'
-                      }`}
-                    >
-                      <ThumbsDown className="h-5 w-5" />
+                      <Flag className="h-3 w-3 mr-1" />
+                      Report an Issue
                     </Button>
                   </div>
                 )}
@@ -1191,6 +1211,15 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detailed Feedback Dialog */}
+      <DetailedFeedbackDialog
+        open={feedbackDialogOpen}
+        onOpenChange={setFeedbackDialogOpen}
+        queryLogId={selectedMessageForFeedback?.query_log_id}
+        manualId={selectedMessageForFeedback?.manual_id}
+        queryText={messages.find(m => m.type === 'user' && messages.indexOf(m) === messages.indexOf(selectedMessageForFeedback!) - 1)?.content as string}
+      />
     </Card>
   );
 }

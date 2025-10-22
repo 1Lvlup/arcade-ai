@@ -909,18 +909,43 @@ serve(async (req) => {
       // Create a new stream that sends metadata first, then the answer
       const streamWithMetadata = new ReadableStream({
         async start(controller) {
-          // Build citations and retrieve images based on chunks used
+          // PHASE 2.1: Enhanced logging and contamination detection
           const chunkIds = (chunks || []).map(c => c.id).filter(Boolean);
           let thumbnails: any[] = [];
           
-          if (chunkIds.length > 0) {
+          // Pre-validation: check for cross-manual contamination
+          if (manual_id && chunks && chunks.length > 0) {
+            const chunksByManual = new Map<string, number>();
+            for (const chunk of chunks) {
+              const mid = chunk.manual_id || 'unknown';
+              chunksByManual.set(mid, (chunksByManual.get(mid) || 0) + 1);
+            }
+            
+            const wrongManualChunks = chunks.filter(c => c.manual_id !== manual_id);
+            if (wrongManualChunks.length > 0) {
+              const manualBreakdown = Array.from(chunksByManual.entries())
+                .map(([mid, count]) => `${mid}: ${count}`)
+                .join(', ');
+              console.error(`❌ PRE-VALIDATION: Cross-manual contamination detected!`);
+              console.error(`   Expected: ${manual_id}`);
+              console.error(`   Found: ${manualBreakdown}`);
+              console.error(`   Wrong chunks: ${wrongManualChunks.length}/${chunks.length}`);
+            } else {
+              console.log(`✅ PRE-VALIDATION: All ${chunks.length} chunks from correct manual: ${manual_id}`);
+            }
+          }
+          
+          if (chunkIds.length > 0 && manual_id) {
             try {
               const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, manual_id);
               thumbnails = imgs || [];
-              console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${manual_id || 'all'}`);
+              console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${manual_id}`);
             } catch (e) {
-              console.error('Error fetching images:', e);
+              console.error('❌ Error fetching images:', e);
+              // Don't fail the entire request, just log and continue without images
             }
+          } else if (!manual_id) {
+            console.warn('⚠️ No manual_id specified, skipping image retrieval');
           }
           
           // Get manual title if manual_id is specified

@@ -824,6 +824,12 @@ serve(async (req) => {
             return null;
           }
           
+          // Extract OCR text from LlamaCloud image metadata (if return_image_ocr was enabled)
+          const extractedOcrText = (imageItem && typeof imageItem === 'object' && imageItem.ocr_text) ? imageItem.ocr_text : null;
+          if (extractedOcrText) {
+            console.log(`  📄 LlamaCloud OCR found: ${extractedOcrText.substring(0, 100)}...`);
+          }
+          
           // Extract page number and metadata from LlamaCloud image naming
           // LlamaCloud formats: img_p{page}_{index}.png (e.g., img_p0_1.png, img_p12_3.png)
           let pageNumber: number | null = null;
@@ -918,9 +924,9 @@ serve(async (req) => {
             llama_asset_name: imageName,
             fec_tenant_id: document.fec_tenant_id,
             raw_image_metadata: imageItem && typeof imageItem === 'object' ? imageItem : { name: imageName },
-            ocr_text: null,
-            ocr_confidence: null,
-            ocr_status: 'pending'
+            ocr_text: extractedOcrText, // Use LlamaCloud OCR if available
+            ocr_confidence: extractedOcrText ? 0.95 : null, // LlamaCloud OCR is high quality
+            ocr_status: extractedOcrText ? 'completed' : 'pending' // Mark as completed if we have OCR
           };
           
           console.log(`  💾 Inserting figure record...`);
@@ -970,12 +976,18 @@ serve(async (req) => {
           return;
         }
         
-        // Only process figures that still have ocr_status = 'pending' (no LlamaCloud OCR)
-        const figuresToProcess = insertedFigureIds.filter(f => !f.hasOcr);
+        // Process all figures - generate captions using LlamaCloud OCR as context
+        console.log(`🤖 Generating captions for ${insertedFigureIds.length} figures (using LlamaCloud OCR as context)`);
         
-        console.log(`🤖 Processing ${figuresToProcess.length} figures without LlamaCloud OCR`);
-        
-        for (const figureInfo of figuresToProcess) {
+        for (const figureInfo of insertedFigureIds) {
+          // Get the figure's OCR text from database (populated by LlamaCloud)
+          const { data: figureData } = await supabase
+            .from('figures')
+            .select('ocr_text')
+            .eq('id', figureInfo.id)
+            .single();
+          
+          const llamaOcr = figureData?.ocr_text || null;
           try {
             console.log(`🤖 Generating AI caption and OCR for: ${figureInfo.figureName}`);
             
@@ -986,7 +998,10 @@ serve(async (req) => {
             
             const imagePublicUrl = publicUrlData.publicUrl;
             
-            // Call GPT-4.1 Vision for caption generation
+            // Use LlamaCloud OCR from database (retrieved above)
+            const ocrText = llamaOcr;
+            
+            // Call GPT-4.1 Vision ONLY for caption generation (not OCR - LlamaCloud handles that)
             const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -1012,6 +1027,7 @@ serve(async (req) => {
 Manual: ${document.title}
 Figure ID: ${figureInfo.figureName}
 Page: ${figureInfo.page_number || 'Unknown'}
+${ocrText ? `\nOCR Text from image: ${ocrText.substring(0, 300)}` : ''}
 
 Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed by a detailed technical description that helps technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
                       },
@@ -1027,58 +1043,14 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
               }),
             });
             
-            // Call GPT-4.1 Vision for OCR text extraction
-            const ocrResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openaiApiKey}`,
-                'OpenAI-Project': openaiProjectId,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'gpt-4.1',
-                max_completion_tokens: 1000,
-                messages: [
-                  {
-                    role: 'system',
-                    content: 'You are an OCR specialist. Extract ALL visible text from images with 100% accuracy. Preserve the exact text, formatting, labels, part numbers, model numbers, voltage ratings, warnings, and any other written content. Return ONLY the extracted text without any commentary or explanation.'
-                  },
-                  {
-                    role: 'user',
-                    content: [
-                      {
-                        type: 'text',
-                        text: 'Extract all visible text from this image. Include labels, part numbers, specifications, warnings, and any other text. Preserve the original formatting and organization as much as possible.'
-                      },
-                      {
-                        type: 'image_url',
-                        image_url: {
-                          url: imagePublicUrl
-                        }
-                      }
-                    ]
-                  }
-                ],
-              }),
-            });
-            
             let caption = null;
-            let ocrText = null;
             
             if (captionResponse.ok) {
               const captionData = await captionResponse.json();
               caption = captionData.choices[0].message.content;
-              console.log(`✅ Caption generated for ${figureInfo.figureName}`);
+              console.log(`✅ Caption generated for ${figureInfo.figureName}${ocrText ? ' (used LlamaCloud OCR)' : ''}`);
             } else {
               console.error(`❌ Caption API error for ${figureInfo.figureName}:`, captionResponse.status);
-            }
-            
-            if (ocrResponse.ok) {
-              const ocrData = await ocrResponse.json();
-              ocrText = ocrData.choices[0].message.content;
-              console.log(`✅ OCR text extracted for ${figureInfo.figureName}`);
-            } else {
-              console.error(`❌ OCR API error for ${figureInfo.figureName}:`, ocrResponse.status);
             }
             
             // Generate embedding from combined caption + OCR text for semantic search

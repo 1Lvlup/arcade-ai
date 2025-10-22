@@ -34,8 +34,8 @@ serve(async (req) => {
 
     // Get manual details for context
     const { data: manual } = await supabase
-      .from('manual_documents')
-      .select('title, description')
+      .from('documents')
+      .select('title')
       .eq('manual_id', manual_id)
       .single();
 
@@ -63,85 +63,47 @@ serve(async (req) => {
 
     console.log(`📊 Found ${figures.length} figures needing captions`);
 
-    const BATCH_SIZE = 5;
-    let processed = 0;
-    let succeeded = 0;
-    let failed = 0;
+    // Initialize or update processing status
+    await supabase
+      .from('processing_status')
+      .upsert({
+        manual_id,
+        job_id: `caption-${manual_id}-${Date.now()}`,
+        status: 'processing',
+        stage: 'caption_generation',
+        current_task: 'Generating figure captions',
+        total_figures: figures.length,
+        figures_processed: 0,
+        progress_percent: 0
+      }, {
+        onConflict: 'manual_id'
+      });
 
-    // Process in batches
-    for (let i = 0; i < figures.length; i += BATCH_SIZE) {
-      const batch = figures.slice(i, i + BATCH_SIZE);
+    // Start background processing
+    const processInBackground = async () => {
+      const BATCH_SIZE = 5;
+      let processed = 0;
+      let succeeded = 0;
+      let failed = 0;
 
-      const batchResults = await Promise.allSettled(batch.map(async (figure) => {
-        try {
-          // Validate storage URL exists
-          if (!figure.storage_url || figure.storage_url.trim() === '') {
-            console.error(`❌ Figure ${figure.id} has no storage_url, skipping`);
-            return { 
-              success: false, 
-              image_name: figure.image_name,
-              error: 'No storage URL'
-            };
-          }
+      // Process in batches
+      for (let i = 0; i < figures.length; i += BATCH_SIZE) {
+        const batch = figures.slice(i, i + BATCH_SIZE);
 
-          // Generate caption using GPT-4o Vision
-          const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openaiApiKey}`,
-              'OpenAI-Project': openaiProjectId,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o',
-              max_tokens: 500,
-              messages: [
-                {
-                  role: 'system',
-                  content: `You are analyzing technical manual images for "${manual?.title || 'a technical manual'}". Generate detailed, technical captions that describe what the image shows, including any visible text, diagrams, parts, specifications, or instructions.`
-                },
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: 'Generate a detailed caption for this technical manual image. Describe what is shown, any visible text, diagrams, parts, or specifications.'
-                    },
-                    {
-                      type: 'image_url',
-                      image_url: { url: figure.storage_url }
-                    }
-                  ]
-                }
-              ],
-            }),
-          });
-
-          if (!captionResponse.ok) {
-            const errorText = await captionResponse.text();
-            console.error(`Caption API error for figure ${figure.id}: ${captionResponse.status} - ${errorText}`);
-            
-            // If it's an image download error, skip this image and continue
-            if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
-              console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
+        const batchResults = await Promise.allSettled(batch.map(async (figure) => {
+          try {
+            // Validate storage URL exists
+            if (!figure.storage_url || figure.storage_url.trim() === '') {
+              console.error(`❌ Figure ${figure.id} has no storage_url, skipping`);
               return { 
                 success: false, 
                 image_name: figure.image_name,
-                error: 'Image not accessible'
+                error: 'No storage URL'
               };
             }
-            
-            throw new Error(`Caption API error: ${captionResponse.status} - ${errorText.substring(0, 200)}`);
-          }
 
-          const captionData = await captionResponse.json();
-          const captionText = captionData.choices[0].message.content;
-
-          // Generate embedding for the caption
-          let embedding = null;
-
-          if (captionText.length > 0) {
-            const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+            // Generate caption using GPT-4o Vision
+            const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${openaiApiKey}`,
@@ -149,61 +111,146 @@ serve(async (req) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                model: 'text-embedding-3-small',
-                input: captionText.substring(0, 8000)
-              })
+                model: 'gpt-4o',
+                max_tokens: 500,
+                messages: [
+                  {
+                    role: 'system',
+                    content: `You are analyzing technical manual images for "${manual?.title || 'a technical manual'}". Generate detailed, technical captions that describe what the image shows, including any visible text, diagrams, parts, specifications, or instructions.`
+                  },
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: 'Generate a detailed caption for this technical manual image. Describe what is shown, any visible text, diagrams, parts, or specifications.'
+                      },
+                      {
+                        type: 'image_url',
+                        image_url: { url: figure.storage_url }
+                      }
+                    ]
+                  }
+                ],
+              }),
             });
 
-            if (embeddingResponse.ok) {
-              const embeddingData = await embeddingResponse.json();
-              embedding = embeddingData.data[0].embedding;
+            if (!captionResponse.ok) {
+              const errorText = await captionResponse.text();
+              console.error(`Caption API error for figure ${figure.id}: ${captionResponse.status} - ${errorText}`);
+              
+              // If it's an image download error, skip this image and continue
+              if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
+                console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
+                return { 
+                  success: false, 
+                  image_name: figure.image_name,
+                  error: 'Image not accessible'
+                };
+              }
+              
+              throw new Error(`Caption API error: ${captionResponse.status} - ${errorText.substring(0, 200)}`);
             }
+
+            const captionData = await captionResponse.json();
+            const captionText = captionData.choices[0].message.content;
+
+            // Generate embedding for the caption
+            let embedding = null;
+
+            if (captionText.length > 0) {
+              const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${openaiApiKey}`,
+                  'OpenAI-Project': openaiProjectId,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'text-embedding-3-small',
+                  input: captionText.substring(0, 8000)
+                })
+              });
+
+              if (embeddingResponse.ok) {
+                const embeddingData = await embeddingResponse.json();
+                embedding = embeddingData.data[0].embedding;
+              }
+            }
+
+            // Update figure with caption and embedding
+            const { error: updateError } = await supabase
+              .from('figures')
+              .update({
+                caption_text: captionText,
+                embedding_text: embedding
+              })
+              .eq('id', figure.id);
+
+            if (updateError) throw updateError;
+
+            return { success: true, image_name: figure.image_name };
+
+          } catch (error) {
+            console.error(`❌ Error processing figure ${figure.id}:`, error);
+            return { 
+              success: false, 
+              image_name: figure.image_name,
+              error: error instanceof Error ? error.message : String(error)
+            };
           }
+        }));
 
-          // Update figure with caption and embedding
-          const { error: updateError } = await supabase
-            .from('figures')
-            .update({
-              caption_text: captionText,
-              embedding_text: embedding
-            })
-            .eq('id', figure.id);
+        // Count results
+        batchResults.forEach(result => {
+          processed++;
+          if (result.status === 'fulfilled' && result.value.success) {
+            succeeded++;
+          } else {
+            failed++;
+          }
+        });
 
-          if (updateError) throw updateError;
+        // Update progress in database
+        const progressPercent = Math.round((processed / figures.length) * 100);
+        await supabase
+          .from('processing_status')
+          .update({
+            figures_processed: processed,
+            progress_percent: progressPercent,
+            updated_at: new Date().toISOString()
+          })
+          .eq('manual_id', manual_id);
 
-          return { success: true, image_name: figure.image_name };
+        console.log(`📊 Progress: ${processed}/${figures.length} (✅ ${succeeded} success, ❌ ${failed} failed)`);
+      }
 
-        } catch (error) {
-          console.error(`❌ Error processing figure ${figure.id}:`, error);
-          return { 
-            success: false, 
-            image_name: figure.image_name,
-            error: error instanceof Error ? error.message : String(error)
-          };
-        }
-      }));
+      // Mark as complete
+      await supabase
+        .from('processing_status')
+        .update({
+          status: 'completed',
+          stage: 'caption_complete',
+          figures_processed: processed,
+          progress_percent: 100,
+          current_task: `Completed: ${succeeded} captions generated, ${failed} failed`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('manual_id', manual_id);
 
-      // Count results
-      batchResults.forEach(result => {
-        processed++;
-        if (result.status === 'fulfilled' && result.value.success) {
-          succeeded++;
-        } else {
-          failed++;
-        }
-      });
+      console.log(`🎉 Caption processing complete: ${succeeded}/${figures.length} figures processed`);
+    };
 
-      console.log(`📊 Progress: ${processed}/${figures.length} (✅ ${succeeded} success, ❌ ${failed} failed)`);
-    }
+    // Use waitUntil to process in background
+    EdgeRuntime.waitUntil(processInBackground());
 
-    console.log(`🎉 Caption processing complete: ${succeeded}/${figures.length} figures processed`);
-
+    // Return immediately
     return new Response(
       JSON.stringify({
         success: true,
-        processed: succeeded,
-        failed: failed,
-        total: figures.length
+        message: 'Caption processing started in background',
+        total: figures.length,
+        status: 'processing'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

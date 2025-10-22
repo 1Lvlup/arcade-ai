@@ -975,6 +975,21 @@ serve(async (req) => {
             }
           }
           
+          // Get manual title if manual_id is specified
+          let manualTitle = null;
+          if (manual_id) {
+            try {
+              const { data: manualData } = await supabase
+                .from('manual_metadata')
+                .select('canonical_title')
+                .eq('manual_id', manual_id)
+                .single();
+              manualTitle = manualData?.canonical_title || null;
+            } catch (e) {
+              console.error('Error fetching manual title:', e);
+            }
+          }
+          
           // Send metadata first (including query_log_id for feedback and thumbnails)
           const metadata = {
             type: 'metadata',
@@ -985,7 +1000,9 @@ serve(async (req) => {
               })) || [],
               strategy,
               query_log_id: queryLogId,
-              thumbnails
+              thumbnails,
+              manual_id: manual_id || null,
+              manual_title: manualTitle
             }
           };
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));

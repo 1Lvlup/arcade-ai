@@ -64,6 +64,8 @@ interface ChatMessage {
     url: string;
     title: string;
   }>;
+  manual_id?: string;
+  manual_title?: string;
   pastMatches?: Array<{
     conversation_id: string;
     title: string;
@@ -480,14 +482,17 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 ));
               } else if (parsed.type === 'metadata') {
                 console.log('📊 Received metadata:', parsed.data);
-                // Store thumbnails from metadata
-                if (parsed.data?.thumbnails) {
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === botMessageId 
-                      ? { ...msg, thumbnails: parsed.data.thumbnails }
-                      : msg
-                  ));
-                }
+                // Store metadata including thumbnails and manual_id
+                setMessages(prev => prev.map(msg => 
+                  msg.id === botMessageId 
+                    ? { 
+                        ...msg, 
+                        thumbnails: parsed.data?.thumbnails,
+                        manual_id: parsed.data?.manual_id,
+                        manual_title: parsed.data?.manual_title
+                      }
+                    : msg
+                ));
               }
             } catch (e) {
               console.error('Failed to parse SSE data:', e);
@@ -1016,6 +1021,16 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 ) : (
                   <div className="text-base whitespace-pre-wrap leading-relaxed">
                     {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
+                  </div>
+                )}
+
+                {/* Manual Source Info */}
+                {message.type === 'bot' && message.manual_id && (
+                  <div className="mt-4 pt-4 border-t border-primary/10">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <FileText className="h-4 w-4" />
+                      <span>Source: {message.manual_title || message.manual_id}</span>
+                    </div>
                   </div>
                 )}
 

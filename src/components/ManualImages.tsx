@@ -8,7 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Image, Eye, Edit, Save, X, RefreshCw, Sparkles, Wand2, Trash2 } from 'lucide-react';
+import { Image, Eye, Edit, Save, X, RefreshCw, Sparkles, Wand2, Trash2, Download } from 'lucide-react';
+import JSZip from 'jszip';
 
 interface Figure {
   id: string;
@@ -290,6 +291,67 @@ export function ManualImages({ manualId }: ManualImagesProps) {
     }
   };
 
+  const exportAllImages = async () => {
+    if (figures.length === 0) {
+      toast({
+        title: 'No images to export',
+        description: 'This manual has no images',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Preparing export',
+      description: `Downloading ${figures.length} images...`,
+    });
+
+    try {
+      const zip = new JSZip();
+      const imageFolder = zip.folder('manual-images');
+
+      // Download all images and add to zip
+      for (const figure of figures) {
+        try {
+          const imageUrl = `${supabase.storage.from('postparse').getPublicUrl(figure.storage_path).data.publicUrl}`;
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          
+          // Create filename from page number and figure_id
+          const filename = `page-${figure.page_number || 'unknown'}_${figure.figure_id || figure.id}.png`;
+          imageFolder?.file(filename, blob);
+        } catch (error) {
+          console.error(`Failed to download image ${figure.id}:`, error);
+        }
+      }
+
+      // Generate zip file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Download zip file
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${manualId}-images.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Export complete',
+        description: `Downloaded ${figures.length} images as a zip file`,
+      });
+    } catch (error) {
+      console.error('Error exporting images:', error);
+      toast({
+        title: 'Export failed',
+        description: 'Failed to create zip file. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card className="border-border bg-card">
@@ -339,6 +401,16 @@ export function ManualImages({ manualId }: ManualImagesProps) {
                 </Button>
               </>
             )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={exportAllImages}
+              className="flex items-center gap-2"
+              disabled={figures.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export All ({figures.length})
+            </Button>
             <Button 
               variant="outline" 
               size="sm"

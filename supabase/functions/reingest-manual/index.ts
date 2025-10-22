@@ -174,9 +174,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // STEP 2: Re-embed figures (call separately)
+    // STEP 2: Re-embed figures (runs in background)
     if (step === 'figures') {
-      console.log(`🖼️ Step 2: Re-embedding figures for manual: ${manual_id}`);
+      console.log(`🖼️ Starting background figure re-embedding for: ${manual_id}`);
 
       const { data: metadata } = await supabase
         .from('manual_metadata')
@@ -186,91 +186,96 @@ Deno.serve(async (req) => {
 
       const pageCount = metadata?.page_count || 48;
 
-      const { data: figures } = await supabase
-        .from('figures')
-        .select('id, manual_id, page_number, ocr_text, caption_text')
-        .eq('manual_id', manual_id)
-        .not('page_number', 'is', null)
-        .limit(50); // Process in batches of 50
+      // Start background task
+      const backgroundTask = async () => {
+        const { data: figures } = await supabase
+          .from('figures')
+          .select('id, manual_id, page_number, ocr_text, caption_text')
+          .eq('manual_id', manual_id)
+          .not('page_number', 'is', null);
 
-      if (!figures || figures.length === 0) {
-        return new Response(
-          JSON.stringify({ success: true, step: 'figures', figures_processed: 0 }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      let processed = 0;
-      
-      for (const figure of figures) {
-        if (figure.page_number > pageCount) {
-          console.warn(`⚠️ Skipping figure on invalid page ${figure.page_number}`);
-          continue;
+        if (!figures || figures.length === 0) {
+          console.log('No figures to process');
+          return;
         }
 
-        const { data: contextChunks } = await supabase
-          .from('chunks_text')
-          .select('content, section_heading')
-          .eq('manual_id', manual_id)
-          .gte('page_start', Math.max(1, figure.page_number - 2))
-          .lte('page_end', Math.min(pageCount, figure.page_number + 2))
-          .limit(5);
-
-        const contextText = contextChunks?.map(c => c.section_heading || c.content.slice(0, 100)).join(' ') || '';
-        const embeddingText = `${figure.caption_text || ''} ${figure.ocr_text || ''} ${contextText}`.trim();
-
-        if (embeddingText.length < 10) continue;
-
-        try {
-          const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openaiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              input: embeddingText.slice(0, 8000),
-              model: 'text-embedding-3-small',
-            }),
-          });
-
-          if (embeddingResponse.ok) {
-            const embeddingData = await embeddingResponse.json();
-            const embedding = embeddingData.data[0].embedding;
-
-            await supabase
-              .from('figures')
-              .update({ embedding_text: `[${embedding.join(',')}]` })
-              .eq('id', figure.id);
-
-            processed++;
+        console.log(`Processing ${figures.length} figures in background`);
+        let processed = 0;
+        
+        for (const figure of figures) {
+          if (figure.page_number > pageCount) {
+            continue;
           }
 
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-          console.error(`Error embedding figure ${figure.id}:`, error);
-        }
-      }
+          const { data: contextChunks } = await supabase
+            .from('chunks_text')
+            .select('content, section_heading')
+            .eq('manual_id', manual_id)
+            .gte('page_start', Math.max(1, figure.page_number - 2))
+            .lte('page_end', Math.min(pageCount, figure.page_number + 2))
+            .limit(5);
 
+          const contextText = contextChunks?.map(c => c.section_heading || c.content.slice(0, 100)).join(' ') || '';
+          const embeddingText = `${figure.caption_text || ''} ${figure.ocr_text || ''} ${contextText}`.trim();
+
+          if (embeddingText.length < 10) continue;
+
+          try {
+            const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openaiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                input: embeddingText.slice(0, 8000),
+                model: 'text-embedding-3-small',
+              }),
+            });
+
+            if (embeddingResponse.ok) {
+              const embeddingData = await embeddingResponse.json();
+              const embedding = embeddingData.data[0].embedding;
+
+              await supabase
+                .from('figures')
+                .update({ embedding_text: `[${embedding.join(',')}]` })
+                .eq('id', figure.id);
+
+              processed++;
+              
+              if (processed % 10 === 0) {
+                console.log(`Background: Processed ${processed}/${figures.length} figures`);
+              }
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (error) {
+            console.error(`Error embedding figure ${figure.id}:`, error);
+          }
+        }
+
+        console.log(`✅ Background task complete: ${processed} figures processed`);
+      };
+
+      // Start background task without awaiting
+      EdgeRuntime.waitUntil(backgroundTask());
+
+      // Return immediate response
       return new Response(
         JSON.stringify({
           success: true,
           step: 'figures',
-          figures_processed: processed,
+          message: 'Figure re-embedding started in background',
+          total_figures: (await supabase
+            .from('figures')
+            .select('id', { count: 'exact' })
+            .eq('manual_id', manual_id)
+            .not('page_number', 'is', null)).count || 0,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    throw new Error('Invalid step parameter');
-  } catch (error: any) {
-    console.error('❌ Re-ingestion error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
     );
   }
 });

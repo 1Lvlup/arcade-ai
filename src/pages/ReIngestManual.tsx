@@ -18,16 +18,24 @@ const ReIngestManual = () => {
     setResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('reingest-manual', {
-        body: { manual_id: MANUAL_ID }
+      // Step 1: Re-chunk
+      const { data: chunkData, error: chunkError } = await supabase.functions.invoke('reingest-manual', {
+        body: { manual_id: MANUAL_ID, step: 'chunks' }
       });
 
-      if (error) throw error;
+      if (chunkError) throw chunkError;
 
-      setResult(data);
+      // Step 2: Re-embed figures in background
+      const { data: figureData, error: figureError } = await supabase.functions.invoke('reingest-manual', {
+        body: { manual_id: MANUAL_ID, step: 'figures' }
+      });
+
+      if (figureError) throw figureError;
+
+      setResult({ ...chunkData, figures_started: figureData });
       toast({
-        title: "Re-ingestion Complete",
-        description: `Created ${data.chunks_created} chunks and re-embedded ${data.figures_reembedded} figures`,
+        title: "Re-ingestion Started",
+        description: `Created ${chunkData.chunks_created} chunks. Figure embedding running in background.`,
       });
     } catch (error: any) {
       console.error('Re-ingestion error:', error);

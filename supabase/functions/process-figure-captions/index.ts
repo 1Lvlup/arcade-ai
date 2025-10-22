@@ -74,7 +74,17 @@ serve(async (req) => {
 
       const batchResults = await Promise.allSettled(batch.map(async (figure) => {
         try {
-          // Generate caption using GPT-4.1 Vision
+          // Validate storage URL exists
+          if (!figure.storage_url || figure.storage_url.trim() === '') {
+            console.error(`❌ Figure ${figure.id} has no storage_url, skipping`);
+            return { 
+              success: false, 
+              image_name: figure.image_name,
+              error: 'No storage URL'
+            };
+          }
+
+          // Generate caption using GPT-4o Vision
           const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -110,6 +120,17 @@ serve(async (req) => {
           if (!captionResponse.ok) {
             const errorText = await captionResponse.text();
             console.error(`Caption API error for figure ${figure.id}: ${captionResponse.status} - ${errorText}`);
+            
+            // If it's an image download error, skip this image and continue
+            if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
+              console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
+              return { 
+                success: false, 
+                image_name: figure.image_name,
+                error: 'Image not accessible'
+              };
+            }
+            
             throw new Error(`Caption API error: ${captionResponse.status} - ${errorText.substring(0, 200)}`);
           }
 

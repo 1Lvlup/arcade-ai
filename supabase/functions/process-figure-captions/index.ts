@@ -142,8 +142,7 @@ serve(async (req) => {
             .from('figures')
             .update({
               caption_text: captionText,
-              embedding_text: embedding,
-              caption_updated_at: new Date().toISOString()
+              embedding_text: embedding
             })
             .eq('id', figure.id);
 

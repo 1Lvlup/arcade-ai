@@ -913,49 +913,60 @@ serve(async (req) => {
           const chunkIds = (chunks || []).map(c => c.id).filter(Boolean);
           let thumbnails: any[] = [];
           
+          // Auto-detect manual_id from chunks if not provided
+          let effectiveManualId = manual_id;
+          if (!effectiveManualId && chunks && chunks.length > 0) {
+            const firstManualId = chunks[0]?.manual_id;
+            if (firstManualId) {
+              effectiveManualId = firstManualId;
+              console.log(`🔍 Auto-detected manual_id from chunks: ${effectiveManualId}`);
+            }
+          }
+          
           // Pre-validation: check for cross-manual contamination
-          if (manual_id && chunks && chunks.length > 0) {
+          if (effectiveManualId && chunks && chunks.length > 0) {
             const chunksByManual = new Map<string, number>();
             for (const chunk of chunks) {
               const mid = chunk.manual_id || 'unknown';
               chunksByManual.set(mid, (chunksByManual.get(mid) || 0) + 1);
             }
             
-            const wrongManualChunks = chunks.filter(c => c.manual_id !== manual_id);
-            if (wrongManualChunks.length > 0) {
+            // Check if chunks span multiple manuals
+            if (chunksByManual.size > 1) {
               const manualBreakdown = Array.from(chunksByManual.entries())
-                .map(([mid, count]) => `${mid}: ${count}`)
+                .map(([mid, count]) => `${mid}(${count})`)
                 .join(', ');
-              console.error(`❌ PRE-VALIDATION: Cross-manual contamination detected!`);
-              console.error(`   Expected: ${manual_id}`);
+              const wrongManualChunks = chunks.filter(c => c.manual_id !== effectiveManualId);
+              console.error(`❌ CROSS-MANUAL CONTAMINATION DETECTED!`);
+              console.error(`   Expected: ${effectiveManualId} only`);
               console.error(`   Found: ${manualBreakdown}`);
               console.error(`   Wrong chunks: ${wrongManualChunks.length}/${chunks.length}`);
             } else {
-              console.log(`✅ PRE-VALIDATION: All ${chunks.length} chunks from correct manual: ${manual_id}`);
+              console.log(`✅ PRE-VALIDATION: All ${chunks.length} chunks from correct manual: ${effectiveManualId}`);
             }
           }
           
-          if (chunkIds.length > 0 && manual_id) {
+          if (chunkIds.length > 0 && effectiveManualId) {
             try {
-              const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, manual_id);
+              const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, effectiveManualId);
               thumbnails = imgs || [];
-              console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${manual_id}`);
+              console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${effectiveManualId}`);
             } catch (e) {
               console.error('❌ Error fetching images:', e);
               // Don't fail the entire request, just log and continue without images
             }
-          } else if (!manual_id) {
-            console.warn('⚠️ No manual_id specified, skipping image retrieval');
+          } else if (!effectiveManualId) {
+            console.warn('⚠️ No manual_id detected, skipping image retrieval');
           }
           
           // Get manual title if manual_id is specified
           let manualTitle = null;
-          if (manual_id) {
+          if (effectiveManualId) {
             try {
               const { data: manualData } = await supabase
                 .from('manual_metadata')
                 .select('canonical_title')
-                .eq('manual_id', manual_id)
+                .eq('manual_id', effectiveManualId)
                 .single();
               manualTitle = manualData?.canonical_title || null;
             } catch (e) {
@@ -974,7 +985,7 @@ serve(async (req) => {
               strategy,
               query_log_id: queryLogId,
               thumbnails,
-              manual_id: manual_id || null,
+              manual_id: effectiveManualId || null,
               manual_title: manualTitle
             }
           };

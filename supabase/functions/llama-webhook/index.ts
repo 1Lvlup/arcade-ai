@@ -10,7 +10,11 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
-const webhookSecret = Deno.env.get("LLAMACLOUD_WEBHOOK_SECRET") || "your-secret-verification-token";
+const webhookSecret = Deno.env.get("LLAMACLOUD_WEBHOOK_SECRET");
+
+if (!webhookSecret) {
+  throw new Error("LLAMACLOUD_WEBHOOK_SECRET must be configured");
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -281,14 +285,13 @@ serve(async (req) => {
   }
 
   try {
-    // Verify webhook signature (lenient check)
+    // Verify webhook signature
     const signature = req.headers.get('x-signature');
     console.log("🔐 Signature check:");
     console.log("  - Received:", signature);
-    console.log("  - Expected:", webhookSecret === "your-secret-verification-token" ? "DEFAULT (not configured)" : "CONFIGURED");
+    console.log("  - Expected: CONFIGURED");
     
-    // Only enforce signature if a real secret is configured (not the default)
-    if (webhookSecret !== "your-secret-verification-token" && signature !== webhookSecret) {
+    if (signature !== webhookSecret) {
       console.error("❌ Invalid webhook signature mismatch!");
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 401,
@@ -296,7 +299,7 @@ serve(async (req) => {
       });
     }
     
-    console.log("✅ Signature check passed (or skipped with default)");
+    console.log("✅ Signature check passed");
     
     // Get event type from headers (LlamaCloud sends it here)
     const eventType = req.headers.get('x-webhook-event-type');

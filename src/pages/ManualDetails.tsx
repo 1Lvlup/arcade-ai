@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,10 +8,12 @@ import { SharedHeader } from '@/components/SharedHeader';
 import { SimpleChat } from '@/components/SimpleChat';
 import { ManualImages } from '@/components/ManualImages';
 import { ManualQuestions } from '@/components/ManualQuestions';
-import { FileText, Image as ImageIcon, Brain } from 'lucide-react';
+import { FileText, Image as ImageIcon, Brain, Scan } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ManualDetails() {
   const { manualId } = useParams<{ manualId: string }>();
+  const queryClient = useQueryClient();
 
   const { data: document } = useQuery({
     queryKey: ['document', manualId],
@@ -57,6 +59,27 @@ export default function ManualDetails() {
     },
     enabled: !!manualId,
   });
+
+  const processOcrMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('process-figure-ocr', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['figures', manualId] });
+      toast.success(`✅ OCR processed: ${data.processed}/${data.total} figures updated`);
+    },
+    onError: (error: Error) => {
+      toast.error(`❌ OCR processing failed: ${error.message}`);
+    }
+  });
+
+  const figuresWithoutOcr = figures?.filter(f => !f.ocr_text).length || 0;
+  const figuresWithOcr = figures?.filter(f => f.ocr_text).length || 0;
 
   return (
     <div className="min-h-screen mesh-gradient">
@@ -129,10 +152,37 @@ export default function ManualDetails() {
                 <div className="text-tech-base text-primary mt-1">{figures?.length || 0}</div>
               </div>
               <div className="tech-card p-4 bg-gradient-tech">
-                <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Processing Status</div>
-                <div className="text-sm text-green-400 mt-1">✓ COMPLETE</div>
+                <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider">OCR Status</div>
+                <div className="text-sm mt-1">
+                  <span className="text-primary">{figuresWithOcr}</span>
+                  <span className="text-muted-foreground"> / {figures?.length || 0}</span>
+                </div>
               </div>
             </div>
+            
+            {/* OCR Processing Button */}
+            {figuresWithoutOcr > 0 && (
+              <div className="mt-4 p-4 border border-primary/20 rounded-lg bg-primary/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-mono text-sm text-primary mb-1">
+                      🔍 OCR Processing Available
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {figuresWithoutOcr} figures need OCR text extraction. This will improve search accuracy.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => processOcrMutation.mutate()}
+                    disabled={processOcrMutation.isPending}
+                    className="btn-tech"
+                  >
+                    <Scan className="h-4 w-4 mr-2" />
+                    {processOcrMutation.isPending ? 'Processing...' : 'Process OCR'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Tabbed Content */}

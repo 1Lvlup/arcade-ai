@@ -4,16 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { SharedHeader } from '@/components/SharedHeader';
 import { SimpleChat } from '@/components/SimpleChat';
 import { ManualImages } from '@/components/ManualImages';
 import { ManualQuestions } from '@/components/ManualQuestions';
-import { FileText, Image as ImageIcon, Brain, Scan } from 'lucide-react';
+import { FileText, Image as ImageIcon, Brain, Scan, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 
 export default function ManualDetails() {
   const { manualId } = useParams<{ manualId: string }>();
   const queryClient = useQueryClient();
+  const [processingStatus, setProcessingStatus] = useState<any>(null);
 
   const { data: document } = useQuery({
     queryKey: ['document', manualId],
@@ -101,6 +104,60 @@ export default function ManualDetails() {
   const figuresWithoutCaptions = figures?.filter(f => !f.caption_text).length || 0;
   const figuresWithCaptions = figures?.filter(f => f.caption_text).length || 0;
 
+  // Query processing status
+  const { data: statusData } = useQuery({
+    queryKey: ['processing_status', manualId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('processing_status')
+        .select('*')
+        .eq('manual_id', manualId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!manualId,
+    refetchInterval: 2000, // Poll every 2 seconds
+  });
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!manualId) return;
+
+    const channel = supabase
+      .channel(`processing-status-${manualId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'processing_status',
+          filter: `manual_id=eq.${manualId}`
+        },
+        (payload) => {
+          console.log('Processing status update:', payload);
+          setProcessingStatus(payload.new);
+          queryClient.invalidateQueries({ queryKey: ['processing_status', manualId] });
+          queryClient.invalidateQueries({ queryKey: ['figures', manualId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [manualId, queryClient]);
+
+  useEffect(() => {
+    if (statusData) {
+      setProcessingStatus(statusData);
+    }
+  }, [statusData]);
+
+  const isProcessing = processingStatus?.stage === 'caption_generation' && 
+                       processingStatus?.status === 'processing';
+
   return (
     <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Manual Analysis" showBackButton={true} backTo="/manuals" />
@@ -179,6 +236,34 @@ export default function ManualDetails() {
                 </div>
               </div>
             </div>
+            
+            {/* Live Processing Progress */}
+            {isProcessing && (
+              <div className="mt-4 p-4 border border-primary/30 rounded-lg bg-primary/5 animate-pulse-subtle">
+                <div className="flex items-center gap-3 mb-3">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  <div>
+                    <h3 className="font-mono text-sm text-primary font-semibold">
+                      🔄 Caption & OCR Processing In Progress
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {processingStatus.current_task}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Progress value={processingStatus.progress_percent} className="h-2" />
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {processingStatus.figures_processed} / {processingStatus.total_figures} figures
+                    </span>
+                    <span className="text-primary font-mono">
+                      {processingStatus.progress_percent}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Caption Processing Button */}
             {figuresWithoutCaptions > 0 && (

@@ -116,20 +116,32 @@ serve(async (req) => {
       }
     }
 
-    // Get surrounding text chunks for additional context
+    // ENHANCED: Get surrounding text chunks from ±2 pages for richer context
     let textContext = '';
     if (figure.page_number) {
       const { data: nearbyChunks } = await supabase
         .from('chunks_text')
-        .select('content')
+        .select('content, page_start, section_heading')
         .eq('manual_id', manual_id)
-        .gte('page_start', Math.max(1, figure.page_number - 1))
-        .lte('page_end', figure.page_number + 1)
-        .limit(3);
+        .gte('page_start', Math.max(1, figure.page_number - 2))  // ±2 pages
+        .lte('page_end', figure.page_number + 2)
+        .order('page_start', { ascending: true })
+        .limit(8);  // Get more chunks for better context
 
       if (nearbyChunks && nearbyChunks.length > 0) {
-        textContext = nearbyChunks.map(c => c.content).join('\n').substring(0, 500);
+        console.log(`📄 Found ${nearbyChunks.length} nearby chunks (pages ${nearbyChunks[0]?.page_start}-${nearbyChunks[nearbyChunks.length-1]?.page_start})`);
+        // Combine chunks with section headers for context
+        textContext = nearbyChunks
+          .map(c => {
+            const header = c.section_heading ? `[${c.section_heading}]\n` : '';
+            return header + c.content;
+          })
+          .join('\n\n')
+          .substring(0, 800);  // Increased from 500 to use more context
       }
+
+    } else {
+      console.log(`⚠️ No nearby chunks found for page ${figure.page_number}`);
     }
 
     console.log('👁️ Analyzing image with GPT-4 Vision for caption AND OCR...');

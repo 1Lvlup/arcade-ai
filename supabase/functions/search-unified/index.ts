@@ -130,6 +130,19 @@ serve(async (req) => {
 
     console.log(`📦 Retrieved ${rawResults?.length || 0} candidates`);
 
+    // Log breakdown of content types
+    const textCount = rawResults?.filter(r => r.content_type === 'text').length || 0;
+    const figureCount = rawResults?.filter(r => r.content_type === 'figure').length || 0;
+    console.log(`📊 Content breakdown: ${textCount} text chunks, ${figureCount} figures`);
+    
+    if (figureCount > 0) {
+      console.log(`🖼️ Figures retrieved:`, rawResults
+        ?.filter(r => r.content_type === 'figure')
+        .slice(0, 3)
+        .map(f => `p${f.page_start} (score: ${f.score?.toFixed(3)})`)
+        .join(', '));
+    }
+
     if (!rawResults || rawResults.length === 0) {
       return new Response(
         JSON.stringify({
@@ -147,6 +160,11 @@ serve(async (req) => {
 
     // Take top 10 after reranking
     const finalResults = reranked.slice(0, 10);
+    
+    // Log final content type breakdown
+    const finalTextCount = finalResults.filter(r => r.content_type === 'text').length;
+    const finalFigureCount = finalResults.filter(r => r.content_type === 'figure').length;
+    console.log(`✅ Final results: ${finalTextCount} text chunks, ${finalFigureCount} figures`);
 
     console.log(`✅ Returning ${finalResults.length} results (vector → rerank)`);
 

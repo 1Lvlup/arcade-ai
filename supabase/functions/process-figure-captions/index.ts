@@ -45,22 +45,23 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: true })
       .eq('manual_id', manual_id);
 
-    // Get figures that still need captions
+    // Get figures that still need captions OR OCR
     const { data: figures, error: fetchError } = await supabase
       .from('figures')
-      .select('id, storage_url, page_number, image_name')
+      .select('id, storage_url, page_number, image_name, caption_text, ocr_text')
       .eq('manual_id', manual_id)
-      .is('caption_text', null)
+      .or('caption_text.is.null,ocr_text.is.null')
       .order('page_number', { ascending: true });
 
     if (fetchError) throw fetchError;
 
-    // Get count of already captioned figures
+    // Get count of figures that have BOTH caption and OCR completed
     const { count: captionedCount } = await supabase
       .from('figures')
       .select('*', { count: 'exact', head: true })
       .eq('manual_id', manual_id)
-      .not('caption_text', 'is', null);
+      .not('caption_text', 'is', null)
+      .not('ocr_text', 'is', null);
 
     const alreadyCaptioned = captionedCount || 0;
     const total = totalFigures || 0;
@@ -136,63 +137,122 @@ serve(async (req) => {
               };
             }
 
-            // Generate caption using GPT-4o Vision
-            const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openaiApiKey}`,
-                'OpenAI-Project': openaiProjectId,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'gpt-4o',
-                max_tokens: 500,
-                messages: [
-                  {
-                    role: 'system',
-                    content: `You are analyzing technical manual images for "${manual?.title || 'a technical manual'}". Generate detailed, technical captions that describe what the image shows, including any visible text, diagrams, parts, specifications, or instructions.`
-                  },
-                  {
-                    role: 'user',
-                    content: [
-                      {
-                        type: 'text',
-                        text: 'Generate a detailed caption for this technical manual image. Describe what is shown, any visible text, diagrams, parts, or specifications.'
-                      },
-                      {
-                        type: 'image_url',
-                        image_url: { url: figure.storage_url }
-                      }
-                    ]
-                  }
-                ],
-              }),
-            });
+            let captionText = figure.caption_text;
+            let ocrText = figure.ocr_text;
 
-            if (!captionResponse.ok) {
-              const errorText = await captionResponse.text();
-              console.error(`Caption API error for figure ${figure.id}: ${captionResponse.status} - ${errorText}`);
-              
-              // If it's an image download error, skip this image and continue
-              if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
-                console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
-                return { 
-                  success: false, 
-                  image_name: figure.image_name,
-                  error: 'Image not accessible'
-                };
+            // Generate caption if missing
+            if (!captionText) {
+              const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${openaiApiKey}`,
+                  'OpenAI-Project': openaiProjectId,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'gpt-4o',
+                  max_tokens: 500,
+                  messages: [
+                    {
+                      role: 'system',
+                      content: `You are analyzing technical manual images for "${manual?.title || 'a technical manual'}". Generate detailed, technical captions that describe what the image shows, including any visible text, diagrams, parts, specifications, or instructions.`
+                    },
+                    {
+                      role: 'user',
+                      content: [
+                        {
+                          type: 'text',
+                          text: 'Generate a detailed caption for this technical manual image. Describe what is shown, any visible text, diagrams, parts, or specifications.'
+                        },
+                        {
+                          type: 'image_url',
+                          image_url: { url: figure.storage_url }
+                        }
+                      ]
+                    }
+                  ],
+                }),
+              });
+
+              if (!captionResponse.ok) {
+                const errorText = await captionResponse.text();
+                console.error(`Caption API error for figure ${figure.id}: ${captionResponse.status} - ${errorText}`);
+                
+                if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
+                  console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
+                  return { 
+                    success: false, 
+                    image_name: figure.image_name,
+                    error: 'Image not accessible'
+                  };
+                }
+                
+                throw new Error(`Caption API error: ${captionResponse.status} - ${errorText.substring(0, 200)}`);
               }
-              
-              throw new Error(`Caption API error: ${captionResponse.status} - ${errorText.substring(0, 200)}`);
+
+              const captionData = await captionResponse.json();
+              captionText = captionData.choices[0].message.content;
             }
 
-            const captionData = await captionResponse.json();
-            const captionText = captionData.choices[0].message.content;
+            // Extract OCR text if missing
+            if (!ocrText) {
+              const ocrResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${openaiApiKey}`,
+                  'OpenAI-Project': openaiProjectId,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'gpt-4o',
+                  max_tokens: 1000,
+                  messages: [
+                    {
+                      role: 'system',
+                      content: 'You are an OCR system. Extract ALL visible text from the image exactly as shown. Include labels, numbers, values, units, headings, and any other text. Preserve formatting and spacing where possible.'
+                    },
+                    {
+                      role: 'user',
+                      content: [
+                        {
+                          type: 'text',
+                          text: 'Extract all visible text from this image. Include every word, number, label, and value you can see.'
+                        },
+                        {
+                          type: 'image_url',
+                          image_url: { url: figure.storage_url }
+                        }
+                      ]
+                    }
+                  ],
+                }),
+              });
 
-            // Generate embedding for the caption
+              if (!ocrResponse.ok) {
+                const errorText = await ocrResponse.text();
+                console.error(`OCR API error for figure ${figure.id}: ${ocrResponse.status} - ${errorText}`);
+                
+                if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
+                  console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
+                  return { 
+                    success: false, 
+                    image_name: figure.image_name,
+                    error: 'Image not accessible'
+                  };
+                }
+                
+                throw new Error(`OCR API error: ${ocrResponse.status} - ${errorText.substring(0, 200)}`);
+              }
+
+              const ocrData = await ocrResponse.json();
+              ocrText = ocrData.choices[0].message.content;
+            }
+
+            // Generate embedding from combined caption + OCR text
             let embedding = null;
+            const combinedText = `${captionText}\n\n${ocrText}`;
 
-            if (captionText.length > 0) {
+            if (combinedText.trim().length > 0) {
               const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
                 method: 'POST',
                 headers: {
@@ -202,7 +262,7 @@ serve(async (req) => {
                 },
                 body: JSON.stringify({
                   model: 'text-embedding-3-small',
-                  input: captionText.substring(0, 8000)
+                  input: combinedText.substring(0, 8000)
                 })
               });
 
@@ -212,12 +272,15 @@ serve(async (req) => {
               }
             }
 
-            // Update figure with caption and embedding
+            // Update figure with caption, OCR, embedding, and mark as completed
             const { error: updateError } = await supabase
               .from('figures')
               .update({
                 caption_text: captionText,
-                embedding_text: embedding
+                ocr_text: ocrText,
+                embedding_text: embedding,
+                ocr_status: 'completed',
+                ocr_updated_at: new Date().toISOString()
               })
               .eq('id', figure.id);
 
@@ -260,7 +323,7 @@ serve(async (req) => {
           })
           .eq('manual_id', manual_id);
 
-        console.log(`📊 Progress: ${totalProcessed}/${total} (this batch: ${batchProcessed}/${figures.length}, ✅ ${succeeded} success, ❌ ${failed} failed)`);
+        console.log(`📊 Progress: ${totalProcessed}/${total} captions+OCR (this batch: ${batchProcessed}/${figures.length}, ✅ ${succeeded} success, ❌ ${failed} failed)`);
       }
 
       // Mark as complete
@@ -272,12 +335,12 @@ serve(async (req) => {
           stage: 'caption_complete',
           figures_processed: finalProcessed,
           progress_percent: 100,
-          current_task: `Completed: ${finalProcessed}/${total} figures captioned (${succeeded} in this run, ${failed} failed)`,
+          current_task: `Completed: ${finalProcessed}/${total} figures with captions+OCR (${succeeded} in this run, ${failed} failed)`,
           updated_at: new Date().toISOString()
         })
         .eq('manual_id', manual_id);
 
-      console.log(`🎉 Caption processing complete: ${finalProcessed}/${total} total (${succeeded} in this run)`);
+      console.log(`🎉 Caption+OCR processing complete: ${finalProcessed}/${total} total (${succeeded} in this run)`);
     };
 
     // Use waitUntil to process in background
@@ -287,7 +350,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Caption processing started in background (${alreadyCaptioned}/${total} already complete)`,
+        message: `Caption+OCR processing started in background (${alreadyCaptioned}/${total} already complete)`,
         total: total,
         remaining: figures.length,
         already_captioned: alreadyCaptioned,

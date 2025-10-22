@@ -254,8 +254,8 @@ serve(async (req) => {
     formData.append('page_suffix', '<!-- Page {pageNumber} End -->')
     formData.append('page_separator', '______________________________')
     
-    // OCR / Layout - CRITICAL: Enable LlamaCloud OCR for baseline text extraction
-    formData.append('disable_ocr', 'false')  // Enable OCR - baseline text extraction
+    // OCR / Layout - OCR disabled, we handle it in captioning phase
+    formData.append('disable_ocr', 'true')  // Disable OCR - we do it ourselves
     formData.append('extract_layout', 'true')
     formData.append('preserve_layout_alignment_across_pages', 'true')
     formData.append('hide_headers', 'false')  // KEEP headers - they have page numbers!
@@ -275,7 +275,7 @@ serve(async (req) => {
     formData.append('specialized_image_parsing', 'true')
     formData.append('precise_bounding_box', 'true')
     formData.append('inline_images_in_markdown', 'true')
-    formData.append('return_image_ocr', 'true')  // Get OCR from LlamaCloud as baseline
+    formData.append('return_image_ocr', 'false')  // Don't get OCR from LlamaCloud
     formData.append('return_images', 'true')
     
     // Caching/behavior

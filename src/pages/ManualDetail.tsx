@@ -43,6 +43,8 @@ interface ManualStats {
   chunks: number;
   figures: number;
   questions: number;
+  figuresWithCaptions: number;
+  figuresWithoutCaptions: number;
 }
 
 export function ManualDetail() {
@@ -52,11 +54,18 @@ export function ManualDetail() {
   
   const [manual, setManual] = useState<Manual | null>(null);
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
-  const [stats, setStats] = useState<ManualStats>({ chunks: 0, figures: 0, questions: 0 });
+  const [stats, setStats] = useState<ManualStats>({ 
+    chunks: 0, 
+    figures: 0, 
+    questions: 0,
+    figuresWithCaptions: 0,
+    figuresWithoutCaptions: 0
+  });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [extractingOCR, setExtractingOCR] = useState(false);
+  const [processingCaptions, setProcessingCaptions] = useState(false);
 
   useEffect(() => {
     if (manualId) {
@@ -150,13 +159,15 @@ export function ManualDetail() {
 
       const chunksCount = chunksCountExact || chunksData?.length || 0;
 
-      // Fetch figures count
+      // Fetch figures count and caption stats
       const { data: figuresData, error: figuresError, count: figuresCountExact } = await supabase
         .from('figures')
-        .select('id', { count: 'exact' })
+        .select('id, caption_text', { count: 'exact' })
         .eq('manual_id', manualId);
 
       const figuresCount = figuresCountExact || figuresData?.length || 0;
+      const figuresWithCaptions = figuresData?.filter(f => f.caption_text).length || 0;
+      const figuresWithoutCaptions = figuresCount - figuresWithCaptions;
 
       if (figuresError) {
         console.error('Error fetching figures:', figuresError);
@@ -174,12 +185,14 @@ export function ManualDetail() {
         console.error('Error fetching questions:', questionsError);
       }
 
-      console.log('Final stats:', { chunksCount, figuresCount, questionsCount });
+      console.log('Final stats:', { chunksCount, figuresCount, questionsCount, figuresWithCaptions, figuresWithoutCaptions });
 
       setStats({
         chunks: chunksCount,
         figures: figuresCount,
-        questions: questionsCount
+        questions: questionsCount,
+        figuresWithCaptions,
+        figuresWithoutCaptions
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -215,6 +228,35 @@ export function ManualDetail() {
       });
     } finally {
       setGeneratingQuestions(false);
+    }
+  };
+
+  const processCaptions = async () => {
+    if (!manualId) return;
+    
+    setProcessingCaptions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-figure-captions', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Caption Processing Complete',
+        description: `Generated captions for ${data.processed} of ${data.total} figures.`,
+      });
+
+      fetchStats();
+    } catch (error) {
+      console.error('Error processing captions:', error);
+      toast({
+        title: 'Caption Processing Failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessingCaptions(false);
     }
   };
 
@@ -379,6 +421,20 @@ export function ManualDetail() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mt-6">
+              {stats.figuresWithoutCaptions > 0 && (
+                <Button 
+                  onClick={processCaptions}
+                  disabled={processingCaptions}
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                >
+                  {processingCaptions ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  Generate Captions ({stats.figuresWithoutCaptions} images)
+                </Button>
+              )}
               <Button 
                 onClick={extractOCR}
                 disabled={extractingOCR}

@@ -1048,12 +1048,12 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
             if (captionResponse.ok) {
               const captionData = await captionResponse.json();
               caption = captionData.choices[0].message.content;
-              console.log(`✅ Caption generated for ${figureInfo.figureName}${ocrText ? ' (used LlamaCloud OCR)' : ''}`);
+              console.log(`✅ Caption generated for ${figureInfo.figureName}`);
             } else {
               console.error(`❌ Caption API error for ${figureInfo.figureName}:`, captionResponse.status);
             }
             
-            // Generate embedding from combined caption + OCR text for semantic search
+            // CRITICAL: Generate embedding from combined LlamaCloud OCR + GPT caption
             let embedding = null;
             const combinedText = `${caption || ''}\n\n${ocrText || ''}`.trim();
             
@@ -1075,7 +1075,7 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
                 if (embeddingResponse.ok) {
                   const embeddingData = await embeddingResponse.json();
                   embedding = embeddingData.data[0].embedding;
-                  console.log(`  🔢 Generated embedding for ${figureInfo.figureName}`);
+                  console.log(`  🔢 Generated embedding from caption + OCR for ${figureInfo.figureName}`);
                 } else {
                   console.error(`  ⚠️ Embedding generation failed (${embeddingResponse.status})`);
                 }
@@ -1084,17 +1084,14 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
               }
             }
             
-            // Update figure with caption, OCR text, embedding, and status
+            // Update figure with caption AND embedding together
             const updateData: any = {
-              ocr_status: 'success', // Mark as success (valid status)
+              ocr_status: 'success',
               ocr_updated_at: new Date().toISOString()
             };
             if (caption) {
               updateData.caption_text = caption;
               updateData.vision_text = caption;
-            }
-            if (ocrText) {
-              updateData.ocr_text = ocrText;
             }
             if (embedding) {
               updateData.embedding_text = embedding; // CRITICAL for semantic search
@@ -1105,13 +1102,13 @@ Start your caption with "[Page ${figureInfo.page_number || 'Unknown'}]" followed
               .update(updateData)
               .eq('id', figureInfo.id);
             
-            console.log(`✅ Updated ${figureInfo.figureName} with caption: ${!!caption}, OCR: ${!!ocrText}, embedding: ${!!embedding}`);
+            console.log(`✅ Updated ${figureInfo.figureName} with caption: ${!!caption}, embedding: ${!!embedding} (OCR from LlamaCloud)`);
             
           } catch (captionError) {
             console.error(`❌ Error processing ${figureInfo.figureName}:`, captionError);
           }
         }
-        console.log(`🎉 Background caption and OCR processing complete for ${insertedFigureIds.length} images`);
+        console.log(`🎉 Background caption and embedding processing complete for ${insertedFigureIds.length} images`);
       })());
     }
 

@@ -369,16 +369,18 @@ export default function ManualDetails() {
               )}
             </div>
             
-            {/* Figure Type Backfill Button */}
-            {figuresWithoutType > 0 && (
-              <div className="mt-4 p-4 border border-orange-500/20 rounded-lg bg-orange-500/5">
+            {/* Figure Type Backfill Button - ALWAYS SHOW */}
+            <div className="mt-4 p-4 border border-orange-500/20 rounded-lg bg-orange-500/5">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-mono text-sm text-orange-400 mb-1">
                       🏷️ Classify Figure Types
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {figuresWithoutType} figures need type classification (diagram, photo, schematic, etc.). This enables better filtering.
+                      {figuresWithoutType > 0 
+                        ? `${figuresWithoutType} figures need type classification (diagram, photo, schematic, etc.). This enables better filtering.`
+                        : `All ${figures?.length || 0} figures already classified.`
+                      }
                     </p>
                   </div>
                   <Button
@@ -407,10 +409,11 @@ export default function ManualDetails() {
                         });
                       }
                     }}
-                    disabled={backfillProgress.isRunning && backfillProgress.type === 'figures'}
+                    disabled={backfillProgress.isRunning && backfillProgress.type === 'figures' || figuresWithoutType === 0}
                     className="btn-tech"
                   >
-                    {backfillProgress.isRunning && backfillProgress.type === 'figures' ? 'Processing...' : 'Classify Figures'}
+                    {backfillProgress.isRunning && backfillProgress.type === 'figures' ? 'Processing...' : 
+                     figuresWithoutType === 0 ? 'Already Classified' : 'Classify Figures'}
                   </Button>
                 </div>
                 {backfillProgress.isRunning && backfillProgress.type === 'figures' && (
@@ -422,8 +425,7 @@ export default function ManualDetails() {
                   </div>
                 )}
               </div>
-            )}
-          </div>
+            </div>
 
           {/* Tabbed Content */}
           <Tabs defaultValue="chunks" className="space-y-6">

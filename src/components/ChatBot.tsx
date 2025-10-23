@@ -514,6 +514,16 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 ));
               } else if (parsed.type === 'metadata') {
                 console.log('📊 Received metadata:', parsed.data);
+                
+                // Show toast if manual was auto-detected
+                if (parsed.data.auto_detected && parsed.data.detected_manual_title) {
+                  toast({
+                    title: 'Manual Auto-Detected',
+                    description: `Searching in: ${parsed.data.detected_manual_title}`,
+                    duration: 4000,
+                  });
+                }
+                
                 // Store metadata including thumbnails and manual_id
                 setMessages(prev => prev.map(msg => 
                   msg.id === botMessageId 

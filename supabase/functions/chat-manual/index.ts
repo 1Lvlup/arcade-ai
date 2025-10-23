@@ -873,13 +873,44 @@ serve(async (req) => {
       }
     }
 
+    // Auto-detect manual from query if not specified
+    let effectiveManualId = manual_id;
+    let detectedManualTitle = null;
+    
+    if (!effectiveManualId) {
+      try {
+        console.log("🔍 No manual_id provided, attempting auto-detection...");
+        const detectionResponse = await supabase.functions.invoke('detect-manual', {
+          body: { query, tenant_id }
+        });
+
+        if (!detectionResponse.error && detectionResponse.data) {
+          const { manual_id: detected_id, manual_title, confidence, reasoning } = detectionResponse.data;
+          
+          if (detected_id && (confidence === "high" || confidence === "medium")) {
+            effectiveManualId = detected_id;
+            detectedManualTitle = manual_title;
+            console.log(`✅ Auto-detected manual: ${manual_title} (confidence: ${confidence})`);
+            console.log(`   Reasoning: ${reasoning}`);
+          } else if (detected_id && confidence === "low") {
+            console.log(`⚠️ Manual detected with low confidence, searching all manuals instead`);
+            console.log(`   Detected: ${manual_title}, Reasoning: ${reasoning}`);
+          } else {
+            console.log(`ℹ️ No specific manual detected, searching all manuals`);
+          }
+        }
+      } catch (detectionError) {
+        console.warn("⚠️ Manual detection failed, proceeding without filter:", detectionError);
+      }
+    }
+
     // Run pipeline
     console.log("🚀 Using RAG Pipeline V3\n");
     
     // If streaming is requested, handle it differently
     if (stream) {
       console.log("📡 Starting streaming response");
-      const result = await runRagPipelineV3(query, manual_id, tenant_id, model, messages);
+      const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages);
       const { sources, strategy, chunks } = result;
       
       // Log the query to get query_log_id for feedback
@@ -889,7 +920,7 @@ serve(async (req) => {
           .from('query_logs')
           .insert({
             query_text: query,
-            manual_id: manual_id || null,
+            manual_id: effectiveManualId || null,
             fec_tenant_id: tenant_id || null,
             retrieval_method: strategy,
             model_name: model,
@@ -993,7 +1024,9 @@ serve(async (req) => {
               query_log_id: queryLogId,
               thumbnails,
               manual_id: effectiveManualId || null,
-              manual_title: manualTitle
+              manual_title: manualTitle,
+              auto_detected: detectedManualTitle ? true : false,
+              detected_manual_title: detectedManualTitle
             }
           };
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));
@@ -1051,7 +1084,7 @@ serve(async (req) => {
       });
     }
     
-    const result = await runRagPipelineV3(query, manual_id, tenant_id, model, messages);
+    const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages);
 
     const { answer, sources, strategy, chunks } = result;
 
@@ -1145,7 +1178,7 @@ serve(async (req) => {
           model_name: model,
           retrieval_method: strategy,
           response_text,
-          manual_id: manual_id || null,
+          manual_id: effectiveManualId || null,
           top_doc_ids: chunks?.slice(0, 10).map(c => c.id) || [],
           top_doc_pages: chunks?.slice(0, 10).map(c => c.page_start || 0) || [],
           top_doc_scores: chunks?.slice(0, 10).map(c => c.rerank_score || 0) || [],

@@ -114,7 +114,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedMessageForFeedback, setSelectedMessageForFeedback] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
 
   const GUEST_MESSAGE_LIMIT = 5;
 
@@ -129,13 +131,31 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     }
   }, [user]);
 
+  // Detect manual scrolling
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      setIsUserScrolling(!isAtBottom);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Only auto-scroll if user hasn't manually scrolled up
+    if (!isUserScrolling) {
+      scrollToBottom();
+    }
+  }, [messages, isUserScrolling]);
 
   const updateWelcomeMessage = () => {
     const welcomeMessage: ChatMessage = {
@@ -993,7 +1013,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         )}
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 min-h-0" style={{ background: 'hsl(210 20% 5%)' }}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-6 space-y-6 min-h-0" style={{ background: 'hsl(210 20% 5%)' }}>
           {messages.map((message) => (
             <div
               key={message.id}

@@ -82,14 +82,17 @@ serve(async (req) => {
       
       await Promise.all(batch.map(async (fig) => {
         try {
-          const visionPrompt = `Analyze this technical diagram/image. Return JSON with:
+          const visionPrompt = `Analyze this technical diagram/image. Return ONLY a JSON object (no markdown, no explanation) with:
 {
   "figure_type": "diagram|photo|illustration|schematic|circuit|exploded_view|chart|table|mixed|text|sectionheader",
   "detected_components": [{"type": "part_number|measurement|callout", "label": "...", "value": "..."}],
   "semantic_tags": ["electrical", "mechanical", "troubleshooting", "assembly", "safety"]
 }
 
-CRITICAL: Use "text" or "sectionheader" ONLY for purely textual images with NO diagrams/photos/illustrations.`;
+CRITICAL: 
+- Use "text" or "sectionheader" ONLY for purely textual images with NO diagrams/photos/illustrations
+- For tables with many rows, limit to first 5-10 most important items
+- Return ONLY the JSON object, no other text`;
 
           const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -99,7 +102,7 @@ CRITICAL: Use "text" or "sectionheader" ONLY for purely textual images with NO d
             },
             body: JSON.stringify({
               model: 'gpt-4.1-mini',
-              max_completion_tokens: 500,
+              max_completion_tokens: 2000,  // Increased from 500 to handle large tables
               messages: [
                 {
                   role: 'user',

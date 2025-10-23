@@ -1662,24 +1662,15 @@ export type Database = {
         }
         Returns: Json
       }
-      fn_backfill_for_manual: {
-        Args: { p_manual_id: string }
-        Returns: number
-      }
+      fn_backfill_for_manual: { Args: { p_manual_id: string }; Returns: number }
       fn_backfill_for_manual_any: {
         Args: { p_manual_id: string }
         Returns: Json
       }
-      get_current_tenant_context: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_fec_tenant_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_tenant_context: { Args: never; Returns: string }
+      get_current_user_fec_tenant_id: { Args: never; Returns: string }
       get_manuals_for_dropdown: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           canonical_slug: string
           canonical_title: string
@@ -1746,28 +1737,37 @@ export type Database = {
           score: number
         }[]
       }
-      match_docs: {
-        Args:
-          | { manual?: string; match_count?: number; query_embedding: string }
-          | {
+      match_docs:
+        | {
+            Args: {
               match_count: number
               query_embedding: string
               similarity_threshold: number
             }
-        Returns: {
-          content: string
-          game_title: string
-          id: number
-          manual_section: string
-          similarity: number
-          source_file: string
-          subsection: string
-        }[]
-      }
-      normalize_name: {
-        Args: { input_text: string }
-        Returns: string
-      }
+            Returns: {
+              content: string
+              game_title: string
+              id: number
+              manual_section: string
+              similarity: number
+              source_file: string
+              subsection: string
+            }[]
+          }
+        | {
+            Args: {
+              manual?: string
+              match_count?: number
+              query_embedding: string
+            }
+            Returns: {
+              content: string
+              game_title: string
+              id: number
+              similarity: number
+            }[]
+          }
+      normalize_name: { Args: { input_text: string }; Returns: string }
       search_manual_content: {
         Args: {
           match_count?: number
@@ -1786,10 +1786,9 @@ export type Database = {
           similarity: number
         }[]
       }
-      set_tenant_context: {
-        Args: { p_tenant_id: string } | { tenant_id: string }
-        Returns: undefined
-      }
+      set_tenant_context:
+        | { Args: { p_tenant_id: string }; Returns: undefined }
+        | { Args: { tenant_id: string }; Returns: undefined }
       simple_search: {
         Args: {
           search_limit?: number
@@ -1806,14 +1805,8 @@ export type Database = {
           page_start: number
         }[]
       }
-      slugify: {
-        Args: { input_text: string }
-        Returns: string
-      }
-      trigger_reindex: {
-        Args: { p_manual_id: string }
-        Returns: Json
-      }
+      slugify: { Args: { input_text: string }; Returns: string }
+      trigger_reindex: { Args: { p_manual_id: string }; Returns: Json }
       upsert_manual_metadata: {
         Args: { p_metadata: Json }
         Returns: {

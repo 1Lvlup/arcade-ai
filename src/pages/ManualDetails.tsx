@@ -99,10 +99,18 @@ export default function ManualDetails() {
     }
   });
 
+  const [backfillProgress, setBackfillProgress] = useState<{
+    type: 'metadata' | 'figures' | null;
+    current: number;
+    total: number;
+    isRunning: boolean;
+  }>({ type: null, current: 0, total: 0, isRunning: false });
+
   const figuresWithoutOcr = figures?.filter(f => !f.ocr_text).length || 0;
   const figuresWithOcr = figures?.filter(f => f.ocr_text).length || 0;
   const figuresWithoutCaptions = figures?.filter(f => !f.caption_text).length || 0;
   const figuresWithCaptions = figures?.filter(f => f.caption_text).length || 0;
+  const figuresWithoutType = figures?.filter(f => !f.figure_type).length || 0;
 
   // Query processing status
   const { data: statusData } = useQuery({
@@ -312,8 +320,111 @@ export default function ManualDetails() {
                 </div>
               </div>
             )}
+            
+            {/* Metadata Backfill Button */}
+            <div className="mt-4 p-4 border border-purple-500/20 rounded-lg bg-purple-500/5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-mono text-sm text-purple-400 mb-1">
+                    📦 Populate Chunk Metadata
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Update all text chunks with game title, platform, manufacturer, and other metadata from manual_metadata table.
+                  </p>
+                </div>
+                <Button
+                  onClick={async () => {
+                    try {
+                      setBackfillProgress({ type: 'metadata', current: 0, total: chunks?.length || 0, isRunning: true });
+                      const { data, error } = await supabase.rpc('fn_backfill_for_manual_any', {
+                        p_manual_id: manualId
+                      });
+                      
+                      if (error) throw error;
+                      
+                      setBackfillProgress({ type: null, current: 0, total: 0, isRunning: false });
+                      const result = data as any;
+                      toast.success(`✅ Metadata backfill complete`, {
+                        description: `Updated ${result.total} records (${result.updated_chunks_text} chunks, ${result.updated_rag_chunks} rag_chunks)`
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['chunks', manualId] });
+                    } catch (error: any) {
+                      setBackfillProgress({ type: null, current: 0, total: 0, isRunning: false });
+                      toast.error('❌ Metadata backfill failed', {
+                        description: error.message
+                      });
+                    }
+                  }}
+                  disabled={backfillProgress.isRunning && backfillProgress.type === 'metadata'}
+                  className="btn-tech"
+                >
+                  {backfillProgress.isRunning && backfillProgress.type === 'metadata' ? 'Processing...' : 'Populate Metadata'}
+                </Button>
+              </div>
+              {backfillProgress.isRunning && backfillProgress.type === 'metadata' && (
+                <div className="mt-3 space-y-2">
+                  <Progress value={100} className="h-2" />
+                  <p className="text-xs text-muted-foreground">Processing {backfillProgress.total} chunks...</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Figure Type Backfill Button */}
+            {figuresWithoutType > 0 && (
+              <div className="mt-4 p-4 border border-orange-500/20 rounded-lg bg-orange-500/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-mono text-sm text-orange-400 mb-1">
+                      🏷️ Classify Figure Types
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {figuresWithoutType} figures need type classification (diagram, photo, schematic, etc.). This enables better filtering.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        setBackfillProgress({ type: 'figures', current: 0, total: figuresWithoutType, isRunning: true });
+                        toast.loading(`Processing ${figuresWithoutType} figures...`, { id: 'figure-backfill' });
+                        
+                        const { data, error } = await supabase.functions.invoke('backfill-figure-types', {
+                          body: { manual_id: manualId }
+                        });
+                        
+                        if (error) throw error;
+                        
+                        setBackfillProgress({ type: null, current: 0, total: 0, isRunning: false });
+                        toast.dismiss('figure-backfill');
+                        toast.success(`✅ Classified ${data.processed}/${data.total} figures`, {
+                          description: data.errors ? `${data.errors} errors occurred` : 'All figures updated'
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['figures', manualId] });
+                      } catch (error: any) {
+                        setBackfillProgress({ type: null, current: 0, total: 0, isRunning: false });
+                        toast.dismiss('figure-backfill');
+                        toast.error('❌ Figure classification failed', {
+                          description: error.message
+                        });
+                      }
+                    }}
+                    disabled={backfillProgress.isRunning && backfillProgress.type === 'figures'}
+                    className="btn-tech"
+                  >
+                    {backfillProgress.isRunning && backfillProgress.type === 'figures' ? 'Processing...' : 'Classify Figures'}
+                  </Button>
+                </div>
+                {backfillProgress.isRunning && backfillProgress.type === 'figures' && (
+                  <div className="mt-3 space-y-2">
+                    <Progress value={(backfillProgress.current / backfillProgress.total) * 100} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      Processing {backfillProgress.current} / {backfillProgress.total} figures...
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          
+
           {/* Tabbed Content */}
           <Tabs defaultValue="chunks" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">

@@ -447,8 +447,16 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       console.log('📤 Sending streaming message to chat-manual:', { 
         query, 
         manual_id: selectedManualId,
+        manual_title: manualTitle,
         history_length: conversationHistory.length
       });
+
+      // Validate manual_id before sending
+      if (selectedManualId) {
+        console.log('✅ Manual filter ACTIVE:', selectedManualId);
+      } else {
+        console.log('⚠️ No manual filter - searching ALL manuals');
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(

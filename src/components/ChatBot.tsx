@@ -120,6 +120,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [isUserScrolling, setIsUserScrolling] = useState(false);
 
   const GUEST_MESSAGE_LIMIT = 5;
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load guest message count from localStorage on mount
   useEffect(() => {
@@ -170,10 +171,38 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     setMessages([welcomeMessage]);
   };
 
+  // Initial load - restore last conversation or show welcome
   useEffect(() => {
-    updateWelcomeMessage();
-    loadSavedConversations();
-    loadConversations();
+    const initializeChat = async () => {
+      if (isInitialized) return;
+      
+      await loadConversations();
+      
+      // Try to restore last active conversation
+      const lastConvId = localStorage.getItem('last_conversation_id');
+      if (lastConvId && user) {
+        try {
+          await loadConversation(lastConvId);
+          setIsInitialized(true);
+          return;
+        } catch (error) {
+          console.log('Could not restore last conversation, starting fresh');
+        }
+      }
+      
+      // No conversation to restore, show welcome message
+      updateWelcomeMessage();
+      setIsInitialized(true);
+    };
+    
+    initializeChat();
+  }, [user]);
+
+  // Update welcome message when manual changes (but only if no active conversation)
+  useEffect(() => {
+    if (isInitialized && messages.length <= 1) {
+      updateWelcomeMessage();
+    }
   }, [selectedManualId, manualTitle]);
 
   const loadConversations = async () => {
@@ -258,6 +287,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       setCurrentConversationId(conversationId);
       setSelectedManualId(conversationData.manual_id);
       setShowConversations(false);
+      
+      // Save as last active conversation
+      localStorage.setItem('last_conversation_id', conversationId);
 
       toast({
         title: 'Conversation loaded',
@@ -364,6 +396,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const startNewConversation = () => {
     setMessages([]);
     setCurrentConversationId(null);
+    localStorage.removeItem('last_conversation_id');
     updateWelcomeMessage();
   };
 
@@ -420,6 +453,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         
         if (!error && newConv) {
           setCurrentConversationId(newConv.id);
+          localStorage.setItem('last_conversation_id', newConv.id);
         }
       } catch (err) {
         console.error('Failed to create conversation:', err);
@@ -585,6 +619,15 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               content: accumulatedContent,
             }
           ]);
+          
+          // Update last_message_at timestamp
+          await supabase
+            .from('conversations')
+            .update({ last_message_at: new Date().toISOString() })
+            .eq('id', currentConversationId);
+          
+          // Save as last active conversation
+          localStorage.setItem('last_conversation_id', currentConversationId);
         } catch (err) {
           console.error('Failed to auto-save messages:', err);
         }

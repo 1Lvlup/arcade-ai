@@ -73,18 +73,29 @@ async function rerankResults(query: string, documents: any[]): Promise<any[]> {
 
     const data = await response.json();
     
-    // 🔥 TESTING MODE: FORCE FIGURES TO TOP
-    const FIGURE_BOOST = 0.80; // 80% boost for ALL figures (not just visual queries)
+    // 🔥 TESTING MODE: FORCE VISUAL FIGURES TO TOP
+    const FIGURE_BOOST = 0.95; // 95% boost for visual figures
+    const TEXT_FIGURE_PENALTY = -0.50; // 50% penalty for text-only figures
     
     // Map reranked indices back to original documents with scores
     let reranked = data.results.map((result: any) => {
       const doc = documents[result.index];
       let finalScore = result.relevance_score;
       
-      // Apply massive figure boost to ALL queries for testing
+      // Boost actual visual content, penalize text-only figures
       if (doc.content_type === 'figure') {
-        finalScore = finalScore * (1 + FIGURE_BOOST);
-        console.log(`🖼️ BOOSTED figure p${doc.page_start} score: ${result.relevance_score.toFixed(3)} → ${finalScore.toFixed(3)}`);
+        const figureType = doc.figure_type?.toLowerCase() || '';
+        
+        // Penalize text-only figures heavily
+        if (figureType.includes('text') || figureType.includes('sectionheader')) {
+          finalScore = finalScore * (1 + TEXT_FIGURE_PENALTY);
+          console.log(`📝 PENALIZED text figure p${doc.page_start} (${doc.figure_type}): ${result.relevance_score.toFixed(3)} → ${finalScore.toFixed(3)}`);
+        } 
+        // Boost actual visual content
+        else {
+          finalScore = finalScore * (1 + FIGURE_BOOST);
+          console.log(`🖼️ BOOSTED visual figure p${doc.page_start} (${doc.figure_type}): ${result.relevance_score.toFixed(3)} → ${finalScore.toFixed(3)}`);
+        }
       }
       
       return {

@@ -910,8 +910,8 @@ serve(async (req) => {
     // If streaming is requested, handle it differently
     if (stream) {
       console.log("📡 Starting streaming response");
-      const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages);
-      const { sources, strategy, chunks } = result;
+      const ragResult = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages);
+      const { sources, strategy, chunks, figureResults } = ragResult;
       
       // Log the query to get query_log_id for feedback
       let queryLogId = null;
@@ -985,7 +985,7 @@ serve(async (req) => {
           if (chunkIds.length > 0 && effectiveManualId) {
             try {
               // Pass figure results from search to buildCitationsAndImages
-              const figures = result.figureResults || [];
+              const figures = figureResults || [];
               const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, figures, effectiveManualId);
               thumbnails = imgs || [];
               console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${effectiveManualId}`);

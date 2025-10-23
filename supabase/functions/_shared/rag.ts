@@ -283,7 +283,8 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
     if (img.detected_components && Object.keys(img.detected_components || {}).length > 0) score += 1;
     
     // Specific figure types are more relevant
-    if (img.kind === 'diagram' || img.kind === 'schematic' || img.kind === 'table') score += 3;
+    const figType = (img.figure_type || '').toLowerCase();
+    if (figType.includes('diagram') || figType.includes('schematic') || figType.includes('table') || figType.includes('exploded')) score += 3;
     
     return { ...img, score };
   });
@@ -321,7 +322,7 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
     thumbnails: topImages.map(img => ({
       page_id: `${img.manual_id}:p${img.page_number}`,
       url: img.storage_url,
-      title: `${img.kind || 'Figure'} · ${img.manual_id} p.${img.page_number}`,
+      title: `${img.figure_type || img.caption_text?.substring(0, 50) || 'image'} · ${img.manual_id} p.${img.page_number}`,
       manual_id: img.manual_id
     }))
   };

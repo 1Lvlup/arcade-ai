@@ -244,21 +244,34 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
       return false;
     }
     
-    // Prioritize figures with meaningful visual types
-    const isVisualType = ['illustration', 'photo', 'diagram', 'exploded_view', 'schematic', 'chart', 'mixed'].includes(figureType);
+    // 🚫 EXCLUDE low-quality OCR captures (page numbers, single words, etc.)
+    const ocrText = (img.ocr_text || '').trim();
+    const captionText = (img.caption_text || '').trim();
     
-    // Check if image has meaningful content (caption, OCR, or metadata)
-    const hasCaption = img.caption_text && img.caption_text.length > 10;
-    const hasOCR = img.ocr_text && img.ocr_text.length > 5;
+    // If OCR is ONLY numbers or very short, it's likely a page number capture
+    if (ocrText.length > 0 && ocrText.length <= 5) {
+      const isOnlyNumbers = /^[\d\s]+$/.test(ocrText);
+      if (isOnlyNumbers) {
+        console.log(`🚫 Skipping page number capture p${img.page_number} (OCR: "${ocrText}")`);
+        return false;
+      }
+    }
+    
+    // Require SUBSTANTIAL content - not just a few characters
+    const hasSubstantialCaption = captionText.length >= 20;
+    const hasSubstantialOCR = ocrText.length >= 15 && !/^[\d\s]+$/.test(ocrText); // Must be real text, not just numbers
     const hasMetadata = (img.semantic_tags && img.semantic_tags.length > 0) || 
                         (img.keywords && img.keywords.length > 0) ||
                         (img.detected_components && Object.keys(img.detected_components || {}).length > 0);
     
-    // Require either a visual type OR meaningful content
-    const isRelevant = isVisualType || hasCaption || hasOCR || hasMetadata;
+    // Prioritize figures with meaningful visual types
+    const isVisualType = ['illustration', 'photo', 'diagram', 'exploded_view', 'schematic', 'chart', 'mixed'].includes(figureType);
+    
+    // Require BOTH a visual type AND meaningful content (caption/OCR/metadata)
+    const isRelevant = isVisualType && (hasSubstantialCaption || hasSubstantialOCR || hasMetadata);
     
     if (!isRelevant) {
-      console.log(`⚠️ Skipping low-quality figure p${img.page_number} (type: ${img.figure_type || 'unknown'})`);
+      console.log(`⚠️ Skipping low-quality figure p${img.page_number} (type: ${img.figure_type || 'unknown'}, caption: ${captionText.length}ch, OCR: ${ocrText.length}ch)`);
     }
     
     return isRelevant;

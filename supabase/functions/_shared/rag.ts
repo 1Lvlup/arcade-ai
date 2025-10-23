@@ -257,8 +257,8 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
       }
     }
     
-    // Require SUBSTANTIAL content - not just a few characters
-    const hasSubstantialCaption = captionText.length >= 20;
+    // Require SUBSTANTIAL content - captions must be 50+ chars for important images
+    const hasSubstantialCaption = captionText.length >= 50;
     const hasSubstantialOCR = ocrText.length >= 15 && !/^[\d\s]+$/.test(ocrText); // Must be real text, not just numbers
     const hasMetadata = (img.semantic_tags && img.semantic_tags.length > 0) || 
                         (img.keywords && img.keywords.length > 0) ||

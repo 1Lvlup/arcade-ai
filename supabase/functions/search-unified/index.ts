@@ -193,8 +193,24 @@ serve(async (req) => {
     // Rerank with Cohere
     const reranked = await rerankResults(query, rawResults);
 
-    // Take top 10 after reranking
-    const finalResults = reranked.slice(0, 10);
+    // 🔥 FILTER OUT text-only figures completely
+    const visualOnly = reranked.filter(r => {
+      if (r.content_type !== 'figure') return true; // Keep all text chunks
+      
+      const figureType = r.figure_type?.toLowerCase() || '';
+      const isTextOnly = figureType.includes('text') || figureType.includes('sectionheader');
+      
+      if (isTextOnly) {
+        console.log(`🚫 EXCLUDED text-only figure p${r.page_start} (${r.figure_type})`);
+        return false;
+      }
+      return true;
+    });
+
+    console.log(`📊 Filtered ${reranked.length} → ${visualOnly.length} results (removed text-only figures)`);
+
+    // Take top 10 after filtering
+    const finalResults = visualOnly.slice(0, 10);
     
     // Log final content type breakdown
     const finalTextCount = finalResults.filter(r => r.content_type === 'text').length;

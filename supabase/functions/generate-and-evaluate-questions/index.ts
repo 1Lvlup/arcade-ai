@@ -55,7 +55,7 @@ serve(async (req) => {
       throw new Error('User profile not found');
     }
 
-    await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id });
+    await supabase.rpc('set_tenant_context', { p_tenant_id: profile.fec_tenant_id });
 
     // ========================================================================
     // STEP 1: Build comprehensive manual summary

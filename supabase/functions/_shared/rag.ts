@@ -37,8 +37,8 @@ export function pageAwareChunk(markdown: string, meta: {
   return out;
 }
 
-// --- Build citations + thumbnails from used chunk IDs ---
-export async function buildCitationsAndImages(db: any, chunkIds: string[], manualId: string) {
+// --- Build citations + thumbnails from retrieved figures ---
+export async function buildCitationsAndImages(db: any, chunkIds: string[], figureChunks: any[], manualId: string) {
   // PHASE 1.1: Strict Manual ID Enforcement - manualId is now REQUIRED
   if (!manualId) {
     throw new Error('❌ CRITICAL: manualId is required for buildCitationsAndImages');
@@ -160,74 +160,15 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
   
   console.log(`📄 Found ${textChunks?.length || 0} text chunks covering ${pageRanges.length} valid page ranges`);
 
-  // Query figures based on the pages referenced in the chunks
-  // PHASE 1.1: Strict manual_id enforcement on figure retrieval
-  let figureChunks: any[] = [];
-  let crossManualFigures = 0;
-  
-  for (const range of pageRanges) {
-    let figureQuery = db
-      .from('figures')
-      .select('id, manual_id, page_number, storage_url, kind, image_name, caption_text, ocr_text, semantic_tags, detected_components, figure_type, keywords')
-      .eq('manual_id', manualId)  // ENFORCE: Use parameter, not range.manual_id
-      .in('page_number', range.pages)
-      .not('storage_url', 'is', null);
-    
-    const { data: figs, error: figError } = await figureQuery;
-    if (figError) console.error(`❌ Error fetching figures for ${manualId}:`, figError);
-    
-    // Double-check: reject any figures that don't match manual_id
-    if (figs) {
-      const validFigs = figs.filter(f => f.manual_id === manualId);
-      const invalidFigs = figs.length - validFigs.length;
-      if (invalidFigs > 0) {
-        crossManualFigures += invalidFigs;
-        console.error(`❌ CONTAMINATION: Rejected ${invalidFigs} figures from wrong manual`);
-      }
-      figureChunks.push(...validFigs);
-    }
+  // Use ONLY figures passed in from search-unified (NO PAGE SCRAPING)
+  if (!figureChunks || figureChunks.length === 0) {
+    console.log('🖼️ No figures provided from search - no images will be shown (strict mode)');
+    figureChunks = [];
+  } else {
+    console.log(`📄 Using ${figureChunks.length} figures from search results (strict mode - NO page scraping)`);
+
   }
 
-  if (crossManualFigures > 0) {
-    console.error(`❌ TOTAL CONTAMINATION: Blocked ${crossManualFigures} cross-manual figures`);
-  }
-  
-  console.log(`📄 Found ${figureChunks.length} valid figure chunks from ${pageRanges.length} page ranges`);
-
-  // Build map of pages PER MANUAL (prevent cross-contamination)
-  // PHASE 1.2: Enhanced page validation
-  const pagesByManual = new Map<string, Set<number>>();
-  
-  // Add pages from text chunks with strict validation
-  for (const c of textChunks ?? []) {
-    if (!pagesByManual.has(c.manual_id)) {
-      pagesByManual.set(c.manual_id, new Set());
-    }
-    const pages = pagesByManual.get(c.manual_id)!;
-    for (let p = c.page_start; p <= c.page_end; p++) {
-      if (p && p > 0 && p <= maxPage) { // Use calculated maxPage, not hardcoded 1000
-        pages.add(p);
-      }
-    }
-  }
-  
-  // Add pages from figure chunks with strict validation
-  for (const f of figureChunks ?? []) {
-    if (f.page_number && f.page_number > 0 && f.page_number <= maxPage) {
-      if (!pagesByManual.has(f.manual_id)) {
-        pagesByManual.set(f.manual_id, new Set());
-      }
-      pagesByManual.get(f.manual_id)!.add(f.page_number);
-    } else if (f.page_number > maxPage) {
-      console.warn(`⚠️ Skipping figure on invalid page ${f.page_number} (max: ${maxPage})`);
-    }
-  }
-
-  console.log(`📑 Page map by manual:`, 
-    Array.from(pagesByManual.entries()).map(([mid, pages]) => 
-      `${mid}: ${pages.size} pages`
-    ).join(', ')
-  );
 
   // Filter images by relevance using metadata, captions, OCR text
   const allImages = (figureChunks ?? []).filter(img => {
@@ -320,11 +261,16 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
   console.log(`🖼️ Filtered to ${topImages.length} images from ${uniquePages.length} unique pages: [${uniquePages.join(', ')}]`);
   console.log(`   (from ${allImages.length} relevant, ${figureChunks?.length || 0} total before filtering)`);
 
-  // Build citations array
+  // Build citations array from text chunks only
   const citations: string[] = [];
-  for (const [manualId, pages] of pagesByManual.entries()) {
-    for (const page of pages) {
-      citations.push(`${manualId}:p${page}`);
+  const citationPages = new Set<number>();
+  
+  for (const c of textChunks ?? []) {
+    for (let p = c.page_start; p <= c.page_end; p++) {
+      if (p && p > 0 && p <= maxPage && !citationPages.has(p)) {
+        citations.push(`${c.manual_id}:p${p}`);
+        citationPages.add(p);
+      }
     }
   }
 

@@ -209,20 +209,18 @@ serve(async (req) => {
 
     console.log(`📊 Filtered ${reranked.length} → ${visualOnly.length} results (removed text-only figures)`);
 
-    // Take top 10 after filtering
-    const finalResults = visualOnly.slice(0, 10);
+    // Separate text and figure results
+    const textResults = visualOnly.filter(r => r.content_type === 'text').slice(0, 10);
+    const figureResults = visualOnly.filter(r => r.content_type === 'figure').slice(0, 5);
     
-    // Log final content type breakdown
-    const finalTextCount = finalResults.filter(r => r.content_type === 'text').length;
-    const finalFigureCount = finalResults.filter(r => r.content_type === 'figure').length;
-    console.log(`✅ Final results: ${finalTextCount} text chunks, ${finalFigureCount} figures`);
-
-    console.log(`✅ Returning ${finalResults.length} results (vector → rerank)`);
+    console.log(`✅ Final separation: ${textResults.length} text chunks, ${figureResults.length} figures`);
 
     return new Response(
       JSON.stringify({
-        results: finalResults,
-        count: finalResults.length,
+        textResults,
+        figureResults,
+        allResults: visualOnly.slice(0, 10), // Backwards compatibility
+        count: textResults.length + figureResults.length,
         total_candidates: rawResults.length,
         strategy: 'vector_rerank',
         reranked: true,

@@ -241,11 +241,11 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
       // Fallback to direct vector search
       const fallbackResults = await fallbackVectorSearch(hybridQuery, manual_id, tenant_id);
       console.log(`⏱️ Fallback search completed in ${Date.now() - startTime}ms`);
-      return { finalResults: fallbackResults, strategy: "fallback_vector" };
+      return { textResults: fallbackResults, figureResults: [], strategy: "fallback_vector" };
     }
 
-    const { results = [] } = searchResponse.data || {};
-    console.log(`✅ Unified search returned ${results.length} results in ${Date.now() - startTime}ms`);
+    const { textResults = [], figureResults = [], allResults = [] } = searchResponse.data || {};
+    console.log(`✅ Unified search returned ${textResults.length} text, ${figureResults.length} figures in ${Date.now() - startTime}ms`);
 
     // Normalize DB rows
     function normalizeRow(r: any) {
@@ -260,13 +260,16 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
       return { ...r, content: t };
     }
 
-    const finalResults = results.map(normalizeRow);
-    return { finalResults, strategy: "unified_vector_rerank" };
+    return { 
+      textResults: textResults.map(normalizeRow),
+      figureResults: figureResults.map(normalizeRow),
+      strategy: "unified_vector_rerank" 
+    };
   } catch (error) {
     console.error("❌ Search error:", error);
     const fallbackResults = await fallbackVectorSearch(hybridQuery, manual_id, tenant_id);
     console.log(`⏱️ Error fallback completed in ${Date.now() - startTime}ms`);
-    return { finalResults: fallbackResults, strategy: "error_fallback" };
+    return { textResults: fallbackResults, figureResults: [], strategy: "error_fallback" };
   }
 }
 
@@ -659,8 +662,9 @@ async function runRagPipelineV3(
 ) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
-  const { finalResults: chunks, strategy } = await searchChunks(query, manual_id, tenant_id);
-  console.log(`📊 Retrieved ${chunks.length} chunks (strategy: ${strategy})`);
+  const { textResults, figureResults, strategy } = await searchChunks(query, manual_id, tenant_id);
+  const chunks = textResults; // Use text results for answer generation
+  console.log(`📊 Retrieved ${chunks.length} text chunks, ${figureResults.length} figures (strategy: ${strategy})`);
 
   if (!chunks || chunks.length === 0) {
     const fallback = buildFallbackFor(query);
@@ -768,6 +772,7 @@ Keep it short (2-3 sentences max) and friendly.`;
     })),
     strategy,
     chunks: topChunks,
+    figureResults, // Pass figures separately
     pipeline_version: "v3",
   };
 }
@@ -948,7 +953,9 @@ serve(async (req) => {
           
           if (chunkIds.length > 0 && effectiveManualId) {
             try {
-              const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, effectiveManualId);
+              // Pass figure results from search to buildCitationsAndImages
+              const figures = ragResult.figureResults || [];
+              const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, figures, effectiveManualId);
               thumbnails = imgs || [];
               console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${effectiveManualId}`);
             } catch (e) {

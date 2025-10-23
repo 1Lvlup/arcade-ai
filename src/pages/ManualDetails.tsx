@@ -111,6 +111,13 @@ export default function ManualDetails() {
   const figuresWithoutCaptions = figures?.filter(f => !f.caption_text).length || 0;
   const figuresWithCaptions = figures?.filter(f => f.caption_text).length || 0;
   const figuresWithoutType = figures?.filter(f => !f.figure_type).length || 0;
+  
+  console.log('🔍 Debug - Figures analysis:', {
+    totalFigures: figures?.length,
+    figuresWithoutType,
+    figuresWithoutOcr,
+    figuresWithoutCaptions
+  });
 
   // Query processing status
   const { data: statusData } = useQuery({

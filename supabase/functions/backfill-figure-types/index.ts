@@ -121,25 +121,39 @@ CRITICAL: Use "text" or "sectionheader" ONLY for purely textual images with NO d
           const visionData = await visionResponse.json();
           const visionContent = visionData.choices[0].message.content;
           
+          console.log(`📥 Raw response for ${fig.id}:`, visionContent.substring(0, 300));
+          
           let visionMetadata;
           try {
             // Try parsing as-is first
             visionMetadata = JSON.parse(visionContent);
           } catch {
             // If that fails, try extracting JSON from markdown code block
-            try {
-              const jsonMatch = visionContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-              if (jsonMatch && jsonMatch[1]) {
+            const jsonMatch = visionContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+            if (jsonMatch && jsonMatch[1]) {
+              try {
                 visionMetadata = JSON.parse(jsonMatch[1].trim());
-              } else {
-                console.error(`Failed to parse vision response for figure ${fig.id}:\n${visionContent.substring(0, 200)}`);
+              } catch (innerError) {
+                console.error(`❌ Failed even after markdown extraction for ${fig.id}:`, visionContent);
                 errors++;
                 return;
               }
-            } catch (innerError) {
-              console.error(`Failed to parse vision response for figure ${fig.id}:\n${visionContent.substring(0, 200)}`);
-              errors++;
-              return;
+            } else {
+              // Try to find any JSON object in the response
+              const objectMatch = visionContent.match(/\{[\s\S]*\}/);
+              if (objectMatch) {
+                try {
+                  visionMetadata = JSON.parse(objectMatch[0]);
+                } catch {
+                  console.error(`❌ No valid JSON found for ${fig.id}:`, visionContent);
+                  errors++;
+                  return;
+                }
+              } else {
+                console.error(`❌ No JSON structure found for ${fig.id}:`, visionContent);
+                errors++;
+                return;
+              }
             }
           }
 

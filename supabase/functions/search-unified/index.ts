@@ -191,7 +191,18 @@ serve(async (req) => {
     }
 
     // Rerank with Cohere
-    const reranked = await rerankResults(query, rawResults);
+    let reranked = await rerankResults(query, rawResults);
+
+    // 🚨 LAYER 1: Hard filter to prevent cross-manual leakage
+    if (manual_id) {
+      const beforeFilter = reranked.length;
+      reranked = reranked.filter(r => r.manual_id === manual_id);
+      const dropped = beforeFilter - reranked.length;
+      if (dropped > 0) {
+        console.warn(`🚫 DROPPED ${dropped} cross-manual results (requested: ${manual_id})`);
+      }
+      console.log(`✅ Hard filter: ${reranked.length} results confirmed for manual_id="${manual_id}"`);
+    }
 
     // 🔥 FILTER OUT text-only figures completely
     const visualOnly = reranked.filter(r => {

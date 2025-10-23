@@ -247,6 +247,21 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
     const { textResults = [], figureResults = [], allResults = [] } = searchResponse.data || {};
     console.log(`✅ Unified search returned ${textResults.length} text, ${figureResults.length} figures in ${Date.now() - startTime}ms`);
 
+    // 🔥 LAYER 4: Log search results with cross-manual detection
+    const totalResults = textResults.length + figureResults.length;
+    if (manual_id && totalResults > 0) {
+      const wrongManual = [...textResults, ...figureResults].filter(
+        r => r.manual_id && r.manual_id !== manual_id
+      );
+      if (wrongManual.length > 0) {
+        console.error(`🚨 CROSS-MANUAL LEAK: ${wrongManual.length}/${totalResults} results from wrong manual!`);
+        console.error(`   Requested: ${manual_id}`);
+        console.error(`   Leaked:`, wrongManual.map(r => `${r.manual_id} (p${r.page_start})`).join(', '));
+      } else {
+        console.log(`✅ SEARCH CLEAN: All ${totalResults} results from manual_id="${manual_id}"`);
+      }
+    }
+
     // Normalize DB rows
     function normalizeRow(r: any) {
       const t =
@@ -906,6 +921,7 @@ serve(async (req) => {
 
     // Run pipeline
     console.log("🚀 Using RAG Pipeline V3\n");
+    console.log(`📊 QUERY LOG: manual_requested="${manual_id || 'null'}", manual_effective="${effectiveManualId || 'null'}", tenant="${tenant_id || 'null'}"`);
     
     // If streaming is requested, handle it differently
     if (stream) {

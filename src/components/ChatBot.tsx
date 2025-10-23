@@ -29,7 +29,8 @@ import {
   Trash2,
   MessageSquarePlus,
   LogIn,
-  Flag
+  Flag,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -369,6 +370,15 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const handleManualChange = (newManualId: string | null, newManualTitle: string | null) => {
     setSelectedManualId(newManualId);
     setManualTitle(newManualTitle);
+    
+    // Show context switch notification if messages exist
+    if (messages.length > 1) {
+      toast({
+        title: "🔄 Switched context",
+        description: `Now querying: ${newManualTitle || 'All Manuals'}`,
+      });
+    }
+    
     setMessages([]); // clear chat when switching manuals
     setCurrentConversationId(null);
   };
@@ -515,13 +525,28 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               } else if (parsed.type === 'metadata') {
                 console.log('📊 Received metadata:', parsed.data);
                 
-                // Show toast if manual was auto-detected
-                if (parsed.data.auto_detected && parsed.data.detected_manual_title) {
-                  toast({
-                    title: 'Manual Auto-Detected',
-                    description: `Searching in: ${parsed.data.detected_manual_title}`,
-                    duration: 4000,
-                  });
+                // 🔥 LAYER 3: Auto-set manual when detected
+                if (parsed.data.auto_detected && parsed.data.manual_id && parsed.data.detected_manual_title) {
+                  const detectedId = parsed.data.manual_id;
+                  const detectedTitle = parsed.data.detected_manual_title;
+                  
+                  // Only auto-set if different from current selection
+                  if (detectedId !== selectedManualId) {
+                    setSelectedManualId(detectedId);
+                    setManualTitle(detectedTitle);
+                    toast({
+                      title: '🔄 Manual Auto-Detected',
+                      description: `Switched to: ${detectedTitle}`,
+                      duration: 4000,
+                    });
+                    console.log(`✅ Auto-set manual: ${detectedTitle} (${detectedId})`);
+                  } else {
+                    toast({
+                      title: 'Manual Confirmed',
+                      description: `Searching in: ${detectedTitle}`,
+                      duration: 3000,
+                    });
+                  }
                 }
                 
                 // Store metadata including thumbnails and manual_id
@@ -1180,6 +1205,18 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               disabled={isLoading}
               className="flex-1 text-base h-12"
             />
+            {/* 🔥 LAYER 3: Clear chat button */}
+            {messages.length > 1 && (
+              <Button
+                onClick={startNewConversation}
+                variant="ghost"
+                size="lg"
+                className="h-12 px-4"
+                title="Clear chat (keeps history saved)"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            )}
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isLoading}

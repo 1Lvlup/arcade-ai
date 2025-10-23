@@ -78,6 +78,7 @@ Analyze the query and determine:
 1. Is the user asking about a specific manual/machine? 
 2. If yes, which manual best matches their question?
 3. Consider variations in naming (abbreviations, partial names, common nicknames, misspellings)
+4. Match natural language to manual IDs (e.g., "ice ball" -> "ice-ball-manual", "down the clown" -> "down-the-clown-combined-10-21-25-current")
 
 Respond with a JSON object:
 {
@@ -95,11 +96,10 @@ Only set manual_id if you're confident the user is asking about a specific manua
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "user", content: prompt }
         ],
-        temperature: 0.3,
         response_format: { type: "json_object" }
       }),
     });

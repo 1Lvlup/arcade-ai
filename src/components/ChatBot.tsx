@@ -164,8 +164,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       id: 'welcome',
       type: 'bot',
       content: selectedManualId 
-        ? `Hi! I'm your Arcade Fix Guru assistant. I'll help you troubleshoot issues with "${manualTitle}". What problem are you experiencing?`
-        : `Hi! I'm your Arcade Fix Guru assistant. I'll search through all your uploaded manuals to help you troubleshoot arcade machine issues. What can I help you with today?`,
+        ? `Hello! I'm here to help you troubleshoot "${manualTitle}". What issue can I help you solve today?`
+        : `Hello! I'm your arcade troubleshooting assistant. I'll search through all your uploaded manuals to help diagnose and fix your machine issues. What can I help you with?`,
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);

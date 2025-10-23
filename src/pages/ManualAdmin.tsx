@@ -36,7 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Search, Plus, Edit, Database, Play, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit, Database, Play, Trash2, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { QuickTestConsole } from '@/components/QuickTestConsole';
 
@@ -355,6 +355,43 @@ const ManualAdmin = () => {
                                 <div className="max-w-xs">
                                   <p className="font-semibold">Populate Metadata</p>
                                   <p className="text-xs">Updates chunk metadata with game title, platform, etc.</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      toast.loading(`Backfilling figure types for ${manual.canonical_title}...`);
+                                      const { data, error } = await supabase.functions.invoke('backfill-figure-types', {
+                                        body: { manual_id: manual.manual_id }
+                                      });
+                                      
+                                      if (error) throw error;
+                                      
+                                      toast.dismiss();
+                                      toast.success(`Processed ${data.processed}/${data.total} figures`, {
+                                        description: data.errors ? `${data.errors} errors occurred` : 'All figures updated'
+                                      });
+                                    } catch (error: any) {
+                                      toast.dismiss();
+                                      toast.error('Backfill failed', {
+                                        description: error.message
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <Image className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="max-w-xs">
+                                  <p className="font-semibold">Backfill Figure Types</p>
+                                  <p className="text-xs">Extract figure_type metadata from existing images</p>
                                 </div>
                               </TooltipContent>
                             </Tooltip>

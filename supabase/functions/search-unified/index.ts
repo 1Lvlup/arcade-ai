@@ -209,9 +209,59 @@ serve(async (req) => {
 
     console.log(`📊 Filtered ${reranked.length} → ${visualOnly.length} results (removed text-only figures)`);
 
+    // 🎯 INTENT DETECTION + ANCHOR BOOST
+    const isVisualQuery = isVisualQuery(query);
+    console.log(`🔍 Visual query detected: ${isVisualQuery}`);
+    
+    // Apply anchor boost: figures on same pages as top text chunks get extra weight
+    const topTextPages = new Set(
+      visualOnly
+        .filter(r => r.content_type === 'text')
+        .slice(0, 6)
+        .map(r => r.page_start)
+    );
+    
+    for (const result of visualOnly) {
+      if (result.content_type === 'figure') {
+        let boost = 1.0;
+        
+        // Anchor boost: figure on same page as top text
+        if (topTextPages.has(result.page_start)) {
+          boost *= 1.12;
+          console.log(`📍 ANCHOR BOOST: p${result.page_start} figure is on same page as top text`);
+        }
+        
+        // Intent boost: visual query gets moderate figure boost
+        if (isVisualQuery) {
+          boost *= 1.10;
+        }
+        
+        if (boost > 1.0) {
+          const oldScore = result.rerank_score || 0;
+          result.rerank_score = oldScore * boost;
+          console.log(`  Score: ${oldScore.toFixed(3)} → ${result.rerank_score.toFixed(3)}`);
+        }
+      }
+    }
+    
+    // Re-sort after applying boosts
+    visualOnly.sort((a, b) => (b.rerank_score || 0) - (a.rerank_score || 0));
+
     // Separate text and figure results
-    const textResults = visualOnly.filter(r => r.content_type === 'text').slice(0, 10);
-    const figureResults = visualOnly.filter(r => r.content_type === 'figure').slice(0, 5);
+    let textResults = visualOnly.filter(r => r.content_type === 'text').slice(0, 10);
+    let figureResults = visualOnly.filter(r => r.content_type === 'figure').slice(0, 5);
+    
+    // 🎯 GUARANTEE FIGURE SLOTS for visual queries
+    if (isVisualQuery && figureResults.length === 0) {
+      // Find best figure even if it didn't make top results
+      const allFigures = visualOnly.filter(r => r.content_type === 'figure');
+      if (allFigures.length > 0) {
+        console.log(`⚠️ Visual query but no figures in top results - forcing best figure`);
+        figureResults = [allFigures[0]];
+        // Remove one text result to make room
+        textResults = textResults.slice(0, 9);
+      }
+    }
     
     console.log(`✅ Final separation: ${textResults.length} text chunks, ${figureResults.length} figures`);
 

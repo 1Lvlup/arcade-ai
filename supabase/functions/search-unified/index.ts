@@ -61,7 +61,7 @@ async function rerankResults(query: string, documents: any[]): Promise<any[]> {
         model: 'rerank-english-v3.0',
         query: query,
         documents: docs,
-        top_n: Math.min(10, documents.length),
+        top_n: Math.min(15, documents.length), // 🔥 TESTING: Get more results including figures
         return_documents: false,
       }),
     });
@@ -73,19 +73,18 @@ async function rerankResults(query: string, documents: any[]): Promise<any[]> {
 
     const data = await response.json();
     
-    // Detect if this is a visual query
-    const isVisual = isVisualQuery(query);
-    const FIGURE_BOOST = 0.12; // 12% boost for figures on visual queries
+    // 🔥 TESTING MODE: FORCE FIGURES TO TOP
+    const FIGURE_BOOST = 0.80; // 80% boost for ALL figures (not just visual queries)
     
     // Map reranked indices back to original documents with scores
     let reranked = data.results.map((result: any) => {
       const doc = documents[result.index];
       let finalScore = result.relevance_score;
       
-      // Apply figure boost for visual queries
-      if (isVisual && doc.content_type === 'figure') {
+      // Apply massive figure boost to ALL queries for testing
+      if (doc.content_type === 'figure') {
         finalScore = finalScore * (1 + FIGURE_BOOST);
-        console.log(`🖼️ Boosted figure p${doc.page_start} score: ${result.relevance_score.toFixed(3)} → ${finalScore.toFixed(3)}`);
+        console.log(`🖼️ BOOSTED figure p${doc.page_start} score: ${result.relevance_score.toFixed(3)} → ${finalScore.toFixed(3)}`);
       }
       
       return {
@@ -94,11 +93,9 @@ async function rerankResults(query: string, documents: any[]): Promise<any[]> {
       };
     });
     
-    // Re-sort after applying figure boost
-    if (isVisual) {
-      reranked = reranked.sort((a, b) => (b.rerank_score || 0) - (a.rerank_score || 0));
-      console.log(`🎯 Applied figure boost (query contains visual keywords)`);
-    }
+    // Always re-sort after applying figure boost
+    reranked = reranked.sort((a, b) => (b.rerank_score || 0) - (a.rerank_score || 0));
+    console.log(`🎯 TESTING MODE: Figures boosted by 80% and sorted to top`);
 
     console.log(`✅ Reranked ${reranked.length} results (top score: ${reranked[0]?.rerank_score?.toFixed(3)})`);
     return reranked;
@@ -145,7 +142,7 @@ serve(async (req) => {
       {
         query_embedding: embedding,
         top_k: top_k,
-        min_score: 0.25, // Lower threshold to get more candidates for reranking
+        min_score: 0.20, // 🔥 TESTING: Even lower threshold to catch more figures
         manual: manual_id || null,
         tenant_id: tenant_id || null,
       }

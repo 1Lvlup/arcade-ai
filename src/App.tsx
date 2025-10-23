@@ -34,6 +34,7 @@ import Pricing from "./pages/Pricing";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import ReIngestManual from "./pages/ReIngestManual";
+import ManualProcessingTools from "./pages/ManualProcessingTools";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,13 @@ const App = () => (
             <Route path="/manuals/:manualId" element={
               <ProtectedRoute>
                 <ManualDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/manuals/:manualId/tools" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <ManualProcessingTools />
+                </AdminRoute>
               </ProtectedRoute>
             } />
             <Route path="/vision-board" element={

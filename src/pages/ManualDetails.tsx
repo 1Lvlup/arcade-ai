@@ -9,7 +9,7 @@ import { SharedHeader } from '@/components/SharedHeader';
 import { SimpleChat } from '@/components/SimpleChat';
 import { ManualImages } from '@/components/ManualImages';
 import { ManualQuestions } from '@/components/ManualQuestions';
-import { FileText, Image as ImageIcon, Brain, Scan, Loader2 } from 'lucide-react';
+import { FileText, Image as ImageIcon, Brain, Scan, Loader2, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 
@@ -189,6 +189,12 @@ export default function ManualDetails() {
               </span>
             </div>
             <div className="flex items-center gap-3">
+              <Link to={`/manuals/${manualId}/tools`}>
+                <Button className="btn-tech-outline">
+                  <Database className="h-4 w-4 mr-2" />
+                  Processing Tools
+                </Button>
+              </Link>
               <Link to="/manuals">
                 <Button className="btn-tech-outline">
                   <FileText className="h-4 w-4 mr-2" />

@@ -954,7 +954,7 @@ serve(async (req) => {
           if (chunkIds.length > 0 && effectiveManualId) {
             try {
               // Pass figure results from search to buildCitationsAndImages
-              const figures = ragResult.figureResults || [];
+              const figures = result.figureResults || [];
               const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, figures, effectiveManualId);
               thumbnails = imgs || [];
               console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${effectiveManualId}`);

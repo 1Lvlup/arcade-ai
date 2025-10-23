@@ -126,38 +126,46 @@ CRITICAL:
           
           console.log(`📥 Raw response for ${fig.id}:`, visionContent.substring(0, 300));
           
-          let visionMetadata;
+          let visionMetadata: any = {};
+          
+          // Try to extract figure_type even from incomplete JSON
+          const typeMatch = visionContent.match(/"figure_type"\s*:\s*"([^"]+)"/);
+          if (typeMatch) {
+            visionMetadata.figure_type = typeMatch[1];
+          }
+          
+          // Try to extract semantic_tags
+          const tagsMatch = visionContent.match(/"semantic_tags"\s*:\s*\[(.*?)\]/);
+          if (tagsMatch) {
+            try {
+              visionMetadata.semantic_tags = JSON.parse(`[${tagsMatch[1]}]`);
+            } catch {
+              visionMetadata.semantic_tags = [];
+            }
+          }
+          
+          // Try full JSON parse for complete responses
           try {
-            // Try parsing as-is first
-            visionMetadata = JSON.parse(visionContent);
+            const fullParse = JSON.parse(visionContent);
+            visionMetadata = { ...visionMetadata, ...fullParse };
           } catch {
-            // If that fails, try extracting JSON from markdown code block
+            // Try markdown extraction
             const jsonMatch = visionContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
             if (jsonMatch && jsonMatch[1]) {
               try {
-                visionMetadata = JSON.parse(jsonMatch[1].trim());
-              } catch (innerError) {
-                console.error(`❌ Failed even after markdown extraction for ${fig.id}:`, visionContent);
-                errors++;
-                return;
-              }
-            } else {
-              // Try to find any JSON object in the response
-              const objectMatch = visionContent.match(/\{[\s\S]*\}/);
-              if (objectMatch) {
-                try {
-                  visionMetadata = JSON.parse(objectMatch[0]);
-                } catch {
-                  console.error(`❌ No valid JSON found for ${fig.id}:`, visionContent);
-                  errors++;
-                  return;
-                }
-              } else {
-                console.error(`❌ No JSON structure found for ${fig.id}:`, visionContent);
-                errors++;
-                return;
+                const fullParse = JSON.parse(jsonMatch[1].trim());
+                visionMetadata = { ...visionMetadata, ...fullParse };
+              } catch {
+                // Partial data is OK - we at least have figure_type
               }
             }
+          }
+          
+          // If we don't have at least figure_type, fail
+          if (!visionMetadata.figure_type) {
+            console.error(`❌ No figure_type found for ${fig.id}`);
+            errors++;
+            return;
           }
 
           // Update figure with metadata

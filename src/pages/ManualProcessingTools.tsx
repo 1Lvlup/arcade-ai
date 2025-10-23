@@ -1,63 +1,65 @@
-import { useParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { SharedHeader } from '@/components/SharedHeader';
-import { ArrowLeft, Database, Image, CheckCircle, AlertCircle } from 'lucide-react';
+import { ManualSelector } from '@/components/ManualSelector';
+import { Database, Image, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
 export default function ManualProcessingTools() {
-  const { manualId } = useParams<{ manualId: string }>();
   const queryClient = useQueryClient();
+  const [selectedManualId, setSelectedManualId] = useState<string | null>(null);
+  const [selectedManualTitle, setSelectedManualTitle] = useState<string | null>(null);
   const [processing, setProcessing] = useState<{
     metadata: boolean;
     figureTypes: boolean;
   }>({ metadata: false, figureTypes: false });
 
   const { data: document } = useQuery({
-    queryKey: ['document', manualId],
+    queryKey: ['document', selectedManualId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('documents')
         .select('*')
-        .eq('manual_id', manualId)
+        .eq('manual_id', selectedManualId)
         .single();
       
       if (error) throw error;
       return data;
     },
-    enabled: !!manualId,
+    enabled: !!selectedManualId,
   });
 
   const { data: chunks } = useQuery({
-    queryKey: ['chunks', manualId],
+    queryKey: ['chunks', selectedManualId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('chunks_text')
         .select('*')
-        .eq('manual_id', manualId);
+        .eq('manual_id', selectedManualId);
       
       if (error) throw error;
       return data;
     },
-    enabled: !!manualId,
+    enabled: !!selectedManualId,
   });
 
   const { data: figures } = useQuery({
-    queryKey: ['figures', manualId],
+    queryKey: ['figures', selectedManualId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('figures')
         .select('*')
-        .eq('manual_id', manualId);
+        .eq('manual_id', selectedManualId);
       
       if (error) throw error;
       return data;
     },
-    enabled: !!manualId,
+    enabled: !!selectedManualId,
   });
 
   const figuresWithoutType = figures?.filter(f => !f.figure_type).length || 0;
@@ -68,7 +70,7 @@ export default function ManualProcessingTools() {
       toast.loading('Processing metadata backfill...', { id: 'metadata-backfill' });
       
       const { data, error } = await supabase.rpc('fn_backfill_for_manual_any', {
-        p_manual_id: manualId
+        p_manual_id: selectedManualId
       });
       
       if (error) throw error;
@@ -78,7 +80,7 @@ export default function ManualProcessingTools() {
       toast.success(`✅ Metadata backfill complete`, {
         description: `Updated ${result.total} records (${result.updated_chunks_text} chunks, ${result.updated_rag_chunks} rag_chunks)`
       });
-      queryClient.invalidateQueries({ queryKey: ['chunks', manualId] });
+      queryClient.invalidateQueries({ queryKey: ['chunks', selectedManualId] });
     } catch (error: any) {
       toast.dismiss('metadata-backfill');
       toast.error('❌ Metadata backfill failed', {
@@ -95,7 +97,7 @@ export default function ManualProcessingTools() {
       toast.loading(`Processing ${figuresWithoutType} figures...`, { id: 'figure-backfill' });
       
       const { data, error } = await supabase.functions.invoke('backfill-figure-types', {
-        body: { manual_id: manualId }
+        body: { manual_id: selectedManualId }
       });
       
       if (error) throw error;
@@ -104,7 +106,7 @@ export default function ManualProcessingTools() {
       toast.success(`✅ Classified ${data.processed}/${data.total} figures`, {
         description: data.errors ? `${data.errors} errors occurred` : 'All figures updated'
       });
-      queryClient.invalidateQueries({ queryKey: ['figures', manualId] });
+      queryClient.invalidateQueries({ queryKey: ['figures', selectedManualId] });
     } catch (error: any) {
       toast.dismiss('figure-backfill');
       toast.error('❌ Figure classification failed', {
@@ -117,23 +119,43 @@ export default function ManualProcessingTools() {
 
   return (
     <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="Processing Tools" showBackButton={true} backTo={`/manuals/${manualId}`} />
+      <SharedHeader title="Processing Tools" showBackButton={true} backTo="/manual-admin" />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <Link to={`/manuals/${manualId}`}>
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Manual
-            </Button>
-          </Link>
-          <h1 className="text-4xl font-bold neon-text mb-2">Processing Tools</h1>
-          <p className="text-muted-foreground">{document?.title}</p>
+          <h1 className="text-4xl font-bold neon-text mb-4">Processing Tools</h1>
+          
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Select Manual</CardTitle>
+              <CardDescription>Choose which manual to process</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ManualSelector
+                selectedManualId={selectedManualId || undefined}
+                onManualChange={(manualId, title) => {
+                  setSelectedManualId(manualId);
+                  setSelectedManualTitle(title);
+                }}
+              />
+              {selectedManualTitle && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Selected: <span className="font-medium">{selectedManualTitle}</span>
+                </p>
+              )}
+              {!selectedManualId && (
+                <p className="text-sm text-yellow-500 mt-2">
+                  Please select a manual to view processing options
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="space-y-6">
-          {/* Status Overview */}
-          <Card>
+        {selectedManualId && (
+          <div className="space-y-6">
+            {/* Status Overview */}
+            <Card>
             <CardHeader>
               <CardTitle>Manual Status</CardTitle>
               <CardDescription>Current state of processing</CardDescription>
@@ -233,7 +255,8 @@ export default function ManualProcessingTools() {
               )}
             </CardContent>
           </Card>
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );

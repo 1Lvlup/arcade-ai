@@ -82,17 +82,18 @@ serve(async (req) => {
       
       await Promise.all(batch.map(async (fig) => {
         try {
-          const visionPrompt = `Analyze this technical diagram/image. Return ONLY a JSON object (no markdown, no explanation) with:
+          const visionPrompt = `Classify this technical image. Return ONLY a JSON object:
 {
-  "figure_type": "diagram|photo|illustration|schematic|circuit|exploded_view|chart|table|mixed|text|sectionheader",
-  "detected_components": [{"type": "part_number|measurement|callout", "label": "...", "value": "..."}],
-  "semantic_tags": ["electrical", "mechanical", "troubleshooting", "assembly", "safety"]
+  "figure_type": "diagram|photo|illustration|schematic|circuit|exploded_view|chart|table|mixed|text|sectionheader"
 }
 
-CRITICAL: 
-- Use "text" or "sectionheader" ONLY for purely textual images with NO diagrams/photos/illustrations
-- For tables with many rows, limit to first 5-10 most important items
-- Return ONLY the JSON object, no other text`;
+Rules:
+- "text" or "sectionheader" = purely textual, no diagrams/photos
+- "table" = parts lists, specifications, data tables
+- "exploded_view" = assembly diagrams showing component breakdown
+- "photo" = photographs
+- "illustration" = drawings/diagrams
+- Return ONLY the JSON, nothing else`;
 
           const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -102,7 +103,7 @@ CRITICAL:
             },
             body: JSON.stringify({
               model: 'gpt-4.1-mini',
-              max_completion_tokens: 2000,  // Increased from 500 to handle large tables
+              max_completion_tokens: 100,  // Reduced - we only need figure_type
               messages: [
                 {
                   role: 'user',
@@ -173,8 +174,6 @@ CRITICAL:
             .from('figures')
             .update({
               figure_type: visionMetadata.figure_type || 'diagram',
-              detected_components: visionMetadata.detected_components || [],
-              semantic_tags: visionMetadata.semantic_tags || [],
             })
             .eq('id', fig.id);
 

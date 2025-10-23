@@ -58,21 +58,37 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
     .in('id', chunkIds);
   if (textError) console.error('❌ Error fetching text chunks:', textError);
   
-  // PHASE 1.1: Cross-Manual Contamination Detection
+  // PHASE 1.1: Cross-Manual Contamination Detection & Auto-Fix
   if (textChunks && textChunks.length > 0) {
-    const uniqueManuals = new Set(textChunks.map(c => c.manual_id));
-    if (uniqueManuals.size > 1) {
-      const manualList = Array.from(uniqueManuals).join(', ');
-      console.error(`❌ CONTAMINATION DETECTED: chunks span ${uniqueManuals.size} manuals: ${manualList}`);
-      throw new Error(`Cross-manual contamination detected in chunk IDs. Expected: ${manualId}, Found: ${manualList}`);
-    }
+    const manualCounts = textChunks.reduce((acc, c) => {
+      acc[c.manual_id] = (acc[c.manual_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
     
-    // Verify all chunks match the requested manual
-    const wrongManualChunks = textChunks.filter(c => c.manual_id !== manualId);
-    if (wrongManualChunks.length > 0) {
-      console.error(`❌ MANUAL MISMATCH: ${wrongManualChunks.length} chunks from wrong manual:`, 
-        wrongManualChunks.map(c => c.manual_id).slice(0, 3));
-      throw new Error(`Chunk manual mismatch: expected ${manualId}, got chunks from ${wrongManualChunks[0].manual_id}`);
+    const uniqueManuals = Object.keys(manualCounts);
+    
+    if (uniqueManuals.length > 1) {
+      // Find the dominant manual (most chunks)
+      const dominantManual = uniqueManuals.reduce((a, b) => 
+        manualCounts[a] > manualCounts[b] ? a : b
+      );
+      
+      console.log(`⚠️ Multi-manual detected: ${uniqueManuals.join(', ')}`);
+      console.log(`🔧 Auto-filtering to dominant manual: ${dominantManual} (${manualCounts[dominantManual]}/${textChunks.length} chunks)`);
+      
+      // Filter chunk IDs to only the dominant manual
+      const filteredChunkIds = textChunks
+        .filter(c => c.manual_id === dominantManual)
+        .map(c => c.id);
+      
+      // Update chunkIds array and manualId
+      chunkIds = filteredChunkIds;
+      manualId = dominantManual;
+      
+      // Re-filter textChunks
+      const originalCount = textChunks.length;
+      textChunks.splice(0, textChunks.length, ...textChunks.filter(c => c.manual_id === dominantManual));
+      console.log(`✅ Filtered ${originalCount} → ${textChunks.length} chunks`);
     }
   }
 

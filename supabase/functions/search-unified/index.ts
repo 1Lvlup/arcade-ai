@@ -122,7 +122,7 @@ serve(async (req) => {
   }
 
   try {
-    const { query, manual_id, tenant_id, top_k = 60 } = await req.json();
+    const { query, manual_id, tenant_id, top_k = 75 } = await req.json();
 
     if (!query) {
       throw new Error('Query is required');
@@ -153,7 +153,7 @@ serve(async (req) => {
       {
         query_embedding: embedding,
         top_k: top_k,
-        min_score: 0.20, // 🔥 TESTING: Even lower threshold to catch more figures
+        min_score: 0.18, // Lowered threshold to capture more relevant chunks
         manual: manual_id || null,
         tenant_id: tenant_id || null,
       }

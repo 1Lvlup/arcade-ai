@@ -232,7 +232,7 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
         query: hybridQuery,
         manual_id: manual_id,
         tenant_id: tenant_id,
-        top_k: 60,
+        top_k: 75,
       },
     });
 
@@ -296,8 +296,8 @@ async function fallbackVectorSearch(query: string, manual_id?: string, tenant_id
   
   const { data: vectorResults, error: vectorError } = await supabase.rpc("match_chunks_improved", {
     query_embedding: queryEmbedding,
-    top_k: 60,
-    min_score: 0.3,
+    top_k: 75,
+    min_score: 0.25,
     manual: manual_id,
     tenant_id: tenant_id,
   });

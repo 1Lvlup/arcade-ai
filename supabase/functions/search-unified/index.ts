@@ -74,7 +74,7 @@ async function rerankResults(query: string, documents: any[]): Promise<any[]> {
     const data = await response.json();
     
     // 🔥 TESTING MODE: FORCE VISUAL FIGURES TO TOP
-    const FIGURE_BOOST = 0.95; // 95% boost for visual figures
+    const FIGURE_BOOST = 0.20; // 20% boost for visual figures
     const TEXT_FIGURE_PENALTY = -0.50; // 50% penalty for text-only figures
     
     // Map reranked indices back to original documents with scores

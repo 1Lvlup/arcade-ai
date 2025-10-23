@@ -123,11 +123,24 @@ CRITICAL: Use "text" or "sectionheader" ONLY for purely textual images with NO d
           
           let visionMetadata;
           try {
+            // Try parsing as-is first
             visionMetadata = JSON.parse(visionContent);
           } catch {
-            console.error(`Failed to parse vision response for figure ${fig.id}`);
-            errors++;
-            return;
+            // If that fails, try extracting JSON from markdown code block
+            try {
+              const jsonMatch = visionContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+              if (jsonMatch && jsonMatch[1]) {
+                visionMetadata = JSON.parse(jsonMatch[1].trim());
+              } else {
+                console.error(`Failed to parse vision response for figure ${fig.id}:\n${visionContent.substring(0, 200)}`);
+                errors++;
+                return;
+              }
+            } catch (innerError) {
+              console.error(`Failed to parse vision response for figure ${fig.id}:\n${visionContent.substring(0, 200)}`);
+              errors++;
+              return;
+            }
           }
 
           // Update figure with metadata

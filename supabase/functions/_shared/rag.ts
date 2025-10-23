@@ -237,15 +237,29 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], manua
       return false;
     }
     
+    // 🔥 EXCLUDE text-only figures - we only want visual diagrams/photos
+    const figureType = (img.figure_type || '').toLowerCase();
+    if (figureType.includes('text') || figureType.includes('sectionheader')) {
+      console.log(`🚫 Skipping text-only figure p${img.page_number} (${img.figure_type})`);
+      return false;
+    }
+    
+    // Prioritize figures with meaningful visual types
+    const isVisualType = ['illustration', 'photo', 'diagram', 'exploded_view', 'schematic', 'chart', 'mixed'].includes(figureType);
+    
     // Check if image has meaningful content (caption, OCR, or metadata)
     const hasCaption = img.caption_text && img.caption_text.length > 10;
     const hasOCR = img.ocr_text && img.ocr_text.length > 5;
     const hasMetadata = (img.semantic_tags && img.semantic_tags.length > 0) || 
                         (img.keywords && img.keywords.length > 0) ||
                         (img.detected_components && Object.keys(img.detected_components || {}).length > 0);
-    const hasType = img.kind || img.figure_type;
     
-    const isRelevant = hasCaption || hasOCR || hasMetadata || hasType;
+    // Require either a visual type OR meaningful content
+    const isRelevant = isVisualType || hasCaption || hasOCR || hasMetadata;
+    
+    if (!isRelevant) {
+      console.log(`⚠️ Skipping low-quality figure p${img.page_number} (type: ${img.figure_type || 'unknown'})`);
+    }
     
     return isRelevant;
   });

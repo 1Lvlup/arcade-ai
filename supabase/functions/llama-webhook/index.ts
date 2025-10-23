@@ -1030,7 +1030,7 @@ serve(async (req) => {
                 }
               }
               
-              // Call GPT-4.1 Vision for caption (with context)
+              // Call GPT-4.1 Vision for caption + metadata extraction (with context)
               const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -1040,18 +1040,24 @@ serve(async (req) => {
                 },
                 body: JSON.stringify({
                   model: 'gpt-4.1',
-                  max_completion_tokens: 500,
+                  max_completion_tokens: 800,
                   messages: [
                     {
                       role: 'system',
-                      content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Create detailed, accurate captions for images from technical manuals focusing on components, connections, troubleshooting value, and maintenance procedures.'
+                      content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Analyze images and extract structured metadata.'
                     },
                     {
                       role: 'user',
                       content: [
                         {
                           type: 'text',
-                          text: `Analyze this image from an arcade game manual and provide a detailed technical caption.
+                          text: `Analyze this image from an arcade game manual and return JSON with:
+{
+  "caption": "[Page ${pageNum || 'Unknown'}] Detailed technical description for troubleshooting/maintenance",
+  "figure_type": "diagram|photo|illustration|schematic|circuit|exploded_view|chart|table|mixed|text|sectionheader",
+  "detected_components": [{"type": "part_number|measurement|callout|wire_color|safety_symbol|component", "label": "...", "value": "..."}],
+  "semantic_tags": ["electrical", "mechanical", "troubleshooting", "assembly", "safety", etc.]
+}
 
 Manual: ${document.title}
 Figure ID: ${figureInfo.figureName}
@@ -1059,7 +1065,7 @@ Page: ${pageNum || 'Unknown'}
 ${llamaOcr ? `\nOCR Text: ${llamaOcr.substring(0, 300)}` : ''}
 ${textContext ? `\nNearby content: ${textContext.substring(0, 300)}` : ''}
 
-Start your caption with "[Page ${pageNum || 'Unknown'}]" followed by a detailed technical description that helps technicians understand what they're looking at and how it relates to troubleshooting or maintenance.`
+CRITICAL: Use figure_type "text" or "sectionheader" ONLY for images that are purely text/headers with NO diagrams/photos.`
                         },
                         {
                           type: 'image_url',
@@ -1072,9 +1078,25 @@ Start your caption with "[Page ${pageNum || 'Unknown'}]" followed by a detailed 
               });
               
               let caption = null;
+              let figureType = 'diagram';
+              let detectedComponents = null;
+              let semanticTags = null;
+              
               if (captionResponse.ok) {
                 const captionData = await captionResponse.json();
-                caption = captionData.choices[0].message.content;
+                const content = captionData.choices[0].message.content;
+                
+                // Try to parse JSON response
+                try {
+                  const parsed = JSON.parse(content);
+                  caption = parsed.caption || content;
+                  figureType = parsed.figure_type || 'diagram';
+                  detectedComponents = parsed.detected_components || null;
+                  semanticTags = parsed.semantic_tags || null;
+                } catch {
+                  // Fallback: treat as plain caption
+                  caption = content;
+                }
               } else {
                 throw new Error(`Caption API error: ${captionResponse.status}`);
               }
@@ -1105,11 +1127,14 @@ Start your caption with "[Page ${pageNum || 'Unknown'}]" followed by a detailed 
                 }
               }
               
-              // Update figure with caption AND embedding together
+              // Update figure with caption, metadata, AND embedding together
               const updateData: any = {
                 caption_text: caption,
                 vision_text: caption,
                 embedding_text: embedding,
+                figure_type: figureType,
+                detected_components: detectedComponents,
+                semantic_tags: semanticTags,
                 ocr_status: 'success',
                 ocr_updated_at: new Date().toISOString()
               };

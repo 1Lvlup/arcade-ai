@@ -1711,12 +1711,14 @@ export type Database = {
         Returns: {
           content: string
           content_type: string
+          figure_type: string
           id: string
           manual_id: string
           menu_path: string
           page_end: number
           page_start: number
           score: number
+          storage_url: string
         }[]
       }
       match_chunks_text: {

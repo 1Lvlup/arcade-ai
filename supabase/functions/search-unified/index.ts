@@ -11,6 +11,57 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
 const COHERE_API_KEY = Deno.env.get('COHERE_API_KEY')!;
 
+// Maximal Marginal Relevance for result diversity
+function applyMMR(results: any[], lambda = 0.7, targetCount = 10): any[] {
+  if (results.length <= targetCount) return results;
+
+  const selected = [results[0]]; // Start with highest scoring result
+  const remaining = results.slice(1);
+
+  while (selected.length < targetCount && remaining.length > 0) {
+    let bestIdx = 0;
+    let bestScore = -1;
+
+    for (let i = 0; i < remaining.length; i++) {
+      const candidate = remaining[i];
+      const relevanceScore = candidate.rerank_score || candidate.score || 0;
+
+      // Calculate diversity (1 - max similarity to selected items)
+      let maxSimilarity = 0;
+      for (const sel of selected) {
+        const similarity = textSimilarity(candidate.content, sel.content);
+        maxSimilarity = Math.max(maxSimilarity, similarity);
+      }
+      const diversityScore = 1 - maxSimilarity;
+
+      // MMR formula: λ * relevance + (1-λ) * diversity
+      const mmrScore = lambda * relevanceScore + (1 - lambda) * diversityScore;
+
+      if (mmrScore > bestScore) {
+        bestScore = mmrScore;
+        bestIdx = i;
+      }
+    }
+
+    selected.push(remaining[bestIdx]);
+    remaining.splice(bestIdx, 1);
+  }
+
+  console.log(`✅ MMR applied: ${results.length} → ${selected.length} results (diversity improved)`);
+  return selected;
+}
+
+// Simple text similarity using Jaccard similarity
+function textSimilarity(text1: string, text2: string): number {
+  const words1 = new Set(text1.toLowerCase().split(/\s+/));
+  const words2 = new Set(text2.toLowerCase().split(/\s+/));
+  
+  const intersection = new Set([...words1].filter(x => words2.has(x)));
+  const union = new Set([...words1, ...words2]);
+  
+  return intersection.size / union.size;
+}
+
 // Create embedding using OpenAI
 async function createEmbedding(text: string): Promise<number[]> {
   const response = await fetch('https://api.openai.com/v1/embeddings', {
@@ -147,23 +198,70 @@ serve(async (req) => {
     const embedding = await createEmbedding(query);
     console.log(`📊 Generated embedding (${embedding.length} dims)`);
 
-    // Search using unified function (text chunks + figures)
-    const { data: rawResults, error: searchError } = await supabase.rpc(
+    // Strategy 1: Vector search using unified function (text chunks + figures)
+    let rawResults: any[] = [];
+    let strategy = 'vector_search';
+    
+    const { data: vectorData, error: vectorError } = await supabase.rpc(
       'match_chunks_improved',
       {
         query_embedding: embedding,
         top_k: top_k,
-        min_score: 0.18, // Lowered threshold to capture more relevant chunks
+        min_score: 0.18,
         manual: manual_id || null,
         tenant_id: tenant_id || null,
       }
     );
 
-    if (searchError) {
-      throw searchError;
+    if (vectorError) {
+      console.error('❌ Vector search error:', vectorError);
+    } else {
+      rawResults = vectorData || [];
     }
 
-    console.log(`📦 Retrieved ${rawResults?.length || 0} candidates`);
+    console.log(`📦 Vector search retrieved ${rawResults.length} candidates`);
+
+    // Strategy 2: Text search fallback if vector search yields few results
+    if (rawResults.length < 3) {
+      console.log('⚠️ Low vector results, trying text search fallback');
+      const { data: textData, error: textError } = await supabase.rpc('match_chunks_text', {
+        query_text: query,
+        top_k: top_k,
+        manual: manual_id || null,
+        tenant_id: tenant_id || null,
+      });
+
+      if (textError) {
+        console.error('❌ Text search error:', textError);
+      } else if (textData && textData.length > 0) {
+        rawResults = textData;
+        strategy = 'text_search';
+        console.log(`📦 Text search retrieved ${rawResults.length} candidates`);
+      }
+    }
+
+    // Strategy 3: Simple search as last resort
+    if (rawResults.length === 0) {
+      console.log('⚠️ No results from vector/text, trying simple search');
+      const { data: simpleData, error: simpleError } = await supabase.rpc('simple_search', {
+        search_query: query,
+        search_manual: manual_id || null,
+        search_tenant: tenant_id || null,
+        search_limit: top_k,
+      });
+
+      if (simpleError) {
+        console.error('❌ Simple search error:', simpleError);
+      } else if (simpleData && simpleData.length > 0) {
+        rawResults = simpleData.map((r: any) => ({
+          ...r,
+          score: 0.5,
+          content_type: 'text'
+        }));
+        strategy = 'simple_search';
+        console.log(`📦 Simple search retrieved ${rawResults.length} candidates`);
+      }
+    }
 
     // Log breakdown of content types
     const textCount = rawResults?.filter(r => r.content_type === 'text').length || 0;
@@ -258,9 +356,12 @@ serve(async (req) => {
     // Re-sort after applying boosts
     visualOnly.sort((a, b) => (b.rerank_score || 0) - (a.rerank_score || 0));
 
+    // Apply MMR for diversity before final separation
+    const diverseResults = applyMMR(visualOnly, 0.7, Math.min(15, visualOnly.length));
+
     // Separate text and figure results
-    let textResults = visualOnly.filter(r => r.content_type === 'text').slice(0, 10);
-    let figureResults = visualOnly.filter(r => r.content_type === 'figure').slice(0, 5);
+    let textResults = diverseResults.filter(r => r.content_type === 'text').slice(0, 10);
+    let figureResults = diverseResults.filter(r => r.content_type === 'figure').slice(0, 5);
     
     // 🎯 GUARANTEE FIGURE SLOTS for visual queries
     if (isVisualQuery && figureResults.length === 0) {
@@ -276,14 +377,37 @@ serve(async (req) => {
     
     console.log(`✅ Final separation: ${textResults.length} text chunks, ${figureResults.length} figures`);
 
+    // Enhance results with manual titles
+    const manualIds = [...new Set([...textResults, ...figureResults].map(r => r.manual_id))];
+    const { data: manuals } = await supabase
+      .from('documents')
+      .select('manual_id, title')
+      .in('manual_id', manualIds);
+
+    const manualTitles = manuals?.reduce((acc: any, m: any) => {
+      acc[m.manual_id] = m.title;
+      return acc;
+    }, {}) || {};
+
+    // Add manual titles to results
+    textResults = textResults.map((r: any) => ({
+      ...r,
+      manual_title: manualTitles[r.manual_id] || r.manual_id
+    }));
+
+    figureResults = figureResults.map((r: any) => ({
+      ...r,
+      manual_title: manualTitles[r.manual_id] || r.manual_id
+    }));
+
     return new Response(
       JSON.stringify({
         textResults,
         figureResults,
-        allResults: visualOnly.slice(0, 10), // Backwards compatibility
+        allResults: diverseResults.slice(0, 10), // Backwards compatibility
         count: textResults.length + figureResults.length,
         total_candidates: rawResults.length,
-        strategy: 'vector_rerank',
+        strategy,
         reranked: true,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

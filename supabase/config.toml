@@ -68,8 +68,6 @@ PROCESS_FIGURES_IN_WEBHOOK = "false"
 UPLOAD_FIGURES_IN_WEBHOOK = "false"
 EMBED_FIGURES_IN_WEBHOOK = "false"
 
-[functions.search-manuals]
-verify_jwt = true
 
 [functions.search-manuals-robust]
 verify_jwt = true

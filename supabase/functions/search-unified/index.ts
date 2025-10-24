@@ -302,25 +302,32 @@ serve(async (req) => {
       console.log(`✅ Hard filter: ${reranked.length} results confirmed for manual_id="${manual_id}"`);
     }
 
-    // 🔥 FILTER OUT text-only figures completely
+    // 🔥 FILTER OUT only explicitly text-only figures (keep NULL types - they're likely visual)
     const visualOnly = reranked.filter(r => {
       if (r.content_type !== 'figure') return true; // Keep all text chunks
       
-      const figureType = r.figure_type?.toLowerCase() || '';
-      const isTextOnly = figureType.includes('text') || figureType.includes('sectionheader');
+      const figureType = (r.figure_type || '').toLowerCase();
       
-      if (isTextOnly) {
+      // Only exclude if EXPLICITLY marked as text-only or section header
+      const isExplicitlyTextOnly = 
+        figureType === 'text' || 
+        figureType === 'sectionheader' || 
+        figureType === 'text_snippet';
+      
+      if (isExplicitlyTextOnly) {
         console.log(`🚫 EXCLUDED text-only figure p${r.page_start} (${r.figure_type})`);
         return false;
       }
+      
+      // Keep all other figures (including NULL types which are likely visual)
       return true;
     });
 
     console.log(`📊 Filtered ${reranked.length} → ${visualOnly.length} results (removed text-only figures)`);
 
     // 🎯 INTENT DETECTION + ANCHOR BOOST
-    const isVisualQuery = isVisualQuery(query);
-    console.log(`🔍 Visual query detected: ${isVisualQuery}`);
+    const hasVisualIntent = isVisualQuery(query);
+    console.log(`🔍 Visual query detected: ${hasVisualIntent}`);
     
     // Apply anchor boost: figures on same pages as top text chunks get extra weight
     const topTextPages = new Set(
@@ -341,7 +348,7 @@ serve(async (req) => {
         }
         
         // Intent boost: visual query gets moderate figure boost
-        if (isVisualQuery) {
+        if (hasVisualIntent) {
           boost *= 1.10;
         }
         
@@ -364,7 +371,7 @@ serve(async (req) => {
     let figureResults = diverseResults.filter(r => r.content_type === 'figure').slice(0, 5);
     
     // 🎯 GUARANTEE FIGURE SLOTS for visual queries
-    if (isVisualQuery && figureResults.length === 0) {
+    if (hasVisualIntent && figureResults.length === 0) {
       // Find best figure even if it didn't make top results
       const allFigures = visualOnly.filter(r => r.content_type === 'figure');
       if (allFigures.length > 0) {

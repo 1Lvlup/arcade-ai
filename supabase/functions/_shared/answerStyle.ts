@@ -172,7 +172,7 @@ export function shapeMessages(
     `#${i + 1}: ${s.title}${s.cite ? ` (${s.cite})` : ""}\n${s.excerpt}`
   ).join("\n\n");
 
-  const system = ANSWER_STYLE_SYSTEM + (
+  const system = ARCADE_TROUBLESHOOTER_PRO + (
     isWeak
       ? `\n\nRetrieval is WEAK. Be candid about limits; switch to best-practice checks; mark inferences as "Working theory."`
       : `\n\nRetrieval is STRONG. Prefer doc-backed steps and name the doc/section inline.`

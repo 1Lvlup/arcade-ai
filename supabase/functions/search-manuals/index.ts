@@ -11,6 +11,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
 const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID')
+const chatModel = Deno.env.get('CHAT_MODEL') || 'gpt-5-chat-latest'
 
 // Search thresholds
 const VECTOR_THRESHOLD = 0.7
@@ -74,7 +75,7 @@ async function generateHypotheticalAnswer(query: string): Promise<string> {
       ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
     },
     body: JSON.stringify({
-      model: 'gpt-4.1-mini',
+      model: chatModel,
       max_completion_tokens: 500,
       messages: [
         {
@@ -111,7 +112,7 @@ async function rerankResults(query: string, results: any[]): Promise<any[]> {
         ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
       },
     body: JSON.stringify({
-      model: 'gpt-4.1-mini',
+      model: chatModel,
       max_completion_tokens: 200,
       messages: [
         {

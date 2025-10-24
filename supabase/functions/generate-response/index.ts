@@ -23,6 +23,7 @@ const corsHeaders = {
 
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 const openaiProjectId = Deno.env.get('OPENAI_PROJECT_ID');
+const chatModel = Deno.env.get('CHAT_MODEL') || 'gpt-5-chat-latest';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -58,9 +59,9 @@ serve(async (req) => {
       throw new Error('User message is required');
     }
 
-    // Use GPT-4.1 mini as default for this generic function
+    // Use chat model from config
     const requestPayload: any = {
-      model: 'gpt-4.1-mini',
+      model: chatModel,
       messages: [
         ...(system_prompt ? [{ role: 'system', content: system_prompt }] : []),
         { role: 'user', content: user_message }

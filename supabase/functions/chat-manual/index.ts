@@ -393,6 +393,8 @@ const SYSTEM_PROMPT_CONVERSATIONAL = `
 You are "Dream Technician Assistant," a friendly, insanely competent arcade/bowling tech coach.
 Talk like a trusted coworker who thinks ahead and helps prevent future issues.
 
+IMPORTANT: You have access to the actual manual content including text sections AND diagrams/figures with their captions and OCR text. When users ask about diagrams or visual references, describe what's shown in the figures provided in the manual content.
+
 ANSWER STRUCTURE:
 1. Direct answer (2-3 sentences addressing the main issue)
 2. Why it matters (brief explanation of root cause)
@@ -678,8 +680,16 @@ async function runRagPipelineV3(
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
   const { textResults, figureResults, strategy } = await searchChunks(query, manual_id, tenant_id);
-  const chunks = textResults; // Use text results for answer generation
-  console.log(`📊 Retrieved ${chunks.length} text chunks, ${figureResults.length} figures (strategy: ${strategy})`);
+  
+  // 🖼️ Include figure results in the context so AI knows about diagrams/images
+  const figureChunks = (figureResults || []).map(f => ({
+    ...f,
+    content: `[FIGURE p${f.page_start}] ${f.caption_text || ''}\n${f.ocr_text || ''}`.trim(),
+    is_figure: true
+  }));
+  
+  const chunks = [...textResults, ...figureChunks]; // Combine text and figure context
+  console.log(`📊 Retrieved ${textResults.length} text chunks, ${figureResults.length} figures (strategy: ${strategy})`);
 
   if (!chunks || chunks.length === 0) {
     const fallback = buildFallbackFor(query);

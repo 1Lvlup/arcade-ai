@@ -368,11 +368,14 @@ const Index = () => {
             <div className="premium-card hover-lift p-8 rounded-3xl border-2 transition-all group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
               <div className="text-center space-y-4">
                 <h3 className="text-3xl font-bold text-foreground">Starter</h3>
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-extrabold text-foreground">$299</span>
-                  <span className="text-xl text-primary">/ month</span>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-2xl font-semibold text-muted-foreground line-through opacity-50">$299</span>
+                    <span className="text-5xl font-extrabold text-foreground">$149</span>
+                    <span className="text-xl text-primary">/ month</span>
+                  </div>
                 </div>
-                <p className="text-sm text-primary italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $2,700/yr — 3 months free)</p>
+                <p className="text-sm text-primary italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $1,345/yr — 3 months free)</p>
                 <ul className="text-left space-y-3 pt-6">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -405,11 +408,14 @@ const Index = () => {
               </div>
               <div className="text-center space-y-4">
                 <h3 className="text-3xl font-bold text-foreground">Pro</h3>
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-extrabold text-foreground">$499</span>
-                  <span className="text-xl text-primary">/ month</span>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-2xl font-semibold text-muted-foreground line-through opacity-50">$499</span>
+                    <span className="text-5xl font-extrabold text-foreground">$249</span>
+                    <span className="text-xl text-primary">/ month</span>
+                  </div>
                 </div>
-                <p className="text-sm text-primary italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $4,500/yr — 3 months free)</p>
+                <p className="text-sm text-primary italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $2,245/yr — 3 months free)</p>
                 <ul className="text-left space-y-3 pt-6">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />

@@ -66,15 +66,21 @@ export default function Pricing() {
   };
 
   const plans = useMemo(() => {
-    const starterMonthly = 299;
-    const proMonthly = 499;
-    const starterAnnual = 2700; // 3 months free
-    const proAnnual = 4500; // 3 months free
+    const starterMonthly = 149;
+    const proMonthly = 249;
+    const starterAnnual = 1345; // 3 months free
+    const proAnnual = 2245; // 3 months free
+    
+    const starterMonthlyOld = 299;
+    const proMonthlyOld = 499;
+    const starterAnnualOld = 2700;
+    const proAnnualOld = 4500;
 
     return {
       starter: {
         title: "Starter",
         priceMain: annual ? `$${starterAnnual.toLocaleString()}` : `$${starterMonthly}`,
+        oldPrice: annual ? `$${starterAnnualOld.toLocaleString()}` : `$${starterMonthlyOld}`,
         cadence: annual ? "/ yr" : "/ mo",
         subNote: annual
           ? "(3 months free)"
@@ -91,6 +97,7 @@ export default function Pricing() {
       pro: {
         title: "Pro (Recommended)",
         priceMain: annual ? `$${proAnnual.toLocaleString()}` : `$${proMonthly}`,
+        oldPrice: annual ? `$${proAnnualOld.toLocaleString()}` : `$${proMonthlyOld}`,
         cadence: annual ? "/ yr" : "/ mo",
         subNote: annual
           ? "(3 months free)"
@@ -174,6 +181,7 @@ export default function Pricing() {
           <PlanCard
             title={plans.starter.title}
             priceMain={plans.starter.priceMain}
+            oldPrice={plans.starter.oldPrice}
             cadence={plans.starter.cadence}
             subNote={plans.starter.subNote}
             features={plans.starter.features}
@@ -187,6 +195,7 @@ export default function Pricing() {
           <PlanCard
             title={plans.pro.title}
             priceMain={plans.pro.priceMain}
+            oldPrice={plans.pro.oldPrice}
             cadence={plans.pro.cadence}
             subNote={plans.pro.subNote}
             features={plans.pro.features}
@@ -245,6 +254,7 @@ export default function Pricing() {
 function PlanCard(props: {
   title: string;
   priceMain: string;
+  oldPrice?: string;
   cadence: string;
   subNote: string;
   features: (string | JSX.Element)[];
@@ -253,7 +263,7 @@ function PlanCard(props: {
   onButtonClick?: () => void;
   disabled?: boolean;
 }) {
-  const { title, priceMain, cadence, subNote, features, buttonLabel, highlight, onButtonClick, disabled } = props;
+  const { title, priceMain, oldPrice, cadence, subNote, features, buttonLabel, highlight, onButtonClick, disabled } = props;
   return (
     <div
       className={[
@@ -284,7 +294,15 @@ function PlanCard(props: {
         {title}
       </h3>
 
-      <div className="flex items-baseline gap-1">
+      <div className="flex items-baseline gap-2 flex-wrap">
+        {oldPrice && (
+          <span
+            className="text-xl md:text-2xl font-semibold line-through opacity-50"
+            style={{ color: "var(--text-dim)", fontFamily: "Inter, ui-sans-serif, system-ui" }}
+          >
+            {oldPrice}
+          </span>
+        )}
         <span
           className="text-3xl md:text-4xl font-extrabold"
           style={{ color: "var(--accent-orange)", fontFamily: "Inter, ui-sans-serif, system-ui" }}

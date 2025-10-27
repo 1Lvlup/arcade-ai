@@ -5,31 +5,35 @@ import { useAuth } from './useAuth';
 // Subscription tier mapping
 export const SUBSCRIPTION_TIERS = {
   starter_monthly: {
-    price_id: "price_1SKUjFKhihueLCnLfOqSs9Xp",
-    product_id: "prod_TH2o40xyLhZB3Q",
+    price_id: "price_1SMyMHKhihueLCnLcJAH2Q70",
+    product_id: "prod_TJbZGUZDFTO2IK",
     name: "Starter",
-    price: 299,
+    price: 149,
+    oldPrice: 299,
     interval: "month" as const,
   },
   starter_annual: {
-    price_id: "price_1SKUluKhihueLCnL4FT7gd6V",
-    product_id: "prod_TH2rySLECEcx2t",
+    price_id: "price_1SMyMXKhihueLCnLuCxVWoXO",
+    product_id: "prod_TJbZngTkYHEsUy",
     name: "Starter",
-    price: 2690,
+    price: 1345,
+    oldPrice: 2700,
     interval: "year" as const,
   },
   pro_monthly: {
-    price_id: "price_1SKUjNKhihueLCnLrK00qXZw",
-    product_id: "prod_TH2puHgfpJb01a",
+    price_id: "price_1SMyMjKhihueLCnLNHpdYh9n",
+    product_id: "prod_TJbZc5GqoMOI3p",
     name: "Pro",
-    price: 499,
+    price: 249,
+    oldPrice: 499,
     interval: "month" as const,
   },
   pro_annual: {
-    price_id: "price_1SKUm5KhihueLCnLMWXVyvOD",
-    product_id: "prod_TH2raTObixduym",
+    price_id: "price_1SMyMwKhihueLCnLHWeXRvmP",
+    product_id: "prod_TJbaiLiwlOCjEF",
     name: "Pro",
-    price: 4490,
+    price: 2245,
+    oldPrice: 4500,
     interval: "year" as const,
   }
 } as const;

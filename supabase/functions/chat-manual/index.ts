@@ -108,7 +108,8 @@ function styleHintFromQuery(q: string): string {
 // ── Mode picker for Rundown vs Default ──
 function pickModeFromQuery(q: string): "rundown" | "default" {
   const s = q.toLowerCase();
-  return /(overview|rundown|architecture|how does|what is|components)/i.test(s) ? "rundown" : "default";
+  // Only trigger rundown for high-level overview questions, not specific "what is X" questions
+  return /(overview|rundown|architecture|system\s+components|how\s+does\s+(the\s+)?(system|machine)\s+work)/i.test(s) ? "rundown" : "default";
 }
 
 function keywordLine(q: string): string {

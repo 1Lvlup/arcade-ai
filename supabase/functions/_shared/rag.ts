@@ -170,52 +170,15 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], figur
   }
 
 
-  // Filter images by relevance using metadata, captions, OCR text
+  // RELAXED FILTERING: Show all images with storage URLs (user wants "too many images")
   const allImages = (figureChunks ?? []).filter(img => {
-    // Must have storage URL
+    // Only requirement: must have storage URL
     if (!img.storage_url) {
-      console.log(`❌ Skipping image: no storage_url`);
       return false;
     }
     
-    // 🔥 EXCLUDE text-only figures - we only want visual diagrams/photos
-    const figureType = (img.figure_type || '').toLowerCase();
-    if (figureType.includes('text') || figureType.includes('sectionheader')) {
-      console.log(`🚫 Skipping text-only figure p${img.page_number} (${img.figure_type})`);
-      return false;
-    }
-    
-    // 🚫 EXCLUDE low-quality OCR captures (page numbers, single words, etc.)
-    const ocrText = (img.ocr_text || '').trim();
-    const captionText = (img.caption_text || '').trim();
-    
-    // If OCR is ONLY numbers or very short, it's likely a page number capture
-    if (ocrText.length > 0 && ocrText.length <= 5) {
-      const isOnlyNumbers = /^[\d\s]+$/.test(ocrText);
-      if (isOnlyNumbers) {
-        console.log(`🚫 Skipping page number capture p${img.page_number} (OCR: "${ocrText}")`);
-        return false;
-      }
-    }
-    
-    // Require SUBSTANTIAL content - captions must be 50+ chars for important images
-    const hasSubstantialCaption = captionText.length >= 50;
-    const hasSubstantialOCR = ocrText.length >= 15 && !/^[\d\s]+$/.test(ocrText); // Must be real text, not just numbers
-    const hasMetadata = (img.semantic_tags && img.semantic_tags.length > 0) || 
-                        (img.keywords && img.keywords.length > 0) ||
-                        (img.detected_components && Object.keys(img.detected_components || {}).length > 0);
-    
-    // Prioritize figures with meaningful visual types
-    const isVisualType = ['illustration', 'photo', 'diagram', 'exploded_view', 'schematic', 'chart', 'mixed'].includes(figureType);
-    
-    // Require BOTH a visual type AND meaningful content (caption/OCR/metadata)
-    const isRelevant = isVisualType && (hasSubstantialCaption || hasSubstantialOCR || hasMetadata);
-    
-    if (!isRelevant) {
-      console.log(`⚠️ Skipping low-quality figure p${img.page_number} (type: ${img.figure_type || 'unknown'}, caption: ${captionText.length}ch, OCR: ${ocrText.length}ch)`);
-    }
-    
-    return isRelevant;
+    // That's it! Show everything
+    return true;
   });
   
   // Score and limit images to top 5 most relevant
@@ -246,13 +209,13 @@ export async function buildCitationsAndImages(db: any, chunkIds: string[], figur
   // Sort by score descending first
   scoredImages.sort((a, b) => b.score - a.score);
   
-  // PHASE 1.3: Deduplicate by page - take only highest-scoring image per page
+  // RELAXED: Show up to 15 images (user wants more images showing up)
   const imagesByPage = new Map<number, typeof scoredImages[0]>();
   for (const img of scoredImages) {
     if (!imagesByPage.has(img.page_number)) {
       imagesByPage.set(img.page_number, img);
     }
-    if (imagesByPage.size >= 5) break; // Stop at 5 unique pages
+    if (imagesByPage.size >= 15) break; // Increased from 5 to 15
   }
   
   const topImages = Array.from(imagesByPage.values());

@@ -838,9 +838,9 @@ serve(async (req) => {
     console.log("Stream:", stream || false);
     console.log("=================================\n");
 
-    // Check for Rundown Mode
-    const mode = pickModeFromQuery(query);
-    console.log("RUNDOWN MODE?", { mode, query });
+    // Check for Rundown Mode (DISABLED - always use default mode)
+    const mode = "default"; // pickModeFromQuery(query);
+    console.log("Mode:", mode);
 
     if (mode === "rundown" && Deno.env.get("ENABLE_RUNDOWN") === "true") {
       const r = await fetch(`${supabaseUrl}/functions/v1/search-rundown-v1`, {

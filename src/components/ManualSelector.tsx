@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Database, FileText, Loader2 } from 'lucide-react';
+import { Database, Gamepad2, Loader2 } from 'lucide-react';
 
 interface Manual {
   id: string;
@@ -74,28 +74,28 @@ export function ManualSelector({ selectedManualId, onManualChange }: ManualSelec
     return (
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Loading manuals...</span>
+        <span>Loading games...</span>
       </div>
     );
   }
 
   return (
     <div className="flex items-center space-x-2">
-      <FileText className="h-4 w-4 text-muted-foreground" />
+      <Gamepad2 className="h-4 w-4 text-muted-foreground" />
       <Select 
         value={selectedManualId || 'all'} 
         onValueChange={handleValueChange}
       >
         <SelectTrigger className="w-[250px] h-8 text-xs">
-          <SelectValue placeholder="Select a manual" />
+          <SelectValue placeholder="Select a game" />
         </SelectTrigger>
         <SelectContent className="bg-background border border-border">
           <SelectItem value="all" className="text-xs">
             <div className="flex items-center space-x-2">
               <Database className="h-3 w-3" />
-              <span>All Manuals</span>
+              <span>All Games</span>
               <Badge variant="secondary" className="text-xs">
-                {manuals.length} available
+                {manuals.length} games
               </Badge>
             </div>
           </SelectItem>
@@ -105,9 +105,6 @@ export function ManualSelector({ selectedManualId, onManualChange }: ManualSelec
                 <span className="truncate max-w-[180px]">
                   {manual.title || manual.source_filename}
                 </span>
-                <Badge variant="outline" className="text-xs ml-2">
-                  {manual.chunk_count} chunks
-                </Badge>
               </div>
             </SelectItem>
           ))}

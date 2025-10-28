@@ -437,7 +437,7 @@
   .hero-headline {
     color: hsl(183 100% 50%);
     text-shadow: 0 0 10px hsl(183 100% 50%);
-    animation: glowPulse 4s infinite;
+    animation: glowPulse 3s infinite;
   }
   
   @keyframes glowPulse {
@@ -445,7 +445,7 @@
       text-shadow: 0 0 10px hsl(183 100% 50%); 
     }
     50% { 
-      text-shadow: 0 0 30px hsl(24 100% 54%); 
+      text-shadow: 0 0 40px hsl(24 100% 54%), 0 0 60px hsl(24 100% 54% / 0.6); 
     }
   }
   

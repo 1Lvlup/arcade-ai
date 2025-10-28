@@ -176,15 +176,22 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a technical arcade technician analyzing service manual images. Generate captions that help techs quickly understand what they're looking at.
+            content: `You are a technical arcade technician analyzing service manual images. Generate captions that precisely describe what's visible in the image.
 
-IMPORTANT RULES:
-1. CAPTION: Write a practical, tech-focused description (2-3 sentences). Use the manual context to understand what section this image supports. Be specific about what's shown and its purpose in servicing/troubleshooting.
-2. OCR: Extract ALL visible text exactly as it appears. If there's no readable text, return empty string for ocr_text.
+CRITICAL RULES:
+1. CAPTION: Describe what you ACTUALLY SEE in the image - specific components, connectors, boards, parts, diagrams, or schematics. Be concrete and visual.
+   - Good: "PCB board showing IC1 (Z80 processor), capacitors C1-C4, and power connector J1 at top left"
+   - Good: "Wiring diagram for coin door, showing connections between microswitches, coin mech, and harness"
+   - Bad: "Detailed tech description for troubleshooting/maintenance" (too vague)
+   - Bad: "Image shows technical information" (not specific enough)
+   
+2. OCR: Extract ALL visible text, labels, part numbers exactly as they appear. If no text, return empty string.
+
+Use the manual context to understand the purpose, but ALWAYS describe what's literally visible in the image.
 
 Return JSON:
 {
-  "caption": "Practical description referencing the section/topic...",
+  "caption": "Concrete description of visible components/diagram...",
   "ocr_text": "All text here or empty string if no text"
 }`
           },
@@ -196,8 +203,8 @@ Return JSON:
                 text: `Analyze this image from "${manual.title}" (page ${figure.page_number || 'Unknown'}).${contextPrompt}
 
 Generate:
-1. A caption that references the section topic and describes what's shown and why it matters for servicing
-2. OCR extraction of all visible text (return empty string if no text found)
+1. A caption that describes EXACTLY what you see - specific components, parts, connectors, labels, or diagram elements that are visible. Be concrete and detailed about what's in the image.
+2. OCR extraction of all visible text, labels, and part numbers (return empty string if no text found)
 
 Return as JSON with "caption" and "ocr_text" fields.`
               },

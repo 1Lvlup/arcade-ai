@@ -88,8 +88,12 @@ export default function Auth() {
     } else {
       toast({
         title: "Success!",
-        description: "Please check your email to confirm your account.",
+        description: "Please check your email to confirm your account, then choose a plan to get started.",
       });
+      // Redirect to pricing page after successful signup
+      setTimeout(() => {
+        navigate('/pricing');
+      }, 2000);
     }
     
     setLoading(false);

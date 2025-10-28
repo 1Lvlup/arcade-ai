@@ -903,7 +903,14 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     <Card className="tech-card h-full flex flex-col w-full mx-0 rounded-none border-x-0">
       <CardHeader className="border-b border-primary/20 flex-shrink-0 py-5 px-6">
         <CardTitle className="flex items-center justify-between text-base">
-          <span className="tracking-wider font-bold text-white">LEVEL UP</span>
+          <div className="flex items-center gap-3">
+            <span className="tracking-wider font-bold text-white">LEVEL UP</span>
+            {!user && (
+              <Badge variant="outline" className="text-xs">
+                {GUEST_MESSAGE_LIMIT - guestMessageCount} free questions left
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -1317,14 +1324,18 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               Free Question Limit Reached
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              You've used all {GUEST_MESSAGE_LIMIT} free questions. To continue getting AI assistance, please choose a plan that fits your needs.
+            <AlertDialogDescription className="space-y-2">
+              <p>You've used all {GUEST_MESSAGE_LIMIT} free questions. To continue getting AI assistance:</p>
+              <ol className="list-decimal list-inside space-y-1 text-sm">
+                <li>Create an account</li>
+                <li>Choose a plan that fits your needs</li>
+              </ol>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate('/pricing')}>
-              View Plans
+            <AlertDialogAction onClick={() => navigate('/auth')}>
+              Sign Up Now
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

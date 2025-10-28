@@ -48,11 +48,7 @@ const App = () => (
           <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } />
+            <Route path="/" element={<Index />} />
             <Route path="/manuals" element={
               <ProtectedRoute>
                 <ManualManagement />
@@ -130,11 +126,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/pricing" element={
-              <ProtectedRoute>
-                <Pricing />
-              </ProtectedRoute>
-            } />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/account-settings" element={
               <ProtectedRoute>
                 <AccountSettings />

@@ -214,19 +214,7 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Center - Key Message */}
-              <div className="tech-card p-10 rounded-2xl relative z-10 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <p className="text-2xl font-tech font-bold text-orange leading-relaxed">
-                    Ready to Fix Games Faster Than Ever?
-                  </p>
-                  <p className="text-xl text-muted-foreground font-body leading-relaxed">
-                    Join arcades saving time, money, and frustration with Level Up.
-                  </p>
-                </div>
-              </div>
-
-              {/* Right Side - Payback Period */}
+              {/* Center - Payback Period */}
               <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
                 <div className="space-y-6">
                   <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
@@ -236,11 +224,19 @@ const Index = () => {
                   <p className="text-lg text-primary font-body leading-relaxed">
                     Typical payback period based on reduced technician time and uptime improvements.
                   </p>
-                  <div className="pt-4 border-t border-primary/20">
-                    <p className="text-lg text-primary leading-relaxed">
-                      <span className="text-orange font-semibold">Cut technician labor time by up to 40%</span> — Focus on new revenue, not repeat fixes.
-                    </p>
+                </div>
+              </div>
+
+              {/* Right Side - Labor Time Savings */}
+              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+                <div className="space-y-6">
+                  <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
+                    <Target className="h-8 w-8 text-orange" />
                   </div>
+                  <h3 className="text-3xl font-tech font-bold text-foreground">Up to 40%</h3>
+                  <p className="text-lg text-primary font-body leading-relaxed">
+                    Cut technician labor time — Focus on new revenue, not repeat fixes.
+                  </p>
                 </div>
               </div>
             </div>

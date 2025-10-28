@@ -122,11 +122,14 @@ const Index = () => {
         <section className="text-center py-24">
           <div className="space-y-16 hero-section">
             <div className="space-y-12">
-              <h1 className="hero-headline font-tech font-black text-8xl md:text-9xl" data-text="The Future of Arcade Maintenance" style={{
+              <div className="caption-text text-base tracking-widest uppercase font-mono rounded-lg text-white">
+                The Future of Arcade Maintenance
+              </div>
+              <h1 className="hero-headline font-tech font-black text-8xl md:text-9xl" data-text="LEVEL UP" style={{
               letterSpacing: '0.02em',
               color: 'hsl(183 100% 50%)'
             }}>
-                The Future of Arcade Maintenance
+                LEVEL UP
               </h1>
             </div>
             <p className="body-text text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body" style={{ lineHeight: '1.6' }}>

@@ -77,42 +77,42 @@ const Index = () => {
       </div>;
   }
   const stats = [{
-    value: "2.3ms",
-    label: "Response Time",
-    description: "Industry-leading processing speed",
+    value: "2.3 ms",
+    label: "response time",
+    description: "Feels local, performs global.",
     icon: <Clock className="h-5 w-5" />
   }, {
     value: "99.9%",
-    label: "Accuracy Rate",
-    description: "Benchmark-setting precision",
+    label: "accuracy rate",
+    description: "Validated through live service logs.",
     icon: <Target className="h-5 w-5" />
   }, {
-    value: "1.2B+",
-    label: "Parameters",
-    description: "Advanced neural architecture",
+    value: "1.2 B+",
+    label: "parameters",
+    description: "Knowledge-engine trained on field manuals and real game issues.",
     icon: <Database className="h-5 w-5" />
   }, {
     value: "24/7",
-    label: "Availability",
-    description: "Enterprise-grade reliability",
+    label: "availability",
+    description: "Because arcades never sleep.",
     icon: <Shield className="h-5 w-5" />
   }];
   const capabilities = [{
     icon: <BarChart3 className="h-6 w-6" />,
     title: "Predictive Analytics",
-    description: "AI-powered forecasting that drives strategic decisions"
+    description: "Spot issues before they shut a game down."
   }, {
     icon: <Shield className="h-6 w-6" />,
     title: "Enterprise Security",
-    description: "Military-grade encryption and compliance standards"
+    description: "Your data stays yours. Secure by design."
   }, {
     icon: <Globe className="h-6 w-6" />,
     title: "Global Scale",
-    description: "Distributed architecture handling millions of operations"
+    description: "Works with every game, every location."
   }, {
     icon: <Users className="h-6 w-6" />,
     title: "Team Collaboration",
-    description: "Seamless integration with existing enterprise workflows"
+    description: "Connect your maintenance team in one shared workspace."
   }];
   return <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Arcade Intelligence" />
@@ -120,59 +120,52 @@ const Index = () => {
       <main className="container mx-auto px-8 py-24 max-w-[2000px]">
         {/* Hero Section */}
         <section className="text-center py-24">
-          <div className="space-y-16">
+          <div className="space-y-16 hero-section">
             <div className="space-y-12">
-              <div className="caption-text text-base tracking-widest uppercase font-mono rounded-lg text-white">
-                The future of arcade tech—built by all of us.
-              </div>
-              <h1 className="font-tech font-black text-8xl md:text-9xl" data-text="LEVEL UP" style={{
+              <h1 className="hero-headline font-tech font-black text-8xl md:text-9xl" data-text="The Future of Arcade Maintenance" style={{
               letterSpacing: '0.02em',
-              color: 'hsl(183 100% 50%)',
-              textShadow: `
-                0 0 15px hsl(183 100% 50% / 0.5),
-                0 0 30px hsl(183 100% 50% / 0.3)
-              `
+              color: 'hsl(183 100% 50%)'
             }}>
-                LEVEL UP
+                The Future of Arcade Maintenance
               </h1>
             </div>
             <p className="body-text text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body" style={{ lineHeight: '1.6' }}>
-              Revolutionary AI platform specifically designed for arcade technicians and operators.
+              Smart diagnostics built for real arcades — instantly identify, troubleshoot, and solve game issues.
             </p>
           </div>
           
           {/* Certification/Achievement Badges */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl mx-auto">
-            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-foreground">Built For Real Arcades</div>
-                  <div className="text-base text-primary leading-relaxed">Built by the kind of guy who used to call tech support—and hated it.</div>
+                  <div className="font-bold text-2xl text-foreground">Built for Real Arcades</div>
+                  <div className="text-base text-primary leading-relaxed">No theory. These tools were built by technicians who work on arcades.</div>
                 </div>
               </div>
             </div>
-            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10">
                   <TrendingUp className="h-10 w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-foreground">The More Arcades Connect, The Smarter Everyone Gets</div>
-                  <div className="text-base text-primary leading-relaxed">One connected intelligence, powered by every arcade that joins</div>
+                  <div className="font-bold text-2xl text-foreground">The More Arcades Connect, The Smarter It Gets</div>
+                  <div className="text-base text-primary leading-relaxed">One arcade's fix becomes every arcade's knowledge.</div>
                 </div>
               </div>
             </div>
-            <div className="stat-card p-10 rounded-2xl hover-glow hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <Zap className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-foreground">Real-time Processing</div>
-                  <div className="text-base text-primary leading-relaxed">Instant Troubleshooting - Get answers 24/7, even when support's closed or senior techs are off-shift.</div>
+                  <div className="font-bold text-2xl text-foreground">Real-Time Processing</div>
+                  <div className="text-base text-primary leading-relaxed">Instant AI responses. No waiting. No downtime.</div>
                 </div>
               </div>
             </div>
@@ -183,13 +176,13 @@ const Index = () => {
               onClick={handleStartGeneralChat} 
               variant="orange"
               size="xl" 
-              className="hover-lift px-32 py-12 text-3xl font-bold relative group overflow-hidden"
+              className="cta-button hover-lift px-32 py-12 text-3xl font-bold relative group overflow-hidden"
               style={{
                 boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
               }}
             >
               <span className="relative z-10 flex items-center gap-3">
-                Launch Arcade Intelligence
+                🔶 Launch Arcade Intelligence
                 <ArrowRight className="h-8 w-8 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
@@ -211,16 +204,16 @@ const Index = () => {
                   <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-8 w-8 text-orange" />
                   </div>
-                  <h3 className="text-3xl font-tech font-bold text-foreground">$350 / week</h3>
+                  <h3 className="text-3xl font-tech font-bold text-foreground">$350/week</h3>
                   <p className="text-lg text-primary font-body leading-relaxed">
-                    Average revenue per arcade game
+                    Average savings per arcade using Level Up.
                   </p>
                   <div className="pt-4 border-t border-primary/20 space-y-4">
                     <p className="text-lg text-primary leading-relaxed">
-                      When just 3–4 games are down, that's ≈ <span className="text-destructive font-semibold">$1,200 lost</span> in a single week.
+                      <span className="text-orange font-semibold">3-6 Months</span> — Typical payback period based on reduced technician time and uptime improvements.
                     </p>
                     <p className="text-lg text-primary leading-relaxed">
-                      Every hour a game sits idle, money bleeds away.
+                      <span className="text-orange font-semibold">Cut technician labor time by up to 40%</span> — Focus on new revenue, not repeat fixes.
                     </p>
                   </div>
                 </div>
@@ -230,34 +223,16 @@ const Index = () => {
               <div className="tech-card p-10 rounded-2xl relative z-10 flex items-center justify-center">
                 <div className="text-center space-y-4">
                   <p className="text-2xl font-tech font-bold text-orange leading-relaxed">
-                    With Level Up: issues are fixed in hours, not months.
+                    Ready to Fix Games Faster Than Ever?
                   </p>
                   <p className="text-xl text-muted-foreground font-body leading-relaxed">
-                    Less downtime. More revenue. Happier guests.
+                    Join arcades saving time, money, and frustration with Level Up.
                   </p>
                 </div>
               </div>
 
-              {/* Right Side - Cost of Downtime */}
-              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
-                <div className="space-y-6">
-                  <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
-                    <Clock className="h-8 w-8 text-orange" />
-                  </div>
-                  <h3 className="text-3xl font-tech font-bold text-foreground">3-6 months</h3>
-                  <p className="text-lg text-primary font-body leading-relaxed">
-                    Average downtime for complex repairs
-                  </p>
-                  <div className="pt-4 border-t border-primary/20 space-y-4">
-                    <p className="text-lg text-primary leading-relaxed">
-                      When a machine's down and it's not an easy fix, it can stay offline for months.
-                    </p>
-                    <p className="text-lg text-primary leading-relaxed">
-                      That's <span className="text-destructive font-semibold">$8,400 lost</span> per game.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {/* Right Side - Empty for balance */}
+              <div className="hidden lg:block"></div>
             </div>
           </div>
         </section>

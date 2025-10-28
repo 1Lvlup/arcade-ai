@@ -432,4 +432,93 @@
       -2px 0 hsl(183 100% 50% / 0.5),
       0 0 20px hsl(183 100% 50% / 0.3);
   }
+  
+  /* Hero Headline Glow Animation */
+  .hero-headline {
+    color: hsl(183 100% 50%);
+    text-shadow: 0 0 10px hsl(183 100% 50%);
+    animation: glowPulse 4s infinite;
+  }
+  
+  @keyframes glowPulse {
+    0%, 100% { 
+      text-shadow: 0 0 10px hsl(183 100% 50%); 
+    }
+    50% { 
+      text-shadow: 0 0 30px hsl(24 100% 54%); 
+    }
+  }
+  
+  /* CTA Button Enhanced Effects */
+  .cta-button {
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  }
+  
+  .cta-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px hsl(24 100% 54% / 0.6);
+  }
+  
+  .cta-button:focus {
+    outline: 2px solid hsl(183 100% 50%);
+  }
+  
+  /* Feature Cards Enhanced Hover */
+  .feature-card {
+    background: hsl(0 0% 0%);
+    border: 1px solid hsl(24 100% 54%);
+    backdrop-filter: blur(12px);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    box-shadow: 
+      0 0 20px hsl(183 100% 50% / 0.3),
+      0 0 40px hsl(183 100% 50% / 0.15),
+      inset 0 0 30px hsl(183 100% 50% / 0.08);
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px hsl(183 100% 50% / 0.4);
+  }
+  
+  /* Fade Up Animation */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUpAnim 1s forwards;
+    animation-delay: var(--delay);
+  }
+  
+  @keyframes fadeUpAnim {
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+  
+  /* Hero Background Glow */
+  .hero-section {
+    position: relative;
+  }
+  
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50px; 
+    left: -50px; 
+    right: -50px; 
+    bottom: -50px;
+    background: radial-gradient(circle at center, hsl(183 100% 50% / 0.1) 0%, transparent 80%);
+    filter: blur(80px);
+    z-index: -1;
+    animation: pulseBG 8s infinite;
+  }
+  
+  @keyframes pulseBG {
+    0%, 100% { 
+      opacity: 0.15; 
+    }
+    50% { 
+      opacity: 0.30; 
+    }
+  }
 }

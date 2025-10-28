@@ -120,6 +120,12 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
                     Tenant Management
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/user-management" className="cursor-pointer">
+                    <User className="h-4 w-4 mr-2" />
+                    User Management
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

@@ -42,6 +42,39 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Check for manual override first
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('fec_tenant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profile) {
+      const { data: usageLimits } = await supabaseAdmin
+        .from('usage_limits')
+        .select('manual_override')
+        .eq('fec_tenant_id', profile.fec_tenant_id)
+        .single();
+
+      if (usageLimits?.manual_override) {
+        logStep("Manual override enabled for user, granting full access");
+        return new Response(JSON.stringify({ 
+          subscribed: true,
+          product_id: "manual_override",
+          subscription_end: null,
+          manual_override: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     

@@ -1581,6 +1581,10 @@ export type Database = {
           fec_tenant_id: string
           id: string
           last_reset_date: string
+          manual_override: boolean | null
+          override_reason: string | null
+          override_set_at: string | null
+          override_set_by: string | null
           queries_per_month: number
           queries_used_this_month: number
           updated_at: string
@@ -1590,6 +1594,10 @@ export type Database = {
           fec_tenant_id: string
           id?: string
           last_reset_date?: string
+          manual_override?: boolean | null
+          override_reason?: string | null
+          override_set_at?: string | null
+          override_set_by?: string | null
           queries_per_month?: number
           queries_used_this_month?: number
           updated_at?: string
@@ -1599,6 +1607,10 @@ export type Database = {
           fec_tenant_id?: string
           id?: string
           last_reset_date?: string
+          manual_override?: boolean | null
+          override_reason?: string | null
+          override_set_at?: string | null
+          override_set_by?: string | null
           queries_per_month?: number
           queries_used_this_month?: number
           updated_at?: string

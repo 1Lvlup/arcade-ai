@@ -161,7 +161,8 @@ export default function TenantManagement() {
       });
 
       setDialogOpen(false);
-      fetchUsers();
+      // Refresh the users list to show the updated status
+      await fetchUsers();
     } catch (error: any) {
       toast({
         title: 'Error',

@@ -211,14 +211,6 @@ const Index = () => {
                   <p className="text-lg text-primary font-body leading-relaxed">
                     Average savings per arcade using Level Up.
                   </p>
-                  <div className="pt-4 border-t border-primary/20 space-y-4">
-                    <p className="text-lg text-primary leading-relaxed">
-                      <span className="text-orange font-semibold">3-6 Months</span> — Typical payback period based on reduced technician time and uptime improvements.
-                    </p>
-                    <p className="text-lg text-primary leading-relaxed">
-                      <span className="text-orange font-semibold">Cut technician labor time by up to 40%</span> — Focus on new revenue, not repeat fixes.
-                    </p>
-                  </div>
                 </div>
               </div>
 
@@ -234,8 +226,23 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Right Side - Empty for balance */}
-              <div className="hidden lg:block"></div>
+              {/* Right Side - Payback Period */}
+              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+                <div className="space-y-6">
+                  <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
+                    <Clock className="h-8 w-8 text-orange" />
+                  </div>
+                  <h3 className="text-3xl font-tech font-bold text-foreground">3-6 Months</h3>
+                  <p className="text-lg text-primary font-body leading-relaxed">
+                    Typical payback period based on reduced technician time and uptime improvements.
+                  </p>
+                  <div className="pt-4 border-t border-primary/20">
+                    <p className="text-lg text-primary leading-relaxed">
+                      <span className="text-orange font-semibold">Cut technician labor time by up to 40%</span> — Focus on new revenue, not repeat fixes.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

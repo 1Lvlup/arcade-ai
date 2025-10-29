@@ -168,6 +168,15 @@ serve(async (req) => {
       .eq('manual_id', manual_id)
     if (metadataError) console.error('Error deleting manual_metadata:', metadataError)
 
+    // Delete tenant_manual_access
+    console.log('Deleting tenant_manual_access...')
+    const { error: accessError } = await supabase
+      .from('tenant_manual_access')
+      .delete()
+      .eq('manual_id', manual_id)
+      .eq('fec_tenant_id', profile.fec_tenant_id)
+    if (accessError) console.error('Error deleting tenant_manual_access:', accessError)
+
     // Delete storage files from postparse bucket
     console.log('Deleting files from postparse bucket...')
     const { data: postparseFiles, error: listPostparseError } = await supabase.storage

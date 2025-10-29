@@ -49,6 +49,27 @@ export default function UserConversationHistory() {
     const fetchProfiles = async () => {
       setLoading(true);
       try {
+        // First verify we're admin
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) {
+          throw new Error('Not authenticated');
+        }
+
+        const { data: isAdminData, error: roleError } = await supabase.rpc('has_role', {
+          _user_id: currentUser.id,
+          _role: 'admin'
+        });
+
+        if (roleError) throw roleError;
+        if (!isAdminData) {
+          toast({
+            title: 'Access Denied',
+            description: 'Admin access required',
+            variant: 'destructive',
+          });
+          return;
+        }
+
         const { data, error } = await supabase
           .from('profiles')
           .select('id, email, user_id')

@@ -713,6 +713,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string
+          last_query_at: string
+          queries_count: number
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address: string
+          last_query_at?: string
+          queries_count?: number
+          updated_at?: string
+          week_start?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string
+          last_query_at?: string
+          queries_count?: number
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       manual_metadata: {
         Row: {
           aliases: string[] | null
@@ -1586,8 +1616,11 @@ export type Database = {
           override_set_at: string | null
           override_set_by: string | null
           queries_per_month: number
+          queries_per_week: number
           queries_used_this_month: number
+          queries_used_this_week: number
           updated_at: string
+          week_start: string
         }
         Insert: {
           created_at?: string
@@ -1599,8 +1632,11 @@ export type Database = {
           override_set_at?: string | null
           override_set_by?: string | null
           queries_per_month?: number
+          queries_per_week?: number
           queries_used_this_month?: number
+          queries_used_this_week?: number
           updated_at?: string
+          week_start?: string
         }
         Update: {
           created_at?: string
@@ -1612,8 +1648,11 @@ export type Database = {
           override_set_at?: string | null
           override_set_by?: string | null
           queries_per_month?: number
+          queries_per_week?: number
           queries_used_this_month?: number
+          queries_used_this_week?: number
           updated_at?: string
+          week_start?: string
         }
         Relationships: []
       }
@@ -1697,6 +1736,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_ip_query_count: {
+        Args: { p_ip_address: string }
+        Returns: Json
+      }
+      increment_user_query_count: {
+        Args: { p_tenant_id: string }
+        Returns: Json
       }
       match_chunks: {
         Args: {
@@ -1782,6 +1829,7 @@ export type Database = {
             }[]
           }
       normalize_name: { Args: { input_text: string }; Returns: string }
+      reset_weekly_usage: { Args: never; Returns: undefined }
       search_manual_content: {
         Args: {
           match_count?: number

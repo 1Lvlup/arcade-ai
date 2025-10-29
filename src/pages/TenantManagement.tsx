@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Tenant {
@@ -43,12 +44,14 @@ interface UsageLimit {
   manual_override: boolean;
   override_reason: string | null;
   override_set_at: string | null;
+  queries_per_week: number;
 }
 
 interface UserWithAccess extends UserProfile {
   manual_override: boolean;
   override_reason: string | null;
   override_set_at: string | null;
+  queries_per_week: number;
 }
 
 export default function TenantManagement() {
@@ -100,7 +103,7 @@ export default function TenantManagement() {
       const tenantIds = profiles.map(p => p.fec_tenant_id);
       const { data: limits, error: limitsError } = await supabase
         .from('usage_limits')
-        .select('fec_tenant_id, manual_override, override_reason, override_set_at')
+        .select('fec_tenant_id, manual_override, override_reason, override_set_at, queries_per_week')
         .in('fec_tenant_id', tenantIds);
 
       if (limitsError) throw limitsError;
@@ -117,6 +120,7 @@ export default function TenantManagement() {
           manual_override: limit?.manual_override || false,
           override_reason: limit?.override_reason || null,
           override_set_at: limit?.override_set_at || null,
+          queries_per_week: limit?.queries_per_week || 300,
         };
       });
 
@@ -132,9 +136,12 @@ export default function TenantManagement() {
     }
   };
 
+  const [weeklyLimit, setWeeklyLimit] = useState(300);
+
   const openEditDialog = (userToEdit: UserWithAccess) => {
     setSelectedUser(userToEdit);
     setOverrideReason(userToEdit.override_reason || '');
+    setWeeklyLimit(userToEdit.queries_per_week || 300);
     setDialogOpen(true);
   };
 
@@ -150,6 +157,7 @@ export default function TenantManagement() {
           override_reason: overrideReason || null,
           override_set_by: user.id,
           override_set_at: new Date().toISOString(),
+          queries_per_week: weeklyLimit,
         })
         .eq('fec_tenant_id', selectedUser.fec_tenant_id);
 
@@ -534,6 +542,24 @@ export default function TenantManagement() {
               checked={selectedUser?.manual_override || false}
               onCheckedChange={toggleOverride}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="weekly-limit">Weekly Query Limit</Label>
+            <Input
+              id="weekly-limit"
+              type="number"
+              min="1"
+              max="10000"
+              value={weeklyLimit}
+              onChange={(e) => setWeeklyLimit(parseInt(e.target.value) || 300)}
+              disabled={selectedUser?.manual_override}
+            />
+            <p className="text-sm text-muted-foreground">
+              {selectedUser?.manual_override 
+                ? 'Unlimited queries when full access is enabled'
+                : 'Number of questions this user can ask per week (default: 300)'}
+            </p>
           </div>
 
           {selectedUser?.manual_override && (

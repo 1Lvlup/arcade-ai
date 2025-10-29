@@ -880,11 +880,17 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Extract tenant from auth header
+    // Extract tenant from auth header and handle rate limiting
     const authHeader = req.headers.get("authorization");
+    const clientIp = req.headers.get("x-forwarded-for")?.split(',')[0] || 
+                     req.headers.get("x-real-ip") || 
+                     "unknown";
+    
     let tenant_id: string | undefined;
+    let usageInfo: any = null;
 
     if (authHeader) {
+      // Authenticated user flow
       const jwt = authHeader.replace("Bearer ", "");
       const {
         data: { user },
@@ -1274,6 +1280,15 @@ serve(async (req) => {
         metadata,
         context_seen: contextSeen,
         query_log_id: queryLogId,
+        usage: usageInfo ? {
+          queries_used: usageInfo.queries_used,
+          queries_remaining: usageInfo.queries_remaining,
+          queries_limit: usageInfo.queries_limit || (usageInfo.manual_override ? null : 5),
+          limit_reached: usageInfo.limit_reached,
+          manual_override: usageInfo.manual_override || false,
+          is_authenticated: !!tenant_id,
+          signup_required: !tenant_id && usageInfo.limit_reached
+        } : null
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

@@ -78,9 +78,20 @@ interface ChatMessage {
   }>;
 }
 
+interface UsageInfo {
+  queries_used: number;
+  queries_remaining: number;
+  queries_limit: number | null;
+  limit_reached: boolean;
+  is_authenticated: boolean;
+  signup_required?: boolean;
+  manual_override?: boolean;
+}
+
 interface ChatBotProps {
   selectedManualId?: string;
   manualTitle?: string;
+  onUsageUpdate?: (usage: UsageInfo) => void;
 }
 
 interface Conversation {
@@ -92,7 +103,7 @@ interface Conversation {
   last_message_at: string;
 }
 
-export function ChatBot({ selectedManualId: initialManualId, manualTitle: initialManualTitle }: ChatBotProps) {
+export function ChatBot({ selectedManualId: initialManualId, manualTitle: initialManualTitle, onUsageUpdate }: ChatBotProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -558,6 +569,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 ));
               } else if (parsed.type === 'metadata') {
                 console.log('📊 Received metadata:', parsed.data);
+                
+                // Handle usage info
+                if (parsed.data?.usage) {
+                  onUsageUpdate?.(parsed.data.usage);
+                }
                 
                 // 🔥 LAYER 3: Auto-set manual when detected
                 if (parsed.data.auto_detected && parsed.data.manual_id && parsed.data.detected_manual_title) {

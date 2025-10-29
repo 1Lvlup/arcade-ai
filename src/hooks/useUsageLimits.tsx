@@ -6,6 +6,9 @@ interface UsageLimits {
   fec_tenant_id: string;
   queries_per_month: number;
   queries_used_this_month: number;
+  queries_per_week: number;
+  queries_used_this_week: number;
+  week_start: string;
   last_reset_date: string;
   created_at: string;
   updated_at: string;
@@ -28,15 +31,15 @@ export const useUsageLimits = () => {
   });
 
   const isLimitReached = usageLimits 
-    ? usageLimits.queries_used_this_month >= usageLimits.queries_per_month 
+    ? usageLimits.queries_used_this_week >= usageLimits.queries_per_week 
     : false;
 
   const remainingQueries = usageLimits
-    ? Math.max(0, usageLimits.queries_per_month - usageLimits.queries_used_this_month)
+    ? Math.max(0, usageLimits.queries_per_week - usageLimits.queries_used_this_week)
     : 0;
 
   const usagePercentage = usageLimits
-    ? Math.min(100, (usageLimits.queries_used_this_month / usageLimits.queries_per_month) * 100)
+    ? Math.min(100, (usageLimits.queries_used_this_week / usageLimits.queries_per_week) * 100)
     : 0;
 
   return {

@@ -53,7 +53,7 @@ serve(async (req) => {
 
     console.log(`Deleting manual: ${manual_id} for user: ${user.id}`)
 
-    // Get user's tenant ID
+    // Get user's tenant ID and check if they're an admin
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('fec_tenant_id')
@@ -68,13 +68,28 @@ serve(async (req) => {
       )
     }
 
-    // Verify the document exists (use service role to bypass RLS for check)
-    const { data: document, error: docError } = await supabase
+    // Check if user is admin
+    const { data: isAdmin, error: roleError } = await supabase
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' })
+    
+    if (roleError) {
+      console.error('Error checking admin role:', roleError)
+    }
+
+    console.log(`User is admin: ${isAdmin}`)
+
+    // Verify the document exists
+    let documentQuery = supabase
       .from('documents')
-      .select('id, manual_id')
+      .select('id, manual_id, fec_tenant_id')
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
-      .maybeSingle()
+
+    // If not admin, restrict to user's tenant
+    if (!isAdmin) {
+      documentQuery = documentQuery.eq('fec_tenant_id', profile.fec_tenant_id)
+    }
+
+    const { data: document, error: docError } = await documentQuery.maybeSingle()
 
     if (docError) {
       console.error('Error checking document:', docError)
@@ -92,6 +107,9 @@ serve(async (req) => {
       )
     }
 
+    // Use the document's actual tenant ID for deletions (not the user's)
+    const targetTenantId = document.fec_tenant_id
+
     // Delete related data in order (due to potential dependencies)
     console.log('Deleting all related data for manual:', manual_id)
     
@@ -101,7 +119,7 @@ serve(async (req) => {
       .from('chunks_text')
       .delete()
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
+      .eq('fec_tenant_id', targetTenantId)
     if (chunksError) console.error('Error deleting chunks_text:', chunksError)
 
     // Delete rag_chunks
@@ -110,7 +128,7 @@ serve(async (req) => {
       .from('rag_chunks')
       .delete()
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
+      .eq('fec_tenant_id', targetTenantId)
     if (ragChunksError) console.error('Error deleting rag_chunks:', ragChunksError)
 
     // Delete figures
@@ -119,7 +137,7 @@ serve(async (req) => {
       .from('figures')
       .delete()
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
+      .eq('fec_tenant_id', targetTenantId)
     if (figuresError) console.error('Error deleting figures:', figuresError)
 
     // Delete golden_questions
@@ -128,7 +146,7 @@ serve(async (req) => {
       .from('golden_questions')
       .delete()
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
+      .eq('fec_tenant_id', targetTenantId)
     if (questionsError) console.error('Error deleting golden_questions:', questionsError)
 
     // Delete question_evaluations
@@ -137,7 +155,7 @@ serve(async (req) => {
       .from('question_evaluations')
       .delete()
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
+      .eq('fec_tenant_id', targetTenantId)
     if (evaluationsError) console.error('Error deleting question_evaluations:', evaluationsError)
 
     // Delete manual_pages
@@ -154,7 +172,7 @@ serve(async (req) => {
       .from('processing_status')
       .delete()
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
+      .eq('fec_tenant_id', targetTenantId)
     if (statusError) console.error('Error deleting processing_status:', statusError)
 
     // Delete manual_metadata
@@ -165,13 +183,12 @@ serve(async (req) => {
       .eq('manual_id', manual_id)
     if (metadataError) console.error('Error deleting manual_metadata:', metadataError)
 
-    // Delete tenant_manual_access
+    // Delete tenant_manual_access (all entries for this manual)
     console.log('Deleting tenant_manual_access...')
     const { error: accessError } = await supabase
       .from('tenant_manual_access')
       .delete()
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
     if (accessError) console.error('Error deleting tenant_manual_access:', accessError)
 
     // Delete storage files from postparse bucket
@@ -212,7 +229,7 @@ serve(async (req) => {
       .from('documents')
       .delete()
       .eq('manual_id', manual_id)
-      .eq('fec_tenant_id', profile.fec_tenant_id)
+      .eq('fec_tenant_id', targetTenantId)
 
     if (documentError) {
       console.error('Error deleting document:', documentError)

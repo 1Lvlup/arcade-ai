@@ -462,8 +462,13 @@ async function generateAnswer(
   let systemPrompt: string;
   let userPrompt: string;
 
-  // Use Answer Style V2 if enabled
-  if (USE_ANSWER_STYLE_V2 && opts?.signals) {
+  // Use Answer Style V2 if enabled (always when USE_ANSWER_STYLE_V2=1)
+  if (USE_ANSWER_STYLE_V2) {
+    console.log(`✅ [Answer Style V2] ACTIVE - Adaptive prompt system enabled`);
+    
+    // Compute signals if not provided
+    const signals = opts?.signals ?? computeSignals(chunks.map(c => ({ score: c.rerank_score ?? c.score ?? 0 })));
+    
     const snippets = chunks.map((c, i) => {
       const cleaned = normalizeGist(c.content);
       const pageInfo = c.page_start
@@ -477,17 +482,19 @@ async function generateAnswer(
     });
 
     const shaped = shapeMessages(query, snippets, {
-      existingWeak: opts.existingWeak ?? false,
-      topScore: opts.signals.topScore,
-      avgTop3: opts.signals.avgTop3,
-      strongHits: opts.signals.strongHits
+      existingWeak: opts?.existingWeak ?? false,
+      topScore: signals.topScore,
+      avgTop3: signals.avgTop3,
+      strongHits: signals.strongHits
     });
 
     systemPrompt = shaped.system;
     userPrompt = shaped.user;
 
-    console.log(`📊 [Answer Style V2] Weak: ${shaped.isWeak}, Top: ${opts.signals.topScore.toFixed(3)}, Avg3: ${opts.signals.avgTop3.toFixed(3)}, Strong: ${opts.signals.strongHits}`);
+    console.log(`📊 [Answer Style V2] Weak: ${shaped.isWeak}, Top: ${signals.topScore.toFixed(3)}, Avg3: ${signals.avgTop3.toFixed(3)}, Strong: ${signals.strongHits}`);
   } else {
+    console.log(`⚠️ [Legacy Prompts] Using ${ANSWER_STYLE} (Answer Style V2 disabled)`);
+    // LEGACY: Old conversational/structured prompts (INACTIVE when ANSWER_STYLE_V2=1)
     // Original behavior
     const contextBlocks = chunks
       .map((c, i) => {
@@ -988,9 +995,14 @@ serve(async (req) => {
         console.error('Error logging query:', e);
       }
       
+      // Compute signals for streaming response (required for Answer Style V2)
+      const streamSignals = computeSignals((chunks || []).map(c => ({ score: c.rerank_score ?? c.score ?? 0 })));
+      console.log(`📊 [Streaming] Computed signals - Top: ${streamSignals.topScore.toFixed(3)}, Avg3: ${streamSignals.avgTop3.toFixed(3)}, Strong: ${streamSignals.strongHits}`);
+      
       // Get the answer stream with conversation history
       const answerStream = await generateAnswer(query, chunks || [], model, {
         retrievalWeak: false,
+        signals: streamSignals, // Pass signals for Answer Style V2
         stream: true,
         conversationHistory: messages
       }) as ReadableStream;

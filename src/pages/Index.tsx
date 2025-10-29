@@ -132,25 +132,31 @@ const Index = () => {
                 LEVEL UP
               </h1>
             </div>
-            <p className="body-text text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body" style={{ lineHeight: '1.6' }}>
+            <p className="body-text text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body" style={{
+            lineHeight: '1.6'
+          }}>
               Smart diagnostics built for real arcades — instantly identify, troubleshoot, and solve game issues.
             </p>
           </div>
           
           {/* Certification/Achievement Badges */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl mx-auto">
-            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift group" style={{
+            borderColor: 'hsl(183 100% 50% / 0.3)'
+          }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-foreground">Built for Real Arcades</div>
+                  <div className="font-bold text-2xl text-foreground bg-[#080809]/60 rounded-xl mx-[6px]">Built With Precision  For Arcades</div>
                   <div className="text-base text-primary leading-relaxed">No theory. These tools were built by technicians who work on arcades.</div>
                 </div>
               </div>
             </div>
-            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift" style={{
+            borderColor: 'hsl(183 100% 50% / 0.3)'
+          }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10">
                   <TrendingUp className="h-10 w-10 text-primary" />
@@ -161,7 +167,9 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            <div className="feature-card p-10 rounded-2xl hover-glow hover-lift group" style={{
+            borderColor: 'hsl(183 100% 50% / 0.3)'
+          }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <Zap className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
@@ -175,15 +183,9 @@ const Index = () => {
           </div>
 
           <div className="flex items-center justify-center mt-20">
-            <Button 
-              onClick={handleStartGeneralChat} 
-              variant="orange"
-              size="xl" 
-              className="cta-button hover-lift px-32 py-12 text-3xl font-bold relative group overflow-hidden"
-              style={{
-                boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
-              }}
-            >
+            <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-32 py-12 text-3xl font-bold relative group overflow-hidden" style={{
+            boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
+          }}>
               <span className="relative z-10 flex items-center gap-3">
                 🔶 Launch Arcade Intelligence
                 <ArrowRight className="h-8 w-8 group-hover:translate-x-1 transition-transform" />
@@ -202,7 +204,9 @@ const Index = () => {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center relative">
               {/* Left Side - Revenue Stats */}
-              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{
+              borderColor: 'hsl(183 100% 50% / 0.3)'
+            }}>
                 <div className="space-y-6">
                   <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-8 w-8 text-orange" />
@@ -215,7 +219,9 @@ const Index = () => {
               </div>
 
               {/* Center - Payback Period */}
-              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{
+              borderColor: 'hsl(183 100% 50% / 0.3)'
+            }}>
                 <div className="space-y-6">
                   <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Clock className="h-8 w-8 text-orange" />
@@ -228,7 +234,9 @@ const Index = () => {
               </div>
 
               {/* Right Side - Labor Time Savings */}
-              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+              <div className="stat-card p-10 rounded-2xl hover-lift group" style={{
+              borderColor: 'hsl(183 100% 50% / 0.3)'
+            }}>
                 <div className="space-y-6">
                   <div className="p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Target className="h-8 w-8 text-orange" />
@@ -246,11 +254,15 @@ const Index = () => {
         {/* Performance Stats Section */}
         <section className="py-24">
           <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-4" style={{ letterSpacing: '0.02em' }}>Platform <span className="text-orange">Performance</span></h2>
+            <h2 className="text-5xl md:text-6xl font-tech font-bold text-foreground mb-4" style={{
+            letterSpacing: '0.02em'
+          }}>Platform <span className="text-orange">Performance</span></h2>
             <p className="text-xl text-muted-foreground font-body">Industry-leading metrics that power your arcade operations</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            {stats.map((stat, index) => <div key={index} className="stat-card p-8 rounded-2xl hover-lift hover-glow text-center" style={{
+            borderColor: 'hsl(183 100% 50% / 0.3)'
+          }}>
                 <div className="flex flex-col items-center space-y-6">
                   <div className="p-4 rounded-full bg-primary/10">
                     <div className="text-primary">
@@ -286,7 +298,9 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-10 rounded-3xl group" style={{
+            borderColor: 'hsl(183 100% 50% / 0.3)'
+          }}>
                 <div className="space-y-8">
                   <div className="p-5 rounded-2xl bg-primary/10 inline-flex group-hover:bg-orange/10 transition-colors">
                     <div className="text-primary group-hover:text-orange transition-colors">
@@ -326,11 +340,9 @@ const Index = () => {
         {/* Pricing Teaser */}
         <section className="py-20 relative">
           <div className="absolute inset-0 -z-10">
-            <div className="absolute inset-0"
-                 style={{
-                   background: "radial-gradient(1000px 500px at 50% 50%, rgba(0,245,255,0.12), rgba(0,0,0,0) 70%)",
-                 }}
-            />
+            <div className="absolute inset-0" style={{
+            background: "radial-gradient(1000px 500px at 50% 50%, rgba(0,245,255,0.12), rgba(0,0,0,0) 70%)"
+          }} />
           </div>
           
           <div className="text-center mb-12">
@@ -346,7 +358,9 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
-            <div className="premium-card hover-lift p-8 rounded-3xl border-2 transition-all group" style={{ borderColor: 'hsl(183 100% 50% / 0.3)' }}>
+            <div className="premium-card hover-lift p-8 rounded-3xl border-2 transition-all group" style={{
+            borderColor: 'hsl(183 100% 50% / 0.3)'
+          }}>
               <div className="text-center space-y-4">
                 <h3 className="text-3xl font-bold text-foreground">Starter</h3>
                 <div className="flex flex-col items-center gap-1">
@@ -356,7 +370,9 @@ const Index = () => {
                     <span className="text-xl text-primary">/ month</span>
                   </div>
                 </div>
-                <p className="text-sm text-primary italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $1,345/yr — 3 months free)</p>
+                <p className="text-sm text-primary italic" style={{
+                fontVariantNumeric: 'tabular-nums'
+              }}>(or $1,345/yr — 3 months free)</p>
                 <ul className="text-left space-y-3 pt-6">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -378,13 +394,14 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="premium-card hover-lift p-8 rounded-3xl border-2 transition-all relative" style={{ borderColor: 'hsl(183 100% 50% / 0.5)' }}>
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold"
-                   style={{
-                     background: "linear-gradient(90deg, rgba(255,102,0,0.2), rgba(255,102,0,0.05))",
-                     border: "1px solid rgba(255,102,0,0.45)",
-                     color: "white",
-                   }}>
+            <div className="premium-card hover-lift p-8 rounded-3xl border-2 transition-all relative" style={{
+            borderColor: 'hsl(183 100% 50% / 0.5)'
+          }}>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold" style={{
+              background: "linear-gradient(90deg, rgba(255,102,0,0.2), rgba(255,102,0,0.05))",
+              border: "1px solid rgba(255,102,0,0.45)",
+              color: "white"
+            }}>
                 Recommended
               </div>
               <div className="text-center space-y-4">
@@ -396,7 +413,9 @@ const Index = () => {
                     <span className="text-xl text-primary">/ month</span>
                   </div>
                 </div>
-                <p className="text-sm text-primary italic" style={{ fontVariantNumeric: 'tabular-nums' }}>(or $2,245/yr — 3 months free)</p>
+                <p className="text-sm text-primary italic" style={{
+                fontVariantNumeric: 'tabular-nums'
+              }}>(or $2,245/yr — 3 months free)</p>
                 <ul className="text-left space-y-3 pt-6">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -421,11 +440,7 @@ const Index = () => {
 
           <div className="text-center">
             <Link to="/pricing">
-              <Button 
-                variant="orange"
-                size="lg" 
-                className="hover-lift px-12 py-6 text-lg font-bold"
-              >
+              <Button variant="orange" size="lg" className="hover-lift px-12 py-6 text-lg font-bold">
                 View Full Pricing Details
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -451,12 +466,7 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center justify-center">
-            <Button 
-              onClick={handleStartGeneralChat} 
-              variant="orange"
-              size="xl" 
-              className="hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden"
-            >
+            <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="hover-lift px-20 py-10 text-2xl font-bold relative group overflow-hidden">
               <span className="relative z-10 flex items-center gap-3">
                 Launch Arcade Intelligence
                 <ArrowRight className="h-7 w-7 group-hover:translate-x-1 transition-transform" />

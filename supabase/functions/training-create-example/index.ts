@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +25,31 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const payload = await req.json();
+    // Define validation schema
+    const trainingExampleSchema = z.object({
+      source_query_id: z.string().uuid().optional(),
+      question: z.string().min(1, "Question required").max(2000, "Question too long"),
+      context: z.string().max(20000, "Context too long").optional(),
+      answer: z.string().max(10000, "Answer too long").optional(),
+      expected_answer: z.string().max(10000, "Expected answer too long").optional(),
+      evidence_spans: z.array(z.object({
+        start: z.number().int().min(0),
+        end: z.number().int().min(0),
+        text: z.string().max(1000)
+      })).max(50).optional(),
+      verified_by: z.string().max(255).optional(),
+      model_type: z.enum(['chat', 'completion', 'instruct']).default('chat'),
+      do_instructions: z.array(z.string().max(500)).max(20).default([]),
+      dont_instructions: z.array(z.string().max(500)).max(20).default([]),
+      tags: z.array(z.string().max(100)).max(20).default([]),
+      difficulty: z.enum(['easy', 'medium', 'hard']).default('medium')
+    }).refine(
+      data => data.answer || data.expected_answer,
+      { message: "Either answer or expected_answer must be provided" }
+    );
+
+    const rawPayload = await req.json();
+    const payload = trainingExampleSchema.parse(rawPayload);
     const {
       source_query_id,
       question,
@@ -33,11 +58,11 @@ serve(async (req) => {
       expected_answer,
       evidence_spans,
       verified_by,
-      model_type = 'chat',
-      do_instructions = [],
-      dont_instructions = [],
-      tags = [],
-      difficulty = 'medium'
+      model_type,
+      do_instructions,
+      dont_instructions,
+      tags,
+      difficulty
     } = payload;
 
     // Validate numeric policy: no unverified numbers allowed

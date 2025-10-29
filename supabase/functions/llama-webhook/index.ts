@@ -307,6 +307,9 @@ serve(async (req) => {
     console.log("📬 Event type:", eventType);
     console.log("📬 Event ID:", eventId);
     
+    // Import Zod for validation
+    const { z } = await import('https://deno.land/x/zod@v3.22.4/mod.ts');
+    
     // Parse body - use req.json() since content-type is application/json
     let body = await req.json();
     
@@ -318,14 +321,29 @@ serve(async (req) => {
     
     console.log("📋 Parsed body:", JSON.stringify(body, null, 2));
     
+    // Define validation schema for webhook payload
+    const webhookSchema = z.object({
+      data: z.object({
+        job_id: z.string().uuid().optional()
+      }).optional(),
+      job_id: z.string().uuid().optional(),
+      jobId: z.string().uuid().optional(),
+      id: z.string().uuid().optional(),
+      status: z.string().optional(),
+      event_type: z.string().optional()
+    }).passthrough(); // Allow additional fields
+    
+    // Validate the body structure
+    const validatedBody = webhookSchema.parse(body);
+    
     // Extract job_id - LlamaCloud sends it in data.job_id
-    const jobId = body.data?.job_id || body.job_id || body.jobId || body.id;
+    const jobId = validatedBody.data?.job_id || validatedBody.job_id || validatedBody.jobId || validatedBody.id;
     console.log("🔑 Extracted job_id:", jobId);
     
     if (!jobId) {
       console.error("❌ No job_id found in webhook");
       console.error("Body structure:", JSON.stringify(body, null, 2));
-      return new Response(JSON.stringify({ error: "No job_id in webhook" }), {
+      return new Response(JSON.stringify({ error: "No job_id in webhook - must contain valid UUID in data.job_id, job_id, jobId, or id field" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

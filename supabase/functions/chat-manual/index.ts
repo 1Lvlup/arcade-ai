@@ -828,8 +828,24 @@ serve(async (req) => {
   }
 
   try {
-    const { query, manual_id, stream, messages } = await req.json();
-    if (!query) throw new Error("Query is required");
+    // Import Zod for validation
+    const { z } = await import('https://deno.land/x/zod@v3.22.4/mod.ts');
+    
+    // Define validation schema
+    const chatRequestSchema = z.object({
+      query: z.string().min(1, "Query cannot be empty").max(5000, "Query too long (max 5000 chars)"),
+      manual_id: z.string().optional(),
+      stream: z.boolean().optional(),
+      messages: z.array(z.object({
+        role: z.enum(['user', 'assistant', 'system']),
+        content: z.string().max(10000, "Message content too long")
+      })).max(50, "Too many messages (max 50)").optional()
+    });
+    
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validatedBody = chatRequestSchema.parse(rawBody);
+    const { query, manual_id, stream, messages } = validatedBody;
 
     console.log("\n=================================");
     console.log("🔍 NEW CHAT REQUEST");

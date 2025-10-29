@@ -1,4 +1,5 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -100,7 +101,50 @@ Deno.serve(async (req) => {
     // Set tenant context for RLS
     await supabase.rpc('set_tenant_context', { tenant_id: tenantId });
 
-    const { manual_id, chunks, figures, metadata, images }: ImportRequest = await req.json();
+    // Define validation schema
+    const chunkSchema = z.object({
+      content: z.string().min(1, "Chunk content required").max(50000, "Chunk too large"),
+      page_start: z.number().int().min(0).optional(),
+      page_end: z.number().int().min(0).optional(),
+      menu_path: z.string().max(500).optional(),
+      metadata: z.record(z.any()).optional(),
+      embedding: z.array(z.number()).length(1536).optional()
+    });
+
+    const figureSchema = z.object({
+      image_name: z.string().min(1, "Image name required").max(500),
+      page_number: z.number().int().min(0),
+      caption_text: z.string().max(5000).optional(),
+      ocr_text: z.string().max(20000).optional(),
+      figure_type: z.string().max(100).optional(),
+      kind: z.string().max(100).optional(),
+      semantic_tags: z.array(z.string().max(100)).max(50).optional(),
+      keywords: z.array(z.string().max(100)).max(100).optional(),
+      detected_components: z.record(z.any()).optional(),
+      quality_score: z.number().min(0).max(1).optional(),
+      storage_path: z.string().max(1000).optional(),
+      embedding_text: z.array(z.number()).length(1536).optional()
+    }).passthrough();
+
+    const importRequestSchema = z.object({
+      manual_id: z.string().min(1, "Manual ID required").max(255),
+      chunks: z.array(chunkSchema).min(1, "At least one chunk required").max(10000, "Too many chunks"),
+      figures: z.array(figureSchema).max(5000, "Too many figures").optional(),
+      metadata: z.object({
+        canonical_title: z.string().max(500).optional(),
+        platform: z.string().max(100).optional(),
+        manufacturer: z.string().max(255).optional(),
+        doc_type: z.string().max(100).optional(),
+        version: z.string().max(100).optional(),
+        tags: z.array(z.string().max(100)).max(50).optional(),
+        page_count: z.number().int().min(0).max(100000).optional()
+      }).passthrough().optional(),
+      images: z.number().int().min(0).optional()
+    });
+
+    const rawRequest = await req.json();
+    const validatedRequest = importRequestSchema.parse(rawRequest);
+    const { manual_id, chunks, figures, metadata, images } = validatedRequest;
 
     console.log(`Starting bulk import for manual: ${manual_id}`);
     console.log(`Chunks to import: ${chunks.length}, Figures: ${figures?.length || 0}, Images: ${images || 0}`);

@@ -14,10 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        'sans': ['Space Grotesk', 'system-ui', '-apple-system', 'sans-serif'],
-        'display': ['Orbitron', 'Space Grotesk', 'sans-serif'],
-        'tech': ['Orbitron', 'sans-serif'],
-        'mono': ['JetBrains Mono', 'monospace'],
+        'sans': ['Goldman', 'system-ui', '-apple-system', 'sans-serif'],
+        'display': ['Goldman', 'sans-serif'],
+        'tech': ['Goldman', 'sans-serif'],
+        'mono': ['Goldman', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

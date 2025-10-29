@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Database, Image, MessageCircle, Brain, Activity, RefreshCw, Sparkles, Eye, Download, Zap } from 'lucide-react';
+import { ArrowLeft, Database, Image, MessageCircle, Brain, Activity, RefreshCw, Sparkles, Eye, Download } from 'lucide-react';
 import { SharedHeader } from '@/components/SharedHeader';
 import { ManualQuestions } from '@/components/ManualQuestions';
 import { ManualImages } from '@/components/ManualImages';
@@ -64,7 +64,6 @@ export function ManualDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
-  const [extractingOCR, setExtractingOCR] = useState(false);
   const [processingCaptions, setProcessingCaptions] = useState(false);
   const [captionProgress, setCaptionProgress] = useState<{ current: number; total: number } | null>(null);
 
@@ -287,47 +286,6 @@ export function ManualDetail() {
     }
   };
 
-  const extractOCR = async () => {
-    if (!manualId) return;
-    
-    setExtractingOCR(true);
-    try {
-      // First, extract LlamaCloud OCR
-      const { data: extractData, error: extractError } = await supabase.functions.invoke('extract-existing-ocr', {
-        body: { manual_id: manualId }
-      });
-
-      if (extractError) throw extractError;
-
-      toast({
-        title: 'LlamaCloud OCR Extracted',
-        description: `Extracted ${extractData.extracted} figures. Now processing with AI OCR...`,
-      });
-
-      // Then process remaining images with AI OCR
-      const { data: processData, error: processError } = await supabase.functions.invoke('process-all-ocr', {
-        body: { manual_id: manualId }
-      });
-
-      if (processError) throw processError;
-
-      toast({
-        title: 'AI OCR Processing Started',
-        description: `Processing ${processData.total_figures} images. This runs in the background.`,
-      });
-
-      fetchStats();
-    } catch (error) {
-      console.error('Error processing OCR:', error);
-      toast({
-        title: 'Processing Failed',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
-    } finally {
-      setExtractingOCR(false);
-    }
-  };
 
 
   const getStatusColor = () => {
@@ -477,21 +435,9 @@ export function ManualDetail() {
                   ) : (
                     <Sparkles className="h-4 w-4 mr-2" />
                   )}
-                  Generate Captions ({stats.figuresWithoutCaptions} images)
+                  Generate Captions & OCR ({stats.figuresWithoutCaptions} images)
                 </Button>
               )}
-              <Button 
-                onClick={extractOCR}
-                disabled={extractingOCR}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-              >
-                {extractingOCR ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Zap className="h-4 w-4 mr-2" />
-                )}
-                Process Images with AI OCR
-              </Button>
               <Button 
                 onClick={generateGoldenQuestions}
                 disabled={generatingQuestions || processingStatus?.status !== 'completed'}

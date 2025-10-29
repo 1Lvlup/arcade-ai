@@ -76,7 +76,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.check-job-status]
-verify_jwt = false
+verify_jwt = true
 
 [functions.chat-assistant]
 verify_jwt = true
@@ -124,22 +124,28 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.training-query]
-verify_jwt = false
+verify_jwt = true
 
 [functions.training-inbox]
-verify_jwt = false
+verify_jwt = true
 
 [functions.training-query-detail]
-verify_jwt = false
+verify_jwt = true
 
 [functions.training-create-example]
-verify_jwt = false
+verify_jwt = true
 
 [functions.training-generate-qa]
-verify_jwt = false
+verify_jwt = true
 
 [functions.training-export]
-verify_jwt = false
+verify_jwt = true
+
+[functions.training-bulk-action]
+verify_jwt = true
+
+[functions.training-undo]
+verify_jwt = true
 
 [functions.search-past-conversations]
 verify_jwt = true

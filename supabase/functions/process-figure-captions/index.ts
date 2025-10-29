@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MAX_BATCH_LIMIT = 50; // Process up to 50 figures per invocation to avoid timeout
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -67,7 +69,9 @@ serve(async (req) => {
     const total = totalFigures || 0;
 
     if (!figures || figures.length === 0) {
-      // Mark as complete
+      console.log(`✅ No remaining figures to process. Total: ${total}, Already done: ${alreadyCaptioned}`);
+      
+      // Mark as complete ONLY when all figures are truly done
       await supabase
         .from('processing_status')
         .upsert({
@@ -96,6 +100,12 @@ serve(async (req) => {
     }
 
     console.log(`📊 Found ${figures.length} figures needing captions (${alreadyCaptioned}/${total} already done)`);
+    
+    // Limit to MAX_BATCH_LIMIT figures per invocation
+    const figuresToProcess = figures.slice(0, MAX_BATCH_LIMIT);
+    const hasMoreToProcess = figures.length > MAX_BATCH_LIMIT;
+    
+    console.log(`🔄 Processing batch of ${figuresToProcess.length} figures (${hasMoreToProcess ? 'more batches needed' : 'final batch'})`);
 
     // Update processing status to continue from where we left off
     await supabase
@@ -105,7 +115,7 @@ serve(async (req) => {
         job_id: `caption-${manual_id}-${Date.now()}`,
         status: 'processing',
         stage: 'caption_generation',
-        current_task: `Resuming: ${alreadyCaptioned}/${total} complete`,
+        current_task: `Processing batch: ${alreadyCaptioned}/${total} complete`,
         total_figures: total,
         figures_processed: alreadyCaptioned,
         progress_percent: Math.round((alreadyCaptioned / total) * 100),
@@ -114,16 +124,16 @@ serve(async (req) => {
         onConflict: 'manual_id'
       });
 
-    // Start background processing
-    const processInBackground = async () => {
+    // Process synchronously (no background task)
+    const processBatch = async () => {
       const BATCH_SIZE = 5;
       let batchProcessed = 0;
       let succeeded = 0;
       let failed = 0;
 
-      // Process in batches
-      for (let i = 0; i < figures.length; i += BATCH_SIZE) {
-        const batch = figures.slice(i, i + BATCH_SIZE);
+      // Process in batches of 5
+      for (let i = 0; i < figuresToProcess.length; i += BATCH_SIZE) {
+        const batch = figuresToProcess.slice(i, i + BATCH_SIZE);
 
         const batchResults = await Promise.allSettled(batch.map(async (figure) => {
           try {
@@ -323,11 +333,49 @@ serve(async (req) => {
           })
           .eq('manual_id', manual_id);
 
-        console.log(`📊 Progress: ${totalProcessed}/${total} captions+OCR (this batch: ${batchProcessed}/${figures.length}, ✅ ${succeeded} success, ❌ ${failed} failed)`);
+        console.log(`📊 Progress: ${totalProcessed}/${total} captions+OCR (this batch: ${batchProcessed}/${figuresToProcess.length}, ✅ ${succeeded} success, ❌ ${failed} failed)`);
       }
 
-      // Mark as complete
-      const finalProcessed = alreadyCaptioned + succeeded;
+      return { succeeded, failed, totalProcessed: alreadyCaptioned + succeeded };
+    };
+
+    // Process the batch synchronously
+    const result = await processBatch();
+    const finalProcessed = result.totalProcessed;
+    
+    // Check if there are more figures to process
+    if (hasMoreToProcess) {
+      console.log(`🔄 More figures remaining. Self-invoking for next batch...`);
+      
+      // Self-invoke to process the next batch
+      supabase.functions.invoke('process-figure-captions', {
+        body: { manual_id }
+      }).then(response => {
+        if (response.error) {
+          console.error('❌ Self-invocation failed:', response.error);
+        } else {
+          console.log('✅ Next batch invoked successfully');
+        }
+      }).catch(err => {
+        console.error('❌ Self-invocation error:', err);
+      });
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Batch complete, continuing...`,
+          batch_processed: figuresToProcess.length,
+          total_processed: finalProcessed,
+          total: total,
+          remaining: figures.length - figuresToProcess.length,
+          status: 'processing'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      // All done! Mark as complete
+      console.log(`🎉 All figures processed! Total: ${finalProcessed}/${total}`);
+      
       await supabase
         .from('processing_status')
         .update({
@@ -335,29 +383,22 @@ serve(async (req) => {
           stage: 'caption_complete',
           figures_processed: finalProcessed,
           progress_percent: 100,
-          current_task: `Completed: ${finalProcessed}/${total} figures with captions+OCR (${succeeded} in this run, ${failed} failed)`,
+          current_task: `Completed: ${finalProcessed}/${total} figures with captions+OCR`,
           updated_at: new Date().toISOString()
         })
         .eq('manual_id', manual_id);
-
-      console.log(`🎉 Caption+OCR processing complete: ${finalProcessed}/${total} total (${succeeded} in this run)`);
-    };
-
-    // Use waitUntil to process in background
-    EdgeRuntime.waitUntil(processInBackground());
-
-    // Return immediately
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Caption+OCR processing started in background (${alreadyCaptioned}/${total} already complete)`,
-        total: total,
-        remaining: figures.length,
-        already_captioned: alreadyCaptioned,
-        status: 'processing'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'All figures captioned and OCR complete',
+          total_processed: finalProcessed,
+          total: total,
+          status: 'completed'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
   } catch (error: any) {
     console.error('❌ Error:', error);

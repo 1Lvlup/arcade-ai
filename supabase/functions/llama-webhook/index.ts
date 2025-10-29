@@ -1211,15 +1211,17 @@ CRITICAL: Use figure_type "text" or "sectionheader" ONLY for images that are pur
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // STAGE 11: LlamaCloud Processing Complete!
-    // Mark as 100% complete - upload and parsing is done
+    // STAGE 11: LlamaCloud Upload Complete - But figure processing still pending
+    // Mark as 'processing' (not completed) because OCR/captions still need to be generated
     await supabase
       .from('processing_status')
       .update({
-        status: 'completed',
-        stage: 'completed',
-        current_task: `Upload complete: ${processedCount} text chunks, ${figuresProcessed} images extracted`,
-        progress_percent: 100,
+        status: figuresProcessed > 0 ? 'processing' : 'completed',
+        stage: figuresProcessed > 0 ? 'figure_processing_pending' : 'completed',
+        current_task: figuresProcessed > 0 
+          ? `Upload complete: ${processedCount} text chunks, ${figuresProcessed} images extracted. Starting caption+OCR...`
+          : `Upload complete: ${processedCount} text chunks, no images`,
+        progress_percent: figuresProcessed > 0 ? 50 : 100,
         chunks_processed: processedCount,
         total_chunks: processedCount,
         total_figures: figuresProcessed,

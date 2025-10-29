@@ -165,14 +165,14 @@ serve(async (req) => {
                   messages: [
                     {
                       role: 'system',
-                      content: `You are analyzing technical manual images for "${manual?.title || 'a technical manual'}". Generate detailed, technical captions that describe what the image shows, including any visible text, diagrams, parts, specifications, or instructions.`
+                      content: `You are analyzing technical manual images for "${manual?.title || 'a technical manual'}". Your task is to provide a detailed, specific description of what you see in each image. DO NOT use generic phrases like "detailed technical description" or templates. Instead, describe the actual content: what specific diagrams, buttons, controls, parts, measurements, or text are visible. Be concrete and specific about what the image shows.`
                     },
                     {
                       role: 'user',
                       content: [
                         {
                           type: 'text',
-                          text: 'Generate a detailed caption for this technical manual image. Describe what is shown, any visible text, diagrams, parts, or specifications.'
+                          text: 'Describe this image in detail. What specific elements do you see? If it contains a diagram, describe the components. If it shows controls or buttons, list them. If there are measurements or specifications, include them. Be specific and avoid generic descriptions.'
                         },
                         {
                           type: 'image_url',

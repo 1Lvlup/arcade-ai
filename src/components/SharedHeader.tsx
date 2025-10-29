@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown, Code, Upload } from 'lucide-react';
+import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown, Code, Upload, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useState, useEffect } from 'react';
@@ -118,6 +118,12 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
                   <Link to="/tenant-management" className="cursor-pointer">
                     <Users className="h-4 w-4 mr-2" />
                     Tenant & User Management
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/user-conversations" className="cursor-pointer">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    User Conversation History
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

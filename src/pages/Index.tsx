@@ -187,7 +187,8 @@ const Index = () => {
             boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
           }}>
               <span className="relative z-10 flex items-center gap-3">
-                🔶 Launch Arcade Intelligence
+                <Zap className="h-8 w-8" />
+                LAUNCH ARCADE INTELLIGENCE
                 <ArrowRight className="h-8 w-8 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>

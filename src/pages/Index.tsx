@@ -327,11 +327,17 @@ const Index = () => {
                 </CardTitle>
                 <CardDescription>Quick access to administrative functions</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-2">
                 <Link to="/tenant-management">
                   <Button className="w-full" variant="outline">
                     <Users className="h-4 w-4 mr-2" />
                     Manage Tenant Access to Manuals
+                  </Button>
+                </Link>
+                <Link to="/user-conversations">
+                  <Button className="w-full" variant="outline">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    View User Conversation History
                   </Button>
                 </Link>
               </CardContent>

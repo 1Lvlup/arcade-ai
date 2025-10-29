@@ -35,6 +35,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import ReIngestManual from "./pages/ReIngestManual";
 import ManualProcessingTools from "./pages/ManualProcessingTools";
+import UserConversationHistory from "./pages/UserConversationHistory";
 
 const queryClient = new QueryClient();
 
@@ -197,6 +198,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <ReIngestManual />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/user-conversations" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <UserConversationHistory />
                 </AdminRoute>
               </ProtectedRoute>
             } />

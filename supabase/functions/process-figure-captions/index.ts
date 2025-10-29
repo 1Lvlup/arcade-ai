@@ -147,116 +147,147 @@ serve(async (req) => {
               };
             }
 
-            let captionText = figure.caption_text;
-            let ocrText = figure.ocr_text;
-
-            // Generate caption if missing
-            if (!captionText) {
-              const captionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${openaiApiKey}`,
-                  'OpenAI-Project': openaiProjectId,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  model: 'gpt-4o',
-                  max_tokens: 500,
-                  messages: [
-                    {
-                      role: 'system',
-                      content: `You are analyzing technical manual images for "${manual?.title || 'a technical manual'}". Your task is to provide a detailed, specific description of what you see in each image. DO NOT use generic phrases like "detailed technical description" or templates. Instead, describe the actual content: what specific diagrams, buttons, controls, parts, measurements, or text are visible. Be concrete and specific about what the image shows.`
-                    },
-                    {
-                      role: 'user',
-                      content: [
-                        {
-                          type: 'text',
-                          text: 'Describe this image in detail. What specific elements do you see? If it contains a diagram, describe the components. If it shows controls or buttons, list them. If there are measurements or specifications, include them. Be specific and avoid generic descriptions.'
-                        },
-                        {
-                          type: 'image_url',
-                          image_url: { url: figure.storage_url }
-                        }
-                      ]
-                    }
-                  ],
-                }),
-              });
-
-              if (!captionResponse.ok) {
-                const errorText = await captionResponse.text();
-                console.error(`Caption API error for figure ${figure.id}: ${captionResponse.status} - ${errorText}`);
-                
-                if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
-                  console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
-                  return { 
-                    success: false, 
-                    image_name: figure.image_name,
-                    error: 'Image not accessible'
-                  };
-                }
-                
-                throw new Error(`Caption API error: ${captionResponse.status} - ${errorText.substring(0, 200)}`);
-              }
-
-              const captionData = await captionResponse.json();
-              captionText = captionData.choices[0].message.content;
+            // Skip if both caption and OCR already exist
+            if (figure.caption_text && figure.ocr_text) {
+              console.log(`⏭️ Figure ${figure.id} already has caption and OCR, skipping`);
+              return { success: true, image_name: figure.image_name };
             }
 
-            // Extract OCR text if missing
-            if (!ocrText) {
-              const ocrResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${openaiApiKey}`,
-                  'OpenAI-Project': openaiProjectId,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  model: 'gpt-4o',
-                  max_tokens: 1000,
-                  messages: [
-                    {
-                      role: 'system',
-                      content: 'You are an OCR system. Extract ALL visible text from the image exactly as shown. Include labels, numbers, values, units, headings, and any other text. Preserve formatting and spacing where possible.'
-                    },
-                    {
-                      role: 'user',
-                      content: [
-                        {
-                          type: 'text',
-                          text: 'Extract all visible text from this image. Include every word, number, label, and value you can see.'
-                        },
-                        {
-                          type: 'image_url',
-                          image_url: { url: figure.storage_url }
-                        }
-                      ]
-                    }
-                  ],
-                }),
-              });
+            // Get page context (section/headings) for better captions
+            let pageContext = '';
+            if (figure.page_number) {
+              const { data: pageData } = await supabase
+                .from('manual_pages')
+                .select('section_path, headings')
+                .eq('manual_id', manual_id)
+                .eq('page', figure.page_number)
+                .single();
 
-              if (!ocrResponse.ok) {
-                const errorText = await ocrResponse.text();
-                console.error(`OCR API error for figure ${figure.id}: ${ocrResponse.status} - ${errorText}`);
-                
-                if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
-                  console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
-                  return { 
-                    success: false, 
-                    image_name: figure.image_name,
-                    error: 'Image not accessible'
-                  };
-                }
-                
-                throw new Error(`OCR API error: ${ocrResponse.status} - ${errorText.substring(0, 200)}`);
+              if (pageData) {
+                const section = pageData.section_path?.join(' > ') || '';
+                const headings = pageData.headings?.join(', ') || '';
+                pageContext = `Section: ${section || 'N/A'}\nPage headings: ${headings || 'N/A'}`;
               }
-
-              const ocrData = await ocrResponse.json();
-              ocrText = ocrData.choices[0].message.content;
             }
+
+            // Get surrounding text chunks from ±2 pages for richer context
+            let textContext = '';
+            if (figure.page_number) {
+              const { data: nearbyChunks } = await supabase
+                .from('chunks_text')
+                .select('content, page_start, section_heading')
+                .eq('manual_id', manual_id)
+                .gte('page_start', Math.max(1, figure.page_number - 2))
+                .lte('page_end', figure.page_number + 2)
+                .order('page_start', { ascending: true })
+                .limit(8);
+
+              if (nearbyChunks && nearbyChunks.length > 0) {
+                textContext = nearbyChunks
+                  .map(c => {
+                    const header = c.section_heading ? `[${c.section_heading}]\n` : '';
+                    return header + c.content;
+                  })
+                  .join('\n\n')
+                  .substring(0, 800);
+              }
+            }
+
+            const contextPrompt = pageContext || textContext 
+              ? `\n\nContext from page ${figure.page_number}:\n${pageContext}\n\nNearby text: ${textContext.substring(0, 300)}...`
+              : '';
+
+            // Single combined API call for caption + OCR using GPT-4.1 with JSON output
+            const combinedResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openaiApiKey}`,
+                'OpenAI-Project': openaiProjectId,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'gpt-4.1',
+                messages: [
+                  {
+                    role: 'system',
+                    content: `You are a technical arcade technician analyzing service manual images. Generate captions that precisely describe what's visible in the image.
+
+CRITICAL RULES:
+1. CAPTION: Describe what you ACTUALLY SEE in the image - specific components, connectors, boards, parts, diagrams, or schematics. Be concrete and visual.
+   - Good: "PCB board showing IC1 (Z80 processor), capacitors C1-C4, and power connector J1 at top left"
+   - Good: "Wiring diagram for coin door, showing connections between microswitches, coin mech, and harness"
+   - Bad: "Detailed tech description for troubleshooting/maintenance" (too vague)
+   - Bad: "Image shows technical information" (not specific enough)
+   
+2. OCR: Extract ALL visible text, labels, part numbers exactly as they appear. If no text, return empty string.
+
+Use the manual context to understand the purpose, but ALWAYS describe what's literally visible in the image.
+
+Return JSON:
+{
+  "caption": "Concrete description of visible components/diagram...",
+  "ocr_text": "All text here or empty string if no text"
+}`
+                  },
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: `Analyze this image from "${manual?.title || 'technical manual'}" (page ${figure.page_number || 'Unknown'}).${contextPrompt}
+
+Generate:
+1. A caption that describes EXACTLY what you see - specific components, parts, connectors, labels, or diagram elements that are visible. Be concrete and detailed about what's in the image.
+2. OCR extraction of all visible text, labels, and part numbers (return empty string if no text found)
+
+Return as JSON with "caption" and "ocr_text" fields.`
+                      },
+                      {
+                        type: 'image_url',
+                        image_url: { url: figure.storage_url }
+                      }
+                    ]
+                  }
+                ],
+                response_format: { type: "json_object" },
+                max_completion_tokens: 800,
+                temperature: 0.3
+              }),
+            });
+
+            if (!combinedResponse.ok) {
+              const errorText = await combinedResponse.text();
+              console.error(`Combined API error for figure ${figure.id}: ${combinedResponse.status} - ${errorText}`);
+              
+              if (errorText.includes('invalid_image_url') || errorText.includes('Error while downloading')) {
+                console.log(`⚠️ Skipping figure ${figure.id} - image not accessible`);
+                return { 
+                  success: false, 
+                  image_name: figure.image_name,
+                  error: 'Image not accessible'
+                };
+              }
+              
+              throw new Error(`Combined API error: ${combinedResponse.status} - ${errorText.substring(0, 200)}`);
+            }
+
+            const combinedData = await combinedResponse.json();
+            
+            // Parse JSON response
+            let parsedContent;
+            try {
+              const content = combinedData.choices[0]?.message?.content;
+              if (!content) {
+                throw new Error('No content in response');
+              }
+              parsedContent = JSON.parse(content);
+            } catch (e) {
+              console.error(`❌ Failed to parse JSON response for figure ${figure.id}:`, e);
+              throw new Error('AI response was not valid JSON');
+            }
+
+            const captionText = parsedContent.caption || '';
+            const ocrText = parsedContent.ocr_text || '';
 
             // Generate embedding from combined caption + OCR text
             let embedding = null;

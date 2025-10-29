@@ -68,9 +68,6 @@ serve(async (req) => {
       )
     }
 
-    // Set tenant context for RLS
-    await supabase.rpc('set_tenant_context', { tenant_id: profile.fec_tenant_id })
-
     // Verify the document exists (use service role to bypass RLS for check)
     const { data: document, error: docError } = await supabase
       .from('documents')

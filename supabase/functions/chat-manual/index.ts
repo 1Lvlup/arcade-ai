@@ -843,7 +843,7 @@ serve(async (req) => {
     // Define validation schema
     const chatRequestSchema = z.object({
       query: z.string().min(1, "Query cannot be empty").max(5000, "Query too long (max 5000 chars)"),
-      manual_id: z.string().optional(),
+      manual_id: z.string().nullish(), // Accepts string | null | undefined
       stream: z.boolean().optional(),
       messages: z.array(z.object({
         role: z.enum(['user', 'assistant', 'system']),

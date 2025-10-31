@@ -24,10 +24,7 @@ const BACKEND_MODEL = Deno.env.get("BACKEND_MODEL") ?? "gpt-5-2025-08-07";
 // CHAT_MODEL: Fallback if database lookup fails (deprecated, use ai_config table instead)
 const CHAT_MODEL = Deno.env.get("CHAT_MODEL") ?? "gpt-5-2025-08-07";
 
-// tone: "conversational" | "structured"
-const ANSWER_STYLE = Deno.env.get("ANSWER_STYLE") ?? "conversational";
-// Feature flag for advanced answer style V2
-const USE_ANSWER_STYLE_V2 = (Deno.env.get("ANSWER_STYLE_V2") ?? "0") === "1";
+// Answer Style V2 is always enabled - uses adaptive prompts from answerStyle.ts
 
 // Validate required environment variables
 if (!supabaseUrl) throw new Error("Missing SUPABASE_URL");
@@ -390,63 +387,6 @@ function isGpt5(model: string): boolean {
   return model.includes("gpt-5");
 }
 
-const SYSTEM_PROMPT_CONVERSATIONAL = `
-You are "Dream Technician Assistant," an insanely competent arcade/bowling tech expert.
-You know this equipment inside and out. Talk like a confident expert who thinks ahead and helps prevent future issues.
-
-IMPORTANT: You have deep knowledge backed by technical documentation including diagrams, figures, and detailed specifications. When users ask about visual references, describe what you see in the available figures.
-
-ANSWER STRUCTURE:
-1. Direct answer (2-3 sentences addressing the main issue with confidence)
-2. Why it matters (brief explanation of root cause)
-3. Step-by-step actions (4-6 concrete bullets with specifics)
-4. Related considerations (mention 1-2 related things that could go wrong or should be checked while you're in there)
-5. Next steps guidance (2-3 leading questions to help the tech decide what to investigate next)
-
-RULES:
-- Write answers that start with empathy and end with certainty
-- Sound human, not robotic. Give reasoning, not repetition.
-- Cite sources at the end of each response for backing up technical details
-- Don't ever say with "According to the manual" or "The manual says"
-- Every single time you suggest doing something, make sure to explain exactly how to do it
-- Let documentation support your expertise, don't let it define it
-- Never invent specs, part numbers, or connector IDs - if missing say "I don't have the exact spec for that"
-- Mention power-off for any resistance checks or moving parts
-- Use plain action verbs: "unplug, reseat, measure, check"
-- When suggesting checks, include what readings/results to expect
-
-LEADING QUESTIONS FORMAT (always include at end):
-"What to check next:"
-• [Question about related system/component]?
-• [Question about symptom progression or related issue]?
-• [Question to narrow down root cause]?
-
-Keep it conversational and helpful - you're the expert they called!
-`;
-
-const SYSTEM_PROMPT_STRUCTURED = `You are an expert arcade service assistant. Give **actionable** repair steps a field tech can follow safely on-site.
-
-Rules
-1) Map the symptom to the likely subsystem by name.
-2) Output 2–4 decisive tests with numbers, pins, connectors, or error codes.
-3) Each test must cite an exact page from the provided context. If a step has no page, omit it.
-4) Prefer procedures and wiring tables over parts lists. Prefer pages with voltages, pins, or headers (e.g., Jxx).
-5) If you tell the user to enter any **menu/diagnostic mode**, briefly include **how to open it** (button names or sequence) if it isn't obvious from context.
-6) Stop when a fault is confirmed; don't list speculative branches.
-7) If evidence is thin, return the "Minimal Working Play" (error display → sensor toggle 0↔5 V → power/drive check) and say what data is missing.
-
-Format
-**Subsystem:** <name>
-
-**Do this first (2–4 steps):**
-1) <Test with expected reading, connector/pin>  — p<X>
-2) ...
-3) ...
-
-**Why:** <one-line rationale>
-
-**Citations:** p<X>, p<Y>, p<Z>`;
-
 async function generateAnswer(
   query: string, 
   chunks: any[], 
@@ -462,76 +402,35 @@ async function generateAnswer(
   let systemPrompt: string;
   let userPrompt: string;
 
-  // Use Answer Style V2 if enabled (always when USE_ANSWER_STYLE_V2=1)
-  if (USE_ANSWER_STYLE_V2) {
-    console.log(`✅ [Answer Style V2] ACTIVE - Adaptive prompt system enabled`);
-    
-    // Compute signals if not provided
-    const signals = opts?.signals ?? computeSignals(chunks.map(c => ({ score: c.rerank_score ?? c.score ?? 0 })));
-    
-    const snippets = chunks.map((c, i) => {
-      const cleaned = normalizeGist(c.content);
-      const pageInfo = c.page_start
-        ? (c.page_end && c.page_end !== c.page_start ? `p${c.page_start}-${c.page_end}` : `p${c.page_start}`)
-        : "page unknown";
-      return {
-        title: `Chunk ${i + 1}`,
-        excerpt: cleaned,
-        cite: pageInfo
-      };
-    });
+  // Use Answer Style V2 - adaptive prompts based on retrieval quality
+  console.log(`✅ [Answer Style V2] Adaptive prompt system enabled`);
+  
+  // Compute signals if not provided
+  const signals = opts?.signals ?? computeSignals(chunks.map(c => ({ score: c.rerank_score ?? c.score ?? 0 })));
+  
+  const snippets = chunks.map((c, i) => {
+    const cleaned = normalizeGist(c.content);
+    const pageInfo = c.page_start
+      ? (c.page_end && c.page_end !== c.page_start ? `p${c.page_start}-${c.page_end}` : `p${c.page_start}`)
+      : "page unknown";
+    return {
+      title: `Chunk ${i + 1}`,
+      excerpt: cleaned,
+      cite: pageInfo
+    };
+  });
 
-    const shaped = shapeMessages(query, snippets, {
-      existingWeak: opts?.existingWeak ?? false,
-      topScore: signals.topScore,
-      avgTop3: signals.avgTop3,
-      strongHits: signals.strongHits
-    });
+  const shaped = shapeMessages(query, snippets, {
+    existingWeak: opts?.existingWeak ?? false,
+    topScore: signals.topScore,
+    avgTop3: signals.avgTop3,
+    strongHits: signals.strongHits
+  });
 
-    systemPrompt = shaped.system;
-    userPrompt = shaped.user;
+  systemPrompt = shaped.system;
+  userPrompt = shaped.user;
 
-    console.log(`📊 [Answer Style V2] Weak: ${shaped.isWeak}, Top: ${signals.topScore.toFixed(3)}, Avg3: ${signals.avgTop3.toFixed(3)}, Strong: ${signals.strongHits}`);
-  } else {
-    console.log(`⚠️ [Legacy Prompts] Using ${ANSWER_STYLE} (Answer Style V2 disabled)`);
-    // LEGACY: Old conversational/structured prompts (INACTIVE when ANSWER_STYLE_V2=1)
-    // Original behavior
-    const contextBlocks = chunks
-      .map((c, i) => {
-        const cleaned = normalizeGist(c.content);
-        const pageInfo = c.page_start
-          ? (c.page_end && c.page_end !== c.page_start ? `[p${c.page_start}-${c.page_end}]` : `[p${c.page_start}]`)
-          : "[page unknown]";
-        return `[${i + 1}] ${pageInfo} ${cleaned}`;
-      })
-      .join("\n\n");
-
-    systemPrompt = ANSWER_STYLE === "conversational"
-      ? SYSTEM_PROMPT_CONVERSATIONAL
-      : SYSTEM_PROMPT_STRUCTURED;
-
-    userPrompt = `Question: ${query}
-
-Manual content:
-${contextBlocks}
-
-Provide a clear answer using the manual content above.`;
-
-    const styleHint = styleHintFromQuery(query);
-    
-    if (styleHint) {
-      userPrompt += `
-
-Style request:
-${styleHint}`;
-    }
-
-    if (opts?.retrievalWeak) {
-      userPrompt += `
-
-(Notes for the assistant: Retrieval was thin. Still answer decisively using "field-tested play". Be clear when specs are missing with "spec not captured". Keep tone confident and helpful.)`;
-    }
-  }
+  console.log(`📊 [Answer Style V2] Weak: ${shaped.isWeak}, Top: ${signals.topScore.toFixed(3)}, Avg3: ${signals.avgTop3.toFixed(3)}, Strong: ${signals.strongHits}`);
   
   console.log(`🤖 Generating answer with model: ${model}`);
 

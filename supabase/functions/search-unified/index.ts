@@ -339,7 +339,9 @@ serve(async (req) => {
     
     for (const result of visualOnly) {
       if (result.content_type === 'figure') {
-        let boost = 1.0;
+        // Apply 60/40 weighting: 60% for figures (1.5x boost)
+        const figureBoost = 1.5; // 60% relative weight vs text at 40%
+        let boost = figureBoost;
         
         // Anchor boost: figure on same page as top text
         if (topTextPages.has(result.page_start)) {
@@ -347,16 +349,14 @@ serve(async (req) => {
           console.log(`📍 ANCHOR BOOST: p${result.page_start} figure is on same page as top text`);
         }
         
-        // Intent boost: visual query gets moderate figure boost
+        // Intent boost: visual query gets additional boost
         if (hasVisualIntent) {
           boost *= 1.10;
         }
         
-        if (boost > 1.0) {
-          const oldScore = result.rerank_score || 0;
-          result.rerank_score = oldScore * boost;
-          console.log(`  Score: ${oldScore.toFixed(3)} → ${result.rerank_score.toFixed(3)}`);
-        }
+        const oldScore = result.rerank_score || 0;
+        result.rerank_score = oldScore * boost;
+        console.log(`  📊 Figure boost (60/40): ${oldScore.toFixed(3)} → ${result.rerank_score.toFixed(3)}`);
       }
     }
     

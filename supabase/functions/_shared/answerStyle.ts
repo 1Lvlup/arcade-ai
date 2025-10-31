@@ -121,7 +121,7 @@ export function shapeMessages(
   const system = ARCADE_TROUBLESHOOTER_PRO + (
     isWeak
       ? `\n\nRetrieval is WEAK. Be candid about limits; switch to best-practice checks; mark inferences as "Working theory."`
-      : `\n\nRetrieval is STRONG. Prefer doc-backed steps and name the doc/section inline.`
+      : `\n\nRetrieval is STRONG. Prefer doc-backed steps.`
   );
 
   const user = [

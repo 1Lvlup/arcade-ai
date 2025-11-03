@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MAX_BATCH_LIMIT = 100; // Process up to 100 figures per invocation
+const MAX_BATCH_LIMIT = 50; // Reduced to 50 to avoid timeouts (Edge functions have ~150s limit)
 const CONCURRENT_BATCH_SIZE = 10; // Process 10 images concurrently for faster throughput
 
 serve(async (req) => {
@@ -381,7 +381,8 @@ CRITICAL: Use figure_type "text" or "sectionheader" ONLY for images that are pur
     if (hasMoreToProcess) {
       console.log(`🔄 More figures remaining. Self-invoking for next batch...`);
       
-      // Self-invoke to process the next batch
+      // IMPORTANT: Fire-and-forget self-invoke to continue processing
+      // This ensures processing continues even if this function times out
       supabase.functions.invoke('process-figure-captions', {
         body: { manual_id }
       }).then(response => {
@@ -394,10 +395,11 @@ CRITICAL: Use figure_type "text" or "sectionheader" ONLY for images that are pur
         console.error('❌ Self-invocation error:', err);
       });
       
+      // Return immediately - don't wait for next batch
       return new Response(
         JSON.stringify({
           success: true,
-          message: `Batch complete, continuing...`,
+          message: `Batch complete, continuing in background...`,
           batch_processed: figuresToProcess.length,
           total_processed: finalProcessed,
           total: total,

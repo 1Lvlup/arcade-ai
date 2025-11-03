@@ -928,135 +928,99 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={startNewConversation}
-              className="h-8 px-2"
-              title="New conversation"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={saveConversation}
-              disabled={messages.length <= 1}
-              className="h-8 px-2"
-              title="Save conversation"
-            >
-              <Save className="h-4 w-4" />
-            </Button>
             {user && (
               <>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowConversations(!showConversations)}
+                  onClick={startNewConversation}
                   className="h-8 px-2"
-                  title="View saved conversations"
+                  title="New conversation"
                 >
-                  <History className="h-4 w-4" />
+                  <MessageSquarePlus className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={saveConversation}
                   disabled={messages.length <= 1 || isSaving}
-                  className="h-10 px-3"
+                  className="h-8 px-2"
                   title="Save conversation"
                 >
-                  <Save className="h-5 w-5" />
+                  <Save className="h-4 w-4" />
                 </Button>
+                <Sheet open={showHistory} onOpenChange={setShowHistory}>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      title="View conversation history"
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>Conversation History</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-6 space-y-3">
+                      {conversations.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No saved conversations yet
+                        </div>
+                      ) : (
+                        conversations.map((conv) => (
+                          <Card
+                            key={conv.id}
+                            className={`hover:border-primary/50 transition-colors cursor-pointer ${
+                              currentConversationId === conv.id ? 'border-primary' : ''
+                            }`}
+                          >
+                            <CardContent className="pt-4 pb-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div
+                                  className="flex-1"
+                                  onClick={() => loadConversation(conv.id)}
+                                >
+                                  <div className="font-medium mb-1 line-clamp-2">
+                                    {conv.title}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
+                                    {new Date(conv.last_message_at).toLocaleTimeString()}
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConversationToDelete(conv.id);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={startNewConversation}
-              disabled={messages.length <= 1}
-              className="h-10 px-3"
-              title="New conversation"
-            >
-              <MessageSquarePlus className="h-5 w-5" />
-            </Button>
-            {user && (
-              <Sheet open={showHistory} onOpenChange={setShowHistory}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 px-3"
-                    title="View conversation history"
-                  >
-                    <History className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Conversation History</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6 space-y-3">
-                  {conversations.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No saved conversations yet
-                    </div>
-                  ) : (
-                    conversations.map((conv) => (
-                      <Card
-                        key={conv.id}
-                        className={`hover:border-primary/50 transition-colors cursor-pointer ${
-                          currentConversationId === conv.id ? 'border-primary' : ''
-                        }`}
-                      >
-                        <CardContent className="pt-4 pb-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div
-                              className="flex-1"
-                              onClick={() => loadConversation(conv.id)}
-                            >
-                              <div className="font-medium mb-1 line-clamp-2">
-                                {conv.title}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
-                                {new Date(conv.last_message_at).toLocaleTimeString()}
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConversationToDelete(conv.id);
-                                setShowDeleteDialog(true);
-                              }}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-            )}
-            <ManualSelector 
-              selectedManualId={selectedManualId} 
-              onManualChange={handleManualChange}
-            />
           </div>
         </CardTitle>
-        {selectedManualId && (
-          <div className="mt-2">
-            <Badge variant="outline" className="text-sm px-3 py-1">
-              Searching: {manualTitle}
-            </Badge>
-          </div>
-        )}
+        <div className="mt-4">
+          <ManualSelector 
+            selectedManualId={selectedManualId || undefined} 
+            onManualChange={handleManualChange}
+          />
+        </div>
         {currentConversationId && (
           <div className="mt-2">
             <Badge variant="outline" className="text-sm px-3 py-1 bg-primary/10 text-primary border-primary/30">
@@ -1262,49 +1226,59 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         
         {/* Input Area */}
         <div className="border-t border-border px-6 py-5 flex-shrink-0">
-          <div className="flex space-x-3">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask me about arcade machine troubleshooting..."
-              disabled={isLoading}
-              className="flex-1 text-base h-12"
-            />
-            {/* 🔥 LAYER 3: Clear chat button */}
-            {messages.length > 1 && (
-              <Button
-                onClick={startNewConversation}
-                variant="ghost"
-                size="lg"
-                className="h-12 px-4"
-                title="Clear chat (keeps history saved)"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            )}
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isLoading}
-              size="lg"
-              variant="orange"
-              className="h-12 px-6"
-            >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Send className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
-          <div className="text-sm text-muted-foreground mt-3 flex items-center justify-between">
-            <span>Press Enter to send • Shift+Enter for new line</span>
-            {!user && (
-              <span className="text-orange-500 font-medium">
-                {guestMessageCount}/{GUEST_MESSAGE_LIMIT} free questions used
-              </span>
-            )}
-          </div>
+          {!selectedManualId ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <div className="text-center space-y-2">
+                <p className="text-lg font-semibold text-foreground">Select a game to get started</p>
+                <p className="text-sm text-muted-foreground">Choose a game from the dropdown above to begin troubleshooting</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex space-x-3">
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask me about arcade machine troubleshooting..."
+                  disabled={isLoading}
+                  className="flex-1 text-base h-12"
+                />
+                {messages.length > 1 && (
+                  <Button
+                    onClick={startNewConversation}
+                    variant="ghost"
+                    size="lg"
+                    className="h-12 px-4"
+                    title="Clear chat (keeps history saved)"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                )}
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isLoading}
+                  size="lg"
+                  variant="orange"
+                  className="h-12 px-6"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground mt-3 flex items-center justify-between">
+                <span>Press Enter to send • Shift+Enter for new line</span>
+                {!user && (
+                  <span className="text-orange-500 font-medium">
+                    {guestMessageCount}/{GUEST_MESSAGE_LIMIT} free questions used
+                  </span>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
 

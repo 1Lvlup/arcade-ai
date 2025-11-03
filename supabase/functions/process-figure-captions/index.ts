@@ -197,7 +197,7 @@ serve(async (req) => {
               ? `\n\nContext from page ${figure.page_number}:\n${pageContext}\n\nNearby text: ${textContext.substring(0, 300)}...`
               : '';
 
-            // Single combined API call for caption + OCR using gpt-4o-mini (faster & cheaper)
+            // Combined API call for caption + OCR + metadata using gpt-4o-mini (fast)
             const combinedResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -210,24 +210,7 @@ serve(async (req) => {
                 messages: [
                   {
                     role: 'system',
-                    content: `You are a technical arcade technician analyzing service manual images. Generate captions that precisely describe what's visible in the image.
-
-CRITICAL RULES:
-1. CAPTION: Describe what you ACTUALLY SEE in the image - specific components, connectors, boards, parts, diagrams, or schematics. Be concrete and visual.
-   - Good: "PCB board showing IC1 (Z80 processor), capacitors C1-C4, and power connector J1 at top left"
-   - Good: "Wiring diagram for coin door, showing connections between microswitches, coin mech, and harness"
-   - Bad: "Detailed tech description for troubleshooting/maintenance" (too vague)
-   - Bad: "Image shows technical information" (not specific enough)
-   
-2. OCR: Extract ALL visible text, labels, part numbers exactly as they appear. If no text, return empty string.
-
-Use the manual context to understand the purpose, but ALWAYS describe what's literally visible in the image.
-
-Return JSON:
-{
-  "caption": "Concrete description of visible components/diagram...",
-  "ocr_text": "All text here or empty string if no text"
-}`
+                    content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Analyze images and extract structured metadata.'
                   },
                   {
                     role: 'user',
@@ -236,11 +219,25 @@ Return JSON:
                         type: 'text',
                         text: `Analyze this image from "${manual?.title || 'technical manual'}" (page ${figure.page_number || 'Unknown'}).${contextPrompt}
 
-Generate:
-1. A caption that describes EXACTLY what you see - specific components, parts, connectors, labels, or diagram elements that are visible. Be concrete and detailed about what's in the image.
+Generate comprehensive metadata with:
+1. A caption that describes EXACTLY what you see - specific components, parts, connectors, labels, or diagram elements
 2. OCR extraction of all visible text, labels, and part numbers (return empty string if no text found)
+3. Figure type classification
+4. Detected components with structured data
+5. Semantic tags for categorization
 
-Return as JSON with "caption" and "ocr_text" fields.`
+Return JSON:
+{
+  "caption": "[Page ${figure.page_number || 'Unknown'}] Detailed technical description for troubleshooting/maintenance",
+  "ocr_text": "All visible text here or empty string if no text",
+  "figure_type": "diagram|photo|illustration|schematic|circuit|exploded_view|chart|table|mixed|text|sectionheader",
+  "detected_components": [
+    {"type": "part_number|measurement|callout|wire_color|safety_symbol|component", "label": "...", "value": "..."}
+  ],
+  "semantic_tags": ["electrical", "mechanical", "troubleshooting", "assembly", "safety", etc.]
+}
+
+CRITICAL: Use figure_type "text" or "sectionheader" ONLY for images that are purely text/headers with NO diagrams/photos.`
                       },
                       {
                         type: 'image_url',
@@ -250,7 +247,7 @@ Return as JSON with "caption" and "ocr_text" fields.`
                   }
                 ],
                 response_format: { type: "json_object" },
-                max_completion_tokens: 800,
+                max_tokens: 1000,
                 temperature: 0.3
               }),
             });
@@ -288,6 +285,9 @@ Return as JSON with "caption" and "ocr_text" fields.`
 
             const captionText = parsedContent.caption || '';
             const ocrText = parsedContent.ocr_text || '';
+            const figureType = parsedContent.figure_type || 'diagram';
+            const detectedComponents = parsedContent.detected_components || null;
+            const semanticTags = parsedContent.semantic_tags || null;
 
             // Generate embedding from combined caption + OCR text
             let embedding = null;
@@ -313,12 +313,15 @@ Return as JSON with "caption" and "ocr_text" fields.`
               }
             }
 
-            // Update figure with caption, OCR, embedding, and mark as completed
+            // Update figure with caption, OCR, metadata, embedding, and mark as completed
             const { error: updateError } = await supabase
               .from('figures')
               .update({
                 caption_text: captionText,
                 ocr_text: ocrText,
+                figure_type: figureType,
+                detected_components: detectedComponents,
+                semantic_tags: semanticTags,
                 embedding_text: embedding,
                 ocr_status: 'success',
                 ocr_updated_at: new Date().toISOString()

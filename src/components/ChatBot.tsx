@@ -176,32 +176,24 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       type: 'bot',
       content: selectedManualId 
         ? `Hello! I'm here to help you troubleshoot "${manualTitle}". What issue can I help you solve today?`
-        : `Hello! I'm your arcade troubleshooting assistant. I'll search through all your uploaded manuals to help diagnose and fix your machine issues. What can I help you with?`,
+        : `Hello! I'm your arcade troubleshooting assistant. Please select a game from the dropdown above to get started.`,
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
   };
 
-  // Initial load - restore last conversation or show welcome
+  // Initial load - always start fresh with game selection
   useEffect(() => {
     const initializeChat = async () => {
       if (isInitialized) return;
       
       await loadConversations();
       
-      // Try to restore last active conversation
-      const lastConvId = localStorage.getItem('last_conversation_id');
-      if (lastConvId && user) {
-        try {
-          await loadConversation(lastConvId);
-          setIsInitialized(true);
-          return;
-        } catch (error) {
-          console.log('Could not restore last conversation, starting fresh');
-        }
-      }
-      
-      // No conversation to restore, show welcome message
+      // Always start with a fresh conversation that requires game selection
+      setSelectedManualId(null);
+      setManualTitle(null);
+      setCurrentConversationId(null);
+      localStorage.removeItem('last_conversation_id');
       updateWelcomeMessage();
       setIsInitialized(true);
     };
@@ -407,6 +399,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const startNewConversation = () => {
     setMessages([]);
     setCurrentConversationId(null);
+    setSelectedManualId(null);
+    setManualTitle(null);
     localStorage.removeItem('last_conversation_id');
     updateWelcomeMessage();
   };
@@ -429,6 +423,16 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
+
+    // Require game selection before sending message
+    if (!selectedManualId) {
+      toast({
+        title: 'Please select a game',
+        description: 'Choose which game you need help with from the dropdown above',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Check guest user message limit
     if (!user && guestMessageCount >= GUEST_MESSAGE_LIMIT) {

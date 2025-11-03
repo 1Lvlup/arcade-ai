@@ -125,7 +125,7 @@ const Index = () => {
               <div className="caption-text text-xs sm:text-sm md:text-base tracking-widest uppercase font-mono rounded-lg text-white px-2">
                 The Future of Arcade Maintenance
               </div>
-              <h1 className="hero-headline font-tech font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl px-4" data-text="LEVEL UP" style={{
+              <h1 className="hero-headline font-tech font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl px-4 py-8 sm:py-12 lg:py-16" data-text="LEVEL UP" style={{
               letterSpacing: '0.02em',
               color: 'hsl(183 100% 50%)'
             }}>
@@ -135,7 +135,7 @@ const Index = () => {
             <p className="body-text text-base sm:text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body px-4 sm:px-6" style={{
             lineHeight: '1.6'
           }}>
-              Smart diagnostics built for real arcades — instantly identify, troubleshoot, and solve game issues.
+              Smart diagnostics built for real arcades—pinpoint faults, resolve outages, and collect real-time insights.
             </p>
           </div>
           
@@ -150,7 +150,7 @@ const Index = () => {
                 </div>
                 <div className="text-center space-y-3">
                   <div className="font-bold text-2xl text-foreground bg-[#080809]/60 rounded-xl mx-[6px]">Built With Precision  For Arcades</div>
-                  <div className="text-base text-primary leading-relaxed">No theory. These tools were built by technicians who work on arcades.</div>
+                  <div className="text-base text-primary leading-relaxed"><span className="font-semibold">No theory.</span> These tools were built by technicians who work on arcades.</div>
                 </div>
               </div>
             </div>
@@ -163,7 +163,7 @@ const Index = () => {
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
                   <div className="font-bold text-lg sm:text-xl lg:text-2xl text-foreground px-2">The More Arcades Connect, The Smarter It Gets</div>
-                  <div className="text-sm sm:text-base text-primary leading-relaxed px-2">One arcade's fix becomes every arcade's knowledge.</div>
+                  <div className="text-sm sm:text-base text-primary leading-relaxed px-2"><span className="font-semibold">One arcade's fix becomes every arcade's knowledge.</span></div>
                 </div>
               </div>
             </div>
@@ -176,13 +176,13 @@ const Index = () => {
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
                   <div className="font-bold text-lg sm:text-xl lg:text-2xl text-foreground px-2">Real-Time Processing</div>
-                  <div className="text-sm sm:text-base text-primary leading-relaxed px-2">Instant AI responses. No waiting. No downtime.</div>
+                  <div className="text-sm sm:text-base text-primary leading-relaxed px-2"><span className="font-semibold">Instant AI responses.</span> No waiting. No downtime.</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-center mt-12 sm:mt-16 lg:mt-20 px-4">
+          <div className="flex flex-col items-center justify-center mt-12 sm:mt-16 lg:mt-20 px-4 gap-3">
             <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-6 sm:px-12 md:px-20 lg:px-32 py-6 sm:py-8 md:py-10 lg:py-12 text-base sm:text-xl md:text-2xl lg:text-3xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
             boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
           }}>
@@ -193,6 +193,7 @@ const Index = () => {
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
             </Button>
+            <p className="text-xs sm:text-sm text-muted-foreground/80">No credit card • 2-minute setup</p>
           </div>
         </section>
 
@@ -214,7 +215,7 @@ const Index = () => {
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-tech font-bold text-foreground">$350/week</h3>
                   <p className="text-base sm:text-lg text-primary font-body leading-relaxed">
-                    Average savings per arcade using Level Up.
+                    <span className="font-semibold">Average savings per arcade using Level Up.</span>
                   </p>
                 </div>
               </div>
@@ -229,7 +230,7 @@ const Index = () => {
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-tech font-bold text-foreground">3-6 Months</h3>
                   <p className="text-base sm:text-lg text-primary font-body leading-relaxed">
-                    Typical payback period based on reduced technician time and uptime improvements.
+                    <span className="font-semibold">Typical payback period based on reduced technician time and uptime improvements.</span>
                   </p>
                 </div>
               </div>
@@ -244,7 +245,7 @@ const Index = () => {
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-tech font-bold text-foreground">Up to 40%</h3>
                   <p className="text-base sm:text-lg text-primary font-body leading-relaxed">
-                    Cut technician labor time — Focus on new revenue, not repeat fixes.
+                    <span className="font-semibold">Cut technician labor time</span> — Focus on new revenue, not repeat fixes.
                   </p>
                 </div>
               </div>
@@ -274,7 +275,11 @@ const Index = () => {
                     <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground">{stat.value}</div>
                     <div className="space-y-1 sm:space-y-2">
                       <div className="font-semibold text-base sm:text-lg text-foreground">{stat.label}</div>
-                      <div className="text-xs sm:text-sm text-primary px-2">{stat.description}</div>
+                      <div className="text-xs sm:text-sm text-primary px-2">
+                        {stat.description.split('.').map((sentence, i) => 
+                          i === 0 ? <span key={i} className="font-semibold">{sentence}.</span> : <span key={i}> {sentence}{i < stat.description.split('.').length - 2 ? '.' : ''}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -310,7 +315,9 @@ const Index = () => {
                   </div>
                   <h3 className="text-xl sm:text-2xl font-tech font-bold text-foreground tracking-wide">{capability.title}</h3>
                   <p className="text-primary leading-relaxed text-sm sm:text-base font-body">
-                    {capability.description}
+                    {capability.description.split('.').map((sentence, i) => 
+                      i === 0 ? <span key={i} className="font-semibold">{sentence}.</span> : <span key={i}> {sentence}{i < capability.description.split('.').length - 2 ? '.' : ''}</span>
+                    )}
                   </p>
                 </div>
               </div>)}

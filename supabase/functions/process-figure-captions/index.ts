@@ -170,17 +170,17 @@ serve(async (req) => {
               }
             }
 
-            // Get surrounding text chunks from ±2 pages for richer context
+            // Get surrounding text chunks from ±3 pages for richer context
             let textContext = '';
             if (figure.page_number) {
               const { data: nearbyChunks } = await supabase
                 .from('chunks_text')
                 .select('content, page_start, section_heading')
                 .eq('manual_id', manual_id)
-                .gte('page_start', Math.max(1, figure.page_number - 2))
-                .lte('page_end', figure.page_number + 2)
+                .gte('page_start', Math.max(1, figure.page_number - 3))
+                .lte('page_end', figure.page_number + 3)
                 .order('page_start', { ascending: true })
-                .limit(8);
+                .limit(12);
 
               if (nearbyChunks && nearbyChunks.length > 0) {
                 textContext = nearbyChunks
@@ -189,12 +189,12 @@ serve(async (req) => {
                     return header + c.content;
                   })
                   .join('\n\n')
-                  .substring(0, 800);
+                  .substring(0, 2000);
               }
             }
 
             const contextPrompt = pageContext || textContext 
-              ? `\n\nContext from page ${figure.page_number}:\n${pageContext}\n\nNearby text: ${textContext.substring(0, 300)}...`
+              ? `\n\nContext from surrounding pages (${Math.max(1, figure.page_number - 3)}-${figure.page_number + 3}):\n${pageContext}\n\nSurrounding text content:\n${textContext}`
               : '';
 
             // Combined API call for caption + OCR + metadata using gpt-4o-mini (fast)
@@ -210,7 +210,23 @@ serve(async (req) => {
                 messages: [
                   {
                     role: 'system',
-                    content: 'You are an expert technical documentation analyst specializing in arcade game manuals. Analyze images and extract structured metadata.'
+                    content: `You are an expert technical documentation analyst specializing in arcade game service manuals. Your job is to analyze images and create detailed, context-aware captions that technicians can use.
+
+CRITICAL RULES FOR CAPTIONS:
+1. USE THE CONTEXT: Read the surrounding page text carefully to understand what section this is from and what the image is showing
+2. Be SPECIFIC: Name actual components, part numbers, connectors, and procedures you see
+3. NO GENERIC TEXT: Never use phrases like "detailed technical description" or "showing various components"
+4. DESCRIBE WHAT YOU SEE: If it's a wiring diagram, name the wires and connections. If it's a PCB, name the chips and connectors. If it's a procedure, describe the specific steps shown.
+
+Good examples:
+- "Wiring diagram for coin door showing connections between coin switch (SW1), coin mech harness (J4), and main board connector (CN3)"
+- "PCB J5000-4567 showing Z80 processor (IC1), RAM chips (IC5-IC8), and power supply connector (J1) at top right"
+- "Step-by-step removal procedure for monitor chassis: disconnect anode cap, remove four mounting bolts, disconnect yoke connector (P102)"
+
+Bad examples (DON'T DO THIS):
+- "Detailed technical description for troubleshooting/maintenance"
+- "Image shows various components with labeled arrows"
+- "Technical diagram with multiple parts indicated"`
                   },
                   {
                     role: 'user',
@@ -219,25 +235,23 @@ serve(async (req) => {
                         type: 'text',
                         text: `Analyze this image from "${manual?.title || 'technical manual'}" (page ${figure.page_number || 'Unknown'}).${contextPrompt}
 
-Generate comprehensive metadata with:
-1. A caption that describes EXACTLY what you see - specific components, parts, connectors, labels, or diagram elements
-2. OCR extraction of all visible text, labels, and part numbers (return empty string if no text found)
-3. Figure type classification
-4. Detected components with structured data
-5. Semantic tags for categorization
+Generate comprehensive metadata:
+1. CAPTION: Write a detailed, specific description using the context from surrounding pages. Describe what you actually see - specific components, procedures, connections, part numbers.
+2. OCR: Extract ALL visible text, labels, and part numbers exactly as they appear (empty string if none)
+3. FIGURE TYPE: Classify the image type
+4. COMPONENTS: Structured data about detected components
+5. TAGS: Semantic categorization tags
 
 Return JSON:
 {
-  "caption": "[Page ${figure.page_number || 'Unknown'}] Detailed technical description for troubleshooting/maintenance",
-  "ocr_text": "All visible text here or empty string if no text",
+  "caption": "Specific description based on context and what's visible...",
+  "ocr_text": "All visible text or empty string",
   "figure_type": "diagram|photo|illustration|schematic|circuit|exploded_view|chart|table|mixed|text|sectionheader",
   "detected_components": [
     {"type": "part_number|measurement|callout|wire_color|safety_symbol|component", "label": "...", "value": "..."}
   ],
   "semantic_tags": ["electrical", "mechanical", "troubleshooting", "assembly", "safety", etc.]
-}
-
-CRITICAL: Use figure_type "text" or "sectionheader" ONLY for images that are purely text/headers with NO diagrams/photos.`
+}`
                       },
                       {
                         type: 'image_url',

@@ -116,17 +116,17 @@ serve(async (req) => {
       }
     }
 
-    // ENHANCED: Get surrounding text chunks from ±2 pages for richer context
+    // ENHANCED: Get surrounding text chunks from ±3 pages for richer context
     let textContext = '';
     if (figure.page_number) {
       const { data: nearbyChunks } = await supabase
         .from('chunks_text')
         .select('content, page_start, section_heading')
         .eq('manual_id', manual_id)
-        .gte('page_start', Math.max(1, figure.page_number - 2))  // ±2 pages
-        .lte('page_end', figure.page_number + 2)
+        .gte('page_start', Math.max(1, figure.page_number - 3))  // ±3 pages
+        .lte('page_end', figure.page_number + 3)
         .order('page_start', { ascending: true })
-        .limit(8);  // Get more chunks for better context
+        .limit(12);  // Get more chunks for better context
 
       if (nearbyChunks && nearbyChunks.length > 0) {
         console.log(`📄 Found ${nearbyChunks.length} nearby chunks (pages ${nearbyChunks[0]?.page_start}-${nearbyChunks[nearbyChunks.length-1]?.page_start})`);
@@ -137,7 +137,7 @@ serve(async (req) => {
             return header + c.content;
           })
           .join('\n\n')
-          .substring(0, 800);  // Increased from 500 to use more context
+          .substring(0, 2000);  // Increased to 2000 chars for better context
       }
 
     } else {
@@ -161,7 +161,7 @@ serve(async (req) => {
     console.log('🔑 Using OpenAI Project ID:', openaiProjectId ? 'SET' : 'NOT SET');
     
     const contextPrompt = pageContext || textContext 
-      ? `\n\nContext from page ${figure.page_number}:\n${pageContext}\n\nNearby text: ${textContext.substring(0, 300)}...`
+      ? `\n\nContext from surrounding pages (${Math.max(1, figure.page_number - 3)}-${figure.page_number + 3}):\n${pageContext}\n\nSurrounding text content:\n${textContext}`
       : '';
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -176,22 +176,29 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a technical arcade technician analyzing service manual images. Generate captions that precisely describe what's visible in the image.
+            content: `You are a technical arcade technician analyzing service manual images. Generate detailed, context-aware captions that help technicians understand what they're looking at.
 
-CRITICAL RULES:
-1. CAPTION: Describe what you ACTUALLY SEE in the image - specific components, connectors, boards, parts, diagrams, or schematics. Be concrete and visual.
-   - Good: "PCB board showing IC1 (Z80 processor), capacitors C1-C4, and power connector J1 at top left"
-   - Good: "Wiring diagram for coin door, showing connections between microswitches, coin mech, and harness"
-   - Bad: "Detailed tech description for troubleshooting/maintenance" (too vague)
-   - Bad: "Image shows technical information" (not specific enough)
-   
-2. OCR: Extract ALL visible text, labels, part numbers exactly as they appear. If no text, return empty string.
+CRITICAL RULES FOR CAPTIONS:
+1. USE THE CONTEXT: Read the surrounding page text carefully to understand what section this is from and what the image is showing
+2. Be SPECIFIC: Name actual components, part numbers, connectors, and procedures you see
+3. NO GENERIC TEXT: Never use phrases like "detailed technical description" or "showing various components"
+4. DESCRIBE WHAT YOU SEE: If it's a wiring diagram, name the wires and connections. If it's a PCB, name the chips and connectors. If it's a procedure, describe the specific steps shown.
 
-Use the manual context to understand the purpose, but ALWAYS describe what's literally visible in the image.
+Good examples:
+- "Wiring diagram for coin door showing connections between coin switch (SW1), coin mech harness (J4), and main board connector (CN3)"
+- "PCB J5000-4567 showing Z80 processor (IC1), RAM chips (IC5-IC8), and power supply connector (J1) at top right"
+- "Step-by-step removal procedure for monitor chassis: disconnect anode cap, remove four mounting bolts, disconnect yoke connector (P102)"
+
+Bad examples (DON'T DO THIS):
+- "Detailed technical description for troubleshooting/maintenance"
+- "Image shows various components with labeled arrows"
+- "Technical diagram with multiple parts indicated"
+
+OCR: Extract ALL visible text, labels, part numbers exactly as they appear. If no text, return empty string.
 
 Return JSON:
 {
-  "caption": "Concrete description of visible components/diagram...",
+  "caption": "Specific description based on context and what's visible...",
   "ocr_text": "All text here or empty string if no text"
 }`
           },

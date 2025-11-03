@@ -80,29 +80,33 @@ export function ManualSelector({ selectedManualId, onManualChange }: ManualSelec
   }
 
   return (
-    <div className="flex items-center space-x-2">
-      <Gamepad2 className="h-4 w-4 text-muted-foreground" />
+    <div className="w-full">
+      <div className="mb-2 flex items-center gap-2">
+        <Gamepad2 className="h-5 w-5 text-orange" />
+        <span className="text-sm font-semibold text-foreground">Choose Your Game</span>
+        <Badge variant="default" className="bg-orange text-white text-xs">Required</Badge>
+      </div>
       <Select 
         value={selectedManualId || 'all'} 
         onValueChange={handleValueChange}
       >
-        <SelectTrigger className="w-[250px] h-8 text-xs">
-          <SelectValue placeholder="Select a game" />
+        <SelectTrigger className="w-full h-12 text-base border-2 border-orange/50 hover:border-orange transition-colors bg-card/50 backdrop-blur-sm">
+          <SelectValue placeholder="👉 Select a game to get started" />
         </SelectTrigger>
-        <SelectContent className="bg-background border border-border">
-          <SelectItem value="all" className="text-xs">
-            <div className="flex items-center space-x-2">
-              <Database className="h-3 w-3" />
-              <span>All Games</span>
+        <SelectContent className="bg-background border-2 border-border z-50">
+          <SelectItem value="all" className="text-sm py-3">
+            <div className="flex items-center space-x-3">
+              <Database className="h-4 w-4 text-primary" />
+              <span className="font-medium">All Games</span>
               <Badge variant="secondary" className="text-xs">
                 {manuals.length} games
               </Badge>
             </div>
           </SelectItem>
           {manuals.map((manual) => (
-            <SelectItem key={manual.manual_id} value={manual.manual_id} className="text-xs">
+            <SelectItem key={manual.manual_id} value={manual.manual_id} className="text-sm py-3">
               <div className="flex items-center justify-between w-full">
-                <span className="truncate max-w-[180px]">
+                <span className="truncate max-w-[280px] font-medium">
                   {manual.title || manual.source_filename}
                 </span>
               </div>

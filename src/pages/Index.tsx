@@ -125,11 +125,30 @@ const Index = () => {
               <div className="caption-text text-xs sm:text-sm md:text-base tracking-widest uppercase font-mono rounded-lg text-white px-2">
                 The Future of Arcade Maintenance
               </div>
-              <h1 className="hero-headline-electric font-tech font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl px-4 py-8 sm:py-12 lg:py-16" data-text="LEVEL UP" style={{
-              letterSpacing: '0.02em'
-            }}>
-                LEVEL UP
-              </h1>
+              <div className="relative inline-block">
+                <h1 className="hero-headline-electric font-tech font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl px-4 py-8 sm:py-12 lg:py-16" data-text="LEVEL UP" style={{
+                letterSpacing: '0.02em'
+              }}>
+                  LEVEL UP
+                </h1>
+                <svg className="lightning-bolt" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M50 0 L45 80 L60 80 L40 200 L55 100 L40 100 Z" fill="url(#lightning-gradient)" filter="url(#glow)" />
+                  <defs>
+                    <linearGradient id="lightning-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#FF7A1A" stopOpacity="1" />
+                      <stop offset="50%" stopColor="#FFB84D" stopOpacity="1" />
+                      <stop offset="100%" stopColor="#FF7A1A" stopOpacity="1" />
+                    </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                </svg>
+              </div>
             </div>
             <p className="body-text text-base sm:text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body px-4 sm:px-6" style={{
             lineHeight: '1.6'

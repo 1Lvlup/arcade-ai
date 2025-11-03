@@ -454,48 +454,113 @@
   @keyframes electricSurge {
     0%, 30% { 
       text-shadow: 
-        0 0 20px hsl(24 100% 54%),
-        0 0 40px hsl(24 100% 54% / 0.8),
-        0 0 60px hsl(24 100% 54% / 0.6);
+        0 0 30px hsl(24 100% 54%),
+        0 0 60px hsl(24 100% 54% / 0.9),
+        0 0 90px hsl(24 100% 54% / 0.7),
+        0 0 120px hsl(24 100% 54% / 0.5);
     }
     32% {
       text-shadow: 
-        -5px 0 10px hsl(24 100% 54%),
-        5px 0 10px hsl(24 100% 54%),
-        0 0 80px hsl(24 100% 54%),
-        0 0 120px hsl(24 100% 54% / 0.9);
+        -8px 0 20px hsl(24 100% 54%),
+        8px 0 20px hsl(24 100% 54%),
+        0 0 120px hsl(24 100% 54%),
+        0 0 180px hsl(24 100% 54% / 0.95),
+        0 0 240px hsl(24 100% 54% / 0.8);
     }
     34% {
       text-shadow: 
-        0 0 20px hsl(24 100% 54%),
-        0 0 40px hsl(24 100% 54% / 0.8),
-        0 0 60px hsl(24 100% 54% / 0.6);
+        0 0 30px hsl(24 100% 54%),
+        0 0 60px hsl(24 100% 54% / 0.9),
+        0 0 90px hsl(24 100% 54% / 0.7);
     }
     36% {
       text-shadow: 
-        -8px 0 15px hsl(24 100% 54%),
-        8px 0 15px hsl(24 100% 54%),
-        0 0 100px hsl(24 100% 54%),
-        0 0 140px hsl(24 100% 54% / 0.95);
+        -12px 0 25px hsl(24 100% 54%),
+        12px 0 25px hsl(24 100% 54%),
+        0 0 150px hsl(24 100% 54%),
+        0 0 220px hsl(24 100% 54% / 0.98),
+        0 0 300px hsl(24 100% 54% / 0.9);
     }
     38% {
       text-shadow: 
-        0 0 20px hsl(24 100% 54%),
-        0 0 40px hsl(24 100% 54% / 0.8),
-        0 0 60px hsl(24 100% 54% / 0.6);
+        0 0 30px hsl(24 100% 54%),
+        0 0 60px hsl(24 100% 54% / 0.9),
+        0 0 90px hsl(24 100% 54% / 0.7);
     }
     40% {
       text-shadow: 
-        -3px 0 8px hsl(24 100% 54%),
-        3px 0 8px hsl(24 100% 54%),
-        0 0 70px hsl(24 100% 54%),
-        0 0 100px hsl(24 100% 54% / 0.85);
+        -6px 0 15px hsl(24 100% 54%),
+        6px 0 15px hsl(24 100% 54%),
+        0 0 100px hsl(24 100% 54%),
+        0 0 160px hsl(24 100% 54% / 0.9),
+        0 0 220px hsl(24 100% 54% / 0.7);
     }
     42%, 100% {
       text-shadow: 
-        0 0 20px hsl(24 100% 54%),
-        0 0 40px hsl(24 100% 54% / 0.8),
-        0 0 60px hsl(24 100% 54% / 0.6);
+        0 0 30px hsl(24 100% 54%),
+        0 0 60px hsl(24 100% 54% / 0.9),
+        0 0 90px hsl(24 100% 54% / 0.7),
+        0 0 120px hsl(24 100% 54% / 0.5);
+    }
+  }
+  
+  /* Lightning Bolt Animation */
+  .lightning-bolt {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 160px;
+    opacity: 0;
+    animation: lightningStrike 4s infinite;
+    pointer-events: none;
+    filter: drop-shadow(0 0 20px hsl(24 100% 54%)) drop-shadow(0 0 40px hsl(24 100% 54%));
+  }
+  
+  @keyframes lightningStrike {
+    0%, 30% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+    }
+    32% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.3);
+      filter: drop-shadow(0 0 40px hsl(24 100% 54%)) drop-shadow(0 0 80px hsl(24 100% 54%));
+    }
+    33% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.3);
+    }
+    34% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+    }
+    36% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.5);
+      filter: drop-shadow(0 0 60px hsl(24 100% 54%)) drop-shadow(0 0 120px hsl(24 100% 54%));
+    }
+    37% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.5);
+    }
+    38% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+    }
+    40% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.2);
+      filter: drop-shadow(0 0 50px hsl(24 100% 54%)) drop-shadow(0 0 100px hsl(24 100% 54%));
+    }
+    41% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+    42%, 100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
     }
   }
   

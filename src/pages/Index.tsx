@@ -120,9 +120,7 @@ const Index = () => {
       <main className="max-w-[2000px] mx-auto">
         {/* Hero Section */}
         <section className="w-full">
-          <div className="relative w-full overflow-hidden" style={{
-            boxShadow: '0 0 60px hsl(24 100% 54% / 0.4), 0 0 120px hsl(24 100% 54% / 0.2)'
-          }}>
+          <div className="relative w-full overflow-hidden">
             <video 
               autoPlay 
               loop 

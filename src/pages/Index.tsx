@@ -117,25 +117,25 @@ const Index = () => {
   return <div className="min-h-screen mesh-gradient">
       <SharedHeader title="Arcade Intelligence" />
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24 max-w-[2000px]">
+      <main className="max-w-[2000px] mx-auto">
         {/* Hero Section */}
-        <section className="py-8 sm:py-16 lg:py-24">
-          <div className="relative -mx-4 sm:-mx-6 lg:-mx-8 mb-8 sm:mb-12 lg:mb-16">
-            <div className="relative w-full overflow-hidden" style={{
-              boxShadow: '0 0 60px hsl(24 100% 54% / 0.4), 0 0 120px hsl(24 100% 54% / 0.2)'
-            }}>
-              <video 
-                autoPlay 
-                loop 
-                muted 
-                playsInline
-                className="w-full h-auto"
-              >
-                <source src="/levelupvideo.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-            <div className="text-center mt-8 sm:mt-12 lg:mt-16 px-4 sm:px-6 lg:px-8">
+        <section className="w-full">
+          <div className="relative w-full overflow-hidden" style={{
+            boxShadow: '0 0 60px hsl(24 100% 54% / 0.4), 0 0 120px hsl(24 100% 54% / 0.2)'
+          }}>
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
+              className="w-full h-auto"
+            >
+              <source src="/AIGlitch.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mt-8 sm:mt-12 lg:mt-16">
               <p className="body-text text-base sm:text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body" style={{
                 lineHeight: '1.6'
               }}>
@@ -143,6 +143,9 @@ const Index = () => {
               </p>
             </div>
           </div>
+        </section>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
           
           {/* Certification/Achievement Badges */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mt-12 sm:mt-16 lg:mt-24 max-w-5xl mx-auto">
@@ -200,8 +203,9 @@ const Index = () => {
             </Button>
             <p className="text-xs sm:text-sm text-muted-foreground/80">No credit card • 2-minute setup</p>
           </div>
-        </section>
+        </div>
 
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Testimonials & ROI Section */}
         <section className="py-12 sm:py-16 lg:py-24">
           <div className="premium-card p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl relative">
@@ -490,6 +494,7 @@ const Index = () => {
             </Button>
           </div>
         </section>
+        </div>
 
 
         <div className="mt-12 sm:mt-16 lg:mt-20">

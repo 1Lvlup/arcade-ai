@@ -6,7 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MAX_BATCH_LIMIT = 50; // Process up to 50 figures per invocation to avoid timeout
+const MAX_BATCH_LIMIT = 100; // Process up to 100 figures per invocation
+const CONCURRENT_BATCH_SIZE = 10; // Process 10 images concurrently for faster throughput
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -124,16 +125,15 @@ serve(async (req) => {
         onConflict: 'manual_id'
       });
 
-    // Process synchronously (no background task)
+    // Process with higher concurrency for faster throughput
     const processBatch = async () => {
-      const BATCH_SIZE = 5;
       let batchProcessed = 0;
       let succeeded = 0;
       let failed = 0;
 
-      // Process in batches of 5
-      for (let i = 0; i < figuresToProcess.length; i += BATCH_SIZE) {
-        const batch = figuresToProcess.slice(i, i + BATCH_SIZE);
+      // Process in batches of 10 concurrently
+      for (let i = 0; i < figuresToProcess.length; i += CONCURRENT_BATCH_SIZE) {
+        const batch = figuresToProcess.slice(i, i + CONCURRENT_BATCH_SIZE);
 
         const batchResults = await Promise.allSettled(batch.map(async (figure) => {
           try {
@@ -197,7 +197,7 @@ serve(async (req) => {
               ? `\n\nContext from page ${figure.page_number}:\n${pageContext}\n\nNearby text: ${textContext.substring(0, 300)}...`
               : '';
 
-            // Single combined API call for caption + OCR using GPT-4.1 with JSON output
+            // Single combined API call for caption + OCR using gpt-4o-mini (faster & cheaper)
             const combinedResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -206,7 +206,7 @@ serve(async (req) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                model: 'gpt-4.1',
+                model: 'gpt-4o-mini',
                 messages: [
                   {
                     role: 'system',

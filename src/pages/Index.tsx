@@ -119,9 +119,9 @@ const Index = () => {
 
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24 max-w-[2000px]">
         {/* Hero Section */}
-        <section className="text-center py-8 sm:py-16 lg:py-24">
-          <div className="space-y-8 sm:space-y-12 lg:space-y-16 hero-section">
-            <div className="relative w-full max-w-6xl mx-auto rounded-2xl overflow-hidden" style={{
+        <section className="py-8 sm:py-16 lg:py-24">
+          <div className="relative -mx-4 sm:-mx-6 lg:-mx-8 mb-8 sm:mb-12 lg:mb-16">
+            <div className="relative w-full overflow-hidden" style={{
               boxShadow: '0 0 60px hsl(24 100% 54% / 0.4), 0 0 120px hsl(24 100% 54% / 0.2)'
             }}>
               <video 
@@ -135,11 +135,13 @@ const Index = () => {
                 Your browser does not support the video tag.
               </video>
             </div>
-            <p className="body-text text-base sm:text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body px-4 sm:px-6" style={{
-            lineHeight: '1.6'
-          }}>
-              Smart diagnostics built for real arcades—pinpoint faults, resolve outages, and collect real-time insights.
-            </p>
+            <div className="text-center mt-8 sm:mt-12 lg:mt-16 px-4 sm:px-6 lg:px-8">
+              <p className="body-text text-base sm:text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body" style={{
+                lineHeight: '1.6'
+              }}>
+                Smart diagnostics built for real arcades—pinpoint faults, resolve outages, and collect real-time insights.
+              </p>
+            </div>
           </div>
           
           {/* Certification/Achievement Badges */}

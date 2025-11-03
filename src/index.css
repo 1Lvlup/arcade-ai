@@ -444,6 +444,61 @@
     }
   }
   
+  /* Electric Orange Hero Headline */
+  .hero-headline-electric {
+    color: hsl(24 100% 54%);
+    position: relative;
+    animation: electricSurge 4s infinite;
+  }
+  
+  @keyframes electricSurge {
+    0%, 30% { 
+      text-shadow: 
+        0 0 20px hsl(24 100% 54%),
+        0 0 40px hsl(24 100% 54% / 0.8),
+        0 0 60px hsl(24 100% 54% / 0.6);
+    }
+    32% {
+      text-shadow: 
+        -5px 0 10px hsl(24 100% 54%),
+        5px 0 10px hsl(24 100% 54%),
+        0 0 80px hsl(24 100% 54%),
+        0 0 120px hsl(24 100% 54% / 0.9);
+    }
+    34% {
+      text-shadow: 
+        0 0 20px hsl(24 100% 54%),
+        0 0 40px hsl(24 100% 54% / 0.8),
+        0 0 60px hsl(24 100% 54% / 0.6);
+    }
+    36% {
+      text-shadow: 
+        -8px 0 15px hsl(24 100% 54%),
+        8px 0 15px hsl(24 100% 54%),
+        0 0 100px hsl(24 100% 54%),
+        0 0 140px hsl(24 100% 54% / 0.95);
+    }
+    38% {
+      text-shadow: 
+        0 0 20px hsl(24 100% 54%),
+        0 0 40px hsl(24 100% 54% / 0.8),
+        0 0 60px hsl(24 100% 54% / 0.6);
+    }
+    40% {
+      text-shadow: 
+        -3px 0 8px hsl(24 100% 54%),
+        3px 0 8px hsl(24 100% 54%),
+        0 0 70px hsl(24 100% 54%),
+        0 0 100px hsl(24 100% 54% / 0.85);
+    }
+    42%, 100% {
+      text-shadow: 
+        0 0 20px hsl(24 100% 54%),
+        0 0 40px hsl(24 100% 54% / 0.8),
+        0 0 60px hsl(24 100% 54% / 0.6);
+    }
+  }
+  
   /* CTA Button Enhanced Effects */
   .cta-button {
     transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;

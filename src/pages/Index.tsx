@@ -125,9 +125,8 @@ const Index = () => {
               <div className="caption-text text-xs sm:text-sm md:text-base tracking-widest uppercase font-mono rounded-lg text-white px-2">
                 The Future of Arcade Maintenance
               </div>
-              <h1 className="hero-headline font-tech font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl px-4 py-8 sm:py-12 lg:py-16" data-text="LEVEL UP" style={{
-              letterSpacing: '0.02em',
-              color: 'hsl(183 100% 50%)'
+              <h1 className="hero-headline-electric font-tech font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl px-4 py-8 sm:py-12 lg:py-16" data-text="LEVEL UP" style={{
+              letterSpacing: '0.02em'
             }}>
                 LEVEL UP
               </h1>

@@ -31,6 +31,7 @@ import Support from "./pages/Support";
 import SupportTickets from "./pages/SupportTickets";
 import QAAnalytics from "./pages/QAAnalytics";
 import Pricing from "./pages/Pricing";
+import ServerCapacity from "./pages/ServerCapacity";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import ReIngestManual from "./pages/ReIngestManual";
@@ -128,6 +129,7 @@ const App = () => (
             } />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/server-capacity" element={<ServerCapacity />} />
             <Route path="/account-settings" element={
               <ProtectedRoute>
                 <AccountSettings />

@@ -121,34 +121,19 @@ const Index = () => {
         {/* Hero Section */}
         <section className="text-center py-8 sm:py-16 lg:py-24">
           <div className="space-y-8 sm:space-y-12 lg:space-y-16 hero-section">
-            <div className="space-y-6 sm:space-y-8 lg:space-y-12">
-              <div className="caption-text text-xs sm:text-sm md:text-base tracking-widest uppercase font-mono rounded-lg text-white px-2">
-                The Future of Arcade Maintenance
-              </div>
-              <div className="relative inline-block">
-                <h1 className="hero-headline-electric font-tech font-black text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem] px-4 py-8 sm:py-12 lg:py-16" data-text="LEVEL UP" style={{
-                letterSpacing: '0.02em'
-              }}>
-                  LEVEL UP
-                </h1>
-                <svg className="lightning-bolt" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M50 0 L45 80 L60 80 L40 200 L55 100 L40 100 Z" fill="url(#lightning-gradient)" filter="url(#glow)" />
-                  <defs>
-                    <linearGradient id="lightning-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#FF7A1A" stopOpacity="1" />
-                      <stop offset="50%" stopColor="#FFB84D" stopOpacity="1" />
-                      <stop offset="100%" stopColor="#FF7A1A" stopOpacity="1" />
-                    </linearGradient>
-                    <filter id="glow">
-                      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                      <feMerge>
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                  </defs>
-                </svg>
-              </div>
+            <div className="relative w-full max-w-6xl mx-auto rounded-2xl overflow-hidden" style={{
+              boxShadow: '0 0 60px hsl(24 100% 54% / 0.4), 0 0 120px hsl(24 100% 54% / 0.2)'
+            }}>
+              <video 
+                autoPlay 
+                loop 
+                muted 
+                playsInline
+                className="w-full h-auto"
+              >
+                <source src="/levelupvideo.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
             </div>
             <p className="body-text text-base sm:text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body px-4 sm:px-6" style={{
             lineHeight: '1.6'

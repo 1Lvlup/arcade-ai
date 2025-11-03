@@ -25,7 +25,7 @@ interface QueryLog {
 
 export default function TrainingInbox() {
   const navigate = useNavigate();
-  const { isAuthenticated, adminKey } = useTrainingAuth();
+  const { isAuthenticated, loading } = useTrainingAuth();
   const { toast } = useToast();
   const [queries, setQueries] = useState<QueryLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,10 +36,10 @@ export default function TrainingInbox() {
   const [manuals, setManuals] = useState<string[]>([]);
 
   useEffect(() => {
-    if (isAuthenticated && adminKey) {
+    if (isAuthenticated) {
       fetchInbox();
     }
-  }, [isAuthenticated, adminKey, filter, manualFilter, hasNumbersFilter]);
+  }, [isAuthenticated, filter, manualFilter, hasNumbersFilter]);
 
   const fetchInbox = async () => {
     setIsLoading(true);
@@ -55,11 +55,14 @@ export default function TrainingInbox() {
         params.append('has_numbers', hasNumbersFilter);
       }
 
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: sessionData } = await supabase.auth.getSession();
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/training-inbox?${params}`,
         {
           headers: {
-            'x-admin-key': adminKey!,
+            'Authorization': `Bearer ${sessionData.session?.access_token}`,
           },
         }
       );
@@ -104,13 +107,16 @@ export default function TrainingInbox() {
 
     setIsLoading(true);
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: sessionData } = await supabase.auth.getSession();
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/training-bulk-action`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-key': adminKey!,
+            'Authorization': `Bearer ${sessionData.session?.access_token}`,
           },
           body: JSON.stringify({
             query_ids: Array.from(selectedIds),
@@ -162,6 +168,14 @@ export default function TrainingInbox() {
       setSelectedIds(new Set(queries.map(q => q.id)));
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center mesh-gradient">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <TrainingLogin />;

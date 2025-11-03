@@ -1,70 +1,28 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Shield, AlertCircle } from 'lucide-react';
 import { useTrainingAuth } from '@/hooks/useTrainingAuth';
-import { useToast } from '@/hooks/use-toast';
 
 export function TrainingLogin() {
-  const [key, setKey] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useTrainingAuth();
+  const { user, isAdmin, loading } = useTrainingAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!key.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter an admin key',
-        variant: 'destructive',
-      });
-      return;
+  useEffect(() => {
+    // If user is logged in and is admin, redirect to hub
+    if (user && isAdmin) {
+      navigate('/training-hub');
     }
+  }, [user, isAdmin, navigate]);
 
-    setIsLoading(true);
-
-    try {
-      // Test the key by making a request to the inbox
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/training-inbox?limit=1`,
-        {
-          headers: {
-            'x-admin-key': key,
-          },
-        }
-      );
-
-      if (response.ok) {
-        login(key);
-        toast({
-          title: 'Success',
-          description: 'Admin authentication successful',
-        });
-        navigate('/training-hub');
-      } else {
-        toast({
-          title: 'Authentication Failed',
-          description: 'Invalid admin key',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to authenticate. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -78,27 +36,35 @@ export function TrainingLogin() {
           <div className="text-center">
             <CardTitle className="text-2xl">Training Hub Access</CardTitle>
             <CardDescription className="mt-2">
-              Enter your admin key to access the Training Hub
+              {!user ? (
+                'Please log in to access the Training Hub'
+              ) : !isAdmin ? (
+                'Admin access required'
+              ) : (
+                'Redirecting...'
+              )}
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="adminKey">Admin Key</Label>
-              <Input
-                id="adminKey"
-                type="password"
-                placeholder="Enter your admin key"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Authenticating...' : 'Access Training Hub'}
+        <CardContent className="space-y-4">
+          {!user ? (
+            <Button 
+              className="w-full" 
+              onClick={() => navigate('/auth')}
+            >
+              Go to Login
             </Button>
-          </form>
+          ) : !isAdmin && (
+            <div className="flex items-start gap-3 p-4 bg-destructive/10 rounded-lg text-sm">
+              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-destructive">Admin Access Required</p>
+                <p className="text-muted-foreground mt-1">
+                  Your account does not have admin privileges. Please contact the system administrator.
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

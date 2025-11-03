@@ -9,45 +9,61 @@ import { TrainingLogin } from '@/components/TrainingLogin';
 
 export default function TrainingHub() {
   const navigate = useNavigate();
-  const { isAuthenticated, logout, adminKey } = useTrainingAuth();
+  const { isAuthenticated, loading, logout } = useTrainingAuth();
   const [stats, setStats] = useState({ pending: 0, verified: 0, avgQuality: 0 });
 
   useEffect(() => {
-    if (isAuthenticated && adminKey) {
+    if (isAuthenticated) {
       fetchStats();
     }
-  }, [isAuthenticated, adminKey]);
+  }, [isAuthenticated]);
 
   const fetchStats = async () => {
     try {
-      // Fetch real stats from inbox
-      const inboxRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/training-inbox?limit=1000`,
-        { headers: { 'x-admin-key': adminKey! } }
-      );
-      const inboxData = await inboxRes.json();
-      const pending = inboxData.items?.length || 0;
+      // Import supabase
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Fetch pending feedback count
+      const { count: pending } = await supabase
+        .from('query_feedback')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'open');
 
       // Fetch verified examples count
-      const { supabase } = await import('@/integrations/supabase/client');
       const { count: verified } = await supabase
         .from('training_examples')
         .select('*', { count: 'exact', head: true })
         .eq('is_approved', true);
 
-      // Calculate avg quality from inbox
-      const avgQuality = inboxData.items?.reduce((sum: number, item: any) => 
-        sum + (item.quality_score || 0), 0) / (pending || 1);
+      // Calculate avg quality from feedback
+      const { data: feedbackData } = await supabase
+        .from('query_feedback')
+        .select('severity')
+        .eq('status', 'open');
+      
+      // Map severity to quality score (high=1, medium=0.5, low=0.25)
+      const avgQuality = feedbackData?.reduce((sum, item) => {
+        const score = item.severity === 'high' ? 1 : item.severity === 'medium' ? 0.5 : 0.25;
+        return sum + score;
+      }, 0) / (feedbackData?.length || 1) || 0;
 
       setStats({ 
-        pending, 
+        pending: pending || 0, 
         verified: verified || 0, 
-        avgQuality: avgQuality || 0 
+        avgQuality 
       });
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center mesh-gradient">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <TrainingLogin />;

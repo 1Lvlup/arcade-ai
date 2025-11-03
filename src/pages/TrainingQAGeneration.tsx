@@ -24,7 +24,7 @@ interface QAPair {
 
 export default function TrainingQAGeneration() {
   const navigate = useNavigate();
-  const { isAuthenticated, adminKey } = useTrainingAuth();
+  const { isAuthenticated, loading: authLoading } = useTrainingAuth();
   const [loading, setLoading] = useState(false);
   const [contentText, setContentText] = useState('');
   const [manualId, setManualId] = useState('');
@@ -116,13 +116,16 @@ export default function TrainingQAGeneration() {
 
     try {
       setLoading(true);
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: sessionData } = await supabase.auth.getSession();
+      
       const response = await fetch(
         'https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/training-generate-qa',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-key': adminKey!
+            'Authorization': `Bearer ${sessionData.session?.access_token}`
           },
           body: JSON.stringify({
             content: contentText,
@@ -147,6 +150,14 @@ export default function TrainingQAGeneration() {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center mesh-gradient">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <TrainingLogin />;

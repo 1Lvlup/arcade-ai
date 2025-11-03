@@ -24,8 +24,8 @@ interface ExportHistory {
 
 export default function TrainingExport() {
   const navigate = useNavigate();
-  const { isAuthenticated, adminKey } = useTrainingAuth();
-  const [loading, setLoading] = useState(false);
+  const { isAuthenticated, loading } = useTrainingAuth();
+  const [loadingState, setLoadingState] = useState(false);
   const [format, setFormat] = useState<'jsonl' | 'triples' | 'csv'>('jsonl');
   const [exportName, setExportName] = useState('');
   const [minQuality, setMinQuality] = useState('');
@@ -59,7 +59,10 @@ export default function TrainingExport() {
     }
 
     try {
-      setLoading(true);
+      setLoadingState(true);
+
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: sessionData } = await supabase.auth.getSession();
 
       const response = await fetch(
         'https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/training-export',
@@ -67,7 +70,7 @@ export default function TrainingExport() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-key': adminKey!
+            'Authorization': `Bearer ${sessionData.session?.access_token}`
           },
           body: JSON.stringify({
             format,
@@ -104,9 +107,17 @@ export default function TrainingExport() {
       console.error('Error exporting:', error);
       toast.error('Failed to export training data');
     } finally {
-      setLoading(false);
+      setLoadingState(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center mesh-gradient">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <TrainingLogin />;
@@ -190,11 +201,11 @@ export default function TrainingExport() {
 
             <Button
               onClick={handleExport}
-              disabled={loading || !exportName.trim()}
-              className="w-full"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {loading ? 'Exporting...' : `Export as ${format.toUpperCase()}`}
+            disabled={loadingState || !exportName.trim()}
+            className="w-full"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {loadingState ? 'Exporting...' : `Export as ${format.toUpperCase()}`}
             </Button>
           </CardContent>
         </Card>

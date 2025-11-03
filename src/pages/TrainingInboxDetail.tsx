@@ -49,7 +49,7 @@ interface EvidenceSpan {
 export default function TrainingInboxDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, adminKey } = useTrainingAuth();
+  const { isAuthenticated, loading: authLoading } = useTrainingAuth();
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState<QueryDetail | null>(null);
@@ -75,12 +75,15 @@ export default function TrainingInboxDetail() {
   const fetchQueryDetail = async () => {
     try {
       setLoading(true);
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: sessionData } = await supabase.auth.getSession();
+      
       const response = await fetch(
         `https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/training-query-detail?query_id=${id}`,
         {
           method: 'GET',
           headers: {
-            'x-admin-key': adminKey!
+            'Authorization': `Bearer ${sessionData.session?.access_token}`
           }
         }
       );
@@ -125,13 +128,16 @@ export default function TrainingInboxDetail() {
     if (!lastAction) return;
 
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: sessionData } = await supabase.auth.getSession();
+      
       const response = await fetch(
         'https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/training-undo',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-key': adminKey!
+            'Authorization': `Bearer ${sessionData.session?.access_token}`
           },
           body: JSON.stringify({
             action_type: lastAction.type,
@@ -196,13 +202,16 @@ export default function TrainingInboxDetail() {
 
     try {
       setCreating(true);
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: sessionData } = await supabase.auth.getSession();
+      
       const response = await fetch(
         'https://wryxbfnmecjffxolcgfa.supabase.co/functions/v1/training-create-example',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-key': adminKey!
+            'Authorization': `Bearer ${sessionData.session?.access_token}`
           },
           body: JSON.stringify({
             source_query_id: id,

@@ -126,7 +126,7 @@ const Index = () => {
                 The Future of Arcade Maintenance
               </div>
               <div className="relative inline-block">
-                <h1 className="hero-headline-electric font-tech font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl px-4 py-8 sm:py-12 lg:py-16" data-text="LEVEL UP" style={{
+                <h1 className="hero-headline-electric font-tech font-black text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem] px-4 py-8 sm:py-12 lg:py-16" data-text="LEVEL UP" style={{
                 letterSpacing: '0.02em'
               }}>
                   LEVEL UP

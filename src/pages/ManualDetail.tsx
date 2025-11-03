@@ -438,6 +438,55 @@ export function ManualDetail() {
                   Generate Captions & OCR ({stats.figuresWithoutCaptions} images)
                 </Button>
               )}
+              {stats.figuresWithCaptions > 0 && (
+                <Button 
+                  onClick={async () => {
+                    if (!window.confirm(`This will regenerate captions for ALL ${stats.figures} images. This is useful after improving the caption prompts. Continue?`)) {
+                      return;
+                    }
+                    
+                    // Clear existing captions first
+                    setProcessingCaptions(true);
+                    try {
+                      const { error: clearError } = await supabase
+                        .from('figures')
+                        .update({ caption_text: null, ocr_text: null })
+                        .eq('manual_id', manualId);
+                      
+                      if (clearError) throw clearError;
+                      
+                      // Refresh stats to show uncaptioned count
+                      await fetchStats();
+                      
+                      toast({
+                        title: 'Captions cleared',
+                        description: 'Starting regeneration process...',
+                      });
+                      
+                      // Then process captions
+                      await processCaptions();
+                    } catch (error) {
+                      console.error('Error clearing captions:', error);
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to clear existing captions',
+                        variant: 'destructive',
+                      });
+                      setProcessingCaptions(false);
+                    }
+                  }}
+                  disabled={processingCaptions}
+                  variant="outline"
+                  className="border-orange-500 text-orange-600 hover:bg-orange-500/10"
+                >
+                  {processingCaptions ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Regenerate All Captions ({stats.figures} images)
+                </Button>
+              )}
               <Button 
                 onClick={generateGoldenQuestions}
                 disabled={generatingQuestions || processingStatus?.status !== 'completed'}

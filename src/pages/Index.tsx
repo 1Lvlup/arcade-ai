@@ -220,9 +220,9 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-tech font-bold text-foreground">$350/week</h3>
+                  <h3 className="text-2xl sm:text-3xl font-tech font-bold text-foreground">$400-$900/week</h3>
                   <p className="text-base sm:text-lg text-primary font-body leading-relaxed">
-                    <span className="font-semibold">Average savings per arcade using Level Up.</span>
+                    <span className="font-semibold">Average savings per arcade using Level Up. (Limited Testing)</span>
                   </p>
                 </div>
               </div>

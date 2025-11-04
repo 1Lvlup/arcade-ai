@@ -19,6 +19,7 @@ export default {
         'tech': ['Orbitron', 'sans-serif'],
         'mono': ['Orbitron', 'monospace'],
         'geom': ['geom-graphic', 'sans-serif'],
+        'fuel': ['pf-fuel-decay', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

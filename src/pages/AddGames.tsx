@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Plus } from 'lucide-react';
+import { Upload, Plus, Trash2 } from 'lucide-react';
 import { z } from 'zod';
 
 const gameSchema = z.object({
@@ -27,18 +27,38 @@ export default function AddGames() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<GameFormData>({
+  const [games, setGames] = useState<GameFormData[]>([{
     game_name: '',
     manufacturer: '',
     version_model_year: '',
     fec_location_name: '',
     input_by: '',
-  });
+  }]);
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setGames(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [name]: value };
+      return updated;
+    });
+  };
+
+  const addGame = () => {
+    setGames(prev => [...prev, {
+      game_name: '',
+      manufacturer: '',
+      version_model_year: '',
+      fec_location_name: '',
+      input_by: '',
+    }]);
+  };
+
+  const removeGame = (index: number) => {
+    if (games.length > 1) {
+      setGames(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   const handleSubmitSingle = async (e: React.FormEvent) => {
@@ -56,8 +76,20 @@ export default function AddGames() {
     try {
       setIsSubmitting(true);
       
-      // Validate form data
-      const validatedData = gameSchema.parse(formData);
+      // Validate all games
+      const validGames = games.filter(game => game.game_name.trim() !== '');
+      
+      if (validGames.length === 0) {
+        toast({
+          title: 'No Games to Submit',
+          description: 'Please enter at least one game name.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Validate each game
+      const validatedGames = validGames.map(game => gameSchema.parse(game));
 
       // Get user's tenant ID from profile
       const { data: profile } = await supabase
@@ -70,36 +102,36 @@ export default function AddGames() {
         throw new Error('User profile not found');
       }
 
-      // Insert game submission
+      // Insert game submissions
       const { error } = await supabase
         .from('game_submissions')
-        .insert([{
-          game_name: validatedData.game_name,
-          manufacturer: validatedData.manufacturer || null,
-          version_model_year: validatedData.version_model_year || null,
-          fec_location_name: validatedData.fec_location_name || null,
-          input_by: validatedData.input_by || null,
+        .insert(validatedGames.map(game => ({
+          game_name: game.game_name,
+          manufacturer: game.manufacturer || null,
+          version_model_year: game.version_model_year || null,
+          fec_location_name: game.fec_location_name || null,
+          input_by: game.input_by || null,
           user_id: user.id,
           fec_tenant_id: profile.fec_tenant_id,
-        }]);
+        })));
 
       if (error) throw error;
 
       toast({
         title: 'Success!',
-        description: 'Game submitted successfully.',
+        description: `${validatedGames.length} game${validatedGames.length > 1 ? 's' : ''} submitted successfully.`,
       });
 
       // Reset form
-      setFormData({
+      setGames([{
         game_name: '',
         manufacturer: '',
         version_model_year: '',
         fec_location_name: '',
         input_by: '',
-      });
+      }]);
     } catch (error) {
-      console.error('Error submitting game:', error);
+      console.error('Error submitting games:', error);
       if (error instanceof z.ZodError) {
         toast({
           title: 'Validation Error',
@@ -109,7 +141,7 @@ export default function AddGames() {
       } else {
         toast({
           title: 'Error',
-          description: 'Failed to submit game. Please try again.',
+          description: 'Failed to submit games. Please try again.',
           variant: 'destructive',
         });
       }
@@ -276,67 +308,100 @@ export default function AddGames() {
               
               <TabsContent value="form" className="space-y-6 mt-6">
                 <form onSubmit={handleSubmitSingle} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="game_name">
-                      Game Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="game_name"
-                      name="game_name"
-                      value={formData.game_name}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Pac-Man"
-                      required
-                    />
-                  </div>
+                  {games.map((game, index) => (
+                    <div key={index} className="space-y-4 p-4 glass-card rounded-lg relative">
+                      {games.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeGame(index)}
+                          className="absolute top-2 right-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {games.length > 1 && (
+                        <h3 className="font-semibold text-sm text-muted-foreground">
+                          Game {index + 1}
+                        </h3>
+                      )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="manufacturer">Manufacturer</Label>
-                    <Input
-                      id="manufacturer"
-                      name="manufacturer"
-                      value={formData.manufacturer}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Namco"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`game_name_${index}`}>
+                          Game Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id={`game_name_${index}`}
+                          name="game_name"
+                          value={game.game_name}
+                          onChange={(e) => handleInputChange(index, e)}
+                          placeholder="e.g., Pac-Man"
+                          required
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="version_model_year">Version / Model / Year</Label>
-                    <Input
-                      id="version_model_year"
-                      name="version_model_year"
-                      value={formData.version_model_year}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 2023 Deluxe Edition"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`manufacturer_${index}`}>Manufacturer</Label>
+                        <Input
+                          id={`manufacturer_${index}`}
+                          name="manufacturer"
+                          value={game.manufacturer}
+                          onChange={(e) => handleInputChange(index, e)}
+                          placeholder="e.g., Namco"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="fec_location_name">FEC Location / Name</Label>
-                    <Input
-                      id="fec_location_name"
-                      name="fec_location_name"
-                      value={formData.fec_location_name}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Main Street Arcade"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`version_model_year_${index}`}>Version / Model / Year</Label>
+                        <Input
+                          id={`version_model_year_${index}`}
+                          name="version_model_year"
+                          value={game.version_model_year}
+                          onChange={(e) => handleInputChange(index, e)}
+                          placeholder="e.g., 2023 Deluxe Edition"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="input_by">Input By (Your Name)</Label>
-                    <Input
-                      id="input_by"
-                      name="input_by"
-                      value={formData.input_by}
-                      onChange={handleInputChange}
-                      placeholder="e.g., John Smith"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`fec_location_name_${index}`}>FEC Location / Name</Label>
+                        <Input
+                          id={`fec_location_name_${index}`}
+                          name="fec_location_name"
+                          value={game.fec_location_name}
+                          onChange={(e) => handleInputChange(index, e)}
+                          placeholder="e.g., Main Street Arcade"
+                        />
+                      </div>
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full">
-                    {isSubmitting ? 'Submitting...' : 'Submit Game'}
-                  </Button>
+                      <div className="space-y-2">
+                        <Label htmlFor={`input_by_${index}`}>Input By (Your Name)</Label>
+                        <Input
+                          id={`input_by_${index}`}
+                          name="input_by"
+                          value={game.input_by}
+                          onChange={(e) => handleInputChange(index, e)}
+                          placeholder="e.g., John Smith"
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addGame}
+                      className="flex-1"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Another Game
+                    </Button>
+                    <Button type="submit" disabled={isSubmitting} className="flex-1">
+                      {isSubmitting ? 'Submitting...' : `Submit ${games.length > 1 ? `${games.length} Games` : 'Game'}`}
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 

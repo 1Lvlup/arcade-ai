@@ -21,6 +21,7 @@ export default {
         'geom': ['geom-graphic', 'sans-serif'],
         'fuel': ['pf-fuel-grime', 'sans-serif'],
         'posterama': ['posterama-2001', 'sans-serif'],
+        'goodtimes': ['good-times', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

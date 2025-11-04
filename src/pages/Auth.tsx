@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GamepadIcon, Zap } from 'lucide-react';
+import { Brain } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -175,22 +175,21 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen mesh-gradient flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center space-x-2">
-            <GamepadIcon className="h-8 w-8 text-primary neon-glow" />
-            <Zap className="h-6 w-6 text-secondary" />
+            <Brain className="h-10 w-10 text-orange" />
           </div>
-          <h1 className="text-3xl font-bold neon-text">Arcade Fix Guru</h1>
-          <p className="text-muted-foreground">FEC Portal Access</p>
+          <h1 className="text-4xl font-tech font-bold text-foreground">Level Up</h1>
+          <p className="text-primary font-body">Arcade Intelligence Portal</p>
         </div>
 
-        <Card className="border-primary/20 neon-glow">
+        <Card className="border-orange/30 bg-background/95 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-center">Welcome</CardTitle>
-            <CardDescription className="text-center">
-              Sign in to your FEC portal or create a new account
+            <CardTitle className="text-center text-2xl font-tech">Welcome</CardTitle>
+            <CardDescription className="text-center text-primary font-body">
+              Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -226,7 +225,8 @@ export default function Auth() {
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full neon-glow" 
+                    variant="orange"
+                    className="w-full" 
                     disabled={loading}
                   >
                     {loading ? 'Signing in...' : 'Sign In'}
@@ -269,7 +269,8 @@ export default function Auth() {
 
                   <Button 
                     type="submit" 
-                    className="w-full neon-glow" 
+                    variant="orange"
+                    className="w-full" 
                     disabled={loading}
                   >
                     {loading ? 'Creating account...' : 'Sign Up'}
@@ -304,7 +305,8 @@ export default function Auth() {
             </div>
             <Button 
               type="submit" 
-              className="w-full neon-glow" 
+              variant="orange"
+              className="w-full" 
               disabled={loading}
             >
               {loading ? 'Sending...' : 'Send Reset Link'}
@@ -347,7 +349,8 @@ export default function Auth() {
             </div>
             <Button 
               type="submit" 
-              className="w-full neon-glow" 
+              variant="orange"
+              className="w-full" 
               disabled={loading}
             >
               {loading ? 'Updating...' : 'Update Password'}

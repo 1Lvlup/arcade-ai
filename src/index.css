@@ -178,10 +178,10 @@
   
   .hover-glow:hover {
     box-shadow: 
-      0 0 40px hsl(0 0% 100% / 1),
-      0 0 70px hsl(0 0% 100% / 0.9),
-      0 0 100px hsl(0 0% 100% / 0.6);
-    border-color: hsl(0 0% 100%);
+      0 0 40px hsl(25 95% 53% / 1),
+      0 0 70px hsl(25 95% 53% / 0.9),
+      0 0 100px hsl(25 95% 53% / 0.6);
+    border-color: hsl(25 95% 53%);
   }
   
   .hover-lift {

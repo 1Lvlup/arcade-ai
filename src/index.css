@@ -582,21 +582,21 @@
   /* Feature Cards Enhanced Hover */
   .feature-card {
     background: hsl(0 0% 0%);
-    border: 1px solid hsl(25 95% 53%);
+    border: 1px solid hsl(0 0% 100%);
     backdrop-filter: blur(12px);
     transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
     box-shadow: 
-      0 0 20px hsl(25 95% 53% / 0.5),
-      0 0 40px hsl(25 95% 53% / 0.3),
-      inset 0 0 30px hsl(25 95% 53% / 0.15);
+      0 0 20px hsl(0 0% 100% / 0.5),
+      0 0 40px hsl(0 0% 100% / 0.3),
+      inset 0 0 30px hsl(0 0% 100% / 0.15);
   }
   
   .feature-card:hover {
     transform: translateY(-8px);
     box-shadow: 
-      0 0 40px hsl(25 95% 53% / 0.8),
-      0 0 70px hsl(25 95% 53% / 0.6),
-      0 12px 30px hsl(25 95% 53% / 0.5);
+      0 0 40px hsl(0 0% 100% / 0.8),
+      0 0 70px hsl(0 0% 100% / 0.6),
+      0 12px 30px hsl(0 0% 100% / 0.5);
   }
   
   /* Fade Up Animation */

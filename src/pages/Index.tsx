@@ -166,41 +166,41 @@ const Index = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mt-12 sm:mt-16 lg:mt-24 max-w-5xl mx-auto">
             <div className="feature-card p-10 rounded-2xl hover-glow hover-lift group" style={{
-            borderColor: 'hsl(183 100% 50% / 0.3)'
+            borderColor: 'hsl(0 0% 100% / 0.3)'
           }}>
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-bold text-2xl text-foreground bg-[#080809]/60 rounded-xl mx-[6px]">Built With Precision  For Arcades</div>
-                  <div className="text-base text-primary leading-relaxed"><span className="font-semibold">No theory.</span> These tools were built by technicians who work on arcades.</div>
+                  <div className="font-bold text-2xl text-orange bg-[#080809]/60 rounded-xl mx-[6px]">Built With Precision  For Arcades</div>
+                  <div className="text-base text-white leading-relaxed"><span className="font-semibold">No theory.</span> These tools were built by technicians who work on arcades.</div>
                 </div>
               </div>
             </div>
             <div className="feature-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-glow hover-lift" style={{
-            borderColor: 'hsl(183 100% 50% / 0.3)'
+            borderColor: 'hsl(0 0% 100% / 0.3)'
           }}>
               <div className="flex flex-col items-center gap-4 sm:gap-5 lg:gap-6">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10">
                   <TrendingUp className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-bold text-lg sm:text-xl lg:text-2xl text-foreground px-2">The More Arcades Connect, The Smarter It Gets</div>
-                  <div className="text-sm sm:text-base text-primary leading-relaxed px-2"><span className="font-semibold">One arcade's fix becomes every arcade's knowledge.</span></div>
+                  <div className="font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">The More Arcades Connect, The Smarter It Gets</div>
+                  <div className="text-sm sm:text-base text-white leading-relaxed px-2"><span className="font-semibold">One arcade's fix becomes every arcade's knowledge.</span></div>
                 </div>
               </div>
             </div>
             <div className="feature-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-glow hover-lift group" style={{
-            borderColor: 'hsl(183 100% 50% / 0.3)'
+            borderColor: 'hsl(0 0% 100% / 0.3)'
           }}>
               <div className="flex flex-col items-center gap-4 sm:gap-5 lg:gap-6">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <Zap className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-bold text-lg sm:text-xl lg:text-2xl text-foreground px-2">Real-Time Processing</div>
-                  <div className="text-sm sm:text-base text-primary leading-relaxed px-2"><span className="font-semibold">Instant AI responses.</span> No waiting. No downtime.</div>
+                  <div className="font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">Real-Time Processing</div>
+                  <div className="text-sm sm:text-base text-white leading-relaxed px-2"><span className="font-semibold">Instant AI responses.</span> No waiting. No downtime.</div>
                 </div>
               </div>
             </div>

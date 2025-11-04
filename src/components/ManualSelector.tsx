@@ -27,15 +27,48 @@ export function ManualSelector({ selectedManualId, onManualChange }: ManualSelec
 
   const fetchProcessedManuals = async () => {
     try {
-      // Get documents
-      const { data: docs, error: directError } = await supabase
+      // First get the user's tenant to find accessible manuals
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      // Get user's profile to find their tenant
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('fec_tenant_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Get accessible manual IDs from tenant_manual_access
+      const { data: accessibleManuals, error: accessError } = await supabase
+        .from('tenant_manual_access')
+        .select('manual_id')
+        .eq('fec_tenant_id', profile.fec_tenant_id);
+
+      if (accessError) throw accessError;
+
+      if (!accessibleManuals || accessibleManuals.length === 0) {
+        console.log('No manuals accessible for this tenant');
+        setManuals([]);
+        return;
+      }
+
+      const manualIds = accessibleManuals.map(m => m.manual_id);
+
+      // Get documents for accessible manuals
+      const { data: docs, error: docsError } = await supabase
         .from('documents')
         .select('id, manual_id, title, source_filename')
+        .in('manual_id', manualIds)
         .order('title');
 
-      if (directError) throw directError;
+      if (docsError) throw docsError;
 
-      // Get counts separately for each manual using count query
+      // Get counts separately for each manual
       const manualsWithCounts = await Promise.all(
         (docs || []).map(async (doc) => {
           const { count } = await supabase

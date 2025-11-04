@@ -46,6 +46,12 @@ const Index = () => {
     }
   }, []);
   const handleStartGeneralChat = () => {
+    // Redirect to auth if not logged in
+    if (!user) {
+      window.location.href = '/auth';
+      return;
+    }
+    
     setSelectedManualId(undefined);
     setSelectedManualTitle(undefined);
     setShowChat(true);

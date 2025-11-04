@@ -173,10 +173,11 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
             </DropdownMenu>
           ) : (
             <Link to="/auth">
-              <Button variant="orange" size="sm" className="gap-2">
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Sign In / Sign Up</span>
-                <span className="sm:hidden">Sign In</span>
+              <Button variant="orange" size="lg" className="gap-2 font-bold text-base hover-lift" style={{
+                boxShadow: '0 0 20px hsl(24 100% 54% / 0.4)'
+              }}>
+                <User className="h-5 w-5" />
+                <span>SIGN IN / SIGN UP</span>
               </Button>
             </Link>
           )}

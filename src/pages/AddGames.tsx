@@ -251,24 +251,26 @@ export default function AddGames() {
     <div className="min-h-screen mesh-gradient flex flex-col">
       <SharedHeader title="Add These Games" showBackButton backTo="/" />
       
-      <main className="container mx-auto px-4 py-8 flex-1">
+      <main className="container mx-auto px-4 sm:px-6 py-4 md:py-8 flex-1">
         <Card className="max-w-4xl mx-auto premium-card">
-          <CardHeader>
-            <CardTitle className="text-2xl font-tech">Submit Game Information</CardTitle>
-            <CardDescription>
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="text-xl sm:text-2xl font-tech">Submit Game Information</CardTitle>
+            <CardDescription className="text-sm">
               Help us build our game database by submitting arcade games. You can either fill out the form or upload a CSV file.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             <Tabs defaultValue="form" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="form">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Single Entry
+              <TabsList className="grid w-full grid-cols-2 h-auto">
+                <TabsTrigger value="form" className="py-3 text-sm">
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Single Entry</span>
+                  <span className="xs:hidden">Form</span>
                 </TabsTrigger>
-                <TabsTrigger value="upload">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload CSV
+                <TabsTrigger value="upload" className="py-3 text-sm">
+                  <Upload className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Upload CSV</span>
+                  <span className="xs:hidden">Upload</span>
                 </TabsTrigger>
               </TabsList>
               

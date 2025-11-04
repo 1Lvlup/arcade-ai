@@ -20,6 +20,7 @@ export default {
         'mono': ['Orbitron', 'monospace'],
         'geom': ['geom-graphic', 'sans-serif'],
         'fuel': ['pf-fuel-decay', 'sans-serif'],
+        'posterama': ['posterama-2001', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -173,7 +173,7 @@ const Index = () => {
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-geom font-bold text-2xl text-orange bg-[#080809]/60 rounded-xl mx-[6px]">Built With Precision  For Arcades</div>
+                  <div className="font-posterama font-bold text-2xl text-orange bg-[#080809]/60 rounded-xl mx-[6px]">Built With Precision  For Arcades</div>
                   <div className="text-base text-white leading-relaxed"><span className="font-semibold">No theory.</span> These tools were built by technicians who work on arcades.</div>
                 </div>
               </div>
@@ -186,7 +186,7 @@ const Index = () => {
                   <TrendingUp className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-geom font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">The More Arcades Connect, The Smarter It Gets</div>
+                  <div className="font-posterama font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">The More Arcades Connect, The Smarter It Gets</div>
                   <div className="text-sm sm:text-base text-white leading-relaxed px-2"><span className="font-semibold">One arcade's fix becomes every arcade's knowledge.</span></div>
                 </div>
               </div>
@@ -199,7 +199,7 @@ const Index = () => {
                   <Zap className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-geom font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">Real-Time Processing</div>
+                  <div className="font-posterama font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">Real-Time Processing</div>
                   <div className="text-sm sm:text-base text-white leading-relaxed px-2"><span className="font-semibold">Instant AI responses.</span> No waiting. No downtime.</div>
                 </div>
               </div>

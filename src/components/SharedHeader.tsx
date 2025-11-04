@@ -35,7 +35,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
   };
 
   return (
-    <header className="border-b border-border bg-background/95 backdrop-blur-sm border-t-2 border-t-orange/30">
+    <header className="border-b border-border bg-black border-t-2 border-t-orange/30">
       <div className="container mx-auto px-6 py-6 flex items-center justify-between">
         <div className="flex items-center space-x-6">
           {showBackButton && (

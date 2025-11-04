@@ -138,20 +138,29 @@ const Index = () => {
               Your browser does not support the video tag.
             </video>
           </div>
+          
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mt-8 sm:mt-12 lg:mt-16">
-              <p className="body-text text-base sm:text-lg md:text-xl text-muted-foreground max-w-5xl mx-auto font-body" style={{
-                lineHeight: '1.6'
-              }}>
-                Smart diagnostics built for real arcades—pinpoint faults, resolve outages, and collect real-time insights.
-              </p>
+            <div className="flex flex-col items-center justify-center mt-8 sm:mt-12 px-4 gap-3">
+              {!user && (
+                <p className="text-sm sm:text-base text-primary/80 font-semibold">
+                  Create your free account to get started →
+                </p>
+              )}
+              <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-6 sm:px-12 md:px-20 lg:px-32 py-6 sm:py-8 md:py-10 lg:py-12 text-base sm:text-xl md:text-2xl lg:text-3xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
+              boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
+            }}>
+                <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
+                  <Zap className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 flex-shrink-0" />
+                  <span className="text-center">LAUNCH ARCADE INTELLIGENCE</span>
+                  <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
+              </Button>
+              <p className="text-xs sm:text-sm text-muted-foreground/80">No credit card • 2-minute setup</p>
             </div>
           </div>
         </section>
-
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
-          
-          {/* Certification/Achievement Badges */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mt-12 sm:mt-16 lg:mt-24 max-w-5xl mx-auto">
             <div className="feature-card p-10 rounded-2xl hover-glow hover-lift group" style={{
             borderColor: 'hsl(183 100% 50% / 0.3)'
@@ -192,25 +201,6 @@ const Index = () => {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-col items-center justify-center mt-12 sm:mt-16 lg:mt-20 px-4 gap-3">
-            {!user && (
-              <p className="text-sm sm:text-base text-primary/80 font-semibold">
-                Create your free account to get started →
-              </p>
-            )}
-            <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-6 sm:px-12 md:px-20 lg:px-32 py-6 sm:py-8 md:py-10 lg:py-12 text-base sm:text-xl md:text-2xl lg:text-3xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
-            boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
-          }}>
-              <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
-                <Zap className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 flex-shrink-0" />
-                <span className="text-center">LAUNCH ARCADE INTELLIGENCE</span>
-                <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
-            </Button>
-            <p className="text-xs sm:text-sm text-muted-foreground/80">No credit card • 2-minute setup</p>
           </div>
         </div>
 

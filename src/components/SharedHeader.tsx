@@ -141,35 +141,43 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
             </DropdownMenu>
           )}
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="minimal" size="sm">
-                {user?.email}
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-background z-50">
-              <DropdownMenuItem asChild>
-                <Link to="/account-settings" className="cursor-pointer">
-                  <User className="h-4 w-4 mr-2" />
-                  Account Settings
-                </Link>
-              </DropdownMenuItem>
-              {isAdmin && (
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="minimal" size="sm">
+                  {user.email}
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background z-50">
                 <DropdownMenuItem asChild>
-                  <Link to="/support-tickets" className="cursor-pointer">
+                  <Link to="/account-settings" className="cursor-pointer">
                     <User className="h-4 w-4 mr-2" />
-                    Support Tickets
+                    Account Settings
                   </Link>
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/support-tickets" className="cursor-pointer">
+                      <User className="h-4 w-4 mr-2" />
+                      Support Tickets
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="orange" size="sm">
+                Sign In
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

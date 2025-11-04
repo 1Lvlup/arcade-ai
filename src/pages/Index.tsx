@@ -137,10 +137,11 @@ const Index = () => {
               <source src="/AIGlitch.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
-          </div>
-          
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col items-center justify-center mt-8 sm:mt-12 px-4 gap-3">
+            
+            {/* Button overlaying video */}
+            <div className="absolute bottom-0 left-0 right-0 pb-16 sm:pb-20">
+              <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col items-center justify-center px-4 gap-3">
               {!user && (
                 <p className="text-sm sm:text-base text-primary/80 font-semibold">
                   Create your free account to get started →
@@ -157,6 +158,8 @@ const Index = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
               </Button>
               <p className="text-xs sm:text-sm text-muted-foreground/80">No credit card • 2-minute setup</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>

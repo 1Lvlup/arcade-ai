@@ -18,7 +18,7 @@ export default {
         'display': ['Orbitron', 'sans-serif'],
         'tech': ['Orbitron', 'sans-serif'],
         'mono': ['Orbitron', 'monospace'],
-        'typekit': ['acumin-pro-extra-condensed', 'sans-serif'],
+        'geom': ['geom-graphic', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown, Code, Upload, MessageCircle } from 'lucide-react';
+import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown, Code, Upload, MessageCircle, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useState, useEffect } from 'react';
@@ -60,6 +60,17 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
         </div>
         <div className="flex items-center space-x-4">
           {children}
+          
+          {/* Add Games Button - Visible to all authenticated users */}
+          {user && (
+            <Link to="/add-games">
+              <Button variant="orange" size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Add These Games</span>
+                <span className="sm:hidden">Add Games</span>
+              </Button>
+            </Link>
+          )}
           
           <Link to="/">
             <Button variant="minimal" size="sm">

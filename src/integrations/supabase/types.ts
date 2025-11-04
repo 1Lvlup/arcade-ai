@@ -635,6 +635,45 @@ export type Database = {
           },
         ]
       }
+      game_submissions: {
+        Row: {
+          created_at: string
+          fec_location_name: string | null
+          fec_tenant_id: string
+          game_name: string
+          id: string
+          input_by: string | null
+          manufacturer: string | null
+          updated_at: string
+          user_id: string
+          version_model_year: string | null
+        }
+        Insert: {
+          created_at?: string
+          fec_location_name?: string | null
+          fec_tenant_id?: string
+          game_name: string
+          id?: string
+          input_by?: string | null
+          manufacturer?: string | null
+          updated_at?: string
+          user_id: string
+          version_model_year?: string | null
+        }
+        Update: {
+          created_at?: string
+          fec_location_name?: string | null
+          fec_tenant_id?: string
+          game_name?: string
+          id?: string
+          input_by?: string | null
+          manufacturer?: string | null
+          updated_at?: string
+          user_id?: string
+          version_model_year?: string | null
+        }
+        Relationships: []
+      }
       golden_questions: {
         Row: {
           category: string

@@ -37,6 +37,7 @@ import { AdminRoute } from "./components/AdminRoute";
 import ReIngestManual from "./pages/ReIngestManual";
 import ManualProcessingTools from "./pages/ManualProcessingTools";
 import UserConversationHistory from "./pages/UserConversationHistory";
+import AddGames from "./pages/AddGames";
 
 const queryClient = new QueryClient();
 
@@ -208,6 +209,11 @@ const App = () => (
                 <AdminRoute>
                   <UserConversationHistory />
                 </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/add-games" element={
+              <ProtectedRoute>
+                <AddGames />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

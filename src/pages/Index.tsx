@@ -189,6 +189,11 @@ const Index = () => {
           </div>
 
           <div className="flex flex-col items-center justify-center mt-12 sm:mt-16 lg:mt-20 px-4 gap-3">
+            {!user && (
+              <p className="text-sm sm:text-base text-primary/80 font-semibold">
+                Create your free account to get started →
+              </p>
+            )}
             <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-6 sm:px-12 md:px-20 lg:px-32 py-6 sm:py-8 md:py-10 lg:py-12 text-base sm:text-xl md:text-2xl lg:text-3xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
             boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
           }}>

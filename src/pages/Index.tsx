@@ -173,8 +173,8 @@ const Index = () => {
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-goodtimes font-bold text-2xl text-orange bg-[#080809]/60 rounded-xl mx-[6px]">Built With Precision  For Arcades</div>
-                  <div className="text-base text-white leading-relaxed"><span className="font-semibold">No theory.</span> These tools were built by technicians who work on arcades.</div>
+                  <div className="font-goodtimes font-bold text-2xl text-orange bg-[#080809]/60 rounded-xl mx-[6px]">Not just a tool</div>
+                  <div className="text-base text-white leading-relaxed">Worlds largest database of answers to every users problems</div>
                 </div>
               </div>
             </div>

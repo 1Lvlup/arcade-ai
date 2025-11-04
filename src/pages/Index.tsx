@@ -139,7 +139,7 @@ const Index = () => {
             </video>
             
             {/* Button overlaying video */}
-            <div className="absolute bottom-0 left-0 right-0 pb-16 sm:pb-20">
+            <div className="absolute bottom-0 left-0 right-0 pb-8 sm:pb-12">
               <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center justify-center px-4 gap-3">
               {!user && (
@@ -147,7 +147,7 @@ const Index = () => {
                   Create your free account to get started →
                 </p>
               )}
-              <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-6 sm:px-12 md:px-20 lg:px-32 py-6 sm:py-8 md:py-10 lg:py-12 text-base sm:text-xl md:text-2xl lg:text-3xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
+              <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-6 sm:px-12 md:px-20 lg:px-28 py-4 sm:py-6 md:py-7 lg:py-8 text-base sm:text-xl md:text-2xl lg:text-3xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
               boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
             }}>
                 <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">

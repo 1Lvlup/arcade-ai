@@ -164,20 +164,20 @@ const Index = () => {
                   <TrendingUp className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-goodtimes font-normal text-lg sm:text-xl lg:text-2xl text-white px-2">LEVEL UP</div>
-                  <div className="font-goodtimes font-normal text-lg sm:text-xl lg:text-2xl text-orange px-2">The first shared intelligence built for the arcade industry</div>
+                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-white px-2">LEVEL UP</div>
+                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2">The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>
             </div>
             <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-glow hover-lift group" style={{
             borderColor: 'hsl(0 0% 100% / 0.3)'
           }}>
-              <div className="flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-6">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <Zap className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
-                <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-goodtimes font-normal text-lg sm:text-xl lg:text-2xl text-orange px-2">Harnessing AI's capbilities to end downtime for good.</div>
+                <div className="text-center space-y-2 sm:space-y-3 px-4">
+                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2">Harnessing AI's capbilities to end downtime for good.</div>
                 </div>
               </div>
             </div>
@@ -189,7 +189,7 @@ const Index = () => {
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-goodtimes font-normal text-lg sm:text-xl lg:text-2xl text-orange px-2">Every real solution strengthens the network — Creating a living database for every game, every fix</div>
+                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2">Every real solution strengthens the network — Creating a living database for every game, every fix</div>
                 </div>
               </div>
             </div>

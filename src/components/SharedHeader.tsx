@@ -42,14 +42,14 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
         loop 
         muted 
         playsInline 
-        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+        className="absolute inset-0 w-full h-full object-cover z-0"
         style={{ objectPosition: 'center 35%' }}
       >
         <source src="/levelupvideo.mp4" type="video/mp4" />
       </video>
       
       {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 bg-black/70 -z-5" />
+      <div className="absolute inset-0 bg-black/70 z-[1]" />
       
       <div className="container mx-auto px-6 py-6 flex items-center justify-between relative z-10">
         <div className="flex items-center space-x-6">

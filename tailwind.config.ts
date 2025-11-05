@@ -23,6 +23,7 @@ export default {
         'posterama': ['posterama-2001', 'sans-serif'],
         'goodtimes': ['good-times', 'sans-serif'],
         'ethnocentric': ['ethnocentric', 'sans-serif'],
+        'sofachrome': ['sofachrome', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

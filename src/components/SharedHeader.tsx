@@ -76,23 +76,30 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
         <div className="flex items-center space-x-4">
           {children}
           
-          {/* Add Games Button - Visible to all authenticated users */}
-          {user && (
-            <Link to="/add-games">
-              <Button variant="orange" size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Add These Games</span>
-                <span className="sm:hidden">Add Games</span>
+          {/* Navigation Dropdown - Visible to all users */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="minimal" size="sm">
+                <Home className="h-4 w-4 mr-2" />
+                Menu
+                <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
-            </Link>
-          )}
-          
-          <Link to="/">
-            <Button variant="minimal" size="sm">
-              <Home className="h-4 w-4 mr-2" />
-              Home
-            </Button>
-          </Link>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+              <DropdownMenuItem asChild>
+                <Link to="/" className="cursor-pointer">
+                  <Home className="h-4 w-4 mr-2" />
+                  Home
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/add-games" className="cursor-pointer">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add These Games
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           {isAdmin && (
             <DropdownMenu>

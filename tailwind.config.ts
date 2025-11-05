@@ -14,17 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        'sans': ['Exo 2', 'system-ui', '-apple-system', 'sans-serif'],
-        'display': ['Orbitron', 'sans-serif'],
-        'tech': ['Orbitron', 'sans-serif'],
-        'mono': ['Orbitron', 'monospace'],
-        'geom': ['geom-graphic', 'sans-serif'],
-        'fuel': ['pf-fuel-grime', 'sans-serif'],
-        'posterama': ['posterama-2001', 'sans-serif'],
-        'goodtimes': ['good-times', 'sans-serif'],
-        'ethnocentric': ['ethnocentric', 'sans-serif'],
-        'sofachrome': ['sofachrome', 'sans-serif'],
-        'kallisto': ['kallisto', 'sans-serif'],
+        'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        'display': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        'tech': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        'mono': ['SF Mono', 'Monaco', 'Inconsolata', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -71,14 +64,19 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         orange: {
-          DEFAULT: "hsl(var(--brand-orange))",
-          light: "hsl(18 100% 60%)",
-          dark: "hsl(18 100% 40%)",
+          DEFAULT: "hsl(var(--brand-purple))",
+          light: "hsl(261 85% 75%)",
+          dark: "hsl(261 75% 55%)",
         },
         cyan: {
-          DEFAULT: "hsl(var(--brand-cyan))",
-          light: "hsl(188 100% 70%)",
-          dark: "hsl(188 100% 50%)",
+          DEFAULT: "hsl(var(--brand-purple))",
+          light: "hsl(261 85% 75%)",
+          dark: "hsl(261 75% 55%)",
+        },
+        purple: {
+          DEFAULT: "hsl(var(--brand-purple))",
+          light: "hsl(var(--brand-purple-light))",
+          dark: "hsl(var(--brand-purple-dark))",
         },
       },
       borderRadius: {

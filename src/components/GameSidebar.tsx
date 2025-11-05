@@ -108,10 +108,16 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
         "flex items-center h-16 border-b border-white/10",
         isExpanded ? "justify-between px-4" : "justify-center"
       )}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
+          {!isExpanded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute h-10 w-10 rounded-full bg-orange/20 animate-pulse blur-md" />
+            </div>
+          )}
           <Gamepad2 className={cn(
-            "text-orange transition-all",
-            isExpanded ? "h-6 w-6" : "h-7 w-7"
+            "text-orange transition-all relative z-10",
+            isExpanded ? "h-6 w-6" : "h-7 w-7",
+            !isExpanded && "drop-shadow-[0_0_8px_rgba(255,106,0,0.6)]"
           )} />
           {isExpanded && (
             <div className="overflow-hidden">

@@ -419,12 +419,16 @@ const Index = () => {
               </p>
               <Link to="/auth">
                 <Button 
+                  variant="orange"
                   size="lg" 
-                  className="bg-orange hover:bg-orange/90 text-white font-semibold px-8 py-6 text-base sm:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  style={{ boxShadow: '0 0 30px hsl(var(--orange) / 0.4)' }}
+                  className="cta-button hover-lift text-white font-semibold px-8 py-6 text-base sm:text-lg rounded-xl transition-all duration-300 border-2 border-orange relative group overflow-hidden"
+                  style={{ boxShadow: '0 0 20px hsl(24 100% 54% / 0.9), 0 0 40px hsl(24 100% 54% / 0.7), 0 0 60px hsl(24 100% 54% / 0.5)' }}
                 >
-                  Launch Arcade Intelligence
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    Launch Arcade Intelligence
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
                 </Button>
               </Link>
               <p className="text-sm text-primary/50 mt-4">No credit card • 2-minute setup</p>

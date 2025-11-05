@@ -45,7 +45,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
         className="absolute inset-0 w-full h-full object-cover z-0"
         style={{ objectPosition: 'center 35%' }}
       >
-        <source src="/levelupvideo.mp4" type="video/mp4" />
+        <source src="/AIGlitch.mp4" type="video/mp4" />
       </video>
       
       {/* Dark overlay for text readability */}

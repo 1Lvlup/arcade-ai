@@ -138,8 +138,9 @@ const Index = () => {
               {!user && <p className="text-sm sm:text-base text-primary/80 font-semibold">
                   Create your free account to get started →
                 </p>}
-              <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-6 sm:px-12 md:px-20 lg:px-28 py-4 sm:py-6 md:py-7 lg:py-8 text-base sm:text-xl md:text-2xl lg:text-3xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
-                  boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
+              <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-8 sm:px-14 md:px-22 lg:px-32 py-5 sm:py-7 md:py-8 lg:py-9 text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
+                  boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)',
+                  marginBottom: '1rem'
                 }}>
                 <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
                   <Zap className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 flex-shrink-0" />
@@ -156,8 +157,13 @@ const Index = () => {
         </section>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mt-12 sm:mt-16 lg:mt-24 max-w-5xl mx-auto">
-            <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-glow hover-lift" style={{
-            borderColor: 'hsl(0 0% 100% / 0.3)'
+            <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-lift transition-all duration-300" style={{
+            borderColor: 'hsl(0 0% 100% / 0.3)',
+            boxShadow: '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)'
+          }} onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.6), 0 0 40px hsl(24 100% 54% / 0.4)';
+          }} onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)';
           }}>
               <div className="flex flex-col items-center justify-center gap-4 h-full">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10">
@@ -169,8 +175,13 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-glow hover-lift group" style={{
-            borderColor: 'hsl(0 0% 100% / 0.3)'
+            <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-lift group transition-all duration-300" style={{
+            borderColor: 'hsl(0 0% 100% / 0.3)',
+            boxShadow: '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)'
+          }} onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.6), 0 0 40px hsl(24 100% 54% / 0.4)';
+          }} onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)';
           }}>
               <div className="flex flex-col items-center justify-center gap-4 h-full">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
@@ -182,8 +193,13 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-glow hover-lift group" style={{
-            borderColor: 'hsl(0 0% 100% / 0.3)'
+            <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-lift group transition-all duration-300" style={{
+            borderColor: 'hsl(0 0% 100% / 0.3)',
+            boxShadow: '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)'
+          }} onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.6), 0 0 40px hsl(24 100% 54% / 0.4)';
+          }} onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)';
           }}>
               <div className="flex flex-col items-center justify-center gap-4 h-full">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
@@ -208,7 +224,7 @@ const Index = () => {
             }}>
               <span className="text-white text-recessed-white">REAL</span> <span className="text-orange text-recessed-orange">RESULTS</span>
             </h2>
-            <p className="text-sm sm:text-base text-primary font-body mt-3">Proven ROI from live deployments</p>
+            <p className="text-sm sm:text-base text-primary/80 font-tech mt-3">Proven ROI from live deployments</p>
           </div>
           
           <div className="premium-card p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl relative" style={{

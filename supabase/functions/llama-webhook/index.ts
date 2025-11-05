@@ -1015,19 +1015,28 @@ serve(async (req) => {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // STAGE 11: LlamaCloud Upload Complete - But figure processing still pending
+    // Get ACTUAL figure count from database to ensure accuracy
+    const { count: actualFigureCount } = await supabase
+      .from('figures')
+      .select('*', { count: 'exact', head: true })
+      .eq('manual_id', manualId);
+    
+    const confirmedFigureCount = actualFigureCount || 0;
+    console.log(`📊 Figure count verification: ${figuresProcessed} processed, ${confirmedFigureCount} in database`);
+    
     // Mark as 'processing' (not completed) because OCR/captions still need to be generated
     await supabase
       .from('processing_status')
       .update({
-        status: figuresProcessed > 0 ? 'processing' : 'completed',
-        stage: figuresProcessed > 0 ? 'figure_processing_pending' : 'completed',
-        current_task: figuresProcessed > 0 
-          ? `Upload complete: ${processedCount} text chunks, ${figuresProcessed} images extracted. Starting caption+OCR...`
+        status: confirmedFigureCount > 0 ? 'processing' : 'completed',
+        stage: confirmedFigureCount > 0 ? 'figure_processing_pending' : 'completed',
+        current_task: confirmedFigureCount > 0 
+          ? `Upload complete: ${processedCount} text chunks, ${confirmedFigureCount} images extracted. Starting caption+OCR...`
           : `Upload complete: ${processedCount} text chunks, no images`,
-        progress_percent: figuresProcessed > 0 ? 50 : 100,
+        progress_percent: confirmedFigureCount > 0 ? 50 : 100,
         chunks_processed: processedCount,
         total_chunks: processedCount,
-        total_figures: figuresProcessed,
+        total_figures: confirmedFigureCount,  // Use actual DB count, not figuresProcessed
         figures_processed: 0
       })
       .eq('job_id', jobId);

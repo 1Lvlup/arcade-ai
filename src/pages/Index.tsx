@@ -164,7 +164,7 @@ const Index = () => {
                   <TrendingUp className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-goodtimes font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">One arcade's fix becomes every arcade's knowledge.</div>
+                  <div className="font-goodtimes font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">Level Up is The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@ const Index = () => {
                   <Zap className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-goodtimes font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">As more arcades connect, the knowledgebase grows exponentially</div>
+                  <div className="font-goodtimes font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">Harnessing AI's capbilities to end downtime for good.</div>
                 </div>
               </div>
             </div>
@@ -188,8 +188,7 @@ const Index = () => {
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-goodtimes font-bold text-2xl text-orange rounded-xl mx-[6px] bg-[#0093c4]/0">Not just a tool</div>
-                  <div className="text-base text-white leading-relaxed">The worlds largest digital database of answers to every technicians problems</div>
+                  <div className="font-goodtimes font-bold text-lg sm:text-xl lg:text-2xl text-orange px-2">Every real solution strengthens the network — Creating a living database for every game, every fix</div>
                 </div>
               </div>
             </div>

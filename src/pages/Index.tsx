@@ -51,7 +51,6 @@ const Index = () => {
       window.location.href = '/auth';
       return;
     }
-    
     setSelectedManualId(undefined);
     setSelectedManualTitle(undefined);
     setShowChat(true);
@@ -127,13 +126,7 @@ const Index = () => {
         {/* Hero Section */}
         <section className="w-full">
           <div className="relative w-full overflow-hidden">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline
-              className="w-full h-auto"
-            >
+            <video autoPlay loop muted playsInline className="w-full h-auto">
               <source src="/AIGlitch.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
@@ -142,14 +135,12 @@ const Index = () => {
             <div className="absolute bottom-0 left-0 right-0 pb-8 sm:pb-12">
               <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center justify-center px-4 gap-3">
-              {!user && (
-                <p className="text-sm sm:text-base text-primary/80 font-semibold">
+              {!user && <p className="text-sm sm:text-base text-primary/80 font-semibold">
                   Create your free account to get started →
-                </p>
-              )}
+                </p>}
               <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-6 sm:px-12 md:px-20 lg:px-28 py-4 sm:py-6 md:py-7 lg:py-8 text-base sm:text-xl md:text-2xl lg:text-3xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
-              boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
-            }}>
+                  boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)'
+                }}>
                 <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
                   <Zap className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 flex-shrink-0" />
                   <span className="text-center">LAUNCH ARCADE INTELLIGENCE</span>
@@ -173,7 +164,7 @@ const Index = () => {
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-goodtimes font-bold text-2xl text-orange bg-[#080809]/60 rounded-xl mx-[6px]">Not just a tool</div>
+                  <div className="font-goodtimes font-bold text-2xl text-orange rounded-xl mx-[6px] bg-[#0093c4]/0">Not just a tool</div>
                   <div className="text-base text-white leading-relaxed">Worlds largest database of answers to every users problems</div>
                 </div>
               </div>
@@ -218,8 +209,8 @@ const Index = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12 items-center relative">
               {/* Left Side - Revenue Stats */}
               <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-              borderColor: 'hsl(183 100% 50% / 0.3)'
-            }}>
+                borderColor: 'hsl(183 100% 50% / 0.3)'
+              }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
@@ -233,8 +224,8 @@ const Index = () => {
 
               {/* Center - Payback Period */}
               <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-              borderColor: 'hsl(183 100% 50% / 0.3)'
-            }}>
+                borderColor: 'hsl(183 100% 50% / 0.3)'
+              }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Clock className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
@@ -248,8 +239,8 @@ const Index = () => {
 
               {/* Right Side - Labor Time Savings */}
               <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-              borderColor: 'hsl(183 100% 50% / 0.3)'
-            }}>
+                borderColor: 'hsl(183 100% 50% / 0.3)'
+              }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Target className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
@@ -268,14 +259,14 @@ const Index = () => {
         <section className="py-12 sm:py-16 lg:py-24">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16 px-4">
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-tech font-bold text-foreground mb-3 sm:mb-4" style={{
-            letterSpacing: '0.02em'
-          }}>Platform <span className="text-orange">Performance</span></h2>
+              letterSpacing: '0.02em'
+            }}>Platform <span className="text-orange">Performance</span></h2>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-body">Industry-leading metrics that power your arcade operations</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {stats.map((stat, index) => <div key={index} className="stat-card p-6 sm:p-7 lg:p-8 rounded-2xl hover-lift hover-glow text-center" style={{
-            borderColor: 'hsl(183 100% 50% / 0.3)'
-          }}>
+              borderColor: 'hsl(183 100% 50% / 0.3)'
+            }}>
                 <div className="flex flex-col items-center space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-primary/10">
                     <div className="text-primary">
@@ -287,9 +278,7 @@ const Index = () => {
                     <div className="space-y-1 sm:space-y-2">
                       <div className="font-semibold text-base sm:text-lg text-foreground">{stat.label}</div>
                       <div className="text-xs sm:text-sm text-primary px-2">
-                        {stat.description.split('.').map((sentence, i) => 
-                          i === 0 ? <span key={i} className="font-semibold">{sentence}.</span> : <span key={i}> {sentence}{i < stat.description.split('.').length - 2 ? '.' : ''}</span>
-                        )}
+                        {stat.description.split('.').map((sentence, i) => i === 0 ? <span key={i} className="font-semibold">{sentence}.</span> : <span key={i}> {sentence}{i < stat.description.split('.').length - 2 ? '.' : ''}</span>)}
                       </div>
                     </div>
                   </div>
@@ -316,8 +305,8 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
             {capabilities.map((capability, index) => <div key={index} className="premium-card hover-lift p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl group" style={{
-            borderColor: 'hsl(183 100% 50% / 0.3)'
-          }}>
+              borderColor: 'hsl(183 100% 50% / 0.3)'
+            }}>
                 <div className="space-y-5 sm:space-y-6 lg:space-y-8">
                   <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-primary/10 inline-flex group-hover:bg-orange/10 transition-colors">
                     <div className="text-primary group-hover:text-orange transition-colors">
@@ -326,9 +315,7 @@ const Index = () => {
                   </div>
                   <h3 className="text-xl sm:text-2xl font-tech font-bold text-foreground tracking-wide">{capability.title}</h3>
                   <p className="text-primary leading-relaxed text-sm sm:text-base font-body">
-                    {capability.description.split('.').map((sentence, i) => 
-                      i === 0 ? <span key={i} className="font-semibold">{sentence}.</span> : <span key={i}> {sentence}{i < capability.description.split('.').length - 2 ? '.' : ''}</span>
-                    )}
+                    {capability.description.split('.').map((sentence, i) => i === 0 ? <span key={i} className="font-semibold">{sentence}.</span> : <span key={i}> {sentence}{i < capability.description.split('.').length - 2 ? '.' : ''}</span>)}
                   </p>
                 </div>
               </div>)}
@@ -380,8 +367,8 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto mb-8 sm:mb-10 lg:mb-12">
             <div className="premium-card hover-lift p-6 sm:p-8 rounded-2xl sm:rounded-3xl border-2 transition-all group" style={{
-            borderColor: 'hsl(183 100% 50% / 0.3)'
-          }}>
+              borderColor: 'hsl(183 100% 50% / 0.3)'
+            }}>
               <div className="text-center space-y-3 sm:space-y-4">
                 <h3 className="text-2xl sm:text-3xl font-bold text-foreground">Starter</h3>
                 <div className="flex flex-col items-center gap-1">
@@ -392,8 +379,8 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-sm text-primary italic" style={{
-                fontVariantNumeric: 'tabular-nums'
-              }}>(or $1,345/yr — 3 months free)</p>
+                  fontVariantNumeric: 'tabular-nums'
+                }}>(or $1,345/yr — 3 months free)</p>
                 <ul className="text-left space-y-2 sm:space-y-3 pt-4 sm:pt-6">
                   <li className="flex items-start gap-2 sm:gap-3">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -416,13 +403,13 @@ const Index = () => {
             </div>
 
             <div className="premium-card hover-lift p-6 sm:p-8 rounded-2xl sm:rounded-3xl border-2 transition-all relative" style={{
-            borderColor: 'hsl(183 100% 50% / 0.5)'
-          }}>
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-1 rounded-full text-xs font-semibold" style={{
-              background: "linear-gradient(90deg, rgba(255,102,0,0.2), rgba(255,102,0,0.05))",
-              border: "1px solid rgba(255,102,0,0.45)",
-              color: "white"
+              borderColor: 'hsl(183 100% 50% / 0.5)'
             }}>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-1 rounded-full text-xs font-semibold" style={{
+                background: "linear-gradient(90deg, rgba(255,102,0,0.2), rgba(255,102,0,0.05))",
+                border: "1px solid rgba(255,102,0,0.45)",
+                color: "white"
+              }}>
                 Recommended
               </div>
               <div className="text-center space-y-3 sm:space-y-4">
@@ -435,8 +422,8 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-sm text-primary italic" style={{
-                fontVariantNumeric: 'tabular-nums'
-              }}>(or $2,245/yr — 3 months free)</p>
+                  fontVariantNumeric: 'tabular-nums'
+                }}>(or $2,245/yr — 3 months free)</p>
                 <ul className="text-left space-y-2 sm:space-y-3 pt-4 sm:pt-6">
                   <li className="flex items-start gap-2 sm:gap-3">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 mt-0.5" />

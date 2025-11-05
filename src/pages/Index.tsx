@@ -236,11 +236,11 @@ const Index = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             {/* Section Header */}
             <div className="text-center mb-12 sm:mb-16">
-              <p className="text-sm sm:text-base text-cyan/70 font-sans mb-3 italic">Inside the Intelligence</p>
+              <p className="text-base sm:text-lg font-sans mb-3 italic" style={{ color: '#80E9FF', lineHeight: 1.4 }}>Inside the Intelligence</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-tech font-bold mb-4">
                 <span className="text-white text-recessed-white">HOW IT</span> <span className="text-orange text-recessed-orange">WORKS</span>
               </h2>
-              <p className="text-lg sm:text-xl text-cyan/70 font-sans max-w-3xl mx-auto">
+              <p className="text-lg sm:text-xl font-sans max-w-3xl mx-auto" style={{ color: '#80E9FF', lineHeight: 1.4 }}>
                 Precision-built intelligence for the arcade world.
               </p>
             </div>
@@ -248,31 +248,31 @@ const Index = () => {
             {/* Two-Column Explainer */}
             <div className="grid lg:grid-cols-5 gap-8 lg:gap-16 mb-16 sm:mb-20 lg:mb-24 max-w-7xl mx-auto">
               {/* Left Column - Text Content (55%) */}
-              <div className="lg:col-span-3 space-y-8 max-w-2xl">
+              <div className="lg:col-span-3 space-y-6 max-w-2xl">
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">Specialized parsing and embedding.</h3>
-                  <p className="text-base sm:text-lg leading-relaxed font-sans" style={{ color: 'hsl(210 15% 75%)' }}>
+                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}>Specialized parsing and embedding.</h3>
+                  <p className="font-sans" style={{ fontSize: '16px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     Each manual, wiring diagram, error code, and field report is converted by a custom parsing pipeline built for arcade logic. Data is embedded into high-dimensional <span className="text-cyan font-medium">vector space</span>, so the system searches by <span className="text-cyan font-medium">meaning</span>, not keywords.
                   </p>
                 </div>
                 
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">AI trained the hard way — over and over.</h3>
-                  <p className="text-base sm:text-lg leading-relaxed font-sans" style={{ color: 'hsl(210 15% 75%)' }}>
+                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}>AI trained the hard way — over and over.</h3>
+                  <p className="font-sans" style={{ fontSize: '16px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     Thousands of real troubleshooting sessions and verified fixes are refined and re-embedded repeatedly. When confidence drops, we rebuild. The result: a neural index that answers with <span className="text-cyan font-medium">certainty</span>, not guesses.
                   </p>
                 </div>
                 
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">True RAG intelligence.</h3>
-                  <p className="text-base sm:text-lg leading-relaxed font-sans" style={{ color: 'hsl(210 15% 75%)' }}>
+                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}>True RAG intelligence.</h3>
+                  <p className="font-sans" style={{ fontSize: '16px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     On every question, Level Up retrieves the most relevant <span className="text-cyan font-medium">technical context</span> from vector memory, fuses it with <span className="text-cyan font-medium">reasoning models</span>, and returns a step-by-step, machine-specific answer.
                   </p>
                 </div>
                 
                 <div>
-                  <h3 className="text-2xl font-semibold text-white mb-3 font-tech italic">The outcome.</h3>
-                  <p className="text-base sm:text-lg leading-relaxed font-sans" style={{ color: 'hsl(210 15% 75%)' }}>
+                  <h3 className="font-bold mb-2 font-tech text-white italic" style={{ fontSize: '20px', lineHeight: 1.3 }}>The outcome.</h3>
+                  <p className="font-sans" style={{ fontSize: '16px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     An ever-evolving system designed to eliminate downtime—faster, smarter, and more accurate each time it's used.
                   </p>
                 </div>
@@ -296,8 +296,8 @@ const Index = () => {
                     <div className="mb-3 p-2.5 rounded-full bg-cyan/10 w-fit">
                       <Code className="h-5 w-5 text-cyan" />
                     </div>
-                    <h3 className="text-sm font-semibold text-white mb-2 font-tech">Parsing</h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'hsl(200 8% 69%)' }}>Converts chaotic data into structure.</p>
+                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '16px' }}>Parsing</h3>
+                    <p className="m-0" style={{ fontSize: '14px', lineHeight: 1.5, color: '#A9B6C7' }}>Converts chaotic data into structure.</p>
                   </div>
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300" style={{
                     boxShadow: '0 0 30px hsl(24 100% 54% / 0.3)'
@@ -324,8 +324,8 @@ const Index = () => {
                     <div className="mb-3 p-2.5 rounded-full bg-cyan/10 w-fit">
                       <Database className="h-5 w-5 text-cyan" />
                     </div>
-                    <h3 className="text-sm font-semibold text-white mb-2 font-tech">Embedding</h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'hsl(200 8% 69%)' }}>Translates meaning into memory.</p>
+                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '16px' }}>Embedding</h3>
+                    <p className="m-0" style={{ fontSize: '14px', lineHeight: 1.5, color: '#A9B6C7' }}>Translates meaning into memory.</p>
                   </div>
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300" style={{
                     boxShadow: '0 0 30px hsl(24 100% 54% / 0.3)'
@@ -352,8 +352,8 @@ const Index = () => {
                     <div className="mb-3 p-2.5 rounded-full bg-cyan/10 w-fit">
                       <Zap className="h-5 w-5 text-cyan" />
                     </div>
-                    <h3 className="text-sm font-semibold text-white mb-2 font-tech">RAG Engine</h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'hsl(200 8% 69%)' }}>Retrieves and reasons in real time.</p>
+                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '16px' }}>RAG Engine</h3>
+                    <p className="m-0" style={{ fontSize: '14px', lineHeight: 1.5, color: '#A9B6C7' }}>Retrieves and reasons in real time.</p>
                   </div>
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300" style={{
                     boxShadow: '0 0 30px hsl(24 100% 54% / 0.3)'
@@ -380,8 +380,8 @@ const Index = () => {
                     <div className="mb-3 p-2.5 rounded-full bg-cyan/10 w-fit">
                       <TrendingUp className="h-5 w-5 text-cyan" />
                     </div>
-                    <h3 className="text-sm font-semibold text-white mb-2 font-tech">Continuous Learning</h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'hsl(200 8% 69%)' }}>Every fix strengthens the system.</p>
+                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '16px' }}>Continuous Learning</h3>
+                    <p className="m-0" style={{ fontSize: '14px', lineHeight: 1.5, color: '#A9B6C7' }}>Every fix strengthens the system.</p>
                   </div>
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300" style={{
                     boxShadow: '0 0 30px hsl(24 100% 54% / 0.3)'

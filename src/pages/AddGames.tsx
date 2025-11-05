@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { SharedHeader } from '@/components/SharedHeader';
 import { Footer } from '@/components/Footer';
@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Plus, Trash2 } from 'lucide-react';
+import { Upload, Plus, Trash2, Edit2, Check, X, List } from 'lucide-react';
 import { z } from 'zod';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const gameSchema = z.object({
   game_name: z.string().min(1, 'Game name is required').max(200),
@@ -22,6 +23,16 @@ const gameSchema = z.object({
 });
 
 type GameFormData = z.infer<typeof gameSchema>;
+
+interface SubmittedGame {
+  id: string;
+  game_name: string;
+  manufacturer: string | null;
+  version_model_year: string | null;
+  fec_location_name: string | null;
+  input_by: string | null;
+  created_at: string;
+}
 
 export default function AddGames() {
   const { user } = useAuth();
@@ -35,6 +46,116 @@ export default function AddGames() {
     input_by: '',
   }]);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [submittedGames, setSubmittedGames] = useState<SubmittedGame[]>([]);
+  const [editingGameId, setEditingGameId] = useState<string | null>(null);
+  const [editedGameName, setEditedGameName] = useState('');
+  const [isLoadingGames, setIsLoadingGames] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      loadSubmittedGames();
+    }
+  }, [user]);
+
+  const loadSubmittedGames = async () => {
+    if (!user) return;
+    
+    setIsLoadingGames(true);
+    try {
+      const { data, error } = await supabase
+        .from('game_submissions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSubmittedGames(data || []);
+    } catch (error) {
+      console.error('Error loading games:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load your submitted games.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingGames(false);
+    }
+  };
+
+  const startEditing = (game: SubmittedGame) => {
+    setEditingGameId(game.id);
+    setEditedGameName(game.game_name);
+  };
+
+  const cancelEditing = () => {
+    setEditingGameId(null);
+    setEditedGameName('');
+  };
+
+  const saveGameName = async (gameId: string) => {
+    if (!editedGameName.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Game name cannot be empty.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('game_submissions')
+        .update({ game_name: editedGameName.trim() })
+        .eq('id', gameId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Game name updated successfully.',
+      });
+
+      // Refresh the list
+      await loadSubmittedGames();
+      cancelEditing();
+    } catch (error) {
+      console.error('Error updating game name:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update game name.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteGame = async (gameId: string, gameName: string) => {
+    if (!confirm(`Are you sure you want to delete "${gameName}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('game_submissions')
+        .delete()
+        .eq('id', gameId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Game deleted successfully.',
+      });
+
+      await loadSubmittedGames();
+    } catch (error) {
+      console.error('Error deleting game:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete game.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleInputChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -130,6 +251,9 @@ export default function AddGames() {
         fec_location_name: '',
         input_by: '',
       }]);
+      
+      // Reload submitted games
+      await loadSubmittedGames();
     } catch (error) {
       console.error('Error submitting games:', error);
       if (error instanceof z.ZodError) {
@@ -267,6 +391,9 @@ export default function AddGames() {
       // Reset file input
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
+      
+      // Reload submitted games
+      await loadSubmittedGames();
     } catch (error) {
       console.error('Error submitting CSV:', error);
       toast({
@@ -293,7 +420,7 @@ export default function AddGames() {
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
             <Tabs defaultValue="form" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-auto">
+              <TabsList className="grid w-full grid-cols-3 h-auto">
                 <TabsTrigger value="form" className="py-3 text-sm">
                   <Plus className="h-4 w-4 mr-1 sm:mr-2" />
                   <span className="hidden xs:inline">Single Entry</span>
@@ -303,6 +430,11 @@ export default function AddGames() {
                   <Upload className="h-4 w-4 mr-1 sm:mr-2" />
                   <span className="hidden xs:inline">Upload CSV</span>
                   <span className="xs:hidden">Upload</span>
+                </TabsTrigger>
+                <TabsTrigger value="my-games" className="py-3 text-sm">
+                  <List className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">My Games</span>
+                  <span className="xs:hidden">List</span>
                 </TabsTrigger>
               </TabsList>
               
@@ -438,6 +570,93 @@ export default function AddGames() {
                     </Button>
                   </form>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="my-games" className="space-y-4 mt-6">
+                {isLoadingGames ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Loading your games...
+                  </div>
+                ) : submittedGames.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    You haven't submitted any games yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {submittedGames.map((game) => (
+                      <div key={game.id} className="p-4 glass-card rounded-lg space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 space-y-2">
+                            {editingGameId === game.id ? (
+                              <div className="flex gap-2">
+                                <Input
+                                  value={editedGameName}
+                                  onChange={(e) => setEditedGameName(e.target.value)}
+                                  className="flex-1"
+                                  autoFocus
+                                />
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => saveGameName(game.id)}
+                                  className="text-green-500 hover:text-green-600"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={cancelEditing}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-lg">{game.game_name}</h3>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => startEditing(game)}
+                                  className="h-7 w-7"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                            
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              {game.manufacturer && (
+                                <p><strong>Manufacturer:</strong> {game.manufacturer}</p>
+                              )}
+                              {game.version_model_year && (
+                                <p><strong>Version:</strong> {game.version_model_year}</p>
+                              )}
+                              {game.fec_location_name && (
+                                <p><strong>Location:</strong> {game.fec_location_name}</p>
+                              )}
+                              {game.input_by && (
+                                <p><strong>Input By:</strong> {game.input_by}</p>
+                              )}
+                              <p className="text-xs text-muted-foreground/70">
+                                Submitted: {new Date(game.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => deleteGame(game.id, game.game_name)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

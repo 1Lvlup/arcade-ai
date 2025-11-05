@@ -291,6 +291,8 @@ const Index = () => {
                           <animate attributeName="stop-color" values="hsl(188 100% 60% / 0.3); hsl(0 0% 100% / 0.3); hsl(24 100% 54% / 0.3); hsl(188 100% 60% / 0.3)" dur="15s" repeatCount="indefinite" />
                         </stop>
                       </linearGradient>
+                      
+                      {/* Glows */}
                       <filter id="glow">
                         <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
                         <feMerge>
@@ -298,8 +300,8 @@ const Index = () => {
                           <feMergeNode in="SourceGraphic"/>
                         </feMerge>
                       </filter>
-                      <filter id="nodeGlow">
-                        <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+                      <filter id="haloGlow">
+                        <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
                         <feMerge>
                           <feMergeNode in="coloredBlur"/>
                           <feMergeNode in="SourceGraphic"/>
@@ -307,74 +309,96 @@ const Index = () => {
                       </filter>
                     </defs>
                     
-                    {/* Connecting Path - Cyan with gradient pulse */}
+                    {/* Static Faint Connection Spine - Cyan */}
                     <path
-                      d="M 150 50 L 150 120 L 150 200 L 150 280 L 150 360"
-                      stroke="url(#pathGradient)"
-                      strokeWidth="2"
+                      d="M 150 50 L 150 370"
+                      stroke="hsl(188 100% 60%)"
+                      strokeWidth="1"
+                      strokeOpacity="0.1"
                       fill="none"
                     />
                     
-                    {/* Animated traveling dot - Orange with cyan trail */}
-                    <circle r="5" fill="hsl(24 100% 54%)" filter="url(#glow)">
-                      <animateMotion
+                    {/* Animated Traveling Pulse Line - Orange */}
+                    <path
+                      d="M 150 50 L 150 130 L 150 210 L 150 290 L 150 370"
+                      stroke="hsl(24 100% 54%)"
+                      strokeWidth="3"
+                      fill="none"
+                      strokeLinecap="round"
+                      filter="url(#glow)"
+                      strokeDasharray="320"
+                      strokeDashoffset="320"
+                      opacity="0.8"
+                    >
+                      <animate
+                        attributeName="stroke-dashoffset"
+                        values="320; 0"
                         dur="10s"
                         repeatCount="indefinite"
-                        path="M 150 50 L 150 120 L 150 200 L 150 280 L 150 360"
                       />
-                    </circle>
+                    </path>
                     
-                    {/* Nodes with glow */}
+                    {/* Nodes with sequential glow halos */}
                     {/* Query Node */}
-                    <g transform="translate(150, 50)">
-                      <circle r="32" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300" />
-                      <circle r="32" fill="none" stroke="hsl(24 100% 54%)" strokeWidth="0" opacity="0">
-                        <animate attributeName="r" values="32;40;32" dur="10s" begin="0s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="0s" repeatCount="indefinite" />
+                    <g transform="translate(150, 50)" className="group cursor-pointer">
+                      <title>Technician asks a question</title>
+                      {/* Halo glow - appears when pulse hits */}
+                      <circle r="45" fill="none" stroke="hsl(188 100% 60%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
+                        <animate attributeName="opacity" values="0;0.6;0" dur="10s" begin="0s" repeatCount="indefinite" />
+                        <animate attributeName="r" values="32;45;32" dur="10s" begin="0s" repeatCount="indefinite" />
                       </circle>
+                      <circle r="32" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300 group-hover:stroke-[hsl(24_100%_54%)]" />
                       <text y="5" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="13" fontWeight="600">Query</text>
                     </g>
                     
                     {/* Vector Retrieval Node */}
-                    <g transform="translate(150, 130)">
-                      <circle r="38" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" />
-                      <circle r="38" fill="none" stroke="hsl(24 100% 54%)" strokeWidth="0" opacity="0">
-                        <animate attributeName="r" values="38;46;38" dur="10s" begin="2.5s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="2.5s" repeatCount="indefinite" />
+                    <g transform="translate(150, 130)" className="group cursor-pointer">
+                      <title>Retrieves relevant context from vector memory</title>
+                      {/* Halo glow */}
+                      <circle r="50" fill="none" stroke="hsl(188 100% 60%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
+                        <animate attributeName="opacity" values="0;0.6;0" dur="10s" begin="2s" repeatCount="indefinite" />
+                        <animate attributeName="r" values="38;50;38" dur="10s" begin="2s" repeatCount="indefinite" />
                       </circle>
+                      <circle r="38" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300 group-hover:stroke-[hsl(24_100%_54%)]" />
                       <text y="-5" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="12" fontWeight="600">Vector</text>
                       <text y="8" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="12" fontWeight="600">Retrieval</text>
                     </g>
                     
                     {/* Reasoning Engine Node */}
-                    <g transform="translate(150, 210)">
-                      <circle r="38" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" />
-                      <circle r="38" fill="none" stroke="hsl(24 100% 54%)" strokeWidth="0" opacity="0">
-                        <animate attributeName="r" values="38;46;38" dur="10s" begin="5s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="5s" repeatCount="indefinite" />
+                    <g transform="translate(150, 210)" className="group cursor-pointer">
+                      <title>Fuses context with reasoning models</title>
+                      {/* Halo glow */}
+                      <circle r="50" fill="none" stroke="hsl(188 100% 60%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
+                        <animate attributeName="opacity" values="0;0.6;0" dur="10s" begin="4s" repeatCount="indefinite" />
+                        <animate attributeName="r" values="38;50;38" dur="10s" begin="4s" repeatCount="indefinite" />
                       </circle>
+                      <circle r="38" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300 group-hover:stroke-[hsl(24_100%_54%)]" />
                       <text y="-5" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="12" fontWeight="600">Reasoning</text>
                       <text y="8" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="12" fontWeight="600">Engine</text>
                     </g>
                     
-                    {/* Answer Node - Highlighted with Orange */}
-                    <g transform="translate(150, 290)">
-                      <circle r="38" fill="hsl(24 100% 54% / 0.15)" stroke="hsl(24 100% 54%)" strokeWidth="3" filter="url(#glow)" />
-                      <circle r="38" fill="none" stroke="hsl(24 100% 54%)" strokeWidth="0" opacity="0">
-                        <animate attributeName="r" values="38;46;38" dur="10s" begin="7.5s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0;1;0" dur="10s" begin="7.5s" repeatCount="indefinite" />
+                    {/* Answer Node - Orange Highlight (Intelligence Achieved) */}
+                    <g transform="translate(150, 290)" className="group cursor-pointer">
+                      <title>Step-by-step, machine-specific answer delivered</title>
+                      {/* Orange halo glow */}
+                      <circle r="50" fill="none" stroke="hsl(24 100% 54%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
+                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="6s" repeatCount="indefinite" />
+                        <animate attributeName="r" values="38;50;38" dur="10s" begin="6s" repeatCount="indefinite" />
                       </circle>
+                      <circle r="38" fill="hsl(24 100% 54% / 0.15)" stroke="hsl(24 100% 54%)" strokeWidth="3" filter="url(#glow)" className="transition-all duration-300" />
                       <text y="-5" textAnchor="middle" fill="hsl(24 100% 54%)" fontSize="11" fontWeight="700">Step-by-Step</text>
                       <text y="8" textAnchor="middle" fill="hsl(24 100% 54%)" fontSize="11" fontWeight="700">Answer</text>
                     </g>
                     
                     {/* Feedback Loop Node */}
-                    <g transform="translate(150, 370)">
-                      <circle r="32" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" />
-                      <circle r="32" fill="none" stroke="hsl(24 100% 54%)" strokeWidth="0" opacity="0">
-                        <animate attributeName="r" values="32;40;32" dur="10s" begin="9s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="9s" repeatCount="indefinite" />
+                    <g transform="translate(150, 370)" className="group cursor-pointer">
+                      <title>Every verified fix strengthens the network</title>
+                      {/* Faint halo glow */}
+                      <circle r="45" fill="none" stroke="hsl(188 100% 60%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
+                        <animate attributeName="opacity" values="0;0.4;0" dur="10s" begin="8s" repeatCount="indefinite" />
+                        <animate attributeName="r" values="32;45;32" dur="10s" begin="8s" repeatCount="indefinite" />
                       </circle>
+                      <circle r="32" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300 group-hover:stroke-[hsl(24_100%_54%)]" />
                       <text y="-5" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="11" fontWeight="600">Feedback</text>
                       <text y="7" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="11" fontWeight="600">Network</text>
                     </g>

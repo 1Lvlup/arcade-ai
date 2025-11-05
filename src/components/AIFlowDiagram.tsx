@@ -8,9 +8,9 @@ interface Node {
 
 const nodes: Node[] = [
   { label: 'Query', tooltip: 'Technician asks a question', y: 40 },
-  { label: 'Vector Retrieval', tooltip: 'Retrieves relevant context from vector memory', y: 140 },
-  { label: 'Reasoning Engine', tooltip: 'Fuses context with reasoning models', y: 240 },
-  { label: 'Step-by-Step Answer', tooltip: 'Machine-specific answer delivered', y: 320 },
+  { label: 'Vector Retrieval', tooltip: 'Retrieves relevant context from vector memory', y: 145 },
+  { label: 'Reasoning Engine', tooltip: 'Fuses context with reasoning models', y: 250 },
+  { label: 'Step-by-Step Answer', tooltip: 'Machine-specific answer delivered', y: 355 },
   { label: 'Feedback Network', tooltip: 'Every verified fix strengthens the network', y: 460 },
 ];
 
@@ -118,7 +118,7 @@ export const AIFlowDiagram = () => {
           style={{ stroke: 'rgba(0, 229, 255, 0.13)' }}
           strokeWidth="2"
           fill="none"
-          d="M300 40 L300 140 L300 240 L300 320 L300 460"
+          d="M300 40 L300 145 L300 250 L300 355 L300 460"
         />
 
         {/* Cyan pulse */}
@@ -129,7 +129,7 @@ export const AIFlowDiagram = () => {
           strokeLinecap="round"
           fill="none"
           filter="url(#glowCyan)"
-          d="M300 40 L300 140 L300 240 L300 320 L300 460"
+          d="M300 40 L300 145 L300 250 L300 355 L300 460"
           pathLength="1000"
         />
 
@@ -141,7 +141,7 @@ export const AIFlowDiagram = () => {
           strokeLinecap="round"
           fill="none"
           filter="url(#glowOrange)"
-          d="M300 40 L300 140 L300 240 L300 320 L300 460"
+          d="M300 40 L300 145 L300 250 L300 355 L300 460"
           pathLength="1000"
         />
 

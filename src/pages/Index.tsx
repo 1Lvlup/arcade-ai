@@ -164,8 +164,8 @@ const Index = () => {
                   <TrendingUp className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-white px-2 text-inset">LEVEL UP</div>
-                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2 text-inset">The first shared intelligence built for the arcade industry</div>
+                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-white px-2 text-inset italic">LEVEL UP</div>
+                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2 text-inset italic">The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>
             </div>
@@ -177,7 +177,7 @@ const Index = () => {
                   <Zap className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3 px-4">
-                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2 text-inset">Harnessing AI's capbilities to end downtime for good.</div>
+                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2 text-inset italic">Harnessing AI's capbilities to end downtime for good.</div>
                 </div>
               </div>
             </div>
@@ -189,7 +189,7 @@ const Index = () => {
                   <CheckCircle className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-3">
-                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2 text-inset">Every real solution strengthens the network — Creating a living database for every game, every fix</div>
+                  <div className="font-goodtimes font-normal text-base sm:text-lg lg:text-xl text-orange px-2 text-inset italic">Every real solution strengthens the network — Creating a living database for every game, every fix</div>
                 </div>
               </div>
             </div>

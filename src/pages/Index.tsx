@@ -155,7 +155,7 @@ const Index = () => {
           </div>
         </section>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 mt-12 sm:mt-16 lg:mt-24 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mt-12 sm:mt-16 lg:mt-24 max-w-5xl mx-auto">
             <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-glow hover-lift" style={{
             borderColor: 'hsl(0 0% 100% / 0.3)'
           }}>
@@ -200,7 +200,14 @@ const Index = () => {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Testimonials & ROI Section */}
-        <section className="py-12 sm:py-16 lg:py-24">
+        <section className="py-12 sm:py-16 lg:py-24 relative">
+          {/* Title on border */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            <div className="bg-background px-6 py-2">
+              <h2 className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-orange text-recessed-orange underline whitespace-nowrap">REAL RESULTS</h2>
+            </div>
+          </div>
+          
           <div className="premium-card p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl relative" style={{
             borderColor: 'hsl(24 100% 54% / 1)',
             boxShadow: '0 0 20px hsl(24 100% 54% / 0.5), 0 0 40px hsl(24 100% 54% / 0.3)'
@@ -218,9 +225,9 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-tech font-bold text-foreground">$400-$900/week</h3>
-                  <p className="text-base sm:text-lg text-primary font-body leading-relaxed">
-                    <span className="font-semibold">Average savings per arcade using Level Up. (Limited Testing)</span>
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-bold text-foreground">$400-$900/week</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
+                    Average savings per arcade using Level Up. (Limited Testing)
                   </p>
                 </div>
               </div>
@@ -233,9 +240,9 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Clock className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-tech font-bold text-foreground">3-6 Months</h3>
-                  <p className="text-base sm:text-lg text-primary font-body leading-relaxed">
-                    <span className="font-semibold">Typical payback period based on reduced technician time and uptime improvements.</span>
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-bold text-foreground">3-6 Months</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
+                    Typical payback period based on reduced technician time and uptime improvements.
                   </p>
                 </div>
               </div>
@@ -248,9 +255,9 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Target className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-tech font-bold text-foreground">Up to 40%</h3>
-                  <p className="text-base sm:text-lg text-primary font-body leading-relaxed">
-                    <span className="font-semibold">Cut technician labor time</span> — Focus on new revenue, not repeat fixes.
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-bold text-foreground">Up to 40%</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
+                    Cut technician labor time — Focus on new revenue, not repeat fixes.
                   </p>
                 </div>
               </div>

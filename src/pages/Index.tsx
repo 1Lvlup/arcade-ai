@@ -215,10 +215,27 @@ const Index = () => {
         </div>
 
         {/* How It Works Section */}
-        <section className="pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 relative">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 relative overflow-hidden">
+          {/* Optional Network Grid Background */}
+          <div className="absolute inset-0 opacity-5">
+            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="networkGrid" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <circle cx="50" cy="50" r="1" fill="hsl(var(--orange))" opacity="0.3">
+                    <animate attributeName="opacity" values="0.3;0.6;0.3" dur="5s" repeatCount="indefinite" />
+                  </circle>
+                  <line x1="50" y1="50" x2="100" y2="50" stroke="hsl(var(--orange))" strokeWidth="0.5" opacity="0.2" />
+                  <line x1="50" y1="50" x2="50" y2="100" stroke="hsl(var(--orange))" strokeWidth="0.5" opacity="0.2" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#networkGrid)" />
+            </svg>
+          </div>
+
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             {/* Section Header */}
             <div className="text-center mb-12 sm:mb-16">
+              <p className="text-sm sm:text-base text-primary/50 font-sans mb-3 italic">Inside the Intelligence</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-tech font-bold mb-4">
                 <span className="text-white text-recessed-white">HOW IT</span> <span className="text-orange text-recessed-orange">WORKS</span>
               </h2>
@@ -230,30 +247,30 @@ const Index = () => {
             {/* Two-Column Explainer */}
             <div className="grid lg:grid-cols-5 gap-8 lg:gap-16 mb-16 sm:mb-20 lg:mb-24 max-w-7xl mx-auto">
               {/* Left Column - Text Content (60%) */}
-              <div className="lg:col-span-3 space-y-6">
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">Specialized parsing and embedding.</h3>
+              <div className="lg:col-span-3 space-y-8">
+                <div className="pb-6 border-b border-primary/10">
+                  <h3 className="text-xl font-semibold text-orange mb-3 font-tech">Specialized parsing and embedding.</h3>
                   <p className="text-base sm:text-lg text-primary/80 leading-relaxed font-sans">
                     Each manual, wiring diagram, error code, and field report is converted by a custom parsing pipeline built for arcade logic. Data is embedded into high-dimensional vector space, so the system searches by <span className="text-orange font-medium">meaning</span>, not keywords.
                   </p>
                 </div>
                 
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">AI trained the hard way — over and over.</h3>
+                <div className="pb-6 border-b border-primary/10">
+                  <h3 className="text-xl font-semibold text-primary/90 mb-3 font-tech">AI trained the hard way — over and over.</h3>
                   <p className="text-base sm:text-lg text-primary/80 leading-relaxed font-sans">
                     Thousands of real troubleshooting sessions and verified fixes are refined and re-embedded repeatedly. When confidence drops, we rebuild. The result: a neural index that answers with certainty, not guesses.
                   </p>
                 </div>
                 
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">True RAG intelligence.</h3>
+                <div className="pb-6 border-b border-primary/10">
+                  <h3 className="text-xl font-semibold text-orange mb-3 font-tech">True RAG intelligence.</h3>
                   <p className="text-base sm:text-lg text-primary/80 leading-relaxed font-sans">
                     On every question, Level Up retrieves the most relevant technical context from vector memory, fuses it with reasoning models, and returns a step-by-step, machine-specific answer.
                   </p>
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">The outcome.</h3>
+                  <h3 className="text-2xl font-semibold text-white mb-3 font-tech italic">The outcome.</h3>
                   <p className="text-base sm:text-lg text-primary/80 leading-relaxed font-sans">
                     An ever-evolving system designed to eliminate downtime—faster, smarter, and more accurate each time it's used.
                   </p>
@@ -263,7 +280,7 @@ const Index = () => {
               {/* Right Column - Animated Diagram (40%) */}
               <div className="lg:col-span-2 flex items-center justify-center">
                 <div className="relative w-full max-w-md">
-                  <svg viewBox="0 0 300 400" className="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
+                  <svg viewBox="0 0 300 420" className="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" style={{ stopColor: 'hsl(var(--orange))', stopOpacity: 0.8 }} />
@@ -276,115 +293,196 @@ const Index = () => {
                           <feMergeNode in="SourceGraphic"/>
                         </feMerge>
                       </filter>
+                      <filter id="nodeGlow">
+                        <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+                        <feMerge>
+                          <feMergeNode in="coloredBlur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
                     </defs>
                     
-                    {/* Animated Path */}
+                    {/* Connecting Path */}
                     <path
-                      d="M 150 40 L 150 100 L 150 160 L 150 220 L 150 280 L 150 340"
-                      stroke="url(#pathGradient)"
+                      d="M 150 50 L 150 120 L 150 200 L 150 280 L 150 360"
+                      stroke="hsl(var(--orange) / 0.3)"
                       strokeWidth="2"
                       fill="none"
-                      strokeDasharray="8 4"
-                      className="animate-pulse"
-                      style={{ animationDuration: '3s' }}
                     />
                     
-                    {/* Nodes */}
+                    {/* Animated traveling dot */}
+                    <circle r="4" fill="hsl(var(--orange))" filter="url(#glow)">
+                      <animateMotion
+                        dur="10s"
+                        repeatCount="indefinite"
+                        path="M 150 50 L 150 120 L 150 200 L 150 280 L 150 360"
+                      />
+                    </circle>
+                    
+                    {/* Nodes with glow on hover effect */}
                     {/* Query Node */}
-                    <g transform="translate(150, 40)">
-                      <circle r="30" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
-                      <text y="5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="12" fontWeight="600">Query</text>
+                    <g transform="translate(150, 50)">
+                      <circle r="32" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" className="transition-all duration-300" />
+                      <circle r="32" fill="none" stroke="hsl(var(--orange))" strokeWidth="0" opacity="0" className="node-pulse">
+                        <animate attributeName="r" values="32;40;32" dur="10s" begin="0s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="0s" repeatCount="indefinite" />
+                      </circle>
+                      <text y="5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="13" fontWeight="600">Query</text>
                     </g>
                     
                     {/* Vector Retrieval Node */}
-                    <g transform="translate(150, 120)">
-                      <circle r="35" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
-                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Vector</text>
-                      <text y="8" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Retrieval</text>
+                    <g transform="translate(150, 130)">
+                      <circle r="38" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
+                      <circle r="38" fill="none" stroke="hsl(var(--orange))" strokeWidth="0" opacity="0">
+                        <animate attributeName="r" values="38;46;38" dur="10s" begin="2.5s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="2.5s" repeatCount="indefinite" />
+                      </circle>
+                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="12" fontWeight="600">Vector</text>
+                      <text y="8" textAnchor="middle" fill="hsl(var(--primary))" fontSize="12" fontWeight="600">Retrieval</text>
                     </g>
                     
                     {/* Reasoning Engine Node */}
-                    <g transform="translate(150, 200)">
-                      <circle r="35" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
-                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Reasoning</text>
-                      <text y="8" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Engine</text>
+                    <g transform="translate(150, 210)">
+                      <circle r="38" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
+                      <circle r="38" fill="none" stroke="hsl(var(--orange))" strokeWidth="0" opacity="0">
+                        <animate attributeName="r" values="38;46;38" dur="10s" begin="5s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="5s" repeatCount="indefinite" />
+                      </circle>
+                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="12" fontWeight="600">Reasoning</text>
+                      <text y="8" textAnchor="middle" fill="hsl(var(--primary))" fontSize="12" fontWeight="600">Engine</text>
                     </g>
                     
                     {/* Answer Node - Highlighted */}
-                    <g transform="translate(150, 280)">
-                      <circle r="35" fill="hsl(var(--orange) / 0.2)" stroke="hsl(var(--orange))" strokeWidth="3" filter="url(#glow)" />
+                    <g transform="translate(150, 290)">
+                      <circle r="38" fill="hsl(var(--orange) / 0.2)" stroke="hsl(var(--orange))" strokeWidth="3" filter="url(#glow)" />
+                      <circle r="38" fill="none" stroke="hsl(var(--orange))" strokeWidth="0" opacity="0">
+                        <animate attributeName="r" values="38;46;38" dur="10s" begin="7.5s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0;1;0" dur="10s" begin="7.5s" repeatCount="indefinite" />
+                      </circle>
                       <text y="-5" textAnchor="middle" fill="hsl(var(--orange))" fontSize="11" fontWeight="700">Step-by-Step</text>
                       <text y="8" textAnchor="middle" fill="hsl(var(--orange))" fontSize="11" fontWeight="700">Answer</text>
                     </g>
                     
                     {/* Feedback Loop Node */}
-                    <g transform="translate(150, 360)">
-                      <circle r="30" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
-                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="10" fontWeight="600">Feedback</text>
-                      <text y="6" textAnchor="middle" fill="hsl(var(--primary))" fontSize="10" fontWeight="600">Network</text>
+                    <g transform="translate(150, 370)">
+                      <circle r="32" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
+                      <circle r="32" fill="none" stroke="hsl(var(--orange))" strokeWidth="0" opacity="0">
+                        <animate attributeName="r" values="32;40;32" dur="10s" begin="9s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="9s" repeatCount="indefinite" />
+                      </circle>
+                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Feedback</text>
+                      <text y="7" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Network</text>
                     </g>
                   </svg>
                 </div>
               </div>
             </div>
 
-            {/* Four System Cards */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12 max-w-7xl mx-auto">
-              {/* Card 1 */}
-              <div className="premium-card p-6 rounded-xl relative overflow-hidden group transition-all duration-300 border-t-2 border-orange/50" style={{
-                boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
-              }}>
-                <div className="relative z-10">
-                  <div className="mb-4 p-3 rounded-full bg-orange/10 w-fit">
-                    <Code className="h-6 w-6 text-orange" />
+            {/* Timeline-Style System Cards */}
+            <div className="relative max-w-7xl mx-auto mb-12 sm:mb-16">
+              {/* Cards Container */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4">
+                {/* Card 1 - Parsing */}
+                <div className="relative premium-card p-5 rounded-xl group transition-all duration-300 border-t-2 border-orange/50" style={{
+                  boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
+                }}>
+                  <div className="relative z-10">
+                    <div className="mb-3 p-2.5 rounded-full bg-orange/10 w-fit">
+                      <Code className="h-5 w-5 text-orange" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-white mb-2 font-tech">Parsing</h3>
+                    <p className="text-xs text-primary/70 leading-relaxed">Converts chaotic data into structure.</p>
                   </div>
-                  <h3 className="text-base font-semibold text-white mb-2 font-tech">Specialized Parsing</h3>
-                  <p className="text-sm text-primary/70 leading-relaxed">Converts messy docs into structured, machine-readable knowledge.</p>
+                  <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Arrow to next card - Desktop only */}
+                  <div className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-20">
+                    <div className="relative">
+                      <div className="w-6 h-0.5 bg-orange/30" />
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-r-2 border-t-2 border-orange/30 rotate-45" />
+                      {/* Animated dot */}
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 bg-orange rounded-full">
+                        <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite" begin="0s" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
 
-              {/* Card 2 */}
-              <div className="premium-card p-6 rounded-xl relative overflow-hidden group transition-all duration-300 border-t-2 border-orange/50" style={{
-                boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
-              }}>
-                <div className="relative z-10">
-                  <div className="mb-4 p-3 rounded-full bg-orange/10 w-fit">
-                    <Database className="h-6 w-6 text-orange" />
+                {/* Card 2 - Embedding */}
+                <div className="relative premium-card p-5 rounded-xl group transition-all duration-300 border-t-2 border-orange/50" style={{
+                  boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
+                }}>
+                  <div className="relative z-10">
+                    <div className="mb-3 p-2.5 rounded-full bg-orange/10 w-fit">
+                      <Database className="h-5 w-5 text-orange" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-white mb-2 font-tech">Embedding</h3>
+                    <p className="text-xs text-primary/70 leading-relaxed">Translates meaning into memory.</p>
                   </div>
-                  <h3 className="text-base font-semibold text-white mb-2 font-tech">Domain Embeddings</h3>
-                  <p className="text-sm text-primary/70 leading-relaxed">Maps arcade concepts into meaning-space for precise recall.</p>
+                  <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Arrow to next card - Desktop only */}
+                  <div className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-20">
+                    <div className="relative">
+                      <div className="w-6 h-0.5 bg-orange/30" />
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-r-2 border-t-2 border-orange/30 rotate-45" />
+                      {/* Animated dot */}
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 bg-orange rounded-full">
+                        <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite" begin="1s" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
 
-              {/* Card 3 */}
-              <div className="premium-card p-6 rounded-xl relative overflow-hidden group transition-all duration-300 border-t-2 border-orange/50" style={{
-                boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
-              }}>
-                <div className="relative z-10">
-                  <div className="mb-4 p-3 rounded-full bg-orange/10 w-fit">
-                    <Zap className="h-6 w-6 text-orange" />
+                {/* Card 3 - RAG Engine */}
+                <div className="relative premium-card p-5 rounded-xl group transition-all duration-300 border-t-2 border-orange/50" style={{
+                  boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
+                }}>
+                  <div className="relative z-10">
+                    <div className="mb-3 p-2.5 rounded-full bg-orange/10 w-fit">
+                      <Zap className="h-5 w-5 text-orange" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-white mb-2 font-tech">RAG Engine</h3>
+                    <p className="text-xs text-primary/70 leading-relaxed">Retrieves and reasons in real time.</p>
                   </div>
-                  <h3 className="text-base font-semibold text-white mb-2 font-tech">RAG Orchestration</h3>
-                  <p className="text-sm text-primary/70 leading-relaxed">Retrieves, reasons, and composes exact steps for every game.</p>
+                  <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Arrow to next card - Desktop only */}
+                  <div className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-20">
+                    <div className="relative">
+                      <div className="w-6 h-0.5 bg-orange/30" />
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-r-2 border-t-2 border-orange/30 rotate-45" />
+                      {/* Animated dot */}
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 bg-orange rounded-full">
+                        <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite" begin="2s" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
 
-              {/* Card 4 */}
-              <div className="premium-card p-6 rounded-xl relative overflow-hidden group transition-all duration-300 border-t-2 border-orange/50" style={{
-                boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
-              }}>
-                <div className="relative z-10">
-                  <div className="mb-4 p-3 rounded-full bg-orange/10 w-fit">
-                    <TrendingUp className="h-6 w-6 text-orange" />
+                {/* Card 4 - Continuous Learning */}
+                <div className="relative premium-card p-5 rounded-xl group transition-all duration-300 border-t-2 border-orange/50" style={{
+                  boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
+                }}>
+                  <div className="relative z-10">
+                    <div className="mb-3 p-2.5 rounded-full bg-orange/10 w-fit">
+                      <TrendingUp className="h-5 w-5 text-orange" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-white mb-2 font-tech">Continuous Learning</h3>
+                    <p className="text-xs text-primary/70 leading-relaxed">Every fix strengthens the system.</p>
                   </div>
-                  <h3 className="text-base font-semibold text-white mb-2 font-tech">Continuous Learning</h3>
-                  <p className="text-sm text-primary/70 leading-relaxed">Every verified fix strengthens the network and builds exact solutions.</p>
+                  <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
+            </div>
+
+            {/* Closing Cinematic Line */}
+            <div className="text-center mb-12 sm:mb-16">
+              <p className="text-base sm:text-lg text-primary/60 font-sans italic" style={{
+                textShadow: '0 0 20px hsl(var(--orange) / 0.3)'
+              }}>
+                The system doesn't just respond — it remembers.
+              </p>
             </div>
 
             {/* Micro-Proof Strip */}

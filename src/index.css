@@ -243,6 +243,20 @@
     filter: brightness(0.75);
   }
   
+  /* Recessed text effect for white text */
+  .text-recessed-white {
+    text-shadow: 
+      1px 1px 2px hsl(0 0% 0% / 0.9),
+      -1px -1px 2px hsl(0 0% 100% / 0.15);
+  }
+  
+  /* Recessed text effect for orange text */
+  .text-recessed-orange {
+    text-shadow: 
+      1px 1px 2px hsl(0 0% 0% / 0.9),
+      -1px -1px 2px hsl(24 100% 80% / 0.2);
+  }
+  
   .tech-card {
     @apply rounded-xl backdrop-blur-sm;
     background: hsl(0 0% 0%);

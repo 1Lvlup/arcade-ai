@@ -24,6 +24,7 @@ export default {
         'goodtimes': ['good-times', 'sans-serif'],
         'ethnocentric': ['ethnocentric', 'sans-serif'],
         'sofachrome': ['sofachrome', 'sans-serif'],
+        'kallisto': ['kallisto', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

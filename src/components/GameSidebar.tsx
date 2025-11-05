@@ -97,8 +97,8 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
   return (
     <div
       className={cn(
-        "fixed left-0 top-14 h-[calc(100vh-3.5rem)] bg-black/95 border-r border-white/10 transition-all duration-300 z-50 backdrop-blur-sm",
-        isExpanded ? "w-80" : "w-14"
+        "fixed left-0 top-14 h-[calc(100vh-3.5rem)] bg-black/60 border-r border-white/10 transition-all duration-300 z-40 backdrop-blur-md",
+        isExpanded ? "w-80 opacity-100" : "w-14 opacity-0 hover:opacity-100"
       )}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}

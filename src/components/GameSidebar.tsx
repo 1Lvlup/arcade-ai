@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Gamepad2, ChevronRight } from 'lucide-react';
+import { Gamepad2, ChevronRight, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface Manual {
   id: string;
@@ -19,6 +21,7 @@ interface GameSidebarProps {
 }
 
 export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarProps) {
+  const navigate = useNavigate();
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -102,22 +105,34 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
     >
       {/* Collapsed Icon State */}
       <div className={cn(
-        "flex items-center justify-center h-16 border-b border-white/10",
-        isExpanded && "justify-start px-4"
+        "flex items-center h-16 border-b border-white/10",
+        isExpanded ? "justify-between px-4" : "justify-center"
       )}>
-        <Gamepad2 className={cn(
-          "text-orange transition-all",
-          isExpanded ? "h-6 w-6" : "h-7 w-7"
-        )} />
+        <div className="flex items-center gap-3">
+          <Gamepad2 className={cn(
+            "text-orange transition-all",
+            isExpanded ? "h-6 w-6" : "h-7 w-7"
+          )} />
+          {isExpanded && (
+            <div className="overflow-hidden">
+              <h2 className="font-tech text-sm font-bold text-white whitespace-nowrap">
+                SELECT GAME
+              </h2>
+              <p className="text-xs text-cyan/60 whitespace-nowrap">
+                {manuals.length} available
+              </p>
+            </div>
+          )}
+        </div>
         {isExpanded && (
-          <div className="ml-3 flex-1 overflow-hidden">
-            <h2 className="font-tech text-sm font-bold text-white whitespace-nowrap">
-              SELECT GAME
-            </h2>
-            <p className="text-xs text-cyan/60 whitespace-nowrap">
-              {manuals.length} available
-            </p>
-          </div>
+          <Button
+            onClick={() => navigate('/add-games')}
+            size="icon"
+            className="h-8 w-8 bg-orange hover:bg-orange/80 text-white flex-shrink-0"
+            title="Request new game"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
         )}
       </div>
 

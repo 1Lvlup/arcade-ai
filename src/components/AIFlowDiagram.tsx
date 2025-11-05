@@ -85,26 +85,11 @@ export const AIFlowDiagram = () => {
 
   return (
     <div className="relative max-w-[720px] mx-auto mt-6">
-      {/* Labels */}
-      <div className="absolute left-0 top-0 w-[180px] font-semibold">
-        {nodes.map((node, i) => (
-          <div
-            key={i}
-            ref={el => labelRefs.current[i] = el}
-            className="absolute left-0 -translate-y-1/2 px-4 py-2.5 border border-cyan rounded-full bg-black/35 whitespace-nowrap transition-all duration-300 shadow-[0_0_0_1px_#000_inset] label-item text-[16px] font-semibold"
-            style={{ top: `${node.y}px`, color: 'hsl(var(--brand-white))' }}
-            title={node.tooltip}
-          >
-            {node.label}
-          </div>
-        ))}
-      </div>
-
-      {/* SVG Flow */}
+      {/* SVG Flow with overlaid labels */}
       <svg 
-        viewBox="0 0 260 560" 
+        viewBox="0 0 400 560" 
         preserveAspectRatio="xMidYMid meet"
-        className="block ml-[210px] w-[400px] h-[560px] overflow-visible"
+        className="block w-full h-[560px] overflow-visible"
       >
         <defs>
           <linearGradient id="gradCyan" x1="0" x2="0" y1="0" y2="1">
@@ -133,7 +118,7 @@ export const AIFlowDiagram = () => {
           style={{ stroke: 'rgba(0, 229, 255, 0.13)' }}
           strokeWidth="2"
           fill="none"
-          d="M130 40 L130 140 L130 240 L130 320 L130 460"
+          d="M300 40 L300 140 L300 240 L300 320 L300 460"
         />
 
         {/* Cyan pulse */}
@@ -144,7 +129,7 @@ export const AIFlowDiagram = () => {
           strokeLinecap="round"
           fill="none"
           filter="url(#glowCyan)"
-          d="M130 40 L130 140 L130 240 L130 320 L130 460"
+          d="M300 40 L300 140 L300 240 L300 320 L300 460"
           pathLength="1000"
         />
 
@@ -156,23 +141,41 @@ export const AIFlowDiagram = () => {
           strokeLinecap="round"
           fill="none"
           filter="url(#glowOrange)"
-          d="M130 40 L130 140 L130 240 L130 320 L130 460"
+          d="M300 40 L300 140 L300 240 L300 320 L300 460"
           pathLength="1000"
         />
 
         {/* Node circles */}
         {nodes.map((node, i) => (
-          <circle
-            key={i}
-            ref={el => nodeRefs.current[i] = el}
-            className="fill-black/55 stroke-cyan transition-all duration-300 node-circle"
-            strokeWidth="2"
-            filter="url(#glowCyan)"
-            r="22"
-            cx="130"
-            cy={node.y}
-            style={{ stroke: '#00E5FF' }}
-          />
+          <g key={i}>
+            <circle
+              ref={el => nodeRefs.current[i] = el}
+              className="fill-black/55 stroke-cyan transition-all duration-300 node-circle"
+              strokeWidth="2"
+              filter="url(#glowCyan)"
+              r="22"
+              cx="300"
+              cy={node.y}
+              style={{ stroke: '#00E5FF' }}
+            />
+            {/* Label text positioned to the left of circles */}
+            <text
+              ref={el => labelRefs.current[i] = el as any}
+              x="270"
+              y={node.y}
+              textAnchor="end"
+              dominantBaseline="middle"
+              className="transition-all duration-300 label-item pointer-events-none select-none"
+              style={{ 
+                fill: 'hsl(var(--brand-white))', 
+                fontSize: '16px', 
+                fontWeight: 600,
+                fontFamily: 'inherit'
+              }}
+            >
+              {node.label}
+            </text>
+          </g>
         ))}
       </svg>
 
@@ -180,11 +183,8 @@ export const AIFlowDiagram = () => {
         .ai-flow, .ai-flow * { font-family: inherit; }
         
         .label-item.active-orange {
-          border-color: #FF6A00;
-          box-shadow: 
-            0 0 26px 6px color-mix(in oklab, #FF6A00 30%, transparent),
-            0 0 0 1px #000 inset;
-          color: hsl(var(--brand-white));
+          fill: hsl(var(--brand-white));
+          filter: drop-shadow(0 0 8px #FF6A00);
         }
 
         .node-circle.active-orange {

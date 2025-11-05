@@ -164,7 +164,7 @@ const Index = () => {
                   <TrendingUp className="h-10 w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
+                  <div className="font-ethnocentric font-extralight text-base sm:text-lg lg:text-xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
                   <div className="font-kallisto font-extrabold text-base sm:text-lg lg:text-xl text-orange px-2 text-recessed-orange">The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>
@@ -177,7 +177,7 @@ const Index = () => {
                   <Brain className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">ZERO DOWNTIME</div>
+                  <div className="font-ethnocentric font-extralight text-base sm:text-lg lg:text-xl text-white px-2 text-recessed-white underline">ZERO DOWNTIME</div>
                   <div className="font-kallisto font-extrabold text-base sm:text-lg lg:text-xl text-orange px-2 text-recessed-orange">Harnessing AI's capbilities to end downtime for good.</div>
                 </div>
               </div>
@@ -190,7 +190,7 @@ const Index = () => {
                   <Database className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">SHARED INTELLIGENCE</div>
+                  <div className="font-ethnocentric font-extralight text-base sm:text-lg lg:text-xl text-white px-2 text-recessed-white underline">SHARED INTELLIGENCE</div>
                   <div className="font-kallisto font-extrabold text-base sm:text-lg lg:text-xl text-orange px-2 text-recessed-orange">A living, evolving database for every game and every fix.</div>
                 </div>
               </div>
@@ -201,16 +201,18 @@ const Index = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Testimonials & ROI Section */}
         <section className="py-12 sm:py-16 lg:py-24">
-          <div className="premium-card p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl relative">
+          <div className="premium-card p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl relative" style={{
+            borderColor: 'hsl(24 100% 54% / 1)',
+            boxShadow: '0 0 20px hsl(24 100% 54% / 0.5), 0 0 40px hsl(24 100% 54% / 0.3)'
+          }}>
             {/* Connecting lines */}
             <div className="absolute top-1/2 left-[33%] w-[10%] h-0.5 bg-gradient-to-r from-orange/50 to-orange/30 hidden lg:block"></div>
             <div className="absolute top-1/2 right-[33%] w-[10%] h-0.5 bg-gradient-to-l from-orange/50 to-orange/30 hidden lg:block"></div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12 items-center relative">
               {/* Left Side - Revenue Stats */}
-              <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-                borderColor: 'hsl(183 100% 50% / 0.3)',
-                boxShadow: '0 0 20px hsl(24 100% 54% / 0.4), 0 0 40px hsl(24 100% 54% / 0.2)'
+              <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group hover-glow" style={{
+                borderColor: 'hsl(183 100% 50% / 0.3)'
               }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
@@ -224,9 +226,8 @@ const Index = () => {
               </div>
 
               {/* Center - Payback Period */}
-              <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-                borderColor: 'hsl(183 100% 50% / 0.3)',
-                boxShadow: '0 0 20px hsl(24 100% 54% / 0.4), 0 0 40px hsl(24 100% 54% / 0.2)'
+              <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group hover-glow" style={{
+                borderColor: 'hsl(183 100% 50% / 0.3)'
               }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
@@ -240,9 +241,8 @@ const Index = () => {
               </div>
 
               {/* Right Side - Labor Time Savings */}
-              <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-                borderColor: 'hsl(183 100% 50% / 0.3)',
-                boxShadow: '0 0 20px hsl(24 100% 54% / 0.4), 0 0 40px hsl(24 100% 54% / 0.2)'
+              <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group hover-glow" style={{
+                borderColor: 'hsl(183 100% 50% / 0.3)'
               }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">

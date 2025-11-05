@@ -164,7 +164,7 @@ const Index = () => {
                   <TrendingUp className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-sofachrome font-extralight text-base sm:text-lg lg:text-xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
+                  <div className="font-sofachrome font-normal text-base sm:text-lg lg:text-xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
                   <div className="font-kallisto font-extrabold text-base sm:text-lg lg:text-xl text-orange px-2 text-recessed-orange">The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>

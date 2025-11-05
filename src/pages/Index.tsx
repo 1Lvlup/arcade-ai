@@ -209,7 +209,8 @@ const Index = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12 items-center relative">
               {/* Left Side - Revenue Stats */}
               <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-                borderColor: 'hsl(183 100% 50% / 0.3)'
+                borderColor: 'hsl(183 100% 50% / 0.3)',
+                boxShadow: '0 0 20px hsl(24 100% 54% / 0.4), 0 0 40px hsl(24 100% 54% / 0.2)'
               }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
@@ -224,7 +225,8 @@ const Index = () => {
 
               {/* Center - Payback Period */}
               <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-                borderColor: 'hsl(183 100% 50% / 0.3)'
+                borderColor: 'hsl(183 100% 50% / 0.3)',
+                boxShadow: '0 0 20px hsl(24 100% 54% / 0.4), 0 0 40px hsl(24 100% 54% / 0.2)'
               }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
@@ -239,7 +241,8 @@ const Index = () => {
 
               {/* Right Side - Labor Time Savings */}
               <div className="stat-card p-6 sm:p-8 lg:p-10 rounded-2xl hover-lift group" style={{
-                borderColor: 'hsl(183 100% 50% / 0.3)'
+                borderColor: 'hsl(183 100% 50% / 0.3)',
+                boxShadow: '0 0 20px hsl(24 100% 54% / 0.4), 0 0 40px hsl(24 100% 54% / 0.2)'
               }}>
                 <div className="space-y-4 sm:space-y-5 lg:space-y-6">
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">

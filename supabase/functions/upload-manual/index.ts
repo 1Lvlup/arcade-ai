@@ -20,6 +20,31 @@ async function pollJobCompletion(jobId: string, manualId: string, tenantId: stri
   
   await supabase.rpc('set_tenant_context', { tenant_id: tenantId })
   
+  // Check if this job is already being polled by looking for recent updates
+  const { data: existingStatus } = await supabase
+    .from('processing_status')
+    .select('updated_at, status')
+    .eq('job_id', jobId)
+    .single()
+  
+  if (existingStatus) {
+    const updatedAt = new Date(existingStatus.updated_at)
+    const now = new Date()
+    const secondsSinceUpdate = (now.getTime() - updatedAt.getTime()) / 1000
+    
+    // If updated within last 10 seconds, another polling task is active
+    if (secondsSinceUpdate < 10 && existingStatus.status === 'processing') {
+      console.log(`⏭️ Job ${jobId} is already being polled, skipping duplicate`)
+      return
+    }
+    
+    // If job is already completed or errored, don't poll again
+    if (existingStatus.status === 'completed' || existingStatus.status === 'error') {
+      console.log(`⏭️ Job ${jobId} already finished with status: ${existingStatus.status}`)
+      return
+    }
+  }
+  
   console.log(`📊 Starting polling for job: ${jobId}`)
   const maxAttempts = 240 // 20 minutes max (5 second intervals)
   let attempt = 0

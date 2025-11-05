@@ -5,11 +5,14 @@ import { StructuredCSVImport } from '@/components/StructuredCSVImport';
 import { ManualMerge } from '@/components/ManualMerge';
 import { SharedHeader } from '@/components/SharedHeader';
 import { LiveProcessingMonitor } from '@/components/LiveProcessingMonitor';
+import { CleanupStaleJobs } from '@/components/CleanupStaleJobs';
 
 const ManualManagement = () => {
   return (
     <div className="min-h-screen mesh-gradient">
-      <SharedHeader showBackButton={true} />
+      <SharedHeader showBackButton={true}>
+        <CleanupStaleJobs />
+      </SharedHeader>
 
       <main className="container mx-auto px-8 py-12">
         <div className="section-spacing space-y-12">

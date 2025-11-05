@@ -33,12 +33,15 @@ export const LiveProcessingMonitor = () => {
   const [logs, setLogs] = useState<Record<string, ProcessingLog[]>>({});
 
   useEffect(() => {
-    // Load initial active jobs
+    // Load initial active jobs (only from last 6 hours)
     const loadActiveJobs = async () => {
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      
       const { data } = await supabase
         .from('processing_status')
         .select('*')
         .in('status', ['starting', 'processing', 'pending'])
+        .gte('created_at', sixHoursAgo)
         .order('created_at', { ascending: false })
         .limit(5);
 

@@ -161,3 +161,6 @@ verify_jwt = true
 
 [functions.search-unified]
 verify_jwt = false
+
+[functions.cleanup-stale-jobs]
+verify_jwt = true

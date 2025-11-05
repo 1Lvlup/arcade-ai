@@ -164,8 +164,8 @@ const Index = () => {
                   <TrendingUp className="h-10 w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-normal text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
-                  <div className="font-kallisto font-semibold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">The first shared intelligence built for the arcade industry</div>
+                  <div className="font-tech text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange underline">LEVEL UP</div>
+                  <div className="font-body text-sm sm:text-base lg:text-lg text-white px-2">The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>
             </div>
@@ -177,8 +177,8 @@ const Index = () => {
                   <Brain className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-normal text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">ZERO DOWNTIME</div>
-                  <div className="font-kallisto font-semibold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">Harnessing AI's capbilities to end downtime for good.</div>
+                  <div className="font-tech text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange underline">ZERO DOWNTIME</div>
+                  <div className="font-body text-sm sm:text-base lg:text-lg text-white px-2">Harnessing AI's capbilities to end downtime for good.</div>
                 </div>
               </div>
             </div>
@@ -190,8 +190,8 @@ const Index = () => {
                   <Database className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-normal text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">SHARED INTELLIGENCE</div>
-                  <div className="font-kallisto font-semibold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">A living, evolving database for every game and every fix.</div>
+                  <div className="font-tech text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange underline">SHARED INTELLIGENCE</div>
+                  <div className="font-body text-sm sm:text-base lg:text-lg text-white px-2">A living, evolving database for every game and every fix.</div>
                 </div>
               </div>
             </div>
@@ -200,17 +200,15 @@ const Index = () => {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Testimonials & ROI Section */}
-        <section className="pt-24 sm:pt-32 lg:pt-40 pb-12 sm:pb-16 lg:pb-24 relative">
-          {/* Title on border */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-            <div className="bg-background px-6 py-3">
-              <div className="text-center space-y-2">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-tech font-bold text-orange text-recessed-orange underline whitespace-nowrap" style={{
-                  letterSpacing: '0.02em'
-                }}>REAL RESULTS</h2>
-                <p className="text-sm sm:text-base text-primary font-body">Proven ROI from live deployments</p>
-              </div>
-            </div>
+        <section className="pt-12 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 lg:pb-24 relative">
+          {/* Title above section */}
+          <div className="text-center mb-8 sm:mb-10 lg:mb-12">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-tech font-bold underline whitespace-nowrap" style={{
+              letterSpacing: '0.02em'
+            }}>
+              <span className="text-white text-recessed-white">REAL</span> <span className="text-orange text-recessed-orange">RESULTS</span>
+            </h2>
+            <p className="text-sm sm:text-base text-primary font-body mt-3">Proven ROI from live deployments</p>
           </div>
           
           <div className="premium-card p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl relative" style={{
@@ -230,8 +228,8 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-normal text-foreground">$400-$900/week</h3>
-                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-semibold text-orange leading-relaxed">
+                  <h3 className="text-2xl sm:text-3xl font-tech text-orange text-recessed-orange">$400-$900/week</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-body text-white leading-relaxed">
                     Average savings per arcade using Level Up. (Limited Testing)
                   </p>
                 </div>
@@ -245,8 +243,8 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Clock className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-normal text-foreground">3-6 Months</h3>
-                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-semibold text-orange leading-relaxed">
+                  <h3 className="text-2xl sm:text-3xl font-tech text-orange text-recessed-orange">3-6 Months</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-body text-white leading-relaxed">
                     Typical payback period based on reduced technician time and uptime improvements.
                   </p>
                 </div>
@@ -260,8 +258,8 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Target className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-normal text-foreground">Up to 40%</h3>
-                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-semibold text-orange leading-relaxed">
+                  <h3 className="text-2xl sm:text-3xl font-tech text-orange text-recessed-orange">Up to 40%</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-body text-white leading-relaxed">
                     Cut technician labor time — Focus on new revenue, not repeat fixes.
                   </p>
                 </div>

@@ -250,28 +250,28 @@ const Index = () => {
               {/* Left Column - Text Content (55%) */}
               <div className="lg:col-span-3 space-y-6 max-w-2xl">
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="font-bold mb-2 font-['Space_Grotesk'] text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">Specialized</span> parsing and embedding.</h3>
+                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">Specialized</span> parsing and embedding.</h3>
                   <p className="font-sans" style={{ fontSize: '18px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     Each manual, wiring diagram, error code, and field report is converted by a custom parsing pipeline built for arcade logic. Data is embedded into high-dimensional <span className="text-cyan font-medium">vector space</span>, so the system searches by <span className="text-cyan font-medium">meaning</span>, not keywords.
                   </p>
                 </div>
                 
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="font-bold mb-2 font-['Space_Grotesk'] text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">AI trained</span> the hard way — over and over.</h3>
+                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">AI trained</span> the hard way — over and over.</h3>
                   <p className="font-sans" style={{ fontSize: '18px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     Thousands of real troubleshooting sessions and verified fixes are refined and re-embedded repeatedly. When confidence drops, we rebuild. The result: a neural index that answers with <span className="text-cyan font-medium">certainty</span>, not guesses.
                   </p>
                 </div>
                 
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="font-bold mb-2 font-['Space_Grotesk'] text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">True</span> RAG intelligence.</h3>
+                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">True</span> RAG intelligence.</h3>
                   <p className="font-sans" style={{ fontSize: '18px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     On every question, Level Up retrieves the most relevant <span className="text-cyan font-medium">technical context</span> from vector memory, fuses it with <span className="text-cyan font-medium">reasoning models</span>, and returns a step-by-step, machine-specific answer.
                   </p>
                 </div>
                 
                 <div>
-                  <h3 className="font-bold mb-2 font-['Space_Grotesk'] text-white italic" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">The outcome.</span></h3>
+                  <h3 className="font-bold mb-2 font-tech text-white italic" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">The outcome.</span></h3>
                   <p className="font-sans" style={{ fontSize: '18px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     An ever-evolving system designed to eliminate downtime—faster, smarter, and more accurate each time it's used.
                   </p>

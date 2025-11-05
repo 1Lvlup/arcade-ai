@@ -401,14 +401,20 @@ const Index = () => {
 
             {/* Micro-Proof Strip */}
             <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-12">
-              <div className="px-4 py-2 rounded-full bg-white border-[6px] border-[#FF6A00]">
-                <span className="text-xs sm:text-sm text-black font-semibold">2.3 ms response time</span>
+              <div className="px-6 py-3 rounded-full bg-white border-[6px] border-[#FF6A00] w-[280px] flex items-center justify-center" style={{
+                boxShadow: 'inset 0 -3px 0 0 rgba(0,0,0,0.2), inset 0 3px 0 0 rgba(255,255,255,0.4), 0 4px 8px rgba(255,106,0,0.3)'
+              }}>
+                <span className="text-xs sm:text-sm text-black font-semibold text-center">2.3 ms response time</span>
               </div>
-              <div className="px-4 py-2 rounded-full bg-white border-[6px] border-[#FF6A00]">
-                <span className="text-xs sm:text-sm text-black font-semibold">99.9% accuracy on known fixes</span>
+              <div className="px-6 py-3 rounded-full bg-white border-[6px] border-[#FF6A00] w-[280px] flex items-center justify-center" style={{
+                boxShadow: 'inset 0 -3px 0 0 rgba(0,0,0,0.2), inset 0 3px 0 0 rgba(255,255,255,0.4), 0 4px 8px rgba(255,106,0,0.3)'
+              }}>
+                <span className="text-xs sm:text-sm text-black font-semibold text-center">99.9% accuracy on known fixes</span>
               </div>
-              <div className="px-4 py-2 rounded-full bg-white border-[6px] border-[#FF6A00]">
-                <span className="text-xs sm:text-sm text-black font-semibold">1.2B+ parameters accessed per query</span>
+              <div className="px-6 py-3 rounded-full bg-white border-[6px] border-[#FF6A00] w-[280px] flex items-center justify-center" style={{
+                boxShadow: 'inset 0 -3px 0 0 rgba(0,0,0,0.2), inset 0 3px 0 0 rgba(255,255,255,0.4), 0 4px 8px rgba(255,106,0,0.3)'
+              }}>
+                <span className="text-xs sm:text-sm text-black font-semibold text-center">1.2B+ parameters accessed per query</span>
               </div>
             </div>
 

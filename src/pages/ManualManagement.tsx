@@ -4,6 +4,7 @@ import { BulkManualImport } from '@/components/BulkManualImport';
 import { StructuredCSVImport } from '@/components/StructuredCSVImport';
 import { ManualMerge } from '@/components/ManualMerge';
 import { SharedHeader } from '@/components/SharedHeader';
+import { LiveProcessingMonitor } from '@/components/LiveProcessingMonitor';
 
 const ManualManagement = () => {
   return (
@@ -74,6 +75,9 @@ const ManualManagement = () => {
           </div>
         </div>
       </main>
+      
+      {/* Live Processing Monitor */}
+      <LiveProcessingMonitor />
     </div>
   );
 };

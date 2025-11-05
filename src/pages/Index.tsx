@@ -9,6 +9,7 @@ import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
 import { Footer } from '@/components/Footer';
 import { AIFlowDiagram } from '@/components/AIFlowDiagram';
+import { LiveProcessingMonitor } from '@/components/LiveProcessingMonitor';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 const Index = () => {
@@ -125,7 +126,7 @@ const Index = () => {
 
       <main className="max-w-[2000px] mx-auto">
         {/* Hero CTA Section */}
-        <section className="w-full py-12 sm:py-16 lg:py-20">
+        <section className="w-full py-20 sm:py-24 lg:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center px-4 gap-3">
               {!user && <p className="text-sm sm:text-base text-primary/80 font-semibold">
@@ -705,6 +706,9 @@ const Index = () => {
         </div>
       </main>
       <Footer />
+      
+      {/* Live Processing Monitor */}
+      {user && <LiveProcessingMonitor />}
     </div>;
 };
 export default Index;

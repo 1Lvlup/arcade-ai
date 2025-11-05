@@ -8,6 +8,7 @@ import { ProcessingMonitor } from '@/components/ProcessingMonitor';
 import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
 import { Footer } from '@/components/Footer';
+import { AIFlowDiagram } from '@/components/AIFlowDiagram';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 const Index = () => {
@@ -246,8 +247,8 @@ const Index = () => {
 
             {/* Two-Column Explainer */}
             <div className="grid lg:grid-cols-5 gap-8 lg:gap-16 mb-16 sm:mb-20 lg:mb-24 max-w-7xl mx-auto">
-              {/* Left Column - Text Content (60%) */}
-              <div className="lg:col-span-3 space-y-8">
+              {/* Left Column - Text Content (55%) */}
+              <div className="lg:col-span-3 space-y-8 max-w-2xl">
                 <div className="pb-6 border-b border-cyan/10">
                   <h3 className="text-xl font-semibold text-white mb-3 font-tech">Specialized parsing and embedding.</h3>
                   <p className="text-base sm:text-lg leading-relaxed font-sans" style={{ color: 'hsl(210 15% 75%)' }}>
@@ -277,133 +278,9 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Right Column - Animated Diagram (40%) */}
+              {/* Right Column - AI Flow Diagram (45%) */}
               <div className="lg:col-span-2 flex items-center justify-center">
-                <div className="relative w-full max-w-md">
-                  <svg viewBox="0 0 300 420" className="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      {/* Gradient pulse that cycles cyan -> white -> orange */}
-                      <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="hsl(188 100% 60%)">
-                          <animate attributeName="stop-color" values="hsl(188 100% 60%); hsl(0 0% 100%); hsl(24 100% 54%); hsl(188 100% 60%)" dur="15s" repeatCount="indefinite" />
-                        </stop>
-                        <stop offset="100%" stopColor="hsl(188 100% 60%)" stopOpacity="0.3">
-                          <animate attributeName="stop-color" values="hsl(188 100% 60% / 0.3); hsl(0 0% 100% / 0.3); hsl(24 100% 54% / 0.3); hsl(188 100% 60% / 0.3)" dur="15s" repeatCount="indefinite" />
-                        </stop>
-                      </linearGradient>
-                      
-                      {/* Glows */}
-                      <filter id="glow">
-                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                        <feMerge>
-                          <feMergeNode in="coloredBlur"/>
-                          <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                      </filter>
-                      <filter id="haloGlow">
-                        <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
-                        <feMerge>
-                          <feMergeNode in="coloredBlur"/>
-                          <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                      </filter>
-                    </defs>
-                    
-                    {/* Static Faint Connection Spine - Cyan */}
-                    <path
-                      d="M 150 50 L 150 370"
-                      stroke="hsl(188 100% 60%)"
-                      strokeWidth="1"
-                      strokeOpacity="0.1"
-                      fill="none"
-                    />
-                    
-                    {/* Animated Traveling Pulse Line - Orange */}
-                    <path
-                      d="M 150 50 L 150 130 L 150 210 L 150 290 L 150 370"
-                      stroke="hsl(24 100% 54%)"
-                      strokeWidth="3"
-                      fill="none"
-                      strokeLinecap="round"
-                      filter="url(#glow)"
-                      strokeDasharray="320"
-                      strokeDashoffset="320"
-                      opacity="0.8"
-                    >
-                      <animate
-                        attributeName="stroke-dashoffset"
-                        values="320; 0"
-                        dur="10s"
-                        repeatCount="indefinite"
-                      />
-                    </path>
-                    
-                    {/* Nodes with sequential glow halos */}
-                    {/* Query Node */}
-                    <g transform="translate(150, 50)" className="group cursor-pointer">
-                      <title>Technician asks a question</title>
-                      {/* Halo glow - appears when pulse hits */}
-                      <circle r="45" fill="none" stroke="hsl(188 100% 60%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
-                        <animate attributeName="opacity" values="0;0.6;0" dur="10s" begin="0s" repeatCount="indefinite" />
-                        <animate attributeName="r" values="32;45;32" dur="10s" begin="0s" repeatCount="indefinite" />
-                      </circle>
-                      <circle r="32" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300 group-hover:stroke-[hsl(24_100%_54%)]" />
-                      <text y="5" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="13" fontWeight="600">Query</text>
-                    </g>
-                    
-                    {/* Vector Retrieval Node */}
-                    <g transform="translate(150, 130)" className="group cursor-pointer">
-                      <title>Retrieves relevant context from vector memory</title>
-                      {/* Halo glow */}
-                      <circle r="50" fill="none" stroke="hsl(188 100% 60%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
-                        <animate attributeName="opacity" values="0;0.6;0" dur="10s" begin="2s" repeatCount="indefinite" />
-                        <animate attributeName="r" values="38;50;38" dur="10s" begin="2s" repeatCount="indefinite" />
-                      </circle>
-                      <circle r="38" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300 group-hover:stroke-[hsl(24_100%_54%)]" />
-                      <text y="-5" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="12" fontWeight="600">Vector</text>
-                      <text y="8" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="12" fontWeight="600">Retrieval</text>
-                    </g>
-                    
-                    {/* Reasoning Engine Node */}
-                    <g transform="translate(150, 210)" className="group cursor-pointer">
-                      <title>Fuses context with reasoning models</title>
-                      {/* Halo glow */}
-                      <circle r="50" fill="none" stroke="hsl(188 100% 60%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
-                        <animate attributeName="opacity" values="0;0.6;0" dur="10s" begin="4s" repeatCount="indefinite" />
-                        <animate attributeName="r" values="38;50;38" dur="10s" begin="4s" repeatCount="indefinite" />
-                      </circle>
-                      <circle r="38" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300 group-hover:stroke-[hsl(24_100%_54%)]" />
-                      <text y="-5" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="12" fontWeight="600">Reasoning</text>
-                      <text y="8" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="12" fontWeight="600">Engine</text>
-                    </g>
-                    
-                    {/* Answer Node - Orange Highlight (Intelligence Achieved) */}
-                    <g transform="translate(150, 290)" className="group cursor-pointer">
-                      <title>Step-by-step, machine-specific answer delivered</title>
-                      {/* Orange halo glow */}
-                      <circle r="50" fill="none" stroke="hsl(24 100% 54%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
-                        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="6s" repeatCount="indefinite" />
-                        <animate attributeName="r" values="38;50;38" dur="10s" begin="6s" repeatCount="indefinite" />
-                      </circle>
-                      <circle r="38" fill="hsl(24 100% 54% / 0.15)" stroke="hsl(24 100% 54%)" strokeWidth="3" filter="url(#glow)" className="transition-all duration-300" />
-                      <text y="-5" textAnchor="middle" fill="hsl(24 100% 54%)" fontSize="11" fontWeight="700">Step-by-Step</text>
-                      <text y="8" textAnchor="middle" fill="hsl(24 100% 54%)" fontSize="11" fontWeight="700">Answer</text>
-                    </g>
-                    
-                    {/* Feedback Loop Node */}
-                    <g transform="translate(150, 370)" className="group cursor-pointer">
-                      <title>Every verified fix strengthens the network</title>
-                      {/* Faint halo glow */}
-                      <circle r="45" fill="none" stroke="hsl(188 100% 60%)" strokeWidth="0" opacity="0" filter="url(#haloGlow)">
-                        <animate attributeName="opacity" values="0;0.4;0" dur="10s" begin="8s" repeatCount="indefinite" />
-                        <animate attributeName="r" values="32;45;32" dur="10s" begin="8s" repeatCount="indefinite" />
-                      </circle>
-                      <circle r="32" fill="hsl(210 33% 9%)" stroke="hsl(188 100% 60%)" strokeWidth="2" className="transition-all duration-300 group-hover:stroke-[hsl(24_100%_54%)]" />
-                      <text y="-5" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="11" fontWeight="600">Feedback</text>
-                      <text y="7" textAnchor="middle" fill="hsl(0 0% 100%)" fontSize="11" fontWeight="600">Network</text>
-                    </g>
-                  </svg>
-                </div>
+                <AIFlowDiagram />
               </div>
             </div>
 

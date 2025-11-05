@@ -164,8 +164,8 @@ const Index = () => {
                   <TrendingUp className="h-10 w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
-                  <div className="font-kallisto font-extrabold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">The first shared intelligence built for the arcade industry</div>
+                  <div className="font-ethnocentric font-normal text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
+                  <div className="font-kallisto font-semibold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>
             </div>
@@ -177,8 +177,8 @@ const Index = () => {
                   <Brain className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">ZERO DOWNTIME</div>
-                  <div className="font-kallisto font-extrabold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">Harnessing AI's capbilities to end downtime for good.</div>
+                  <div className="font-ethnocentric font-normal text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">ZERO DOWNTIME</div>
+                  <div className="font-kallisto font-semibold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">Harnessing AI's capbilities to end downtime for good.</div>
                 </div>
               </div>
             </div>
@@ -190,8 +190,8 @@ const Index = () => {
                   <Database className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">SHARED INTELLIGENCE</div>
-                  <div className="font-kallisto font-extrabold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">A living, evolving database for every game and every fix.</div>
+                  <div className="font-ethnocentric font-normal text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">SHARED INTELLIGENCE</div>
+                  <div className="font-kallisto font-semibold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">A living, evolving database for every game and every fix.</div>
                 </div>
               </div>
             </div>
@@ -200,11 +200,11 @@ const Index = () => {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Testimonials & ROI Section */}
-        <section className="py-12 sm:py-16 lg:py-24 relative">
+        <section className="py-16 sm:py-20 lg:py-32 relative">
           {/* Title on border */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
             <div className="bg-background px-6 py-2">
-              <h2 className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-orange text-recessed-orange underline whitespace-nowrap">REAL RESULTS</h2>
+              <h2 className="font-ethnocentric font-normal text-xl sm:text-2xl lg:text-3xl text-orange text-recessed-orange underline whitespace-nowrap tracking-wider">REAL RESULTS</h2>
             </div>
           </div>
           
@@ -225,8 +225,8 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-light text-foreground">$400-$900/week</h3>
-                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-normal text-foreground">$400-$900/week</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-semibold text-orange leading-relaxed">
                     Average savings per arcade using Level Up. (Limited Testing)
                   </p>
                 </div>
@@ -240,8 +240,8 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Clock className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-light text-foreground">3-6 Months</h3>
-                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-normal text-foreground">3-6 Months</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-semibold text-orange leading-relaxed">
                     Typical payback period based on reduced technician time and uptime improvements.
                   </p>
                 </div>
@@ -255,8 +255,8 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Target className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-light text-foreground">Up to 40%</h3>
-                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-normal text-foreground">Up to 40%</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-kallisto font-semibold text-orange leading-relaxed">
                     Cut technician labor time — Focus on new revenue, not repeat fixes.
                   </p>
                 </div>

@@ -139,8 +139,8 @@ const Index = () => {
               {!user && <p className="text-sm sm:text-base text-primary/80 font-semibold">
                   Create your free account to get started →
                 </p>}
-              <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-8 sm:px-14 md:px-22 lg:px-32 py-5 sm:py-7 md:py-8 lg:py-9 text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold relative group overflow-hidden w-full sm:w-auto" style={{
-                  boxShadow: '0 0 30px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4), 0 0 90px hsl(24 100% 54% / 0.2)',
+              <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-8 sm:px-14 md:px-22 lg:px-32 py-5 sm:py-7 md:py-8 lg:py-9 text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold relative group overflow-hidden w-full sm:w-auto border-2 border-orange" style={{
+                  boxShadow: '0 0 20px hsl(24 100% 54% / 0.9), 0 0 40px hsl(24 100% 54% / 0.7), 0 0 60px hsl(24 100% 54% / 0.5)',
                   marginBottom: '1rem'
                 }}>
                 <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
@@ -392,7 +392,7 @@ const Index = () => {
 
             {/* Closing Cinematic Line */}
             <div className="text-center mb-12 sm:mb-16">
-              <p className="text-base sm:text-lg text-primary/60 font-sans italic" style={{
+              <p className="text-base sm:text-lg text-white font-sans italic" style={{
                 textShadow: '0 0 20px hsl(var(--orange) / 0.3)'
               }}>
                 The system doesn't just respond — it remembers.
@@ -401,14 +401,14 @@ const Index = () => {
 
             {/* Micro-Proof Strip */}
             <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-12">
-              <div className="px-4 py-2 rounded-full bg-card/50 border border-primary/10">
-                <span className="text-xs sm:text-sm text-primary/60">2.3 ms response time</span>
+              <div className="px-4 py-2 rounded-full bg-white border-2 border-[#FF6A00]">
+                <span className="text-xs sm:text-sm text-black font-semibold">2.3 ms response time</span>
               </div>
-              <div className="px-4 py-2 rounded-full bg-card/50 border border-primary/10">
-                <span className="text-xs sm:text-sm text-primary/60">99.9% accuracy on known fixes</span>
+              <div className="px-4 py-2 rounded-full bg-white border-2 border-[#FF6A00]">
+                <span className="text-xs sm:text-sm text-black font-semibold">99.9% accuracy on known fixes</span>
               </div>
-              <div className="px-4 py-2 rounded-full bg-card/50 border border-primary/10">
-                <span className="text-xs sm:text-sm text-primary/60">1.2B+ parameters accessed per query</span>
+              <div className="px-4 py-2 rounded-full bg-white border-2 border-[#FF6A00]">
+                <span className="text-xs sm:text-sm text-black font-semibold">1.2B+ parameters accessed per query</span>
               </div>
             </div>
 

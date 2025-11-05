@@ -22,6 +22,7 @@ export default {
         'fuel': ['pf-fuel-grime', 'sans-serif'],
         'posterama': ['posterama-2001', 'sans-serif'],
         'goodtimes': ['good-times', 'sans-serif'],
+        'ethnocentric': ['ethnocentric', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

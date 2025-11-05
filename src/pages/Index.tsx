@@ -225,7 +225,7 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-bold text-foreground">$400-$900/week</h3>
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-light text-foreground">$400-$900/week</h3>
                   <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
                     Average savings per arcade using Level Up. (Limited Testing)
                   </p>
@@ -240,7 +240,7 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Clock className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-bold text-foreground">3-6 Months</h3>
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-light text-foreground">3-6 Months</h3>
                   <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
                     Typical payback period based on reduced technician time and uptime improvements.
                   </p>
@@ -255,7 +255,7 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Target className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-bold text-foreground">Up to 40%</h3>
+                  <h3 className="text-2xl sm:text-3xl font-ethnocentric font-light text-foreground">Up to 40%</h3>
                   <p className="text-sm sm:text-base lg:text-lg font-kallisto font-extrabold text-orange leading-relaxed">
                     Cut technician labor time — Focus on new revenue, not repeat fixes.
                   </p>

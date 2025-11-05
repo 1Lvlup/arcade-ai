@@ -200,13 +200,16 @@ const Index = () => {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Testimonials & ROI Section */}
-        <section className="py-12 sm:py-16 lg:py-24 relative">
+        <section className="pt-24 sm:pt-32 lg:pt-40 pb-12 sm:pb-16 lg:pb-24 relative">
           {/* Title on border */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-            <div className="bg-background px-6 py-2">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-tech font-bold text-orange underline whitespace-nowrap" style={{
-                letterSpacing: '0.02em'
-              }}>REAL RESULTS</h2>
+            <div className="bg-background px-6 py-3">
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-tech font-bold text-orange text-recessed-orange underline whitespace-nowrap" style={{
+                  letterSpacing: '0.02em'
+                }}>REAL RESULTS</h2>
+                <p className="text-sm sm:text-base text-primary font-body">Proven ROI from live deployments</p>
+              </div>
             </div>
           </div>
           

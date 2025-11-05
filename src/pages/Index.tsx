@@ -237,7 +237,7 @@ const Index = () => {
             {/* Section Header */}
             <div className="text-center mb-12 sm:mb-16">
               <p className="text-base sm:text-lg font-sans mb-3 italic" style={{ color: '#80E9FF', lineHeight: 1.4 }}>Inside the Intelligence</p>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-tech font-bold mb-4">
+              <h2 className="text-3xl sm:text-4xl md:text-6xl font-tech font-bold mb-4">
                 <span className="text-white text-recessed-white">HOW IT</span> <span className="text-orange text-recessed-orange">WORKS</span>
               </h2>
               <p className="text-lg sm:text-xl font-sans max-w-3xl mx-auto" style={{ color: '#80E9FF', lineHeight: 1.4 }}>
@@ -250,29 +250,29 @@ const Index = () => {
               {/* Left Column - Text Content (55%) */}
               <div className="lg:col-span-3 space-y-6 max-w-2xl">
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}>Specialized parsing and embedding.</h3>
-                  <p className="font-sans" style={{ fontSize: '16px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
+                  <h3 className="font-bold mb-2 font-['Space_Grotesk'] text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">Specialized</span> parsing and embedding.</h3>
+                  <p className="font-sans" style={{ fontSize: '18px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     Each manual, wiring diagram, error code, and field report is converted by a custom parsing pipeline built for arcade logic. Data is embedded into high-dimensional <span className="text-cyan font-medium">vector space</span>, so the system searches by <span className="text-cyan font-medium">meaning</span>, not keywords.
                   </p>
                 </div>
                 
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}>AI trained the hard way — over and over.</h3>
-                  <p className="font-sans" style={{ fontSize: '16px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
+                  <h3 className="font-bold mb-2 font-['Space_Grotesk'] text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">AI trained</span> the hard way — over and over.</h3>
+                  <p className="font-sans" style={{ fontSize: '18px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     Thousands of real troubleshooting sessions and verified fixes are refined and re-embedded repeatedly. When confidence drops, we rebuild. The result: a neural index that answers with <span className="text-cyan font-medium">certainty</span>, not guesses.
                   </p>
                 </div>
                 
                 <div className="pb-6 border-b border-cyan/10">
-                  <h3 className="font-bold mb-2 font-tech text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}>True RAG intelligence.</h3>
-                  <p className="font-sans" style={{ fontSize: '16px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
+                  <h3 className="font-bold mb-2 font-['Space_Grotesk'] text-white" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">True</span> RAG intelligence.</h3>
+                  <p className="font-sans" style={{ fontSize: '18px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     On every question, Level Up retrieves the most relevant <span className="text-cyan font-medium">technical context</span> from vector memory, fuses it with <span className="text-cyan font-medium">reasoning models</span>, and returns a step-by-step, machine-specific answer.
                   </p>
                 </div>
                 
                 <div>
-                  <h3 className="font-bold mb-2 font-tech text-white italic" style={{ fontSize: '20px', lineHeight: 1.3 }}>The outcome.</h3>
-                  <p className="font-sans" style={{ fontSize: '16px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
+                  <h3 className="font-bold mb-2 font-['Space_Grotesk'] text-white italic" style={{ fontSize: '20px', lineHeight: 1.3 }}><span className="text-[#FF6A00]">The outcome.</span></h3>
+                  <p className="font-sans" style={{ fontSize: '18px', lineHeight: 1.6, color: '#A9B6C7', margin: 0 }}>
                     An ever-evolving system designed to eliminate downtime—faster, smarter, and more accurate each time it's used.
                   </p>
                 </div>
@@ -289,15 +289,15 @@ const Index = () => {
               {/* Cards Container */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4">
                 {/* Card 1 - Parsing */}
-                <div className="relative premium-card p-5 rounded-xl group transition-all duration-300 border-t border-orange/25 hover:border-orange/50" style={{
+                <div className="relative premium-card p-6 rounded-xl group transition-all duration-300 border-t border-orange/25 hover:border-orange/50" style={{
                   boxShadow: '0 4px 20px hsl(24 100% 54% / 0.05)'
                 }}>
                   <div className="relative z-10">
                     <div className="mb-3 p-2.5 rounded-full bg-cyan/10 w-fit">
-                      <Code className="h-5 w-5 text-cyan" />
+                      <Code className="h-6 w-6 text-cyan" />
                     </div>
-                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '16px' }}>Parsing</h3>
-                    <p className="m-0" style={{ fontSize: '14px', lineHeight: 1.5, color: '#A9B6C7' }}>Converts chaotic data into structure.</p>
+                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '18px' }}>Parsing</h3>
+                    <p className="m-0" style={{ fontSize: '16px', lineHeight: 1.5, color: '#A9B6C7' }}>Converts chaotic data into structure.</p>
                   </div>
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300" style={{
                     boxShadow: '0 0 30px hsl(24 100% 54% / 0.3)'
@@ -317,15 +317,15 @@ const Index = () => {
                 </div>
 
                 {/* Card 2 - Embedding */}
-                <div className="relative premium-card p-5 rounded-xl group transition-all duration-300 border-t border-orange/25 hover:border-orange/50" style={{
+                <div className="relative premium-card p-6 rounded-xl group transition-all duration-300 border-t border-orange/25 hover:border-orange/50" style={{
                   boxShadow: '0 4px 20px hsl(24 100% 54% / 0.05)'
                 }}>
                   <div className="relative z-10">
                     <div className="mb-3 p-2.5 rounded-full bg-cyan/10 w-fit">
-                      <Database className="h-5 w-5 text-cyan" />
+                      <Database className="h-6 w-6 text-cyan" />
                     </div>
-                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '16px' }}>Embedding</h3>
-                    <p className="m-0" style={{ fontSize: '14px', lineHeight: 1.5, color: '#A9B6C7' }}>Translates meaning into memory.</p>
+                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '18px' }}>Embedding</h3>
+                    <p className="m-0" style={{ fontSize: '16px', lineHeight: 1.5, color: '#A9B6C7' }}>Translates meaning into memory.</p>
                   </div>
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300" style={{
                     boxShadow: '0 0 30px hsl(24 100% 54% / 0.3)'
@@ -345,15 +345,15 @@ const Index = () => {
                 </div>
 
                 {/* Card 3 - RAG Engine */}
-                <div className="relative premium-card p-5 rounded-xl group transition-all duration-300 border-t border-orange/25 hover:border-orange/50" style={{
+                <div className="relative premium-card p-6 rounded-xl group transition-all duration-300 border-t border-orange/25 hover:border-orange/50" style={{
                   boxShadow: '0 4px 20px hsl(24 100% 54% / 0.05)'
                 }}>
                   <div className="relative z-10">
                     <div className="mb-3 p-2.5 rounded-full bg-cyan/10 w-fit">
-                      <Zap className="h-5 w-5 text-cyan" />
+                      <Zap className="h-6 w-6 text-cyan" />
                     </div>
-                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '16px' }}>RAG Engine</h3>
-                    <p className="m-0" style={{ fontSize: '14px', lineHeight: 1.5, color: '#A9B6C7' }}>Retrieves and reasons in real time.</p>
+                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '18px' }}>RAG Engine</h3>
+                    <p className="m-0" style={{ fontSize: '16px', lineHeight: 1.5, color: '#A9B6C7' }}>Retrieves and reasons in real time.</p>
                   </div>
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300" style={{
                     boxShadow: '0 0 30px hsl(24 100% 54% / 0.3)'
@@ -373,15 +373,15 @@ const Index = () => {
                 </div>
 
                 {/* Card 4 - Continuous Learning */}
-                <div className="relative premium-card p-5 rounded-xl group transition-all duration-300 border-t border-orange/25 hover:border-orange/50" style={{
+                <div className="relative premium-card p-6 rounded-xl group transition-all duration-300 border-t border-orange/25 hover:border-orange/50" style={{
                   boxShadow: '0 4px 20px hsl(24 100% 54% / 0.05)'
                 }}>
                   <div className="relative z-10">
                     <div className="mb-3 p-2.5 rounded-full bg-cyan/10 w-fit">
-                      <TrendingUp className="h-5 w-5 text-cyan" />
+                      <TrendingUp className="h-6 w-6 text-cyan" />
                     </div>
-                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '16px' }}>Continuous Learning</h3>
-                    <p className="m-0" style={{ fontSize: '14px', lineHeight: 1.5, color: '#A9B6C7' }}>Every fix strengthens the system.</p>
+                    <h3 className="font-bold text-white mb-1 font-tech" style={{ fontSize: '18px' }}>Continuous Learning</h3>
+                    <p className="m-0" style={{ fontSize: '16px', lineHeight: 1.5, color: '#A9B6C7' }}>Every fix strengthens the system.</p>
                   </div>
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300" style={{
                     boxShadow: '0 0 30px hsl(24 100% 54% / 0.3)'

@@ -91,7 +91,7 @@ export const AIFlowDiagram = () => {
           <div
             key={i}
             ref={el => labelRefs.current[i] = el}
-            className="absolute left-0 -translate-y-1/2 px-3 py-2 border border-cyan rounded-full bg-black/35 whitespace-nowrap transition-all duration-300 shadow-[0_0_0_1px_#000_inset] label-item text-[14px] font-semibold"
+            className="absolute left-0 -translate-y-1/2 px-4 py-2.5 border border-cyan rounded-full bg-black/35 whitespace-nowrap transition-all duration-300 shadow-[0_0_0_1px_#000_inset] label-item text-[16px] font-semibold"
             style={{ top: `${node.y}px`, color: 'hsl(var(--brand-white))' }}
             title={node.tooltip}
           >
@@ -168,7 +168,7 @@ export const AIFlowDiagram = () => {
             className="fill-black/55 stroke-cyan transition-all duration-300 node-circle"
             strokeWidth="2"
             filter="url(#glowCyan)"
-            r="18"
+            r="22"
             cx="130"
             cy={node.y}
             style={{ stroke: '#00E5FF' }}

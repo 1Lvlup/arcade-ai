@@ -214,6 +214,212 @@ const Index = () => {
           </div>
         </div>
 
+        {/* How It Works Section */}
+        <section className="pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 relative">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header */}
+            <div className="text-center mb-12 sm:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-tech font-bold mb-4">
+                <span className="text-white text-recessed-white">HOW IT</span> <span className="text-orange text-recessed-orange">WORKS</span>
+              </h2>
+              <p className="text-lg sm:text-xl text-primary/70 font-sans max-w-3xl mx-auto">
+                Precision-built intelligence for the arcade world.
+              </p>
+            </div>
+
+            {/* Two-Column Explainer */}
+            <div className="grid lg:grid-cols-5 gap-8 lg:gap-16 mb-16 sm:mb-20 lg:mb-24 max-w-7xl mx-auto">
+              {/* Left Column - Text Content (60%) */}
+              <div className="lg:col-span-3 space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">Specialized parsing and embedding.</h3>
+                  <p className="text-base sm:text-lg text-primary/80 leading-relaxed font-sans">
+                    Each manual, wiring diagram, error code, and field report is converted by a custom parsing pipeline built for arcade logic. Data is embedded into high-dimensional vector space, so the system searches by <span className="text-orange font-medium">meaning</span>, not keywords.
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">AI trained the hard way — over and over.</h3>
+                  <p className="text-base sm:text-lg text-primary/80 leading-relaxed font-sans">
+                    Thousands of real troubleshooting sessions and verified fixes are refined and re-embedded repeatedly. When confidence drops, we rebuild. The result: a neural index that answers with certainty, not guesses.
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">True RAG intelligence.</h3>
+                  <p className="text-base sm:text-lg text-primary/80 leading-relaxed font-sans">
+                    On every question, Level Up retrieves the most relevant technical context from vector memory, fuses it with reasoning models, and returns a step-by-step, machine-specific answer.
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-3 font-tech">The outcome.</h3>
+                  <p className="text-base sm:text-lg text-primary/80 leading-relaxed font-sans">
+                    An ever-evolving system designed to eliminate downtime—faster, smarter, and more accurate each time it's used.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column - Animated Diagram (40%) */}
+              <div className="lg:col-span-2 flex items-center justify-center">
+                <div className="relative w-full max-w-md">
+                  <svg viewBox="0 0 300 400" className="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: 'hsl(var(--orange))', stopOpacity: 0.8 }} />
+                        <stop offset="100%" style={{ stopColor: 'hsl(var(--orange))', stopOpacity: 0.3 }} />
+                      </linearGradient>
+                      <filter id="glow">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                        <feMerge>
+                          <feMergeNode in="coloredBlur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    
+                    {/* Animated Path */}
+                    <path
+                      d="M 150 40 L 150 100 L 150 160 L 150 220 L 150 280 L 150 340"
+                      stroke="url(#pathGradient)"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeDasharray="8 4"
+                      className="animate-pulse"
+                      style={{ animationDuration: '3s' }}
+                    />
+                    
+                    {/* Nodes */}
+                    {/* Query Node */}
+                    <g transform="translate(150, 40)">
+                      <circle r="30" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
+                      <text y="5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="12" fontWeight="600">Query</text>
+                    </g>
+                    
+                    {/* Vector Retrieval Node */}
+                    <g transform="translate(150, 120)">
+                      <circle r="35" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
+                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Vector</text>
+                      <text y="8" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Retrieval</text>
+                    </g>
+                    
+                    {/* Reasoning Engine Node */}
+                    <g transform="translate(150, 200)">
+                      <circle r="35" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
+                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Reasoning</text>
+                      <text y="8" textAnchor="middle" fill="hsl(var(--primary))" fontSize="11" fontWeight="600">Engine</text>
+                    </g>
+                    
+                    {/* Answer Node - Highlighted */}
+                    <g transform="translate(150, 280)">
+                      <circle r="35" fill="hsl(var(--orange) / 0.2)" stroke="hsl(var(--orange))" strokeWidth="3" filter="url(#glow)" />
+                      <text y="-5" textAnchor="middle" fill="hsl(var(--orange))" fontSize="11" fontWeight="700">Step-by-Step</text>
+                      <text y="8" textAnchor="middle" fill="hsl(var(--orange))" fontSize="11" fontWeight="700">Answer</text>
+                    </g>
+                    
+                    {/* Feedback Loop Node */}
+                    <g transform="translate(150, 360)">
+                      <circle r="30" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="2" />
+                      <text y="-5" textAnchor="middle" fill="hsl(var(--primary))" fontSize="10" fontWeight="600">Feedback</text>
+                      <text y="6" textAnchor="middle" fill="hsl(var(--primary))" fontSize="10" fontWeight="600">Network</text>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Four System Cards */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12 max-w-7xl mx-auto">
+              {/* Card 1 */}
+              <div className="premium-card p-6 rounded-xl relative overflow-hidden group transition-all duration-300 border-t-2 border-orange/50" style={{
+                boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
+              }}>
+                <div className="relative z-10">
+                  <div className="mb-4 p-3 rounded-full bg-orange/10 w-fit">
+                    <Code className="h-6 w-6 text-orange" />
+                  </div>
+                  <h3 className="text-base font-semibold text-white mb-2 font-tech">Specialized Parsing</h3>
+                  <p className="text-sm text-primary/70 leading-relaxed">Converts messy docs into structured, machine-readable knowledge.</p>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+
+              {/* Card 2 */}
+              <div className="premium-card p-6 rounded-xl relative overflow-hidden group transition-all duration-300 border-t-2 border-orange/50" style={{
+                boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
+              }}>
+                <div className="relative z-10">
+                  <div className="mb-4 p-3 rounded-full bg-orange/10 w-fit">
+                    <Database className="h-6 w-6 text-orange" />
+                  </div>
+                  <h3 className="text-base font-semibold text-white mb-2 font-tech">Domain Embeddings</h3>
+                  <p className="text-sm text-primary/70 leading-relaxed">Maps arcade concepts into meaning-space for precise recall.</p>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+
+              {/* Card 3 */}
+              <div className="premium-card p-6 rounded-xl relative overflow-hidden group transition-all duration-300 border-t-2 border-orange/50" style={{
+                boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
+              }}>
+                <div className="relative z-10">
+                  <div className="mb-4 p-3 rounded-full bg-orange/10 w-fit">
+                    <Zap className="h-6 w-6 text-orange" />
+                  </div>
+                  <h3 className="text-base font-semibold text-white mb-2 font-tech">RAG Orchestration</h3>
+                  <p className="text-sm text-primary/70 leading-relaxed">Retrieves, reasons, and composes exact steps for every game.</p>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+
+              {/* Card 4 */}
+              <div className="premium-card p-6 rounded-xl relative overflow-hidden group transition-all duration-300 border-t-2 border-orange/50" style={{
+                boxShadow: '0 4px 20px hsl(var(--orange) / 0.1)'
+              }}>
+                <div className="relative z-10">
+                  <div className="mb-4 p-3 rounded-full bg-orange/10 w-fit">
+                    <TrendingUp className="h-6 w-6 text-orange" />
+                  </div>
+                  <h3 className="text-base font-semibold text-white mb-2 font-tech">Continuous Learning</h3>
+                  <p className="text-sm text-primary/70 leading-relaxed">Every verified fix strengthens the network and builds exact solutions.</p>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            </div>
+
+            {/* Micro-Proof Strip */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-12">
+              <div className="px-4 py-2 rounded-full bg-card/50 border border-primary/10">
+                <span className="text-xs sm:text-sm text-primary/60">2.3 ms response time</span>
+              </div>
+              <div className="px-4 py-2 rounded-full bg-card/50 border border-primary/10">
+                <span className="text-xs sm:text-sm text-primary/60">99.9% accuracy on known fixes</span>
+              </div>
+              <div className="px-4 py-2 rounded-full bg-card/50 border border-primary/10">
+                <span className="text-xs sm:text-sm text-primary/60">1.2B+ parameters accessed per query</span>
+              </div>
+            </div>
+
+            {/* CTA Footer */}
+            <div className="text-center">
+              <p className="text-lg sm:text-xl text-white mb-6 font-sans">
+                Connect your arcade. End downtime.
+              </p>
+              <Link to="/auth">
+                <Button 
+                  size="lg" 
+                  className="bg-orange hover:bg-orange/90 text-white font-semibold px-8 py-6 text-base sm:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  style={{ boxShadow: '0 0 30px hsl(var(--orange) / 0.4)' }}
+                >
+                  Launch Arcade Intelligence
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <p className="text-sm text-primary/50 mt-4">No credit card • 2-minute setup</p>
+            </div>
+          </div>
+        </section>
+
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Testimonials & ROI Section */}
         <section className="pt-12 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 lg:pb-24 relative">

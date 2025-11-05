@@ -224,7 +224,7 @@ const Index = () => {
             }}>
               <span className="text-white text-recessed-white">REAL</span> <span className="text-orange text-recessed-orange">RESULTS</span>
             </h2>
-            <p className="text-sm sm:text-base text-primary/80 font-tech mt-3">Proven ROI from live deployments</p>
+            <p className="text-sm sm:text-base text-primary/80 font-sans mt-3">Proven ROI from live deployments</p>
           </div>
           
           <div className="premium-card p-6 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl relative" style={{

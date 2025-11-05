@@ -159,11 +159,11 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mt-12 sm:mt-16 lg:mt-24 max-w-5xl mx-auto">
             <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-lift transition-all duration-300" style={{
             borderColor: 'hsl(0 0% 100% / 0.3)',
-            boxShadow: '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)'
+            boxShadow: '0 0 20px hsl(0 0% 100% / 0.9), 0 0 40px hsl(0 0% 100% / 0.7), 0 0 60px hsl(0 0% 100% / 0.5)'
           }} onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.6), 0 0 40px hsl(24 100% 54% / 0.4)';
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.8), 0 0 40px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4)';
           }} onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)';
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.9), 0 0 40px hsl(0 0% 100% / 0.7), 0 0 60px hsl(0 0% 100% / 0.5)';
           }}>
               <div className="flex flex-col items-center justify-center gap-4 h-full">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10">
@@ -177,11 +177,11 @@ const Index = () => {
             </div>
             <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-lift group transition-all duration-300" style={{
             borderColor: 'hsl(0 0% 100% / 0.3)',
-            boxShadow: '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)'
+            boxShadow: '0 0 20px hsl(0 0% 100% / 0.9), 0 0 40px hsl(0 0% 100% / 0.7), 0 0 60px hsl(0 0% 100% / 0.5)'
           }} onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.6), 0 0 40px hsl(24 100% 54% / 0.4)';
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.8), 0 0 40px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4)';
           }} onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)';
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.9), 0 0 40px hsl(0 0% 100% / 0.7), 0 0 60px hsl(0 0% 100% / 0.5)';
           }}>
               <div className="flex flex-col items-center justify-center gap-4 h-full">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
@@ -195,11 +195,11 @@ const Index = () => {
             </div>
             <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-lift group transition-all duration-300" style={{
             borderColor: 'hsl(0 0% 100% / 0.3)',
-            boxShadow: '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)'
+            boxShadow: '0 0 20px hsl(0 0% 100% / 0.9), 0 0 40px hsl(0 0% 100% / 0.7), 0 0 60px hsl(0 0% 100% / 0.5)'
           }} onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.6), 0 0 40px hsl(24 100% 54% / 0.4)';
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(24 100% 54% / 0.8), 0 0 40px hsl(24 100% 54% / 0.6), 0 0 60px hsl(24 100% 54% / 0.4)';
           }} onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.6), 0 0 40px hsl(0 0% 100% / 0.4)';
+            e.currentTarget.style.boxShadow = '0 0 20px hsl(0 0% 100% / 0.9), 0 0 40px hsl(0 0% 100% / 0.7), 0 0 60px hsl(0 0% 100% / 0.5)';
           }}>
               <div className="flex flex-col items-center justify-center gap-4 h-full">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">

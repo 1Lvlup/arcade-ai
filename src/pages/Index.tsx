@@ -172,7 +172,7 @@ const Index = () => {
             <div className="feature-card p-5 sm:p-6 lg:p-7 rounded-2xl hover-glow hover-lift group" style={{
             borderColor: 'hsl(0 0% 100% / 0.3)'
           }}>
-              <div className="flex flex-col items-center gap-6">
+              <div className="flex flex-col items-center justify-center gap-6 h-full">
                 <div className="p-3 sm:p-4 rounded-full bg-primary/10 group-hover:bg-orange/10 transition-colors">
                   <Zap className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>

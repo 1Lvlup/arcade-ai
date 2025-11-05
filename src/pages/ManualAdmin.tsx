@@ -202,7 +202,7 @@ const ManualAdmin = () => {
   const uniqueDocTypes = Array.from(new Set(manuals?.map(m => m.doc_type).filter(Boolean)));
 
   return (
-    <div className="min-h-screen mesh-gradient">
+    <div className="min-h-screen bg-black">
       <SharedHeader title="Manual Administration" />
       
       <main className="container mx-auto py-8 px-4">

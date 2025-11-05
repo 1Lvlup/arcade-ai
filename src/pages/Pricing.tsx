@@ -127,7 +127,7 @@ export default function Pricing() {
   }, [annual]);
 
   return (
-    <div className="min-h-screen mesh-gradient flex flex-col">
+    <div className="min-h-screen bg-black flex flex-col">
       <SharedHeader title="Pricing" showBackButton={true} backTo="/" />
       
       <section

@@ -137,35 +137,35 @@ export default function AccountSettings() {
   };
 
   return (
-    <div className="min-h-screen mesh-gradient">
+    <div className="min-h-screen bg-black">
       <SharedHeader title="Account Settings" showBackButton={true} backTo="/" />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
         {/* Subscription Status */}
-        <Card>
+        <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
-              Subscription
+            <CardTitle className="flex items-center gap-2 font-tech text-white">
+              <CreditCard className="h-5 w-5 text-orange" />
+              SUBSCRIPTION
             </CardTitle>
-            <CardDescription>Manage your subscription plan</CardDescription>
+            <CardDescription className="text-cyan/60">Manage your subscription plan</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {subscriptionLoading ? (
-              <p className="text-sm text-muted-foreground">Loading subscription status...</p>
+              <p className="text-sm text-cyan/60">Loading subscription status...</p>
             ) : isSubscribed && getTierInfo() ? (
               <>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Current Plan</span>
-                    <span className="text-lg font-bold text-primary">
+                    <span className="text-sm font-medium text-white">Current Plan</span>
+                    <span className="text-lg font-bold text-orange">
                       {getTierInfo()?.name} - ${getTierInfo()?.price}/{getTierInfo()?.interval === 'month' ? 'mo' : 'yr'}
                     </span>
                   </div>
                   {subscriptionEnd && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Renews On</span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm font-medium text-white">Renews On</span>
+                      <span className="text-sm text-cyan/60">
                         {new Date(subscriptionEnd).toLocaleDateString()}
                       </span>
                     </div>
@@ -174,29 +174,29 @@ export default function AccountSettings() {
                 <Button 
                   onClick={handleManageSubscription} 
                   disabled={portalLoading}
-                  className="w-full"
+                  className="w-full bg-orange hover:bg-orange/80 text-white font-tech"
                 >
-                  {portalLoading ? 'Loading...' : 'Manage Subscription'}
+                  {portalLoading ? 'LOADING...' : 'MANAGE SUBSCRIPTION'}
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-xs text-cyan/60 text-center">
                   Update payment method, cancel, or change your plan
                 </p>
               </>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-cyan/60">
                   You don't have an active subscription
                 </p>
-                <Button onClick={() => window.location.href = '/pricing'} className="w-full">
-                  View Plans
+                <Button onClick={() => window.location.href = '/pricing'} className="w-full bg-orange hover:bg-orange/80 text-white font-tech">
+                  VIEW PLANS
                 </Button>
               </>
             )}
           </CardContent>
         </Card>
         {/* Account Information */}
-        <Card>
+        <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />

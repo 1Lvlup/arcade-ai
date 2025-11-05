@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ManualSelector } from '@/components/ManualSelector';
+import { GameSidebar } from '@/components/GameSidebar';
 import { DetailedFeedbackDialog } from '@/components/DetailedFeedbackDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -920,119 +920,126 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   };
 
   return (
-    <Card className="tech-card h-full flex flex-col w-full mx-0 rounded-none border-x-0">
-      <CardHeader className="border-b border-primary/20 flex-shrink-0 py-5 px-6">
-        <CardTitle className="flex items-center justify-between text-base">
-          <div className="flex items-center gap-3">
-            <span className="tracking-wider font-bold text-white">LEVEL UP</span>
-            {!user && (
-              <Badge variant="outline" className="text-xs">
-                {GUEST_MESSAGE_LIMIT - guestMessageCount} free questions left
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {user && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={startNewConversation}
-                  className="h-8 px-2"
-                  title="New conversation"
-                >
-                  <MessageSquarePlus className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={saveConversation}
-                  disabled={messages.length <= 1 || isSaving}
-                  className="h-8 px-2"
-                  title="Save conversation"
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-                <Sheet open={showHistory} onOpenChange={setShowHistory}>
-                  <SheetTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2"
-                      title="View conversation history"
-                    >
-                      <History className="h-4 w-4" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>Conversation History</SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-6 space-y-3">
-                      {conversations.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          No saved conversations yet
-                        </div>
-                      ) : (
-                        conversations.map((conv) => (
-                          <Card
-                            key={conv.id}
-                            className={`hover:border-primary/50 transition-colors cursor-pointer ${
-                              currentConversationId === conv.id ? 'border-primary' : ''
-                            }`}
-                          >
-                            <CardContent className="pt-4 pb-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <div
-                                  className="flex-1"
-                                  onClick={() => loadConversation(conv.id)}
-                                >
-                                  <div className="font-medium mb-1 line-clamp-2">
-                                    {conv.title}
+    <div className="relative h-full flex">
+      {/* Game Selection Sidebar */}
+      <GameSidebar 
+        selectedManualId={selectedManualId || undefined}
+        onManualChange={handleManualChange}
+      />
+      
+      {/* Main Chat Area */}
+      <Card className="tech-card h-full flex flex-col w-full ml-14 rounded-none border-x-0 bg-black border-white/10">
+        <CardHeader className="border-b border-white/10 flex-shrink-0 py-5 px-6">
+          <CardTitle className="flex items-center justify-between text-base">
+            <div className="flex items-center gap-3">
+              <span className="tracking-wider font-bold text-white font-tech">LEVEL UP</span>
+              {selectedManualId && manualTitle && (
+                <Badge className="bg-orange/20 text-orange border-orange/30 text-xs">
+                  {manualTitle}
+                </Badge>
+              )}
+              {!user && (
+                <Badge variant="outline" className="text-xs border-cyan/30 text-cyan">
+                  {GUEST_MESSAGE_LIMIT - guestMessageCount} free questions left
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {user && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={startNewConversation}
+                    className="h-8 px-2 text-cyan hover:text-cyan/80 hover:bg-cyan/10"
+                    title="New conversation"
+                  >
+                    <MessageSquarePlus className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={saveConversation}
+                    disabled={messages.length <= 1 || isSaving}
+                    className="h-8 px-2 text-cyan hover:text-cyan/80 hover:bg-cyan/10 disabled:opacity-50"
+                    title="Save conversation"
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                  <Sheet open={showHistory} onOpenChange={setShowHistory}>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-cyan hover:text-cyan/80 hover:bg-cyan/10"
+                        title="View conversation history"
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto bg-black border-white/10">
+                      <SheetHeader>
+                        <SheetTitle className="font-tech text-white">CONVERSATION HISTORY</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-6 space-y-3">
+                        {conversations.length === 0 ? (
+                          <div className="text-center py-8 text-cyan/60">
+                            No saved conversations yet
+                          </div>
+                        ) : (
+                          conversations.map((conv) => (
+                            <Card
+                              key={conv.id}
+                              className={`hover:border-orange/50 transition-colors cursor-pointer bg-white/5 border-white/10 ${
+                                currentConversationId === conv.id ? 'border-orange/50' : ''
+                              }`}
+                            >
+                              <CardContent className="pt-4 pb-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div
+                                    className="flex-1"
+                                    onClick={() => loadConversation(conv.id)}
+                                  >
+                                    <div className="font-medium mb-1 line-clamp-2 text-white">
+                                      {conv.title}
+                                    </div>
+                                    <div className="text-xs text-cyan/60">
+                                      {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
+                                      {new Date(conv.last_message_at).toLocaleTimeString()}
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
-                                    {new Date(conv.last_message_at).toLocaleTimeString()}
-                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setConversationToDelete(conv.id);
+                                      setShowDeleteDialog(true);
+                                    }}
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setConversationToDelete(conv.id);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                      )}
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </>
-            )}
-          </div>
-        </CardTitle>
-        <div className="mt-4">
-          <ManualSelector 
-            selectedManualId={selectedManualId || undefined} 
-            onManualChange={handleManualChange}
-          />
-        </div>
-        {currentConversationId && (
-          <div className="mt-2">
-            <Badge variant="outline" className="text-sm px-3 py-1 bg-primary/10 text-primary border-primary/30">
-              Saved conversation
-            </Badge>
-          </div>
-        )}
-      </CardHeader>
+                              </CardContent>
+                            </Card>
+                          ))
+                        )}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </>
+              )}
+            </div>
+          </CardTitle>
+          {currentConversationId && (
+            <div className="mt-2">
+              <Badge variant="outline" className="text-sm px-3 py-1 bg-cyan/10 text-cyan border-cyan/30">
+                Saved conversation
+              </Badge>
+            </div>
+          )}
+        </CardHeader>
       
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Saved Conversations Sidebar */}
@@ -1344,5 +1351,6 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         queryText={messages.find(m => m.type === 'user' && messages.indexOf(m) === messages.indexOf(selectedMessageForFeedback!) - 1)?.content as string}
       />
     </Card>
+    </div>
   );
 }

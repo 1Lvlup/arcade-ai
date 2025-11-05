@@ -95,114 +95,114 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
   };
 
   return (
-    <div
-      className={cn(
-        "fixed left-0 top-14 h-[calc(100vh-3.5rem)] bg-black/60 border-r border-white/10 transition-all duration-300 z-40 backdrop-blur-md",
-        isExpanded ? "w-80 opacity-100" : "w-14 opacity-0 hover:opacity-100"
-      )}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
-    >
-      {/* Collapsed Icon State */}
-      <div className={cn(
-        "flex items-center h-16 border-b border-white/10",
-        isExpanded ? "justify-between px-4" : "justify-center"
-      )}>
-        <div className="flex items-center gap-3 relative">
-          {!isExpanded && (
+    <>
+      {/* Collapsed State - Centered Icon */}
+      {!isExpanded && (
+        <div
+          className="fixed left-4 top-1/2 -translate-y-1/2 z-40 cursor-pointer transition-all duration-300 hover:scale-110"
+          onMouseEnter={() => setIsExpanded(true)}
+        >
+          <div className="relative">
+            {/* Pulsing glow background */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="absolute h-10 w-10 rounded-full bg-orange/20 animate-pulse blur-md" />
+              <div className="absolute h-16 w-16 rounded-full bg-orange/30 animate-pulse blur-xl" />
             </div>
-          )}
-          <Gamepad2 className={cn(
-            "text-orange transition-all relative z-10",
-            isExpanded ? "h-6 w-6" : "h-7 w-7",
-            !isExpanded && "drop-shadow-[0_0_8px_rgba(255,106,0,0.6)]"
-          )} />
-          {isExpanded && (
-            <div className="overflow-hidden">
-              <h2 className="font-tech text-sm font-bold text-white whitespace-nowrap">
-                SELECT GAME
-              </h2>
-              <p className="text-xs text-cyan/60 whitespace-nowrap">
-                {manuals.length} available
-              </p>
-            </div>
-          )}
+            {/* Icon */}
+            <Gamepad2 
+              className="h-12 w-12 text-orange/70 relative z-10 drop-shadow-[0_0_12px_rgba(255,106,0,0.8)]" 
+            />
+            {/* Selection indicator dot */}
+            {selectedManualId && (
+              <div className="absolute -top-1 -right-1 h-3 w-3 bg-orange rounded-full border-2 border-black animate-pulse" />
+            )}
+          </div>
         </div>
-        {isExpanded && (
-          <Button
-            onClick={() => navigate('/add-games')}
-            size="icon"
-            className="h-8 w-8 bg-orange hover:bg-orange/80 text-white flex-shrink-0"
-            title="Request new game"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+      )}
+
+      {/* Expanded Sidebar */}
+      <div
+        className={cn(
+          "fixed left-0 top-14 h-[calc(100vh-3.5rem)] bg-black/70 border-r border-orange/20 transition-all duration-300 z-40 backdrop-blur-md",
+          isExpanded ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"
         )}
+        onMouseLeave={() => setIsExpanded(false)}
+      >
+      {/* Expanded Header */}
+      <div className="flex items-center h-16 border-b border-orange/20 justify-between px-4">
+        <div className="flex items-center gap-3">
+          <Gamepad2 className="h-6 w-6 text-orange" />
+          <div className="overflow-hidden">
+            <h2 className="font-tech text-sm font-bold text-white whitespace-nowrap">
+              SELECT GAME
+            </h2>
+            <p className="text-xs text-cyan/60 whitespace-nowrap">
+              {manuals.length} available
+            </p>
+          </div>
+        </div>
+        <Button
+          onClick={() => navigate('/add-games')}
+          size="icon"
+          className="h-8 w-8 bg-orange hover:bg-orange/80 text-white flex-shrink-0"
+          title="Request new game"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Expanded Game List */}
-      {isExpanded && (
-        <ScrollArea className="h-[calc(100%-4rem)]">
-          <div className="p-3 space-y-1">
-            {loading ? (
-              <div className="text-center py-8 text-cyan/60 text-sm">
-                Loading games...
-              </div>
-            ) : manuals.length === 0 ? (
-              <div className="text-center py-8 text-cyan/60 text-sm">
-                No games available
-              </div>
-            ) : (
-              manuals.map((manual) => (
-                <button
-                  key={manual.manual_id}
-                  onClick={() => handleGameSelect(manual)}
-                  className={cn(
-                    "w-full text-left p-3 rounded-lg transition-all duration-200 group",
-                    "hover:bg-white/10 border border-transparent hover:border-orange/30",
-                    selectedManualId === manual.manual_id
-                      ? "bg-orange/20 border-orange/50"
-                      : "bg-white/5"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        "text-sm font-medium truncate transition-colors",
-                        selectedManualId === manual.manual_id
-                          ? "text-orange"
-                          : "text-white group-hover:text-orange"
-                      )}>
-                        {manual.title || manual.source_filename}
-                      </p>
-                      {selectedManualId === manual.manual_id && (
-                        <Badge className="mt-1 bg-orange/20 text-orange border-orange/30 text-xs">
-                          Active
-                        </Badge>
-                      )}
-                    </div>
-                    <ChevronRight className={cn(
-                      "h-4 w-4 flex-shrink-0 transition-all",
+      <ScrollArea className="h-[calc(100%-4rem)]">
+        <div className="p-3 space-y-1">
+          {loading ? (
+            <div className="text-center py-8 text-cyan/60 text-sm">
+              Loading games...
+            </div>
+          ) : manuals.length === 0 ? (
+            <div className="text-center py-8 text-cyan/60 text-sm">
+              No games available
+            </div>
+          ) : (
+            manuals.map((manual) => (
+              <button
+                key={manual.manual_id}
+                onClick={() => handleGameSelect(manual)}
+                className={cn(
+                  "w-full text-left p-3 rounded-lg transition-all duration-200 group",
+                  "hover:bg-white/10 border border-transparent hover:border-orange/30",
+                  selectedManualId === manual.manual_id
+                    ? "bg-orange/20 border-orange/50"
+                    : "bg-white/5"
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className={cn(
+                      "text-sm font-medium truncate transition-colors",
                       selectedManualId === manual.manual_id
                         ? "text-orange"
-                        : "text-cyan/40 group-hover:text-cyan group-hover:translate-x-0.5"
-                    )} />
+                        : "text-white group-hover:text-orange"
+                    )}>
+                      {manual.title || manual.source_filename}
+                    </p>
+                    {selectedManualId === manual.manual_id && (
+                      <Badge className="mt-1 bg-orange/20 text-orange border-orange/30 text-xs">
+                        Active
+                      </Badge>
+                    )}
                   </div>
-                </button>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      )}
-
-      {/* Hover hint when collapsed */}
-      {!isExpanded && (
-        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-1.5 bg-orange text-white text-xs font-tech rounded-md opacity-0 hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-          HOVER TO SELECT GAME
+                  <ChevronRight className={cn(
+                    "h-4 w-4 flex-shrink-0 transition-all",
+                    selectedManualId === manual.manual_id
+                      ? "text-orange"
+                      : "text-cyan/40 group-hover:text-cyan group-hover:translate-x-0.5"
+                  )} />
+                </div>
+              </button>
+            ))
+          )}
         </div>
-      )}
+      </ScrollArea>
     </div>
+    </>
   );
 }

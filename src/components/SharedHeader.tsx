@@ -35,8 +35,23 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
   };
 
   return (
-    <header className="bg-black border-t-2 border-t-orange/30">
-      <div className="container mx-auto px-6 py-6 flex items-center justify-between">
+    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden">
+      {/* Video Background */}
+      <video 
+        autoPlay 
+        loop 
+        muted 
+        playsInline 
+        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+        style={{ objectPosition: 'center 35%' }}
+      >
+        <source src="/levelupvideo.mp4" type="video/mp4" />
+      </video>
+      
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-black/70 -z-5" />
+      
+      <div className="container mx-auto px-6 py-6 flex items-center justify-between relative z-10">
         <div className="flex items-center space-x-6">
           {showBackButton && (
             onBackClick ? (

@@ -124,25 +124,17 @@ const Index = () => {
       <SharedHeader title="Arcade Intelligence" />
 
       <main className="max-w-[2000px] mx-auto">
-        {/* Hero Section */}
-        <section className="w-full">
-          <div className="relative w-full overflow-hidden">
-            <video autoPlay loop muted playsInline className="w-full h-auto">
-              <source src="/AIGlitch.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-            
-            {/* Button overlaying video */}
-            <div className="absolute bottom-0 left-0 right-0 pb-8 sm:pb-12">
-              <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col items-center justify-center px-4 gap-3">
+        {/* Hero CTA Section */}
+        <section className="w-full py-12 sm:py-16 lg:py-20">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col items-center justify-center px-4 gap-3">
               {!user && <p className="text-sm sm:text-base text-primary/80 font-semibold">
-                  Create your free account to get started →
-                </p>}
+                Create your free account to get started →
+              </p>}
               <Button onClick={handleStartGeneralChat} variant="orange" size="xl" className="cta-button hover-lift px-8 sm:px-14 md:px-22 lg:px-32 py-5 sm:py-7 md:py-8 lg:py-9 text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold relative group overflow-hidden w-full sm:w-auto border-2 border-orange" style={{
-                  boxShadow: '0 0 20px hsl(24 100% 54% / 0.9), 0 0 40px hsl(24 100% 54% / 0.7), 0 0 60px hsl(24 100% 54% / 0.5)',
-                  marginBottom: '1rem'
-                }}>
+                boxShadow: '0 0 20px hsl(24 100% 54% / 0.9), 0 0 40px hsl(24 100% 54% / 0.7), 0 0 60px hsl(24 100% 54% / 0.5)',
+                marginBottom: '1rem'
+              }}>
                 <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
                   <Zap className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 flex-shrink-0" />
                   <span className="text-center">LAUNCH ARCADE INTELLIGENCE</span>
@@ -151,8 +143,6 @@ const Index = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-orange/20 via-transparent to-orange/20 animate-pulse opacity-50"></div>
               </Button>
               <p className="text-xs sm:text-sm text-muted-foreground/80">No credit card • 2-minute setup</p>
-                </div>
-              </div>
             </div>
           </div>
         </section>

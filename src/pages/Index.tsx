@@ -512,39 +512,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Performance Stats Section */}
-        <section className="py-12 sm:py-16 lg:py-24">
-          <div className="text-center mb-8 sm:mb-12 lg:mb-16 px-4">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-tech font-bold text-foreground mb-3 sm:mb-4" style={{
-              letterSpacing: '0.02em'
-            }}>Platform <span className="text-orange">Performance</span></h2>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-body">Industry-leading metrics that power your arcade operations</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-            {stats.map((stat, index) => <div key={index} className="stat-card p-6 sm:p-7 lg:p-8 rounded-2xl hover-lift hover-glow text-center" style={{
-              borderColor: 'hsl(183 100% 50% / 0.3)'
-            }}>
-                <div className="flex flex-col items-center space-y-4 sm:space-y-5 lg:space-y-6">
-                  <div className="p-3 sm:p-4 rounded-full bg-primary/10">
-                    <div className="text-primary">
-                      {stat.icon}
-                    </div>
-                  </div>
-                  <div className="space-y-2 sm:space-y-3">
-                    <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground">{stat.value}</div>
-                    <div className="space-y-1 sm:space-y-2">
-                      <div className="font-semibold text-base sm:text-lg text-foreground">{stat.label}</div>
-                      <div className="text-xs sm:text-sm text-primary px-2">
-                        {stat.description.split('.').map((sentence, i) => i === 0 ? <span key={i} className="font-semibold">{sentence}.</span> : <span key={i}> {sentence}{i < stat.description.split('.').length - 2 ? '.' : ''}</span>)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>)}
-          </div>
-        </section>
-
-
         {/* Capabilities Grid */}
         <section className="py-12 sm:py-16 lg:py-24">
           <div className="text-center mb-12 sm:mb-16 lg:mb-20 px-4">

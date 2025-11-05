@@ -119,7 +119,7 @@ const Index = () => {
     title: "Team Collaboration",
     description: "Connect your maintenance team in one shared workspace."
   }];
-  return <div className="min-h-screen mesh-gradient">
+  return <div className="min-h-screen bg-black">
       <SharedHeader title="Arcade Intelligence" />
 
       <main className="max-w-[2000px] mx-auto">
@@ -164,7 +164,7 @@ const Index = () => {
                   <TrendingUp className="h-10 w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-tech text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange underline">LEVEL UP</div>
+                  <div className="font-tech font-extrabold text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange">LEVEL UP</div>
                   <div className="font-body text-sm sm:text-base lg:text-lg text-white px-2">The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>
@@ -177,7 +177,7 @@ const Index = () => {
                   <Brain className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-tech text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange underline">ZERO DOWNTIME</div>
+                  <div className="font-tech font-extrabold text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange">ZERO DOWNTIME</div>
                   <div className="font-body text-sm sm:text-base lg:text-lg text-white px-2">Harnessing AI's capbilities to end downtime for good.</div>
                 </div>
               </div>
@@ -190,7 +190,7 @@ const Index = () => {
                   <Database className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-tech text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange underline">SHARED INTELLIGENCE</div>
+                  <div className="font-tech font-extrabold text-xl sm:text-2xl lg:text-3xl text-orange px-2 text-recessed-orange">SHARED INTELLIGENCE</div>
                   <div className="font-body text-sm sm:text-base lg:text-lg text-white px-2">A living, evolving database for every game and every fix.</div>
                 </div>
               </div>
@@ -203,8 +203,8 @@ const Index = () => {
         <section className="pt-12 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 lg:pb-24 relative">
           {/* Title above section */}
           <div className="text-center mb-8 sm:mb-10 lg:mb-12">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-tech font-bold underline whitespace-nowrap" style={{
-              letterSpacing: '0.02em'
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-tech font-bold whitespace-nowrap" style={{
+              letterSpacing: '0.15em'
             }}>
               <span className="text-white text-recessed-white">REAL</span> <span className="text-orange text-recessed-orange">RESULTS</span>
             </h2>
@@ -228,7 +228,7 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-tech text-orange text-recessed-orange">$400-$900/week</h3>
+                  <h3 className="text-2xl sm:text-3xl font-tech font-extrabold text-orange text-recessed-orange">$400-$900/week</h3>
                   <p className="text-sm sm:text-base lg:text-lg font-body text-white leading-relaxed">
                     Average savings per arcade using Level Up. (Limited Testing)
                   </p>
@@ -243,7 +243,7 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Clock className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-tech text-orange text-recessed-orange">3-6 Months</h3>
+                  <h3 className="text-2xl sm:text-3xl font-tech font-extrabold text-orange text-recessed-orange">3-6 Months</h3>
                   <p className="text-sm sm:text-base lg:text-lg font-body text-white leading-relaxed">
                     Typical payback period based on reduced technician time and uptime improvements.
                   </p>
@@ -258,7 +258,7 @@ const Index = () => {
                   <div className="p-3 sm:p-4 rounded-full bg-orange/10 inline-flex group-hover:bg-orange/20 transition-colors">
                     <Target className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-tech text-orange text-recessed-orange">Up to 40%</h3>
+                  <h3 className="text-2xl sm:text-3xl font-tech font-extrabold text-orange text-recessed-orange">Up to 40%</h3>
                   <p className="text-sm sm:text-base lg:text-lg font-body text-white leading-relaxed">
                     Cut technician labor time — Focus on new revenue, not repeat fixes.
                   </p>

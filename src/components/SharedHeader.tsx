@@ -43,7 +43,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
         muted 
         playsInline 
         className="absolute inset-0 w-full h-full object-cover z-0"
-        style={{ objectPosition: 'center 20%' }}
+        style={{ objectPosition: 'center 45%' }}
       >
         <source src="/AIGlitch.mp4" type="video/mp4" />
       </video>

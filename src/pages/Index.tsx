@@ -401,13 +401,13 @@ const Index = () => {
 
             {/* Micro-Proof Strip */}
             <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-12">
-              <div className="px-4 py-2 rounded-full bg-white border-2 border-[#FF6A00]">
+              <div className="px-4 py-2 rounded-full bg-white border-[3px] border-[#FF6A00]">
                 <span className="text-xs sm:text-sm text-black font-semibold">2.3 ms response time</span>
               </div>
-              <div className="px-4 py-2 rounded-full bg-white border-2 border-[#FF6A00]">
+              <div className="px-4 py-2 rounded-full bg-white border-[3px] border-[#FF6A00]">
                 <span className="text-xs sm:text-sm text-black font-semibold">99.9% accuracy on known fixes</span>
               </div>
-              <div className="px-4 py-2 rounded-full bg-white border-2 border-[#FF6A00]">
+              <div className="px-4 py-2 rounded-full bg-white border-[3px] border-[#FF6A00]">
                 <span className="text-xs sm:text-sm text-black font-semibold">1.2B+ parameters accessed per query</span>
               </div>
             </div>

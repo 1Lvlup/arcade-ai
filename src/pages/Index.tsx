@@ -164,8 +164,8 @@ const Index = () => {
                   <TrendingUp className="h-10 w-10 text-primary" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-extralight text-base sm:text-lg lg:text-xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
-                  <div className="font-kallisto font-extrabold text-base sm:text-lg lg:text-xl text-orange px-2 text-recessed-orange">The first shared intelligence built for the arcade industry</div>
+                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">LEVEL UP</div>
+                  <div className="font-kallisto font-extrabold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">The first shared intelligence built for the arcade industry</div>
                 </div>
               </div>
             </div>
@@ -177,8 +177,8 @@ const Index = () => {
                   <Brain className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-extralight text-base sm:text-lg lg:text-xl text-white px-2 text-recessed-white underline">ZERO DOWNTIME</div>
-                  <div className="font-kallisto font-extrabold text-base sm:text-lg lg:text-xl text-orange px-2 text-recessed-orange">Harnessing AI's capbilities to end downtime for good.</div>
+                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">ZERO DOWNTIME</div>
+                  <div className="font-kallisto font-extrabold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">Harnessing AI's capbilities to end downtime for good.</div>
                 </div>
               </div>
             </div>
@@ -190,8 +190,8 @@ const Index = () => {
                   <Database className="h-10 w-10 text-primary group-hover:text-orange transition-colors" />
                 </div>
                 <div className="text-center space-y-2 sm:space-y-3">
-                  <div className="font-ethnocentric font-extralight text-base sm:text-lg lg:text-xl text-white px-2 text-recessed-white underline">SHARED INTELLIGENCE</div>
-                  <div className="font-kallisto font-extrabold text-base sm:text-lg lg:text-xl text-orange px-2 text-recessed-orange">A living, evolving database for every game and every fix.</div>
+                  <div className="font-ethnocentric font-light text-lg sm:text-xl lg:text-2xl text-white px-2 text-recessed-white underline">SHARED INTELLIGENCE</div>
+                  <div className="font-kallisto font-extrabold text-sm sm:text-base lg:text-lg text-orange px-2 text-recessed-orange">A living, evolving database for every game and every fix.</div>
                 </div>
               </div>
             </div>

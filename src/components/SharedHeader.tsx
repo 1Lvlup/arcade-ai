@@ -7,14 +7,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SharedHeaderProps {
-  title: string;
+  title?: string;
   showBackButton?: boolean;
   backTo?: string;
   onBackClick?: () => void;
   children?: React.ReactNode;
+  titleClassName?: string;
 }
 
-export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBackClick, children }: SharedHeaderProps) => {
+export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBackClick, children, titleClassName }: SharedHeaderProps) => {
   const { user, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -68,10 +69,12 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
               </Link>
             )
           )}
-          <div className="flex items-center space-x-3">
-            <Brain className="h-7 w-7 text-orange" />
-            <h1 className="text-2xl font-tech font-bold text-foreground">{title}</h1>
-          </div>
+          {title && (
+            <div className="flex items-center space-x-3">
+              <Brain className="h-7 w-7 text-orange" />
+              <h1 className={titleClassName || "text-2xl font-tech font-bold text-foreground"}>{title}</h1>
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-4">
           {children}

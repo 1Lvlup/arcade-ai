@@ -121,7 +121,7 @@ const Index = () => {
     description: "Connect your maintenance team in one shared workspace."
   }];
   return <div className="min-h-screen bg-black">
-      <SharedHeader title="Arcade Intelligence" />
+      <SharedHeader title="Arcade Intelligence" titleClassName="text-lg font-tech font-bold text-foreground" />
 
       <main className="max-w-[2000px] mx-auto">
         {/* Hero CTA Section */}

@@ -8,7 +8,7 @@ import { SharedHeader } from '@/components/SharedHeader';
 const ManualManagement = () => {
   return (
     <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="Document Intelligence" showBackButton={true} />
+      <SharedHeader showBackButton={true} />
 
       <main className="container mx-auto px-8 py-12">
         <div className="section-spacing space-y-12">
@@ -17,7 +17,7 @@ const ManualManagement = () => {
               <div className="caption-text text-orange/80 mb-8">
                 Advanced Processing
               </div>
-              <h1 className="display-heading text-7xl md:text-8xl text-foreground leading-none">
+              <h1 className="font-tech text-7xl md:text-8xl text-foreground leading-none">
                 Document<br />
                 <span className="text-orange brand-glow">Intelligence</span>
               </h1>

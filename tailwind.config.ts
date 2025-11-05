@@ -75,6 +75,11 @@ export default {
           light: "hsl(18 100% 60%)",
           dark: "hsl(18 100% 40%)",
         },
+        cyan: {
+          DEFAULT: "hsl(var(--brand-cyan))",
+          light: "hsl(188 100% 70%)",
+          dark: "hsl(188 100% 50%)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

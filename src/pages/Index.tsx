@@ -105,15 +105,30 @@ const Index = () => {
           <div className="max-w-4xl">
             <div className="mb-6">
               <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-medium">
-                AI-powered technical support
+                AI-powered arcade technician
               </Badge>
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 leading-tight">
-                Arcade downtime <br />
-                <span className="text-muted-foreground">ends here</span>
+                Stop Losing Money <br />
+                <span className="text-muted-foreground">To Dead Games</span>
               </h1>
-              <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl leading-relaxed">
-                Deep technical knowledge for every arcade machine. Instant answers. Guaranteed resolution.
+              <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl leading-relaxed mb-6">
+                LevelUp is an AI technician trained on your actual arcade games, their manuals/schematics, and real fixes. It guides any tech through clear troubleshooting steps so cabinets get back online faster, without waiting on distributors or digging through PDFs.
               </p>
+              
+              <ul className="space-y-3 text-lg text-muted-foreground max-w-2xl mb-8">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Recover revenue from games that would sit dark for days or weeks.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Give every tech instant access to the highest level arcade technician, 24/7, on their phone.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Every fix across every arcade keeps Level Up constantly evolving until it inevitably becomes the standard amongst all arcades. Never let a broken game stop your games from making money again.</span>
+                </li>
+              </ul>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
@@ -122,7 +137,7 @@ const Index = () => {
                 size="lg"
                 className="text-base font-semibold"
               >
-                Get started <ArrowRight className="ml-2 h-5 w-5" />
+                Get started free <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
                 variant="outline" 
@@ -134,7 +149,7 @@ const Index = () => {
             </div>
 
             <p className="text-sm text-muted-foreground mt-6">
-              Free account · No credit card required · 2-minute setup
+              Try it for yourself. All built by the Chief Engineer of an FEC with 85+ game arcade. Built by one technician for all technicians · No credit card
             </p>
           </div>
         </section>

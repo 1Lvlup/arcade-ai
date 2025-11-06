@@ -1091,7 +1091,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         )}
 
         {/* Messages Area */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-6 px-6 space-y-6 min-h-0 w-full" style={{ background: 'hsl(210 20% 5%)' }}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-6 px-6 space-y-6 min-h-0 w-full" style={{ background: 'hsl(0 0% 3%)' }}>
           {messages.map((message) => (
             <div
               key={message.id}
@@ -1104,7 +1104,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                     : 'border border-primary/30'
                 }`}
                 style={{
-                  background: message.type === 'user' ? 'hsl(24 100% 54%)' : 'hsl(210 33% 9%)'
+                  background: message.type === 'user' ? 'hsl(24 100% 54%)' : 'hsl(0 0% 8%)'
                 }}
               >
                 {message.type === 'user' && (

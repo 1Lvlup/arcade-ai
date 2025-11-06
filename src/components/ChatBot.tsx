@@ -735,7 +735,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                       className={`text-xs ${
                         stepItem.source === 'manual' 
                           ? 'bg-green-500/10 text-green-500 border-green-500/30' 
-                          : 'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                          : 'bg-primary/10 text-primary border-primary/30'
                       }`}
                     >
                       {stepItem.source}
@@ -767,8 +767,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
       {/* Expert Advice / Pro Tips */}
       {answer.expert_advice && answer.expert_advice.length > 0 && (
-        <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-xs text-blue-500 uppercase tracking-wider">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
+          <div className="flex items-center gap-2 font-semibold text-xs text-primary uppercase tracking-wider">
             <Lightbulb className="h-4 w-4" />
             Pro Tips
           </div>
@@ -933,7 +933,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 </Badge>
               )}
               {!user && (
-                <Badge variant="outline" className="text-xs border-cyan/30 text-cyan">
+                <Badge variant="outline" className="text-xs border-white/20 text-muted-foreground">
                   {GUEST_MESSAGE_LIMIT - guestMessageCount} free questions left
                 </Badge>
               )}
@@ -945,7 +945,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                     variant="ghost"
                     size="sm"
                     onClick={startNewConversation}
-                    className="h-8 px-2 text-cyan hover:text-cyan/80 hover:bg-cyan/10"
+                    className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5"
                     title="New conversation"
                   >
                     <MessageSquarePlus className="h-4 w-4" />
@@ -955,7 +955,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                     size="sm"
                     onClick={saveConversation}
                     disabled={messages.length <= 1 || isSaving}
-                    className="h-8 px-2 text-cyan hover:text-cyan/80 hover:bg-cyan/10 disabled:opacity-50"
+                    className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-50"
                     title="Save conversation"
                   >
                     <Save className="h-4 w-4" />
@@ -965,7 +965,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2 text-cyan hover:text-cyan/80 hover:bg-cyan/10"
+                        className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5"
                         title="View conversation history"
                       >
                         <History className="h-4 w-4" />
@@ -977,7 +977,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                       </SheetHeader>
                       <div className="mt-6 space-y-3">
                         {conversations.length === 0 ? (
-                          <div className="text-center py-8 text-cyan/60">
+                          <div className="text-center py-8 text-muted-foreground">
                             No saved conversations yet
                           </div>
                         ) : (
@@ -994,13 +994,13 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                                     className="flex-1"
                                     onClick={() => loadConversation(conv.id)}
                                   >
-                                    <div className="font-medium mb-1 line-clamp-2 text-white">
-                                      {conv.title}
-                                    </div>
-                                    <div className="text-xs text-cyan/60">
-                                      {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
-                                      {new Date(conv.last_message_at).toLocaleTimeString()}
-                                    </div>
+                                  <div className="font-medium mb-1 line-clamp-2 text-white">
+                                    {conv.title}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
+                                    {new Date(conv.last_message_at).toLocaleTimeString()}
+                                  </div>
                                   </div>
                                   <Button
                                     variant="ghost"
@@ -1028,7 +1028,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           </CardTitle>
           {currentConversationId && (
             <div className="mt-2">
-              <Badge variant="outline" className="text-sm px-3 py-1 bg-cyan/10 text-cyan border-cyan/30">
+              <Badge variant="outline" className="text-sm px-3 py-1 bg-white/5 text-muted-foreground border-white/10">
                 Saved conversation
               </Badge>
             </div>

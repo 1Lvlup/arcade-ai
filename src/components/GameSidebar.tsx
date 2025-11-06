@@ -94,16 +94,16 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-80 bg-black border-r border-orange/20 flex flex-col z-40">
+    <div className="fixed left-0 top-0 h-full w-56 bg-black border-r border-white/10 flex flex-col z-40">
       {/* Header */}
-      <div className="flex items-center h-16 border-b border-orange/20 justify-between px-4 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <Gamepad2 className="h-6 w-6 text-orange" />
-          <div className="overflow-hidden">
-            <h2 className="font-tech text-sm font-bold text-white whitespace-nowrap">
+      <div className="flex items-center h-16 border-b border-white/10 justify-between px-3 flex-shrink-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Gamepad2 className="h-5 w-5 text-orange flex-shrink-0" />
+          <div className="overflow-hidden flex-1">
+            <h2 className="font-tech text-xs font-bold text-white whitespace-nowrap">
               SELECT GAME
             </h2>
-            <p className="text-xs text-cyan/60 whitespace-nowrap">
+            <p className="text-[10px] text-muted-foreground whitespace-nowrap">
               {manuals.length} available
             </p>
           </div>
@@ -111,22 +111,22 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
         <Button
           onClick={() => navigate('/add-games')}
           size="icon"
-          className="h-8 w-8 bg-orange hover:bg-orange/80 text-white flex-shrink-0"
+          className="h-7 w-7 bg-primary hover:bg-primary/90 text-white flex-shrink-0"
           title="Request new game"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
         </Button>
       </div>
 
       {/* Game List */}
       <ScrollArea className="flex-1">
-        <div className="p-3 space-y-1">
+        <div className="p-2 space-y-1">
           {loading ? (
-            <div className="text-center py-8 text-cyan/60 text-sm">
+            <div className="text-center py-8 text-muted-foreground text-xs">
               Loading games...
             </div>
           ) : manuals.length === 0 ? (
-            <div className="text-center py-8 text-cyan/60 text-sm">
+            <div className="text-center py-8 text-muted-foreground text-xs">
               No games available
             </div>
           ) : (
@@ -135,34 +135,34 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
                 key={manual.manual_id}
                 onClick={() => handleGameSelect(manual)}
                 className={cn(
-                  "w-full text-left p-3 rounded-lg transition-all duration-200 group",
-                  "hover:bg-white/10 border border-transparent hover:border-orange/30",
+                  "w-full text-left p-2 rounded-md transition-all duration-200 group",
+                  "hover:bg-white/5 border border-transparent hover:border-white/10",
                   selectedManualId === manual.manual_id
-                    ? "bg-orange/20 border-orange/50"
-                    : "bg-white/5"
+                    ? "bg-primary/10 border-primary/30"
+                    : "bg-white/[0.02]"
                 )}
               >
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-1.5">
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      "text-sm font-medium truncate transition-colors",
+                      "text-xs font-medium truncate transition-colors",
                       selectedManualId === manual.manual_id
-                        ? "text-orange"
-                        : "text-white group-hover:text-orange"
+                        ? "text-primary"
+                        : "text-foreground group-hover:text-primary"
                     )}>
                       {manual.title || manual.source_filename}
                     </p>
                     {selectedManualId === manual.manual_id && (
-                      <Badge className="mt-1 bg-orange/20 text-orange border-orange/30 text-xs">
+                      <Badge className="mt-1 bg-primary/10 text-primary border-primary/20 text-[10px] px-1.5 py-0">
                         Active
                       </Badge>
                     )}
                   </div>
                   <ChevronRight className={cn(
-                    "h-4 w-4 flex-shrink-0 transition-all",
+                    "h-3.5 w-3.5 flex-shrink-0 transition-all",
                     selectedManualId === manual.manual_id
-                      ? "text-orange"
-                      : "text-cyan/40 group-hover:text-cyan group-hover:translate-x-0.5"
+                      ? "text-primary"
+                      : "text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5"
                   )} />
                 </div>
               </button>

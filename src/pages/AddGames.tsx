@@ -480,7 +480,7 @@ export default function AddGames() {
                               </Button>
                             </div>
                             {game.manufacturer && (
-                              <p className="text-xs text-cyan/60 truncate">{game.manufacturer}</p>
+                              <p className="text-xs text-muted-foreground truncate">{game.manufacturer}</p>
                             )}
                           </>
                         )}
@@ -510,7 +510,7 @@ export default function AddGames() {
               <h1 className="text-3xl sm:text-4xl font-tech font-bold mb-3">
                 <span className="text-white">SUBMIT</span> <span className="text-orange">GAMES</span>
               </h1>
-              <p className="text-cyan/60 text-sm sm:text-base">
+              <p className="text-muted-foreground text-sm sm:text-base">
                 Help us build the ultimate arcade game database
               </p>
             </div>
@@ -583,7 +583,7 @@ export default function AddGames() {
                             value={game.manufacturer}
                             onChange={(e) => handleInputChange(index, e)}
                             placeholder="e.g., Namco"
-                            className="bg-black/50 border-white/20 focus:border-cyan"
+                            className="bg-black/50 border-white/20 focus:border-primary"
                           />
                         </div>
 
@@ -595,7 +595,7 @@ export default function AddGames() {
                             value={game.version_model_year}
                             onChange={(e) => handleInputChange(index, e)}
                             placeholder="e.g., 2023 Deluxe Edition"
-                            className="bg-black/50 border-white/20 focus:border-cyan"
+                            className="bg-black/50 border-white/20 focus:border-primary"
                           />
                         </div>
 
@@ -607,7 +607,7 @@ export default function AddGames() {
                             value={game.fec_location_name}
                             onChange={(e) => handleInputChange(index, e)}
                             placeholder="e.g., Main Street Arcade"
-                            className="bg-black/50 border-white/20 focus:border-cyan"
+                            className="bg-black/50 border-white/20 focus:border-primary"
                           />
                         </div>
 
@@ -619,7 +619,7 @@ export default function AddGames() {
                             value={game.input_by}
                             onChange={(e) => handleInputChange(index, e)}
                             placeholder="e.g., John Smith"
-                            className="bg-black/50 border-white/20 focus:border-cyan"
+                            className="bg-black/50 border-white/20 focus:border-primary"
                           />
                         </div>
                       </div>
@@ -631,7 +631,7 @@ export default function AddGames() {
                       type="button"
                       variant="outline"
                       onClick={addGame}
-                      className="flex-1 border-cyan/30 text-cyan hover:bg-cyan/10"
+                      className="flex-1 border-white/20 text-foreground hover:bg-white/5"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Another Game
@@ -651,7 +651,7 @@ export default function AddGames() {
                 <div className="space-y-6">
                   <div className="p-6 rounded-lg bg-white/5 border border-white/10 space-y-3">
                     <h3 className="font-tech text-white font-semibold">CSV FORMAT REQUIREMENTS</h3>
-                    <ul className="text-sm text-cyan/60 space-y-2 list-none">
+                    <ul className="text-sm text-muted-foreground space-y-2 list-none">
                       <li className="flex items-start gap-2">
                         <span className="text-orange mt-0.5">•</span>
                         <span><strong className="text-white">Game Name</strong> column is required</span>
@@ -666,7 +666,7 @@ export default function AddGames() {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-orange mt-0.5">•</span>
-                        <span>Example: <code className="text-xs bg-black/50 px-2 py-1 rounded text-cyan border border-cyan/20">Game Name,Manufacturer,Version</code></span>
+                        <span>Example: <code className="text-xs bg-black/50 px-2 py-1 rounded text-muted-foreground border border-white/20">Game Name,Manufacturer,Version</code></span>
                       </li>
                     </ul>
                   </div>
@@ -682,7 +682,7 @@ export default function AddGames() {
                         className="bg-black/50 border-white/20 file:bg-orange file:text-white file:border-0 file:rounded file:px-4 file:py-2 file:font-tech file:text-sm hover:file:bg-orange/80"
                       />
                       {csvFile && (
-                        <p className="text-sm text-cyan/60 flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-green-500" />
                           Selected: {csvFile.name}
                         </p>

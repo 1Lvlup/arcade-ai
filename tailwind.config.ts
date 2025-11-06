@@ -64,14 +64,9 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         orange: {
-          DEFAULT: "hsl(var(--brand-orange))",
-          light: "hsl(18 100% 60%)",
-          dark: "hsl(18 100% 40%)",
-        },
-        cyan: {
-          DEFAULT: "hsl(var(--brand-cyan))",
-          light: "hsl(188 100% 70%)",
-          dark: "hsl(188 100% 50%)",
+          DEFAULT: "hsl(24 100% 54%)",
+          light: "hsl(24 100% 60%)",
+          dark: "hsl(24 100% 45%)",
         },
       },
       borderRadius: {

@@ -148,11 +148,11 @@ export default function AccountSettings() {
               <CreditCard className="h-5 w-5 text-orange" />
               SUBSCRIPTION
             </CardTitle>
-            <CardDescription className="text-cyan/60">Manage your subscription plan</CardDescription>
+            <CardDescription className="text-muted-foreground">Manage your subscription plan</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {subscriptionLoading ? (
-              <p className="text-sm text-cyan/60">Loading subscription status...</p>
+              <p className="text-sm text-muted-foreground">Loading subscription status...</p>
             ) : isSubscribed && getTierInfo() ? (
               <>
                 <div className="space-y-2">
@@ -165,7 +165,7 @@ export default function AccountSettings() {
                   {subscriptionEnd && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-white">Renews On</span>
-                      <span className="text-sm text-cyan/60">
+                      <span className="text-sm text-muted-foreground">
                         {new Date(subscriptionEnd).toLocaleDateString()}
                       </span>
                     </div>
@@ -179,13 +179,13 @@ export default function AccountSettings() {
                   {portalLoading ? 'LOADING...' : 'MANAGE SUBSCRIPTION'}
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
-                <p className="text-xs text-cyan/60 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   Update payment method, cancel, or change your plan
                 </p>
               </>
             ) : (
               <>
-                <p className="text-sm text-cyan/60">
+                <p className="text-sm text-muted-foreground">
                   You don't have an active subscription
                 </p>
                 <Button onClick={() => window.location.href = '/pricing'} className="w-full bg-orange hover:bg-orange/80 text-white font-tech">

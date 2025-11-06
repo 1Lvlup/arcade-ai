@@ -9,6 +9,7 @@ import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
 import { Footer } from '@/components/Footer';
 import { LiveProcessingMonitor } from '@/components/LiveProcessingMonitor';
+import { GameSidebar } from '@/components/GameSidebar';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -68,16 +69,25 @@ const Index = () => {
     window.history.pushState({}, '', newUrl.toString());
   };
 
+  const handleManualChange = (manualId: string | null, manualTitle: string | null) => {
+    setSelectedManualId(manualId || undefined);
+    setSelectedManualTitle(manualTitle || undefined);
+  };
+
   if (showChat) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
+        <GameSidebar 
+          selectedManualId={selectedManualId}
+          onManualChange={handleManualChange}
+        />
         <SharedHeader 
           title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : 'AI Assistant'} 
           showBackButton={true} 
           backTo="/" 
           onBackClick={handleBackToHome} 
         />
-        <main className="flex-1 w-full">
+        <main className="flex-1 ml-80 container mx-auto px-4 py-8">
           <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />
         </main>
         <Footer />

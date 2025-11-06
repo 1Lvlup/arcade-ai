@@ -24,7 +24,6 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
   const navigate = useNavigate();
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     fetchProcessedManuals();
@@ -95,36 +94,9 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
   };
 
   return (
-    <>
-      {/* Collapsed State - Icon in Header */}
-      {!isExpanded && (
-        <div
-          className="cursor-pointer transition-all duration-300 hover:scale-110"
-          onMouseEnter={() => setIsExpanded(true)}
-        >
-          <div className="relative">
-            {/* Icon */}
-            <Gamepad2 
-              className="h-6 w-6 text-orange/90" 
-            />
-            {/* Selection indicator dot */}
-            {selectedManualId && (
-              <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-orange rounded-full border border-black animate-pulse" />
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Expanded Sidebar */}
-      <div
-        className={cn(
-          "fixed left-0 top-[52px] h-[calc(100vh-52px)] bg-black/95 border-r border-orange/20 transition-all duration-300 z-50 backdrop-blur-md",
-          isExpanded ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"
-        )}
-        onMouseLeave={() => setIsExpanded(false)}
-      >
-      {/* Expanded Header */}
-      <div className="flex items-center h-16 border-b border-orange/20 justify-between px-4">
+    <div className="fixed left-0 top-0 h-full w-80 bg-black border-r border-orange/20 flex flex-col z-40">
+      {/* Header */}
+      <div className="flex items-center h-16 border-b border-orange/20 justify-between px-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Gamepad2 className="h-6 w-6 text-orange" />
           <div className="overflow-hidden">
@@ -146,8 +118,8 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
         </Button>
       </div>
 
-      {/* Expanded Game List */}
-      <ScrollArea className="h-[calc(100%-4rem)]">
+      {/* Game List */}
+      <ScrollArea className="flex-1">
         <div className="p-3 space-y-1">
           {loading ? (
             <div className="text-center py-8 text-cyan/60 text-sm">
@@ -199,6 +171,5 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
         </div>
       </ScrollArea>
     </div>
-    </>
   );
 }

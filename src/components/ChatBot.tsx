@@ -1520,8 +1520,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                     }, 2000);
                   }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask me about arcade machine troubleshooting..."
-                  disabled={isLoading}
+                  placeholder={selectedManualId ? "Ask me about arcade machine troubleshooting..." : "Select a manual from the sidebar to start asking questions"}
+                  disabled={isLoading || !selectedManualId}
                   className="flex-1 text-base h-12"
                 />
                 {messages.length > 1 && (
@@ -1537,7 +1537,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 )}
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isLoading}
+                  disabled={!inputValue.trim() || isLoading || !selectedManualId}
                   size="lg"
                   variant="orange"
                   className="h-12 px-6"

@@ -34,7 +34,10 @@ import {
   Flag,
   X,
   MoreVertical,
-  Edit
+  Edit,
+  Clock,
+  CheckCheck,
+  XCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -66,6 +69,7 @@ interface ChatMessage {
   timestamp: Date;
   query_log_id?: string;
   feedback?: 'thumbs_up' | 'thumbs_down' | null;
+  status?: 'sending' | 'sent' | 'failed';
   thumbnails?: Array<{
     page_id: string;
     url: string;
@@ -499,9 +503,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     // Require game selection before sending message
     if (!selectedManualId) {
       toast({
-        title: 'Please select a game',
+        title: 'Please select a game first',
         description: 'Choose which game you need help with from the dropdown above',
         variant: 'destructive',
+        duration: 5000,
       });
       return;
     }
@@ -516,7 +521,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       id: Date.now().toString(),
       type: 'user',
       content: inputValue.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
+      status: 'sending'
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -698,6 +704,13 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
       console.log('✅ Streaming complete');
 
+      // Mark user message as sent
+      setMessages(prev => prev.map(msg => 
+        msg.id === userMessage.id 
+          ? { ...msg, status: 'sent' as const }
+          : msg
+      ));
+
       // Auto-save message after completion for logged-in users
       if (user && conversationIdToUse) {
         try {
@@ -728,6 +741,14 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       }
     } catch (err: any) {
       console.error('❌ chat-manual failed:', err);
+      
+      // Mark user message as failed
+      setMessages(prev => prev.map(msg => 
+        msg.id === userMessage.id 
+          ? { ...msg, status: 'failed' as const }
+          : msg
+      ));
+      
       toast({
         title: 'Error',
         description: err.message || 'Failed to process your question. Please try again.',
@@ -1235,22 +1256,64 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 }}
               >
                 {message.type === 'user' && (
-                  <div className="flex items-center space-x-2 mb-3">
-                    <User className="h-5 w-5" />
-                    <span className="text-sm opacity-70">
-                      {message.timestamp.toLocaleTimeString()}
-                    </span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <User className="h-5 w-5" />
+                      <span className="text-sm opacity-70">
+                        {message.timestamp.toLocaleTimeString()}
+                      </span>
+                    </div>
+                    {message.status && (
+                      <div className="flex items-center space-x-1">
+                        {message.status === 'sending' && (
+                          <>
+                            <Clock className="h-4 w-4 opacity-70" />
+                            <span className="text-xs opacity-70">Sending...</span>
+                          </>
+                        )}
+                        {message.status === 'sent' && (
+                          <>
+                            <CheckCheck className="h-4 w-4 opacity-70" />
+                            <span className="text-xs opacity-70">Sent</span>
+                          </>
+                        )}
+                        {message.status === 'failed' && (
+                          <>
+                            <XCircle className="h-4 w-4 text-red-400" />
+                            <span className="text-xs text-red-400">Failed</span>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
                 
                 {message.type === 'user' ? (
                   <div className="text-base whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
-                ) : isStructuredAnswer(message.content) ? (
-                  renderStructuredAnswer(message.content, message.id)
                 ) : (
-                  <div className="text-base whitespace-pre-wrap leading-relaxed">
-                    {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
-                  </div>
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <Bot className="h-5 w-5" />
+                        <span className="text-sm opacity-70">
+                          {message.timestamp.toLocaleTimeString()}
+                        </span>
+                      </div>
+                      {!message.content && (
+                        <div className="flex items-center space-x-1">
+                          <Loader2 className="h-4 w-4 animate-spin opacity-70" />
+                          <span className="text-xs opacity-70">Typing...</span>
+                        </div>
+                      )}
+                    </div>
+                    {isStructuredAnswer(message.content) ? (
+                      renderStructuredAnswer(message.content, message.id)
+                    ) : (
+                      <div className="text-base whitespace-pre-wrap leading-relaxed">
+                        {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* Manual Source Info */}

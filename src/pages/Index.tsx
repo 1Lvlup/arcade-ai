@@ -12,6 +12,7 @@ import { LiveProcessingMonitor } from '@/components/LiveProcessingMonitor';
 import { GameSidebar } from '@/components/GameSidebar';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import productScreenshot from '@/assets/product-screenshot.png';
 
 const Index = () => {
   const { user } = useAuth();
@@ -118,8 +119,8 @@ const Index = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <section className="pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 lg:pb-20">
-          <div className="max-w-4xl">
-            <div className="mb-6">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
               <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-medium">
                 AI-powered arcade technician
               </Badge>
@@ -145,28 +146,41 @@ const Index = () => {
                   <span>Every fix across every arcade keeps Level Up constantly evolving until it inevitably becomes the standard amongst all arcades. Never let a broken game stop your games from making money again.</span>
                 </li>
               </ul>
+
+              <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <Button 
+                  onClick={handleStartGeneralChat} 
+                  size="lg"
+                  className="text-base font-semibold"
+                >
+                  Get started free <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="text-base font-semibold"
+                >
+                  View demo
+                </Button>
+              </div>
+
+              <p className="text-sm text-muted-foreground mt-6">
+                Try it for yourself. All built by the Chief Engineer of an FEC with 85+ game arcade. Built by one technician for all technicians · No credit card
+              </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-              <Button 
-                onClick={handleStartGeneralChat} 
-                size="lg"
-                className="text-base font-semibold"
-              >
-                Get started free <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="text-base font-semibold"
-              >
-                View demo
-              </Button>
+            <div className="relative lg:block hidden">
+              <div className="relative rounded-xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 bg-gradient-to-br from-background to-background/50 p-1">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5 pointer-events-none" />
+                <img 
+                  src={productScreenshot} 
+                  alt="LevelUp AI assistant interface showing game selection and troubleshooting conversation"
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-primary/20 rounded-full blur-3xl -z-10" />
+              <div className="absolute -top-4 -left-4 w-32 h-32 bg-orange/20 rounded-full blur-3xl -z-10" />
             </div>
-
-            <p className="text-sm text-muted-foreground mt-6">
-              Try it for yourself. All built by the Chief Engineer of an FEC with 85+ game arcade. Built by one technician for all technicians · No credit card
-            </p>
           </div>
         </section>
 

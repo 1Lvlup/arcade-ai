@@ -297,6 +297,16 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
       if (msgError) throw msgError;
 
+      // Check if conversation has no messages
+      if (!messagesData || messagesData.length === 0) {
+        toast({
+          title: 'Empty Conversation',
+          description: 'This conversation has no saved messages yet.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const loadedMessages: ChatMessage[] = messagesData.map(msg => ({
         id: msg.id,
         type: msg.role === 'user' ? 'user' : 'bot',
@@ -310,6 +320,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       setCurrentConversationId(conversationId);
       setSelectedManualId(conversationData.manual_id);
       setShowConversations(false);
+      setShowHistory(false);
       
       // Save as last active conversation
       localStorage.setItem('last_conversation_id', conversationId);
@@ -1009,10 +1020,11 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2 text-orange hover:text-orange/80 hover:bg-orange/10"
+                        className="h-8 px-3 text-orange hover:text-orange/80 hover:bg-orange/10 gap-1"
                         title="Request games to be added"
                       >
                         <Plus className="h-4 w-4" />
+                        <span className="text-xs">Request Games</span>
                       </Button>
                     }
                   />

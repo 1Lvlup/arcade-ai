@@ -923,7 +923,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     <div className="relative h-full flex flex-col">
       {/* Main Chat Area */}
       <Card className="tech-card h-full flex flex-col w-full rounded-none border-0 bg-black">
-        <CardHeader className="border-b border-white/10 flex-shrink-0 py-3 px-6">
+        <CardHeader className="border-b border-white/10 flex-shrink-0 py-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center gap-3">
               {/* Game Selection Icon */}
@@ -1096,7 +1096,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         )}
 
         {/* Messages Area */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-6 px-6 space-y-6 min-h-0 w-full" style={{ background: 'hsl(210 20% 5%)' }}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-6 space-y-6 min-h-0 w-full" style={{ background: 'hsl(210 20% 5%)' }}>
           {messages.map((message) => (
             <div
               key={message.id}
@@ -1235,7 +1235,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         </div>
         
         {/* Input Area */}
-        <div className="border-t border-border py-5 px-6 flex-shrink-0 w-full">
+        <div className="border-t border-border py-5 flex-shrink-0 w-full">
           {!selectedManualId ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <div className="text-center space-y-2">

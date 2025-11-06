@@ -77,7 +77,7 @@ const Index = () => {
           backTo="/" 
           onBackClick={handleBackToHome} 
         />
-        <main className="container mx-auto px-4 py-8 flex-1">
+        <main className="flex-1 w-full">
           <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />
         </main>
         <Footer />

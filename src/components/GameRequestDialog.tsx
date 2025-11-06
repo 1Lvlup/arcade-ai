@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-export function GameRequestDialog() {
+export function GameRequestDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [facilityName, setFacilityName] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -103,15 +103,17 @@ export function GameRequestDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5"
-          title="Request games to be added"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          <span className="text-xs">Request Games</span>
-        </Button>
+        {trigger || (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5"
+            title="Request games to be added"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            <span className="text-xs">Request Games</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>

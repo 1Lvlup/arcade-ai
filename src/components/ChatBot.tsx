@@ -10,6 +10,7 @@ import { DetailedFeedbackDialog } from '@/components/DetailedFeedbackDialog';
 import { GameRequestDialog } from '@/components/GameRequestDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
   MessageCircle, 
   Send, 
@@ -31,7 +32,9 @@ import {
   MessageSquarePlus,
   LogIn,
   Flag,
-  X
+  X,
+  MoreVertical,
+  Edit
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -126,6 +129,8 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [guestMessageCount, setGuestMessageCount] = useState(0);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedMessageForFeedback, setSelectedMessageForFeedback] = useState<ChatMessage | null>(null);
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -318,6 +323,47 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       toast({
         title: 'Error',
         description: 'Failed to load conversation',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const renameConversation = async (conversationId: string, newTitle: string) => {
+    if (!newTitle.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Title cannot be empty',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('conversations')
+        .update({ title: newTitle.trim() })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      setConversations(prev =>
+        prev.map(conv =>
+          conv.id === conversationId ? { ...conv, title: newTitle.trim() } : conv
+        )
+      );
+
+      setEditingConversationId(null);
+      setEditingTitle('');
+
+      toast({
+        title: 'Renamed',
+        description: 'Conversation title updated',
+      });
+    } catch (error) {
+      console.error('Error renaming conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to rename conversation',
         variant: 'destructive',
       });
     }
@@ -958,16 +1004,18 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             <div className="flex items-center gap-2">
               {user && (
                 <>
-                  <GameRequestDialog />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={startNewConversation}
-                    className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5"
-                    title="New conversation"
-                  >
-                    <MessageSquarePlus className="h-4 w-4" />
-                  </Button>
+                  <GameRequestDialog 
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-orange hover:text-orange/80 hover:bg-orange/10"
+                        title="Request games to be added"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1002,36 +1050,85 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                           conversations.map((conv) => (
                             <Card
                               key={conv.id}
-                              className={`hover:border-orange/50 transition-colors cursor-pointer bg-white/5 border-white/10 ${
+                              className={`hover:border-orange/50 transition-colors bg-white/5 border-white/10 ${
                                 currentConversationId === conv.id ? 'border-orange/50' : ''
                               }`}
                             >
                               <CardContent className="pt-4 pb-3">
                                 <div className="flex items-start justify-between gap-2">
                                   <div
-                                    className="flex-1"
+                                    className="flex-1 cursor-pointer"
                                     onClick={() => loadConversation(conv.id)}
                                   >
-                                  <div className="font-medium mb-1 line-clamp-2 text-white">
-                                    {conv.title}
+                                    {editingConversationId === conv.id ? (
+                                      <Input
+                                        value={editingTitle}
+                                        onChange={(e) => setEditingTitle(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            renameConversation(conv.id, editingTitle);
+                                          } else if (e.key === 'Escape') {
+                                            setEditingConversationId(null);
+                                            setEditingTitle('');
+                                          }
+                                        }}
+                                        onBlur={() => {
+                                          if (editingTitle.trim()) {
+                                            renameConversation(conv.id, editingTitle);
+                                          } else {
+                                            setEditingConversationId(null);
+                                            setEditingTitle('');
+                                          }
+                                        }}
+                                        className="text-white bg-white/10"
+                                        autoFocus
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                    ) : (
+                                      <div className="font-medium mb-1 line-clamp-2 text-white">
+                                        {conv.title}
+                                      </div>
+                                    )}
+                                    <div className="text-xs text-muted-foreground">
+                                      {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
+                                      {new Date(conv.last_message_at).toLocaleTimeString()}
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {new Date(conv.last_message_at).toLocaleDateString()} at{' '}
-                                    {new Date(conv.last_message_at).toLocaleTimeString()}
-                                  </div>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setConversationToDelete(conv.id);
-                                      setShowDeleteDialog(true);
-                                    }}
-                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingConversationId(conv.id);
+                                          setEditingTitle(conv.title);
+                                        }}
+                                      >
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Rename
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setConversationToDelete(conv.id);
+                                          setShowDeleteDialog(true);
+                                        }}
+                                        className="text-destructive focus:text-destructive"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
                               </CardContent>
                             </Card>

@@ -37,10 +37,12 @@ import {
   Edit,
   Clock,
   CheckCheck,
-  XCircle
+  XCircle,
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface AnswerStep {
   step: string;
@@ -135,6 +137,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   const [selectedMessageForFeedback, setSelectedMessageForFeedback] = useState<ChatMessage | null>(null);
   const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [otherUsers, setOtherUsers] = useState<Array<{ user_id: string; email?: string; is_typing: boolean }>>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -155,6 +161,60 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   }, [user]);
 
   // Detect manual scrolling
+  // Set up presence tracking for the current conversation
+  useEffect(() => {
+    if (!currentConversationId || !user) return;
+
+    const channel = supabase.channel(`conversation:${currentConversationId}`);
+    presenceChannelRef.current = channel;
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const users = Object.values(state)
+          .flat()
+          .filter((presence: any) => presence.user_id !== user.id)
+          .map((presence: any) => ({
+            user_id: presence.user_id,
+            email: presence.email,
+            is_typing: presence.is_typing || false
+          }));
+        setOtherUsers(users);
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('User joined:', newPresences);
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('User left:', leftPresences);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: user.id,
+            email: user.email,
+            is_typing: false,
+            online_at: new Date().toISOString()
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentConversationId, user]);
+
+  // Update typing status when user types
+  useEffect(() => {
+    if (!presenceChannelRef.current || !user) return;
+
+    presenceChannelRef.current.track({
+      user_id: user.id,
+      email: user.email,
+      is_typing: isTyping,
+      online_at: new Date().toISOString()
+    });
+  }, [isTyping, user]);
+
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
@@ -499,6 +559,12 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
+
+    // Clear typing indicator
+    setIsTyping(false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
 
     // Require game selection before sending message
     if (!selectedManualId) {
@@ -1240,6 +1306,21 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
 
         {/* Messages Area */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-6 px-6 space-y-6 min-h-0 w-full" style={{ background: 'hsl(0 0% 3%)' }}>
+          {/* Other users viewing indicator */}
+          {otherUsers.length > 0 && (
+            <div className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-muted-foreground">
+              <Eye className="h-4 w-4" />
+              <span>
+                {otherUsers.length} other {otherUsers.length === 1 ? 'user' : 'users'} viewing
+                {otherUsers.some(u => u.is_typing) && (
+                  <span className="ml-2 text-orange">
+                    • {otherUsers.filter(u => u.is_typing).length} typing...
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+
           {messages.map((message) => (
             <div
               key={message.id}
@@ -1425,7 +1506,22 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               <div className="flex space-x-3">
                 <Input
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onChange={(e) => {
+                    setInputValue(e.target.value);
+                    
+                    // Set typing indicator
+                    setIsTyping(true);
+                    
+                    // Clear existing timeout
+                    if (typingTimeoutRef.current) {
+                      clearTimeout(typingTimeoutRef.current);
+                    }
+                    
+                    // Clear typing after 2 seconds of no typing
+                    typingTimeoutRef.current = setTimeout(() => {
+                      setIsTyping(false);
+                    }, 2000);
+                  }}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask me about arcade machine troubleshooting..."
                   disabled={isLoading}

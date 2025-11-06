@@ -468,6 +468,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
     setIsLoading(true);
 
     // Auto-save conversation when user sends first message
+    let conversationIdToUse = currentConversationId;
     if (user && !currentConversationId && messages.length === 1) {
       const title = query.slice(0, 50);
       try {
@@ -482,6 +483,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           .single();
         
         if (!error && newConv) {
+          conversationIdToUse = newConv.id;
           setCurrentConversationId(newConv.id);
           localStorage.setItem('last_conversation_id', newConv.id);
         }
@@ -640,16 +642,16 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       console.log('✅ Streaming complete');
 
       // Auto-save message after completion for logged-in users
-      if (user && currentConversationId) {
+      if (user && conversationIdToUse) {
         try {
           await supabase.from('conversation_messages').insert([
             {
-              conversation_id: currentConversationId,
+              conversation_id: conversationIdToUse,
               role: 'user',
               content: query,
             },
             {
-              conversation_id: currentConversationId,
+              conversation_id: conversationIdToUse,
               role: 'assistant',
               content: accumulatedContent,
             }
@@ -659,10 +661,10 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
           await supabase
             .from('conversations')
             .update({ last_message_at: new Date().toISOString() })
-            .eq('id', currentConversationId);
+            .eq('id', conversationIdToUse);
           
           // Save as last active conversation
-          localStorage.setItem('last_conversation_id', currentConversationId);
+          localStorage.setItem('last_conversation_id', conversationIdToUse);
         } catch (err) {
           console.error('Failed to auto-save messages:', err);
         }

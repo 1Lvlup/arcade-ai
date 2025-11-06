@@ -1102,19 +1102,6 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             <div className="flex items-center gap-2">
               {user && (
                 <>
-                  <GameRequestDialog 
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-3 text-orange hover:text-orange/80 hover:bg-orange/10 gap-1"
-                        title="Request games to be added"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span className="text-xs">Request Games</span>
-                      </Button>
-                    }
-                  />
                   <Button
                     variant="ghost"
                     size="sm"

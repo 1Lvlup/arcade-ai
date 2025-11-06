@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { GameRequestDialog } from '@/components/GameRequestDialog';
 
 interface Manual {
   id: string;
@@ -21,7 +21,6 @@ interface GameSidebarProps {
 }
 
 export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarProps) {
-  const navigate = useNavigate();
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -96,26 +95,34 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
   return (
     <div className="fixed left-0 top-0 h-full w-56 bg-black border-r border-white/10 flex flex-col z-40">
       {/* Header */}
-      <div className="flex items-center h-16 border-b border-white/10 justify-between px-3 flex-shrink-0">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <Gamepad2 className="h-5 w-5 text-orange flex-shrink-0" />
-          <div className="overflow-hidden flex-1">
-            <h2 className="font-tech text-xs font-bold text-white whitespace-nowrap">
-              SELECT GAME
-            </h2>
-            <p className="text-[10px] text-muted-foreground whitespace-nowrap">
-              {manuals.length} available
-            </p>
+      <div className="flex flex-col border-b border-white/10 flex-shrink-0">
+        <div className="flex items-center h-16 justify-between px-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Gamepad2 className="h-5 w-5 text-orange flex-shrink-0" />
+            <div className="overflow-hidden flex-1">
+              <h2 className="font-tech text-xs font-bold text-white whitespace-nowrap">
+                SELECT GAME
+              </h2>
+              <p className="text-[10px] text-muted-foreground whitespace-nowrap">
+                {manuals.length} available
+              </p>
+            </div>
           </div>
         </div>
-        <Button
-          onClick={() => navigate('/add-games')}
-          size="icon"
-          className="h-7 w-7 bg-primary hover:bg-primary/90 text-white flex-shrink-0"
-          title="Request new game"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
+        <div className="px-3 pb-3">
+          <GameRequestDialog
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-8 text-orange hover:text-orange/80 hover:bg-orange/10 border-orange/30 gap-2"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">Request New Game</span>
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       {/* Game List */}

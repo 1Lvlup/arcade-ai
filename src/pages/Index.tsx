@@ -118,9 +118,9 @@ const Index = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
-        <section className="pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 lg:pb-20 relative">
-          <div className="grid lg:grid-cols-[1fr_1.4fr] gap-8 items-center relative">
-            <div className="relative z-10">
+        <section className="pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 lg:pb-20 relative bg-arcade-hero">
+          <div className="grid lg:grid-cols-2 gap-12 items-center relative">
+            <div className="max-w-xl">
               <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-medium">
                 AI-powered arcade technician
               </Badge>
@@ -128,11 +128,11 @@ const Index = () => {
                 Stop Losing Money <br />
                 <span className="text-muted-foreground">To Dead Games</span>
               </h1>
-              <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl leading-relaxed mb-6">
+              <p className="text-xl sm:text-2xl text-muted-foreground leading-relaxed mb-6">
                 LevelUp is an AI technician trained on your actual arcade games, their manuals/schematics, and real fixes. It guides any tech through clear troubleshooting steps so cabinets get back online faster, without waiting on distributors or digging through PDFs.
               </p>
               
-              <ul className="space-y-3 text-lg text-muted-foreground max-w-2xl mb-8">
+              <ul className="space-y-3 text-lg text-muted-foreground mb-8">
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>
                   <span>Recover revenue from games that would sit dark for days or weeks.</span>
@@ -143,46 +143,41 @@ const Index = () => {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>
-                  <span>Every fix across every arcade keeps Level Up constantly evolving until it inevitably becomes the standard amongst all arcades. Never let a broken game stop your games from making money again.</span>
+                  <span>Every fix across every arcade keeps LevelUp constantly evolving, so over time it becomes the default way modern arcades stay online.</span>
                 </li>
               </ul>
 
-              <div className="flex flex-col sm:flex-row gap-4 mt-8">
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <Button 
                   onClick={handleStartGeneralChat} 
                   size="lg"
-                  className="text-base font-semibold"
+                  variant="orange"
+                  className="text-base font-semibold px-8"
                 >
-                  Get started free <ArrowRight className="ml-2 h-5 w-5" />
+                  Get started free
                 </Button>
                 <Button 
-                  variant="outline" 
+                  variant="link" 
                   size="lg"
-                  className="text-base font-semibold"
+                  className="text-base font-semibold text-foreground hover:text-primary"
                 >
-                  View demo
+                  Book a 15-minute walkthrough →
                 </Button>
               </div>
 
-              <p className="text-sm text-muted-foreground mt-6">
-                Try it for yourself. All built by the Chief Engineer of an FEC with 85+ game arcade. Built by one technician for all technicians · No credit card
+              <p className="text-sm text-muted-foreground">
+                5 free questions · No credit card · Built inside a live FEC with 80+ games
               </p>
             </div>
 
-            <div className="relative lg:block hidden -ml-20">
-              <div className="relative rounded-xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 bg-gradient-to-br from-background to-background/50 p-1">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5 pointer-events-none" />
-                {/* Gradient fade on left edge */}
-                <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background via-background/60 to-transparent z-10 pointer-events-none" />
-                <img 
-                  src={productScreenshot} 
-                  alt="LevelUp AI assistant interface showing game selection and troubleshooting conversation"
-                  className="w-full h-auto rounded-lg"
-                  style={{ imageRendering: 'crisp-edges' }}
-                />
-              </div>
-              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-primary/20 rounded-full blur-3xl -z-10" />
-              <div className="absolute -top-4 -left-4 w-32 h-32 bg-orange/20 rounded-full blur-3xl -z-10" />
+            <div className="relative lg:block hidden">
+              <div className="absolute -inset-4 rounded-3xl bg-orange/25 blur-2xl opacity-40" />
+              <img 
+                src={productScreenshot} 
+                alt="LevelUp AI assistant interface showing game selection and troubleshooting conversation"
+                className="relative rounded-2xl border border-orange/50 shadow-2xl w-full h-auto"
+                style={{ imageRendering: 'crisp-edges' }}
+              />
             </div>
           </div>
         </section>

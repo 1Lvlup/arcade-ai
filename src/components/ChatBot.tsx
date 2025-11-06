@@ -176,7 +176,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       type: 'bot',
       content: selectedManualId 
         ? `Hello! I'm here to help you troubleshoot "${manualTitle}". What issue can I help you solve today?`
-        : `Hello! I'm your arcade troubleshooting assistant. Please select a game from the dropdown above to get started.`,
+        : `Hello! I'm your arcade troubleshooting assistant. Please select a game from the sidebar to get started.`,
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
@@ -1235,7 +1235,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <div className="text-center space-y-2">
                 <p className="text-lg font-semibold text-foreground">Select a game to get started</p>
-                <p className="text-sm text-muted-foreground">Choose a game from the dropdown above to begin troubleshooting</p>
+                <p className="text-sm text-muted-foreground">Choose a game from the sidebar on the left to begin troubleshooting</p>
               </div>
             </div>
           ) : (

@@ -189,17 +189,31 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
       
       await loadConversations();
       
-      // Always start with a fresh conversation that requires game selection
-      setSelectedManualId(null);
-      setManualTitle(null);
-      setCurrentConversationId(null);
-      localStorage.removeItem('last_conversation_id');
+      // Only reset if no manual was passed as prop
+      if (!initialManualId) {
+        setSelectedManualId(null);
+        setManualTitle(null);
+        setCurrentConversationId(null);
+        localStorage.removeItem('last_conversation_id');
+      } else {
+        // Use the prop values
+        setSelectedManualId(initialManualId);
+        setManualTitle(initialManualTitle);
+      }
       updateWelcomeMessage();
       setIsInitialized(true);
     };
     
     initializeChat();
   }, [user]);
+
+  // Sync manual selection from parent props
+  useEffect(() => {
+    if (isInitialized && initialManualId !== selectedManualId) {
+      setSelectedManualId(initialManualId || null);
+      setManualTitle(initialManualTitle || null);
+    }
+  }, [initialManualId, initialManualTitle, isInitialized]);
 
   // Update welcome message when manual changes (but only if no active conversation)
   useEffect(() => {

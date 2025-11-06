@@ -43,7 +43,7 @@ const Chat = () => {
           signupRequired={usageInfo.signup_required}
         />
       )}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 w-full">
         <ChatBot 
           key={refreshTrigger}
           onUsageUpdate={setUsageInfo}

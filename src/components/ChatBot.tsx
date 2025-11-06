@@ -1096,14 +1096,14 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         )}
 
         {/* Messages Area */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-6 space-y-6 min-h-0" style={{ background: 'hsl(210 20% 5%)' }}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-6 space-y-6 min-h-0 w-full" style={{ background: 'hsl(210 20% 5%)' }}>
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-lg p-5 font-sans text-white ${
+                className={`max-w-4xl rounded-lg p-5 font-sans text-white ${
                   message.type === 'user'
                     ? 'border border-orange/30'
                     : 'border border-primary/30'
@@ -1235,7 +1235,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         </div>
         
         {/* Input Area */}
-        <div className="border-t border-border px-6 py-5 flex-shrink-0">
+        <div className="border-t border-border px-8 py-5 flex-shrink-0 w-full max-w-6xl mx-auto">
           {!selectedManualId ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <div className="text-center space-y-2">

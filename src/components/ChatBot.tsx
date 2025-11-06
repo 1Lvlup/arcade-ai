@@ -1330,7 +1330,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 className={`w-full rounded-lg p-5 font-sans text-white ${
                   message.type === 'user'
                     ? 'bg-white/[0.05] border border-primary/40 hover:bg-white/[0.07]'
-                    : 'bg-white/[0.02] border border-white/10'
+                    : 'bg-white/[0.02] border-l-4 border-l-primary/50'
                 }`}
               >
                 {message.type === 'user' && (

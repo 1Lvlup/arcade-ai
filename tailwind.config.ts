@@ -14,17 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        'sans': ['Exo 2', 'system-ui', '-apple-system', 'sans-serif'],
-        'display': ['Orbitron', 'sans-serif'],
-        'tech': ['Orbitron', 'sans-serif'],
-        'mono': ['Orbitron', 'monospace'],
-        'geom': ['geom-graphic', 'sans-serif'],
-        'fuel': ['pf-fuel-grime', 'sans-serif'],
-        'posterama': ['posterama-2001', 'sans-serif'],
-        'goodtimes': ['good-times', 'sans-serif'],
-        'ethnocentric': ['ethnocentric', 'sans-serif'],
-        'sofachrome': ['sofachrome', 'sans-serif'],
-        'kallisto': ['kallisto', 'sans-serif'],
+        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        'display': ['Inter', 'sans-serif'],
+        'tech': ['Inter', 'sans-serif'],
+        'mono': ['Inter', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

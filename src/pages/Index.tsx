@@ -116,10 +116,11 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <SharedHeader title="1LevelUp" titleClassName="text-lg font-semibold text-foreground" />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main>
         {/* Hero Section */}
-        <section className="pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 lg:pb-20 relative bg-arcade-hero">
-          <div className="grid lg:grid-cols-2 gap-12 items-center relative">
+        <section className="bg-arcade-hero">
+          <div className="mx-auto max-w-7xl px-6 py-20 grid gap-12 lg:grid-cols-2 items-center">
+            {/* LEFT: text */}
             <div className="max-w-xl">
               <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-medium">
                 AI-powered arcade technician
@@ -170,17 +171,21 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="relative lg:block hidden">
-              <div className="absolute -inset-4 rounded-3xl bg-orange/25 blur-2xl opacity-40" />
-              <img 
-                src={productScreenshot} 
-                alt="LevelUp AI assistant interface showing game selection and troubleshooting conversation"
-                className="relative rounded-2xl border border-orange/50 shadow-2xl w-full h-auto"
-                style={{ imageRendering: 'crisp-edges' }}
-              />
+            {/* RIGHT: image */}
+            <div className="flex justify-end">
+              <div className="relative w-full max-w-2xl">
+                <div className="absolute -inset-4 rounded-3xl bg-orange/30 blur-3xl opacity-40" />
+                <img 
+                  src={productScreenshot} 
+                  alt="LevelUp arcade troubleshooting assistant"
+                  className="relative w-full rounded-2xl border border-orange/60 shadow-2xl"
+                />
+              </div>
             </div>
           </div>
         </section>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Stats Section */}
         <section className="py-16 border-y border-border">
@@ -434,6 +439,8 @@ const Index = () => {
           </div>
         </section>
 
+        </div>
+        
         {/* Admin Panel */}
         {isAdmin && (
           <section className="py-12 border-t border-border">

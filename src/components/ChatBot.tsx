@@ -1329,12 +1329,9 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               <div
                 className={`w-full rounded-lg p-5 font-sans text-white ${
                   message.type === 'user'
-                    ? 'border border-orange/30'
-                    : 'border border-primary/30'
+                    ? 'bg-white/[0.02] border border-white/10 hover:bg-white/5'
+                    : 'bg-white/[0.02] border border-white/10'
                 }`}
-                style={{
-                  background: message.type === 'user' ? 'hsl(24 100% 54%)' : 'hsl(0 0% 8%)'
-                }}
               >
                 {message.type === 'user' && (
                   <div className="flex items-center justify-between mb-3">

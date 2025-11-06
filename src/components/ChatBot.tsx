@@ -542,19 +542,23 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   };
 
   const handleManualChange = (newManualId: string | null, newManualTitle: string | null) => {
-    setSelectedManualId(newManualId);
-    setManualTitle(newManualTitle);
-    
     // Show context switch notification if messages exist
     if (messages.length > 1) {
       toast({
-        title: "🔄 Switched context",
-        description: `Now querying: ${newManualTitle || 'All Manuals'}`,
+        title: "🔄 Switched to new game",
+        description: `Starting fresh conversation for: ${newManualTitle || 'All Manuals'}`,
       });
     }
     
-    setMessages([]); // clear chat when switching manuals
+    // Clear current conversation and start fresh
+    setMessages([]);
     setCurrentConversationId(null);
+    setSelectedManualId(newManualId);
+    setManualTitle(newManualTitle);
+    localStorage.removeItem('last_conversation_id');
+    
+    // Set up welcome message for new manual
+    setTimeout(() => updateWelcomeMessage(), 0);
   };
 
   const handleSendMessage = async () => {

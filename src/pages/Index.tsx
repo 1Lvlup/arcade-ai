@@ -70,8 +70,24 @@ const Index = () => {
   };
 
   const handleManualChange = (manualId: string | null, manualTitle: string | null) => {
+    if (!user) {
+      window.location.href = '/auth';
+      return;
+    }
+    
     setSelectedManualId(manualId || undefined);
     setSelectedManualTitle(manualTitle || undefined);
+    setShowChat(true);
+
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('chat', 'true');
+    if (manualId) {
+      newUrl.searchParams.set('manual_id', manualId);
+      if (manualTitle) {
+        newUrl.searchParams.set('title', manualTitle);
+      }
+    }
+    window.history.pushState({}, '', newUrl.toString());
   };
 
   if (showChat) {

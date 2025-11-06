@@ -1103,7 +1103,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-4xl rounded-lg p-5 font-sans text-white ${
+                className={`w-full rounded-lg p-5 font-sans text-white ${
                   message.type === 'user'
                     ? 'border border-orange/30'
                     : 'border border-primary/30'
@@ -1235,7 +1235,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         </div>
         
         {/* Input Area */}
-        <div className="border-t border-border px-8 py-5 flex-shrink-0 w-full max-w-6xl mx-auto">
+        <div className="border-t border-border px-8 py-5 flex-shrink-0 w-full">
           {!selectedManualId ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <div className="text-center space-y-2">

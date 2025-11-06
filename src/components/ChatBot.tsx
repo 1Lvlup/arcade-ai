@@ -1305,7 +1305,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         )}
 
         {/* Messages Area */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-6 px-6 space-y-6 min-h-0 w-full" style={{ background: 'hsl(0 0% 3%)' }}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-6 px-6 space-y-6 min-h-0 w-full bg-black">
           {/* Other users viewing indicator */}
           {otherUsers.length > 0 && (
             <div className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-muted-foreground">

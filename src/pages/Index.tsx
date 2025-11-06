@@ -118,9 +118,9 @@ const Index = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
-        <section className="pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 lg:pb-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+        <section className="pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 lg:pb-20 relative">
+          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-center relative">
+            <div className="relative z-10">
               <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-medium">
                 AI-powered arcade technician
               </Badge>
@@ -169,9 +169,11 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="relative lg:block hidden">
-              <div className="relative rounded-xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 bg-gradient-to-br from-background to-background/50 p-1">
+            <div className="relative lg:block hidden -ml-20">
+              <div className="relative rounded-xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 bg-gradient-to-br from-background to-background/50 p-1 scale-125 origin-left">
                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5 pointer-events-none" />
+                {/* Gradient fade on left edge */}
+                <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-background via-background/80 to-transparent z-10 pointer-events-none" />
                 <img 
                   src={productScreenshot} 
                   alt="LevelUp AI assistant interface showing game selection and troubleshooting conversation"

@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { GameSidebar } from '@/components/GameSidebar';
 import { DetailedFeedbackDialog } from '@/components/DetailedFeedbackDialog';
+import { GameRequestDialog } from '@/components/GameRequestDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import {
@@ -955,6 +956,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
             <div className="flex items-center gap-2">
               {user && (
                 <>
+                  <GameRequestDialog />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1245,15 +1247,7 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
         
         {/* Input Area */}
         <div className="border-t border-border py-5 px-6 flex-shrink-0 w-full">
-          {!selectedManualId ? (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <div className="text-center space-y-2">
-                <p className="text-lg font-semibold text-foreground">Select a game to get started</p>
-                <p className="text-sm text-muted-foreground">Choose a game from the sidebar on the left to begin troubleshooting</p>
-              </div>
-            </div>
-          ) : (
-            <>
+          <>
               <div className="flex space-x-3">
                 <Input
                   value={inputValue}
@@ -1297,7 +1291,6 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
                 )}
               </div>
             </>
-          )}
         </div>
       </CardContent>
 

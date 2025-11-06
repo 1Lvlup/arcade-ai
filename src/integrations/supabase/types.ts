@@ -635,6 +635,42 @@ export type Database = {
           },
         ]
       }
+      game_requests: {
+        Row: {
+          created_at: string
+          facility_name: string
+          game_names: string[]
+          id: string
+          notes: string | null
+          request_date: string
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          facility_name: string
+          game_names: string[]
+          id?: string
+          notes?: string | null
+          request_date: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          facility_name?: string
+          game_names?: string[]
+          id?: string
+          notes?: string | null
+          request_date?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       game_submissions: {
         Row: {
           created_at: string

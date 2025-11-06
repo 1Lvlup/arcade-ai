@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, X, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export function GameRequestDialog() {
   const [open, setOpen] = useState(false);
@@ -14,6 +15,7 @@ export function GameRequestDialog() {
   const [gameNames, setGameNames] = useState(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const addGameField = () => {
     setGameNames([...gameNames, '']);
@@ -71,6 +73,7 @@ export function GameRequestDialog() {
           facility_name: facilityName.trim(),
           request_date: date,
           game_names: validGames,
+          user_id: user?.id || null,
         });
 
       if (error) throw error;

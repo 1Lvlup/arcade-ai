@@ -32,32 +32,22 @@ const Chat = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black flex w-full">
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="border-b border-white/10 bg-black">
-          <div className="flex items-center h-14 px-4">
-            <SharedHeader title="AI Assistant" showBackButton={true} />
-          </div>
-        </div>
-        
-        <main className="flex-1 container mx-auto px-4 py-4 flex flex-col">
-          {usageInfo && !usageInfo.manual_override && (
-            <UsageBanner
-              queriesUsed={usageInfo.queries_used}
-              queriesRemaining={usageInfo.queries_remaining}
-              queriesLimit={usageInfo.queries_limit}
-              isAuthenticated={usageInfo.is_authenticated}
-              limitReached={usageInfo.limit_reached}
-              signupRequired={usageInfo.signup_required}
-            />
-          )}
-          <div className="flex-1 min-h-0">
-            <ChatBot 
-              key={refreshTrigger}
-              onUsageUpdate={setUsageInfo}
-            />
-          </div>
-        </main>
+    <div className="h-screen bg-black flex flex-col w-full overflow-hidden">
+      {usageInfo && !usageInfo.manual_override && (
+        <UsageBanner
+          queriesUsed={usageInfo.queries_used}
+          queriesRemaining={usageInfo.queries_remaining}
+          queriesLimit={usageInfo.queries_limit}
+          isAuthenticated={usageInfo.is_authenticated}
+          limitReached={usageInfo.limit_reached}
+          signupRequired={usageInfo.signup_required}
+        />
+      )}
+      <div className="flex-1 min-h-0">
+        <ChatBot 
+          key={refreshTrigger}
+          onUsageUpdate={setUsageInfo}
+        />
       </div>
     </div>
   );

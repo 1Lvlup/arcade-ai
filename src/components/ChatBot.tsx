@@ -920,18 +920,17 @@ export function ChatBot({ selectedManualId: initialManualId, manualTitle: initia
   };
 
   return (
-    <div className="relative h-full flex">
-      {/* Game Selection Sidebar */}
-      <GameSidebar 
-        selectedManualId={selectedManualId || undefined}
-        onManualChange={handleManualChange}
-      />
-      
+    <div className="relative h-full flex flex-col">
       {/* Main Chat Area */}
-      <Card className="tech-card h-full flex flex-col w-full ml-14 rounded-none border-x-0 bg-black border-white/10">
-        <CardHeader className="border-b border-white/10 flex-shrink-0 py-5 px-6">
+      <Card className="tech-card h-full flex flex-col w-full rounded-none border-0 bg-black">
+        <CardHeader className="border-b border-white/10 flex-shrink-0 py-3 px-6">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center gap-3">
+              {/* Game Selection Icon */}
+              <GameSidebar 
+                selectedManualId={selectedManualId || undefined}
+                onManualChange={handleManualChange}
+              />
               <span className="tracking-wider font-bold text-white font-tech">LEVEL UP</span>
               {selectedManualId && manualTitle && (
                 <Badge className="bg-orange/20 text-orange border-orange/30 text-xs">

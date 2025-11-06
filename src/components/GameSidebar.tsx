@@ -96,24 +96,20 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
 
   return (
     <>
-      {/* Collapsed State - Centered Icon */}
+      {/* Collapsed State - Icon in Header */}
       {!isExpanded && (
         <div
-          className="fixed left-4 top-1/2 -translate-y-1/2 z-40 cursor-pointer transition-all duration-300 hover:scale-110"
+          className="cursor-pointer transition-all duration-300 hover:scale-110"
           onMouseEnter={() => setIsExpanded(true)}
         >
           <div className="relative">
-            {/* Pulsing glow background */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="absolute h-16 w-16 rounded-full bg-orange/30 animate-pulse blur-xl" />
-            </div>
             {/* Icon */}
             <Gamepad2 
-              className="h-12 w-12 text-orange/70 relative z-10 drop-shadow-[0_0_12px_rgba(255,106,0,0.8)]" 
+              className="h-6 w-6 text-orange/90" 
             />
             {/* Selection indicator dot */}
             {selectedManualId && (
-              <div className="absolute -top-1 -right-1 h-3 w-3 bg-orange rounded-full border-2 border-black animate-pulse" />
+              <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-orange rounded-full border border-black animate-pulse" />
             )}
           </div>
         </div>
@@ -122,7 +118,7 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
       {/* Expanded Sidebar */}
       <div
         className={cn(
-          "fixed left-0 top-14 h-[calc(100vh-3.5rem)] bg-black/70 border-r border-orange/20 transition-all duration-300 z-40 backdrop-blur-md",
+          "fixed left-0 top-[52px] h-[calc(100vh-52px)] bg-black/95 border-r border-orange/20 transition-all duration-300 z-50 backdrop-blur-md",
           isExpanded ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"
         )}
         onMouseLeave={() => setIsExpanded(false)}

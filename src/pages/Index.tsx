@@ -145,9 +145,8 @@ const Index = () => {
                 <span className="text-muted-foreground">To Dead Games</span>
               </h1>
               <p className="text-xl sm:text-2xl text-muted-foreground leading-relaxed mb-6">
-                LevelUp is an AI technician trained on your actual arcade games, their manuals/schematics, and real
-                fixes. It guides any tech through clear troubleshooting steps so cabinets get back online faster,
-                without waiting on distributors or digging through PDFs.
+                LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
+                the full troubleshooting path from symptom to fix, so dead cabinets start earning again fast.
               </p>
 
               <ul className="space-y-3 text-lg text-muted-foreground mb-8">
@@ -157,15 +156,13 @@ const Index = () => {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>
-                  <span>
-                    Give every tech instant access to the highest level arcade technician, 24/7, on their phone.
-                  </span>
+                  <span>Give every tech instant access to a senior-level arcade technician, 24/7, on their phone.</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>
                   <span>
-                    Every fix across every arcade keeps LevelUp constantly evolving, so over time it becomes the default
-                    way modern arcades stay online.
+                    Every fix your team finds is saved and reused, so LevelUp becomes the default way modern arcades
+                    stay online.
                   </span>
                 </li>
               </ul>
@@ -241,7 +238,7 @@ const Index = () => {
                   <Brain className="h-8 w-8 text-primary mb-3" />
                   <CardTitle className="text-xl">AI-powered diagnostics</CardTitle>
                   <CardDescription className="text-base">
-                    Deep learning models trained on thousands of real repair scenarios
+                    AI that understands real arcade issues and patterns from the field.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -251,7 +248,7 @@ const Index = () => {
                   <Zap className="h-8 w-8 text-primary mb-3" />
                   <CardTitle className="text-xl">Lightning fast</CardTitle>
                   <CardDescription className="text-base">
-                    Get answers in milliseconds, not hours of manual searching
+                    Get answers in seconds instead of hours of manual digging and guesswork.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -261,7 +258,7 @@ const Index = () => {
                   <Database className="h-8 w-8 text-primary mb-3" />
                   <CardTitle className="text-xl">Comprehensive coverage</CardTitle>
                   <CardDescription className="text-base">
-                    Every game, every error, every solution in one unified database
+                    All your key games and recurring issues in one shared intelligence layer.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -269,9 +266,9 @@ const Index = () => {
               <Card className="border-border hover:border-primary/40 transition-colors">
                 <CardHeader>
                   <BookOpen className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl">Smart documentation</CardTitle>
+                  <CardTitle className="text-xl">Smart knowledge base</CardTitle>
                   <CardDescription className="text-base">
-                    Manuals and guides that understand context and find exact answers
+                    A living system that connects game behavior, error codes, and proven fixes into one place.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -281,7 +278,7 @@ const Index = () => {
                   <Shield className="h-8 w-8 text-primary mb-3" />
                   <CardTitle className="text-xl">Enterprise security</CardTitle>
                   <CardDescription className="text-base">
-                    Your data stays yours with end-to-end encryption
+                    Your operational data stays yours with strong security controls.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -291,7 +288,7 @@ const Index = () => {
                   <Users className="h-8 w-8 text-primary mb-3" />
                   <CardTitle className="text-xl">Team collaboration</CardTitle>
                   <CardDescription className="text-base">
-                    Share knowledge across your entire maintenance team
+                    Share what works across your maintenance team instead of keeping it in one person’s head.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -303,7 +300,7 @@ const Index = () => {
             <div className="mb-16">
               <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">How it works</h2>
               <p className="text-xl text-muted-foreground max-w-2xl">
-                Intelligent retrieval meets deep learning for unmatched accuracy.
+                Intelligent retrieval meets deep reasoning so your techs get reliable answers fast.
               </p>
             </div>
 
@@ -312,9 +309,9 @@ const Index = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                   <span className="text-2xl font-bold text-primary">1</span>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">Ask your question</h3>
+                <h3 className="text-xl font-semibold text-foreground">Describe the issue</h3>
                 <p className="text-muted-foreground">
-                  Describe your issue in plain language. No technical jargon required.
+                  Your tech explains what the game is doing in plain language—no special phrasing needed.
                 </p>
               </div>
 
@@ -322,9 +319,10 @@ const Index = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                   <span className="text-2xl font-bold text-primary">2</span>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">AI finds the answer</h3>
+                <h3 className="text-xl font-semibold text-foreground">LevelUp analyzes it</h3>
                 <p className="text-muted-foreground">
-                  Our system searches thousands of manuals and repair logs in milliseconds.
+                  The system uses everything it knows about that game—behavior, wiring, error patterns, and past
+                  fixes—to propose a focused troubleshooting path.
                 </p>
               </div>
 
@@ -332,9 +330,10 @@ const Index = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                   <span className="text-2xl font-bold text-primary">3</span>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">Get back to business</h3>
+                <h3 className="text-xl font-semibold text-foreground">You confirm the fix</h3>
                 <p className="text-muted-foreground">
-                  Follow step-by-step instructions tailored to your exact machine and issue.
+                  Your tech follows the guided steps, confirms what worked, and that resolution is saved so the next
+                  time it’s almost instant.
                 </p>
               </div>
             </div>
@@ -364,7 +363,7 @@ const Index = () => {
                     </div>
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-primary mt-0.5" />
-                      <span className="text-muted-foreground">Basic diagnostics</span>
+                      <span className="text-muted-foreground">Core troubleshooting support</span>
                     </div>
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-primary mt-0.5" />

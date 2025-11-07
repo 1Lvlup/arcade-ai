@@ -295,11 +295,11 @@ export function ChatBot({
     initializeChat();
   }, [user]);
 
-  // Sync manual selection from parent props
+  // Sync manual selection from parent props and auto-start new conversation
   useEffect(() => {
     if (isInitialized && initialManualId !== selectedManualId) {
-      setSelectedManualId(initialManualId || null);
-      setManualTitle(initialManualTitle || null);
+      // If manual changes, automatically start a new conversation
+      handleManualChange(initialManualId || null, initialManualTitle || null);
     }
   }, [initialManualId, initialManualTitle, isInitialized]);
 
@@ -1103,6 +1103,16 @@ export function ChatBot({
               )}
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={startNewConversation}
+                className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-white/5"
+                title="Start new conversation"
+              >
+                <MessageSquarePlus className="h-4 w-4 mr-1.5" />
+                <span className="text-xs">New</span>
+              </Button>
               {user && (
                 <>
                   <Button

@@ -1,10 +1,33 @@
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Brain, LogOut, ArrowLeft, Settings, Database, Home, Shield, GraduationCap, BarChart3, Users, User, ChevronDown, Code, Upload, MessageCircle, Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import {
+  Brain,
+  LogOut,
+  ArrowLeft,
+  Settings,
+  Database,
+  Home,
+  Shield,
+  GraduationCap,
+  BarChart3,
+  Users,
+  User,
+  ChevronDown,
+  Code,
+  Upload,
+  MessageCircle,
+  Plus,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SharedHeaderProps {
   title?: string;
@@ -15,16 +38,23 @@ interface SharedHeaderProps {
   titleClassName?: string;
 }
 
-export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBackClick, children, titleClassName }: SharedHeaderProps) => {
+export const SharedHeader = ({
+  title,
+  showBackButton = false,
+  backTo = "/",
+  onBackClick,
+  children,
+  titleClassName,
+}: SharedHeaderProps) => {
   const { user, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
       if (!user) return;
-      const { data } = await supabase.rpc('has_role', {
+      const { data } = await supabase.rpc("has_role", {
         _user_id: user.id,
-        _role: 'admin'
+        _role: "admin",
       });
       setIsAdmin(data || false);
     };
@@ -38,24 +68,24 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
   return (
     <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden">
       {/* Video Background */}
-      <video 
-        autoPlay 
-        loop 
-        muted 
-        playsInline 
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
         className="absolute inset-0 w-full h-full object-cover z-0"
-        style={{ objectPosition: 'center 52%' }}
+        style={{ objectPosition: "center 59%" }}
       >
         <source src="/AIGlitch.mp4" type="video/mp4" />
       </video>
-      
+
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-black/70 z-[1]" />
-      
+
       <div className="container mx-auto px-6 py-6 flex items-center justify-between relative z-10">
         <div className="flex items-center space-x-6">
-          {showBackButton && (
-            onBackClick ? (
+          {showBackButton &&
+            (onBackClick ? (
               <Button variant="minimal" size="sm" onClick={onBackClick}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -67,8 +97,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
                   Back
                 </Button>
               </Link>
-            )
-          )}
+            ))}
           {title && (
             <div className="flex items-center space-x-3">
               <Brain className="h-7 w-7 text-orange" />
@@ -78,7 +107,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
         </div>
         <div className="flex items-center space-x-4">
           {children}
-          
+
           {/* Navigation Dropdown - Visible to all users */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -103,7 +132,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
+
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -165,7 +194,7 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -198,9 +227,14 @@ export const SharedHeader = ({ title, showBackButton = false, backTo = "/", onBa
             </DropdownMenu>
           ) : (
             <Link to="/auth">
-              <Button variant="orange" size="lg" className="gap-2 font-bold text-base hover-lift" style={{
-                boxShadow: '0 0 20px hsl(24 100% 54% / 0.4)'
-              }}>
+              <Button
+                variant="orange"
+                size="lg"
+                className="gap-2 font-bold text-base hover-lift"
+                style={{
+                  boxShadow: "0 0 20px hsl(24 100% 54% / 0.4)",
+                }}
+              >
                 <User className="h-5 w-5" />
                 <span>SIGN IN / SIGN UP</span>
               </Button>

@@ -14,7 +14,7 @@
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
     
-    --primary: 24 100% 54%;          /* Orange Accent */
+    --primary: 24 100% 60%;          /* Brighter Orange Accent */
     --primary-foreground: 0 0% 100%;
     
     --secondary: 0 0% 12%;           /* Medium Dark Grey */
@@ -23,7 +23,7 @@
     --muted: 0 0% 12%;
     --muted-foreground: 0 0% 64%;    /* Medium Grey Text */
     
-    --accent: 24 100% 54%;           /* Orange */
+    --accent: 24 100% 60%;           /* Brighter Orange */
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 84% 60%;
@@ -31,7 +31,7 @@
     
     --border: 0 0% 20%;              /* Subtle Grey Border */
     --input: 0 0% 12%;
-    --ring: 24 100% 54%;             /* Orange Ring */
+    --ring: 24 100% 60%;             /* Brighter Orange Ring */
     
     --radius: 0.5rem;
     
@@ -48,19 +48,19 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
-    --primary: 24 100% 54%;
+    --primary: 24 100% 60%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 12%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 12%;
     --muted-foreground: 0 0% 64%;
-    --accent: 24 100% 54%;
+    --accent: 24 100% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 20%;
     --input: 0 0% 12%;
-    --ring: 24 100% 54%;
+    --ring: 24 100% 60%;
   }
 }
 
@@ -99,7 +99,7 @@
   }
   
   .stat-card:hover {
-    border-color: hsl(24 100% 54% / 0.5);
+    border-color: hsl(24 100% 60% / 0.5);
     box-shadow: 0 4px 12px hsl(0 0% 0% / 0.3);
   }
   
@@ -121,7 +121,7 @@
   }
   
   .feature-card:hover {
-    border-color: hsl(24 100% 54% / 0.4);
+    border-color: hsl(24 100% 60% / 0.4);
     transform: translateY(-2px);
   }
   

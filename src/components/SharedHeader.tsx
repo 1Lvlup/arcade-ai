@@ -232,7 +232,7 @@ export const SharedHeader = ({
                 size="lg"
                 className="gap-2 font-bold text-base hover-lift"
                 style={{
-                  boxShadow: "0 0 20px hsl(24 100% 54% / 0.4)",
+                  boxShadow: "0 0 20px hsl(24 100% 60% / 0.4)",
                 }}
               >
                 <User className="h-5 w-5" />

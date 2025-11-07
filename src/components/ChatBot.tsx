@@ -1339,7 +1339,7 @@ export function ChatBot({
                   )}
 
                   {message.type === "user" ? (
-                    <div className="text-base whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
+                    <div className="text-sm whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
                   ) : (
                     <>
                       <div className="flex items-center justify-between mb-3">
@@ -1357,7 +1357,7 @@ export function ChatBot({
                       {isStructuredAnswer(message.content) ? (
                         renderStructuredAnswer(message.content, message.id)
                       ) : (
-                        <div className="text-base whitespace-pre-wrap leading-relaxed">
+                        <div className="text-sm whitespace-pre-wrap leading-relaxed">
                           {typeof message.content === "string" ? message.content : JSON.stringify(message.content)}
                         </div>
                       )}

@@ -1313,7 +1313,7 @@ export function ChatBot({
                 <div
                   className={`w-full rounded-lg p-5 font-sans text-white ${
                     message.type === "user"
-                      ? "bg-white/[0.05] border border-primary/40 hover:bg-white/[0.07]"
+                      ? "bg-white/[0.08] border border-blue-500/50 hover:bg-white/[0.10]"
                       : "bg-white/[0.02] border-l-4 border-l-primary/50"
                   }`}
                 >

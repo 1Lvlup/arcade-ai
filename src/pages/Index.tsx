@@ -31,6 +31,7 @@ import { GameSidebar } from "@/components/GameSidebar";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import productScreenshot from "@/assets/product-screenshot.png";
+import heroBackground from "@/assets/hero-background.png";
 
 const Index = () => {
   const { user } = useAuth();
@@ -133,36 +134,32 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="bg-arcade-hero">
-          <div className="mx-auto max-w-7xl px-6 py-20 grid gap-12 lg:grid-cols-2 items-center">
-            {/* LEFT: text */}
-            <div className="max-w-lg">
-              <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-medium">
-                AI-powered arcade technician
-              </Badge>
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 leading-tight">
-                Stop Losing Money <br />
-                <span className="text-muted-foreground">To Dead Games</span>
+        <section className="relative min-h-[700px] bg-background overflow-hidden">
+          <div className="mx-auto max-w-7xl px-6 py-16 relative z-10">
+            {/* Text Content - At Top */}
+            <div className="max-w-3xl mb-12">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
+                Stop losing money to dead games.
               </h1>
-              <p className="text-xl sm:text-2xl text-muted-foreground leading-relaxed mb-6">
+              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-6">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
                 the full troubleshooting path from symptom to fix, so dead cabinets start earning again fast.
               </p>
 
-              <ul className="space-y-3 text-lg text-muted-foreground mb-8">
+              <ul className="space-y-3 text-lg text-muted-foreground mb-6">
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>
                   <span>Recover revenue from games that would sit dark for days or weeks.</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>
-                  <span>Give every tech instant access to a senior-level arcade technician, 24/7, on their phone.</span>
+                  <span>Give every tech instant access to the highest level arcade technician, 24/7, on their phone.</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>
                   <span>
-                    Every fix your team finds is saved and reused, so LevelUp becomes the default way modern arcades
-                    stay online.
+                    Every fix across every arcade keeps LevelUp constantly evolving, so over time it becomes the default
+                    way modern arcades stay online.
                   </span>
                 </li>
               </ul>
@@ -185,18 +182,16 @@ const Index = () => {
                 5 free questions · No credit card · Built inside a live FEC with 80+ games
               </p>
             </div>
+          </div>
 
-            {/* RIGHT: image */}
-            <div className="flex justify-end">
-              <div className="relative w-full max-w-3xl">
-                <div className="absolute -inset-4 rounded-3xl bg-orange/30 blur-3xl opacity-40" />
-                <img
-                  src={productScreenshot}
-                  alt="LevelUp arcade troubleshooting assistant"
-                  className="relative w-full rounded-2xl border border-orange/60 shadow-2xl"
-                />
-              </div>
-            </div>
+          {/* Background Image - Below Text */}
+          <div className="absolute bottom-0 left-0 right-0 h-[400px] z-0">
+            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-background z-10" />
+            <img
+              src={heroBackground}
+              alt="LevelUp interface preview"
+              className="w-full h-full object-cover object-top opacity-80"
+            />
           </div>
         </section>
 

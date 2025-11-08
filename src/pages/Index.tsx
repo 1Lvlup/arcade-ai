@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,8 @@ const Index = () => {
   const [selectedManualId, setSelectedManualId] = useState<string>();
   const [selectedManualTitle, setSelectedManualTitle] = useState<string>();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const heroImageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -49,6 +51,16 @@ const Index = () => {
     };
     checkAdmin();
   }, [user]);
+
+  // Parallax scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -142,9 +154,11 @@ const Index = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-transparent to-background/80 z-10" />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background z-10" />
             <img
+              ref={heroImageRef}
               src={chatUIBackground}
               alt="LevelUp Chat Interface"
-              className="w-full h-full object-cover object-left-top opacity-100 brightness-110"
+              className="w-full h-full object-cover object-left-top opacity-100 brightness-110 transition-transform duration-75"
+              style={{ transform: `translateY(${scrollY * 0.3}px)` }}
             />
           </div>
 

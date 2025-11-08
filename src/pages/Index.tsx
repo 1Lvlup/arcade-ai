@@ -144,7 +144,7 @@ const Index = () => {
             <img
               src={chatUIBackground}
               alt="LevelUp Chat Interface"
-              className="w-full h-full object-cover object-left-top opacity-70"
+              className="w-full h-full object-cover object-left-top opacity-40"
             />
           </div>
 
@@ -166,7 +166,9 @@ const Index = () => {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>
-                  <span>Give every tech instant access to the highest level arcade technician, 24/7, on their phone.</span>
+                  <span>
+                    Give every tech instant access to the highest level arcade technician, 24/7, on their phone.
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1">•</span>

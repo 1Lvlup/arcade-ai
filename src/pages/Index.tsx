@@ -150,16 +150,16 @@ const Index = () => {
         <section className="relative min-h-[700px] bg-background overflow-hidden">
           <div className="mx-auto max-w-7xl px-6 py-8 relative z-20">
             {/* Text Content - Centered at top */}
-            <div className="max-w-3xl mx-auto text-center mb-6">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-tech font-bold tracking-tight text-foreground mb-4 leading-tight">
+            <div className="max-w-6xl mx-auto text-center mb-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-tech font-bold tracking-tight text-foreground mb-4 leading-tight">
                 Stop losing money to dead games.
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 max-w-2xl mx-auto font-sans">
+              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-6 max-w-4xl mx-auto font-sans">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
                 the full troubleshooting path from symptom to fix, so dead cabinets start earning again fast.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-3xl mx-auto text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-5xl mx-auto text-sm">
                 <div className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <span className="text-muted-foreground font-sans">Recover revenue from games that would sit dark for days or weeks.</span>

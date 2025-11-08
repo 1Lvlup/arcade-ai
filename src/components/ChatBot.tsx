@@ -608,7 +608,7 @@ export function ChatBot({
       minute: '2-digit'
     });
 
-    // Build HTML content
+    // Build HTML content matching exact UI styles
     let htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -623,22 +623,37 @@ export function ChatBot({
       box-sizing: border-box;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #0a0a0a;
-      color: #e5e5e5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: hsl(0, 0%, 0%);
+      color: hsl(0, 0%, 100%);
       display: flex;
       height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .sidebar {
       width: 280px;
-      background: #0f0f0f;
-      border-right: 1px solid #262626;
+      background: hsl(0, 0%, 6%);
+      border-right: 1px solid hsl(0, 0%, 20%);
       padding: 20px;
       overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: hsl(0, 0%, 30%) transparent;
+    }
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .sidebar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .sidebar::-webkit-scrollbar-thumb {
+      background: hsl(0, 0%, 30%);
+      border-radius: 3px;
     }
     .sidebar h2 {
       font-size: 14px;
-      color: #a3a3a3;
+      color: hsl(0, 0%, 64%);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 16px;
@@ -649,14 +664,18 @@ export function ChatBot({
       margin-bottom: 4px;
       border-radius: 6px;
       font-size: 14px;
-      color: #d4d4d4;
-      background: #171717;
-      border-left: 3px solid transparent;
+      color: hsl(0, 0%, 98%);
+      background: hsl(0, 0%, 12%);
+      border: 1px solid hsl(0, 0%, 15%);
+      transition: all 0.2s ease;
+    }
+    .game-item:hover {
+      border-color: hsl(24, 100%, 60%, 0.5);
     }
     .game-item.active {
-      background: linear-gradient(135deg, rgba(234, 88, 12, 0.1), rgba(234, 88, 12, 0.05));
-      border-left-color: #ea580c;
-      color: #fafafa;
+      background: linear-gradient(135deg, hsla(24, 100%, 60%, 0.1), hsla(24, 100%, 60%, 0.05));
+      border-color: hsl(24, 100%, 60%);
+      color: hsl(0, 0%, 100%);
       font-weight: 500;
     }
     .chat-container {
@@ -666,32 +685,57 @@ export function ChatBot({
       overflow: hidden;
     }
     .chat-header {
-      background: #0f0f0f;
-      border-bottom: 1px solid #262626;
-      padding: 16px 24px;
+      background: hsl(0, 0%, 0%);
+      border-bottom: 1px solid hsla(0, 0%, 100%, 0.1);
+      padding: 12px 24px;
     }
     .chat-header h1 {
-      font-size: 20px;
-      color: #fafafa;
-      margin-bottom: 4px;
+      font-size: 16px;
+      color: hsl(0, 0%, 100%);
+      margin-bottom: 0;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+    .chat-header .badge {
+      background: hsla(24, 100%, 60%, 0.2);
+      color: hsl(24, 100%, 60%);
+      border: 1px solid hsla(24, 100%, 60%, 0.3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: normal;
     }
     .chat-header .subtitle {
       font-size: 13px;
-      color: #a3a3a3;
+      color: hsl(0, 0%, 64%);
+      margin-top: 4px;
     }
     .messages {
       flex: 1;
       overflow-y: auto;
       padding: 24px;
-      background: #0a0a0a;
+      background: hsl(0, 0%, 0%);
+      scrollbar-width: thin;
+      scrollbar-color: hsl(0, 0%, 30%) transparent;
+    }
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    .messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .messages::-webkit-scrollbar-thumb {
+      background: hsl(0, 0%, 30%);
+      border-radius: 3px;
     }
     .message {
       margin-bottom: 24px;
       display: flex;
       gap: 12px;
+      align-items: flex-start;
     }
     .message-icon {
       width: 32px;
@@ -704,53 +748,168 @@ export function ChatBot({
       font-size: 16px;
     }
     .user-icon {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      background: hsl(217, 91%, 60%);
+      color: white;
     }
     .bot-icon {
-      background: linear-gradient(135deg, #ea580c, #c2410c);
+      background: linear-gradient(135deg, hsl(24, 100%, 60%), hsl(24, 100%, 45%));
+      color: white;
     }
     .message-content {
       flex: 1;
       max-width: 800px;
     }
     .message-text {
-      background: #171717;
+      background: hsl(0, 0%, 6%);
       padding: 12px 16px;
       border-radius: 8px;
       line-height: 1.6;
-      color: #e5e5e5;
-      border: 1px solid #262626;
+      color: hsl(0, 0%, 98%);
+      border: 1px solid hsl(0, 0%, 20%);
     }
     .message.user .message-text {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05));
-      border-color: rgba(59, 130, 246, 0.2);
+      background: hsl(0, 0%, 6%);
+      border-color: hsl(0, 0%, 20%);
     }
     .message.bot .message-text {
-      background: #171717;
+      background: hsl(0, 0%, 6%);
+      border-color: hsl(0, 0%, 20%);
     }
     .timestamp {
-      font-size: 12px;
-      color: #737373;
+      font-size: 11px;
+      color: hsl(0, 0%, 45%);
       margin-top: 6px;
+      font-weight: 400;
+    }
+    .structured-answer {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .summary {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .section-title {
+      font-size: 11px;
+      color: hsl(24, 100%, 60%);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .step-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .step-icon {
+      color: hsl(24, 100%, 60%);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .step-content {
+      flex: 1;
+      font-size: 14px;
+    }
+    .step-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      margin-left: 8px;
+      font-weight: 500;
+    }
+    .badge-manual {
+      background: hsla(142, 76%, 45%, 0.1);
+      color: hsl(142, 76%, 45%);
+      border: 1px solid hsla(142, 76%, 45%, 0.3);
+    }
+    .badge-expert {
+      background: hsla(24, 100%, 60%, 0.1);
+      color: hsl(24, 100%, 60%);
+      border: 1px solid hsla(24, 100%, 60%, 0.3);
+    }
+    .expected {
+      font-size: 12px;
+      color: hsl(0, 0%, 64%);
+      margin-top: 4px;
+    }
+    .why-item {
+      font-size: 14px;
+      color: hsl(0, 0%, 64%);
+      padding-left: 16px;
+      border-left: 2px solid hsla(24, 100%, 60%, 0.2);
+      margin-bottom: 8px;
+    }
+    .tip-box, .safety-box {
+      background: hsla(24, 100%, 60%, 0.05);
+      border: 1px solid hsla(24, 100%, 60%, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 8px;
+    }
+    .tip-header, .safety-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: hsl(24, 100%, 60%);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .tip-item, .safety-item {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .sources-section {
+      border-top: 1px solid hsl(0, 0%, 20%);
+      padding-top: 12px;
+      margin-top: 12px;
+    }
+    .sources-toggle {
+      font-size: 12px;
+      color: hsl(0, 0%, 64%);
+      cursor: pointer;
+    }
+    .source-item {
+      font-size: 12px;
+      padding: 8px;
+      background: hsla(0, 0%, 100%, 0.02);
+      border-radius: 6px;
+      border: 1px solid hsl(0, 0%, 20%);
+      margin-top: 8px;
+    }
+    .source-page {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: hsl(0, 0%, 12%);
+      border: 1px solid hsl(0, 0%, 20%);
+      font-size: 11px;
+      margin-right: 8px;
     }
     .export-footer {
-      background: #0f0f0f;
-      border-top: 1px solid #262626;
+      background: hsl(0, 0%, 0%);
+      border-top: 1px solid hsl(0, 0%, 20%);
       padding: 16px 24px;
       text-align: center;
       font-size: 12px;
-      color: #737373;
+      color: hsl(0, 0%, 45%);
     }
     .image-reference {
       margin-top: 12px;
       padding: 12px;
-      background: #0a0a0a;
-      border: 1px solid #262626;
+      background: hsl(0, 0%, 6%);
+      border: 1px solid hsl(0, 0%, 20%);
       border-radius: 6px;
     }
     .image-reference-title {
-      font-size: 12px;
-      color: #a3a3a3;
+      font-size: 11px;
+      color: hsl(0, 0%, 64%);
       margin-bottom: 8px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -759,25 +918,15 @@ export function ChatBot({
       display: inline-block;
       margin: 4px;
       padding: 6px 10px;
-      background: #171717;
-      border: 1px solid #262626;
+      background: hsl(0, 0%, 12%);
+      border: 1px solid hsl(0, 0%, 20%);
       border-radius: 4px;
       font-size: 12px;
-      color: #d4d4d4;
+      color: hsl(0, 0%, 98%);
     }
     @media print {
-      body {
-        background: white;
-        color: black;
-      }
-      .sidebar {
-        background: #f5f5f5;
-        border-right-color: #e5e5e5;
-      }
-      .message-text {
-        background: #f9f9f9;
-        color: #171717;
-      }
+      body { background: white; color: black; }
+      .sidebar { background: #f5f5f5; }
     }
   </style>
 </head>
@@ -794,8 +943,8 @@ export function ChatBot({
   <div class="chat-container">
     <div class="chat-header">
       <h1>
-        <span>🎮</span>
-        AI Assistant: ${conversationTitle}
+        LEVEL UP
+        ${manualTitle ? `<span class="badge">${manualTitle}</span>` : ''}
       </h1>
       <div class="subtitle">Exported on ${exportDate}</div>
     </div>
@@ -803,7 +952,74 @@ export function ChatBot({
     <div class="messages">
       ${messages.map(msg => {
         const time = msg.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2);
+        const isStructured = typeof msg.content === 'object' && msg.content !== null && 'summary' in msg.content;
+        
+        let contentHtml = '';
+        if (isStructured) {
+          const answer = msg.content as StructuredAnswer;
+          contentHtml = `
+            <div class="structured-answer">
+              <div class="summary">${answer.summary}</div>
+              
+              ${answer.steps && answer.steps.length > 0 ? `
+                <div>
+                  <div class="section-title">Procedure</div>
+                  ${answer.steps.map(step => `
+                    <div class="step-item">
+                      <div class="step-icon">✓</div>
+                      <div class="step-content">
+                        <span>${step.step}</span>
+                        ${step.source ? `<span class="step-badge badge-${step.source}">${step.source}</span>` : ''}
+                        ${step.expected ? `<div class="expected">Expected: ${step.expected}</div>` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              
+              ${answer.why && answer.why.length > 0 ? `
+                <div>
+                  <div class="section-title">Why This Works</div>
+                  ${answer.why.map(reason => `
+                    <div class="why-item">${reason}</div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              
+              ${answer.expert_advice && answer.expert_advice.length > 0 ? `
+                <div class="tip-box">
+                  <div class="tip-header">💡 Pro Tips</div>
+                  ${answer.expert_advice.map(tip => `
+                    <div class="tip-item">• ${tip}</div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              
+              ${answer.safety && answer.safety.length > 0 ? `
+                <div class="safety-box">
+                  <div class="safety-header">⚠️ Safety</div>
+                  ${answer.safety.map(warning => `
+                    <div class="safety-item">⚠️ ${warning}</div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              
+              ${answer.sources && answer.sources.length > 0 ? `
+                <div class="sources-section">
+                  <div class="sources-toggle">📄 View Sources (${answer.sources.length})</div>
+                  ${answer.sources.map(source => `
+                    <div class="source-item">
+                      <span class="source-page">Page ${source.page}</span>
+                      <span>${source.note}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        } else {
+          contentHtml = (msg.content as string).replace(/\n/g, '<br>');
+        }
         
         return `
           <div class="message ${msg.type}">
@@ -811,7 +1027,7 @@ export function ChatBot({
               ${msg.type === 'user' ? '👤' : '🤖'}
             </div>
             <div class="message-content">
-              <div class="message-text">${content.replace(/\n/g, '<br>')}</div>
+              <div class="message-text">${contentHtml}</div>
               <div class="timestamp">${time}</div>
               ${msg.thumbnails && msg.thumbnails.length > 0 ? `
                 <div class="image-reference">

@@ -210,7 +210,9 @@ const Index = () => {
                   src={chatUIBackground}
                   alt="LevelUp Chat Interface"
                   className="w-full h-auto object-contain brightness-105 transition-transform duration-75"
-                  style={{ transform: `translateY(${scrollY * 0.15}px) scale(0.95)` }}
+                  style={{ 
+                    transform: `translateY(${scrollY * 0.15}px) scale(1.05) scaleY(1.1)` 
+                  }}
                 />
               </div>
             </div>

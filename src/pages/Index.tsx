@@ -144,7 +144,7 @@ const Index = () => {
             <img
               src={chatUIBackground}
               alt="LevelUp Chat Interface"
-              className="w-full h-full object-cover object-left-top opacity-40"
+              className="w-full h-full object-cover object-left-top opacity-90"
             />
           </div>
 

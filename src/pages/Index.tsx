@@ -135,49 +135,49 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[800px] bg-background overflow-hidden">
-          {/* Background Image - Large, positioned right */}
-          <div className="absolute top-0 right-0 bottom-0 left-1/4 z-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/60 to-transparent z-10" />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background z-10" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent z-10" />
+        <section className="relative min-h-[1000px] bg-background overflow-hidden flex items-start">
+          {/* Background Image - Large, positioned left with better visibility */}
+          <div className="absolute top-0 left-0 bottom-0 right-1/3 z-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-background/20 to-transparent z-10" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-transparent to-background/80 z-10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background z-10" />
             <img
               src={chatUIBackground}
               alt="LevelUp Chat Interface"
-              className="w-full h-full object-cover object-left-top opacity-98"
+              className="w-full h-full object-cover object-left-top opacity-100 brightness-110"
             />
           </div>
 
-          <div className="mx-auto max-w-7xl px-6 py-24 relative z-20">
-            {/* Text Content - Left aligned */}
-            <div className="max-w-2xl">
+          <div className="mx-auto max-w-7xl px-6 py-16 relative z-20 w-full">
+            {/* Text Content - Top, stretched horizontally */}
+            <div className="max-w-4xl mb-12">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
                 Stop losing money to dead games.
               </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-6">
+              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8 max-w-3xl">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
                 the full troubleshooting path from symptom to fix, so dead cabinets start earning again fast.
               </p>
 
-              <ul className="space-y-3 text-lg text-muted-foreground mb-6">
-                <li className="flex items-start gap-3">
-                  <span className="text-primary mt-1">•</span>
-                  <span>Recover revenue from games that would sit dark for days or weeks.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-primary mt-1">•</span>
-                  <span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="flex items-start gap-3">
+                  <span className="text-primary mt-1 text-xl">•</span>
+                  <span className="text-base text-muted-foreground">Recover revenue from games that would sit dark for days or weeks.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-primary mt-1 text-xl">•</span>
+                  <span className="text-base text-muted-foreground">
                     Give every tech instant access to the highest level arcade technician, 24/7, on their phone.
                   </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-primary mt-1">•</span>
-                  <span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-primary mt-1 text-xl">•</span>
+                  <span className="text-base text-muted-foreground">
                     Every fix across every arcade keeps LevelUp constantly evolving, so over time it becomes the default
                     way modern arcades stay online.
                   </span>
-                </li>
-              </ul>
+                </div>
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <Button

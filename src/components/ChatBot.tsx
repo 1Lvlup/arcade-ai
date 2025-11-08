@@ -1612,41 +1612,53 @@ export function ChatBot({
 
         {/* Image Enlargement Dialog */}
         <Dialog open={selectedImage !== null} onOpenChange={(open) => !open && setSelectedImage(null)}>
-          <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black border-white/20">
-            <DialogHeader className="p-6 pb-4">
-              <div className="flex items-center justify-between">
-                <DialogTitle className="text-white font-tech">
+          <DialogContent className="max-w-5xl w-[95vw] bg-background/95 backdrop-blur-sm border-primary/20 shadow-2xl">
+            <DialogHeader className="space-y-3 pb-4">
+              <div className="flex items-center justify-between gap-4">
+                <DialogTitle className="text-foreground font-tech text-lg">
                   {selectedImage?.title || "Image"}
                 </DialogTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (selectedImage?.url) {
-                      const link = document.createElement('a');
-                      link.href = selectedImage.url;
-                      link.download = `${selectedImage.title || 'image'}.png`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      toast({
-                        title: "Download started",
-                        description: "Image is being downloaded",
-                      });
-                    }
-                  }}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Download
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (selectedImage?.url) {
+                        const link = document.createElement('a');
+                        link.href = selectedImage.url;
+                        link.download = `${selectedImage.title || 'image'}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        toast({
+                          title: "Download started",
+                          description: "Image is being downloaded",
+                        });
+                      }
+                    }}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedImage(null)}
+                    className="gap-2"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Close
+                  </Button>
+                </div>
               </div>
+              <p className="text-sm text-muted-foreground">Click outside or press ESC to close</p>
             </DialogHeader>
-            <div className="p-6 pt-0 flex items-center justify-center bg-black/50">
+            <div className="rounded-lg border border-border/50 bg-muted/20 p-6 flex items-center justify-center min-h-[400px]">
               <img 
                 src={selectedImage?.url} 
                 alt={selectedImage?.title}
-                className="max-w-full max-h-[80vh] object-contain"
+                className="max-w-full max-h-[70vh] object-contain rounded-md shadow-lg"
               />
             </div>
           </DialogContent>

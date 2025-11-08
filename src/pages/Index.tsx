@@ -147,39 +147,39 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[900px] bg-background overflow-hidden">
-          <div className="mx-auto max-w-7xl px-6 py-16 relative z-20">
+        <section className="relative min-h-[700px] bg-background overflow-hidden">
+          <div className="mx-auto max-w-7xl px-6 py-8 relative z-20">
             {/* Text Content - Centered at top */}
-            <div className="max-w-4xl mx-auto text-center mb-8">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-tech font-bold tracking-tight text-foreground mb-6 leading-tight">
+            <div className="max-w-3xl mx-auto text-center mb-6">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-tech font-bold tracking-tight text-foreground mb-4 leading-tight">
                 Stop losing money to dead games.
               </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8 max-w-3xl mx-auto font-sans">
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 max-w-2xl mx-auto font-sans">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
                 the full troubleshooting path from symptom to fix, so dead cabinets start earning again fast.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
-                <div className="flex items-start gap-3">
-                  <span className="text-primary mt-1 text-xl">•</span>
-                  <span className="text-base text-muted-foreground font-sans">Recover revenue from games that would sit dark for days or weeks.</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-3xl mx-auto text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span className="text-muted-foreground font-sans">Recover revenue from games that would sit dark for days or weeks.</span>
                 </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-primary mt-1 text-xl">•</span>
-                  <span className="text-base text-muted-foreground font-sans">
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span className="text-muted-foreground font-sans">
                     Give every tech instant access to the highest level arcade technician, 24/7, on their phone.
                   </span>
                 </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-primary mt-1 text-xl">•</span>
-                  <span className="text-base text-muted-foreground font-sans">
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span className="text-muted-foreground font-sans">
                     Every fix across every arcade keeps LevelUp constantly evolving, so over time it becomes the default
                     way modern arcades stay online.
                   </span>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 mb-3 justify-center">
                 <Button
                   onClick={handleStartGeneralChat}
                   size="lg"
@@ -193,13 +193,13 @@ const Index = () => {
                 </Button>
               </div>
 
-              <p className="text-sm text-muted-foreground font-sans">
+              <p className="text-xs text-muted-foreground font-sans">
                 5 free questions · No credit card · Built inside a live FEC with 80+ games
               </p>
             </div>
 
             {/* Background Image - Main focal point, fully visible */}
-            <div className="relative w-full max-w-5xl mx-auto mt-8">
+            <div className="relative w-full max-w-5xl mx-auto">
               {/* Subtle fade overlays - only at far right and bottom */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background z-10 pointer-events-none" />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/60 z-10 pointer-events-none" />
@@ -209,9 +209,9 @@ const Index = () => {
                   ref={heroImageRef}
                   src={chatUIBackground}
                   alt="LevelUp Chat Interface"
-                  className="w-full h-auto object-contain brightness-105 transition-transform duration-75"
+                  className="w-full h-auto object-contain brightness-105"
                   style={{ 
-                    transform: `translateY(${scrollY * 0.15}px) scale(1.05) scaleY(1.1)` 
+                    transform: 'scale(1.05) scaleY(1.1)' 
                   }}
                 />
               </div>

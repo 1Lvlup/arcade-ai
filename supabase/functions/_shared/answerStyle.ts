@@ -1,7 +1,7 @@
 export const ARCADE_TROUBLESHOOTER_PRO = `
 # Perfect Arcade Technician Assistant Prompt
 ### System Message
-You are a veteran arcade technician AI. Use the provided manual data as ground truth, but combine it with your own technical reasoning to form complete answers. You speak like a seasoned senior tech having a great day—calm, confident, and patient. You’ve seen every kind of problem and remember what it felt like to be new. You know the user is capable—just still connecting the dots.
+You are a world renowned AI arcade technician. Use the provided manual data as ground truth, but combine it with your own technical reasoning to form complete answers. You speak like an arcde technician who understands the aspects of troubleshooting most techs struggle and you know precisely how to explain next steps—you stay calm and confident. You understand every possible problem at an electrical, mechanical, and logical level. You know the user is capable of getting to the bottom of any issue and your deep understanding of arcade cabinets helps them continue even if information in the manual falls short.
 ---
 **Always speak with a cadence that is easy to follow and read.
 ---
@@ -80,12 +80,11 @@ If page numbers look wrong (e.g., many “p1”), refer by section title or conn
 - Did I sound like a mentor, speak with a flowing cadence style, and not like a machine?
 `;
 
-
 export const HEURISTICS = {
   // Safe defaults; we'll calibrate later
   minTopScore: Number(Deno.env.get("RETRIEVAL_MIN_TOP_SCORE") ?? "0.62"),
   weakBundleAvg: Number(Deno.env.get("RETRIEVAL_WEAK_AVG") ?? "0.58"),
-  minStrongHits: Number(Deno.env.get("RETRIEVAL_MIN_STRONG") ?? "2")
+  minStrongHits: Number(Deno.env.get("RETRIEVAL_MIN_STRONG") ?? "2"),
 };
 
 // Normalize Cohere rerank scores to [0,1] if needed.
@@ -94,37 +93,34 @@ export function computeSignals(hits: Array<{ score?: number }>) {
   const s0 = hits[0]?.score ?? 0;
   const top3 = hits.slice(0, 3);
   const avgTop3 = top3.length ? top3.reduce((a, h) => a + (h.score ?? 0), 0) / top3.length : 0;
-  const strongHits = hits.filter(h => (h.score ?? 0) >= HEURISTICS.minTopScore).length;
+  const strongHits = hits.filter((h) => (h.score ?? 0) >= HEURISTICS.minTopScore).length;
   return { topScore: s0, avgTop3, strongHits };
 }
 
 export function shapeMessages(
   question: string,
   contextSnippets: Array<{ title: string; excerpt: string; cite?: string }>,
-  opts: { existingWeak: boolean; topScore: number; avgTop3: number; strongHits: number }
+  opts: { existingWeak: boolean; topScore: number; avgTop3: number; strongHits: number },
 ) {
   const { minTopScore, weakBundleAvg, minStrongHits } = HEURISTICS;
-  const thresholdWeak =
-    opts.topScore < minTopScore ||
-    opts.avgTop3 < weakBundleAvg ||
-    opts.strongHits < minStrongHits;
+  const thresholdWeak = opts.topScore < minTopScore || opts.avgTop3 < weakBundleAvg || opts.strongHits < minStrongHits;
 
   // Merge: we respect your current weak detection OR thresholdWeak
   const isWeak = opts.existingWeak || thresholdWeak;
 
-  const evidenceBlock = contextSnippets.map((s, i) =>
-    `#${i + 1}: ${s.title}${s.cite ? ` (${s.cite})` : ""}\n${s.excerpt}`
-  ).join("\n\n");
+  const evidenceBlock = contextSnippets
+    .map((s, i) => `#${i + 1}: ${s.title}${s.cite ? ` (${s.cite})` : ""}\n${s.excerpt}`)
+    .join("\n\n");
 
-  const system = ARCADE_TROUBLESHOOTER_PRO + (
-    isWeak
+  const system =
+    ARCADE_TROUBLESHOOTER_PRO +
+    (isWeak
       ? `\n\nRetrieval is WEAK. Be candid about limits; switch to best-practice checks; mark inferences as "Working theory."`
-      : `\n\nRetrieval is STRONG. Prefer doc-backed steps.`
-  );
+      : `\n\nRetrieval is STRONG. Prefer doc-backed steps.`);
 
   const user = [
     `Question: ${question}`,
-    contextSnippets.length ? `\nRelevant snippets:\n\n${evidenceBlock}` : `\nNo snippets available.`
+    contextSnippets.length ? `\nRelevant snippets:\n\n${evidenceBlock}` : `\nNo snippets available.`,
   ].join("\n");
 
   return { system, user, isWeak };

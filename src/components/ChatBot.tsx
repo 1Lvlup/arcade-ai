@@ -20,6 +20,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -163,6 +169,7 @@ export function ChatBot({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{url: string, title: string} | null>(null);
 
   const GUEST_MESSAGE_LIMIT = 5;
   const [isInitialized, setIsInitialized] = useState(false);
@@ -1390,7 +1397,11 @@ export function ChatBot({
                       <div className="text-sm font-semibold text-primary mb-3">Reference Images</div>
                       <div className="grid grid-cols-2 gap-4">
                         {message.thumbnails.map((thumb, idx) => (
-                          <div key={idx} className="tech-card bg-background/50 overflow-hidden">
+                          <div 
+                            key={idx} 
+                            className="tech-card bg-background/50 overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                            onClick={() => setSelectedImage({url: thumb.url, title: thumb.title})}
+                          >
                             <img
                               src={thumb.url}
                               alt={thumb.title}
@@ -1597,6 +1608,24 @@ export function ChatBot({
             )?.content as string
           }
         />
+
+        {/* Image Enlargement Dialog */}
+        <Dialog open={selectedImage !== null} onOpenChange={(open) => !open && setSelectedImage(null)}>
+          <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black border-white/20">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="text-white font-tech">
+                {selectedImage?.title || "Image"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="p-6 flex items-center justify-center bg-black/50">
+              <img 
+                src={selectedImage?.url} 
+                alt={selectedImage?.title}
+                className="max-w-full max-h-[80vh] object-contain"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       </Card>
     </div>
   );

@@ -60,6 +60,7 @@ import {
   XCircle,
   Eye,
   Download,
+  FileDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -171,6 +172,7 @@ export function ChatBot({
   const { toast } = useToast();
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{url: string, title: string} | null>(null);
+  const [availableGames, setAvailableGames] = useState<Array<{manual_id: string, canonical_title: string}>>([]);
 
   const GUEST_MESSAGE_LIMIT = 5;
   const [isInitialized, setIsInitialized] = useState(false);
@@ -335,6 +337,25 @@ export function ChatBot({
       console.error("Error loading conversations:", error);
     }
   };
+
+  // Load available games for export
+  useEffect(() => {
+    const loadGames = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("manual_metadata")
+          .select("manual_id, canonical_title")
+          .order("canonical_title");
+        
+        if (!error && data) {
+          setAvailableGames(data);
+        }
+      } catch (error) {
+        console.error("Error loading games:", error);
+      }
+    };
+    loadGames();
+  }, []);
 
   const loadSavedConversations = async () => {
     await loadConversations();
@@ -574,6 +595,261 @@ export function ChatBot({
 
     // Set up welcome message for new manual
     setTimeout(() => updateWelcomeMessage(), 0);
+  };
+
+
+  const exportConversation = () => {
+    const conversationTitle = manualTitle || "General Conversation";
+    const exportDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Build HTML content
+    let htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${conversationTitle} - Conversation Export</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      display: flex;
+      height: 100vh;
+    }
+    .sidebar {
+      width: 280px;
+      background: #0f0f0f;
+      border-right: 1px solid #262626;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .sidebar h2 {
+      font-size: 14px;
+      color: #a3a3a3;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    .game-item {
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #d4d4d4;
+      background: #171717;
+      border-left: 3px solid transparent;
+    }
+    .game-item.active {
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.1), rgba(234, 88, 12, 0.05));
+      border-left-color: #ea580c;
+      color: #fafafa;
+      font-weight: 500;
+    }
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      background: #0f0f0f;
+      border-bottom: 1px solid #262626;
+      padding: 16px 24px;
+    }
+    .chat-header h1 {
+      font-size: 20px;
+      color: #fafafa;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chat-header .subtitle {
+      font-size: 13px;
+      color: #a3a3a3;
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      background: #0a0a0a;
+    }
+    .message {
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+    }
+    .message-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+    .user-icon {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+    .bot-icon {
+      background: linear-gradient(135deg, #ea580c, #c2410c);
+    }
+    .message-content {
+      flex: 1;
+      max-width: 800px;
+    }
+    .message-text {
+      background: #171717;
+      padding: 12px 16px;
+      border-radius: 8px;
+      line-height: 1.6;
+      color: #e5e5e5;
+      border: 1px solid #262626;
+    }
+    .message.user .message-text {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05));
+      border-color: rgba(59, 130, 246, 0.2);
+    }
+    .message.bot .message-text {
+      background: #171717;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: #737373;
+      margin-top: 6px;
+    }
+    .export-footer {
+      background: #0f0f0f;
+      border-top: 1px solid #262626;
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: #737373;
+    }
+    .image-reference {
+      margin-top: 12px;
+      padding: 12px;
+      background: #0a0a0a;
+      border: 1px solid #262626;
+      border-radius: 6px;
+    }
+    .image-reference-title {
+      font-size: 12px;
+      color: #a3a3a3;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .image-thumbnail {
+      display: inline-block;
+      margin: 4px;
+      padding: 6px 10px;
+      background: #171717;
+      border: 1px solid #262626;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #d4d4d4;
+    }
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+      .sidebar {
+        background: #f5f5f5;
+        border-right-color: #e5e5e5;
+      }
+      .message-text {
+        background: #f9f9f9;
+        color: #171717;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Available Games (${availableGames.length})</h2>
+    ${availableGames.map(game => `
+      <div class="game-item ${game.manual_id === selectedManualId ? 'active' : ''}">
+        ${game.canonical_title}
+      </div>
+    `).join('')}
+  </div>
+  
+  <div class="chat-container">
+    <div class="chat-header">
+      <h1>
+        <span>🎮</span>
+        AI Assistant: ${conversationTitle}
+      </h1>
+      <div class="subtitle">Exported on ${exportDate}</div>
+    </div>
+    
+    <div class="messages">
+      ${messages.map(msg => {
+        const time = msg.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2);
+        
+        return `
+          <div class="message ${msg.type}">
+            <div class="message-icon ${msg.type}-icon">
+              ${msg.type === 'user' ? '👤' : '🤖'}
+            </div>
+            <div class="message-content">
+              <div class="message-text">${content.replace(/\n/g, '<br>')}</div>
+              <div class="timestamp">${time}</div>
+              ${msg.thumbnails && msg.thumbnails.length > 0 ? `
+                <div class="image-reference">
+                  <div class="image-reference-title">Referenced Images:</div>
+                  ${msg.thumbnails.map(thumb => `
+                    <span class="image-thumbnail">📄 ${thumb.title}</span>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    
+    <div class="export-footer">
+      Exported from 1LevelUp AI Assistant • ${messages.length} messages
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    // Create and download the file
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${conversationTitle.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Conversation exported",
+      description: "Your conversation has been saved as an HTML file",
+    });
   };
 
   const handleSendMessage = async () => {
@@ -1000,32 +1276,6 @@ export function ChatBot({
     </div>
   );
 
-  const exportConversation = () => {
-    const exportData = messages
-      .filter((m) => m.id !== "welcome")
-      .map((m) => ({
-        role: m.type === "user" ? "User" : "Assistant",
-        content: typeof m.content === "string" ? m.content : JSON.stringify(m.content, null, 2),
-        timestamp: m.timestamp.toLocaleString(),
-      }));
-
-    const exportText = exportData.map((m) => `[${m.timestamp}] ${m.role}:\n${m.content}\n`).join("\n---\n\n");
-
-    const blob = new Blob([exportText], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `conversation-${new Date().toISOString().split("T")[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: "Conversation exported",
-      description: "Your conversation has been downloaded as a text file.",
-    });
-  };
 
   const generateSummary = async () => {
     if (messages.length <= 1) {
@@ -1132,6 +1382,16 @@ export function ChatBot({
                     title="Save conversation"
                   >
                     <Save className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={exportConversation}
+                    disabled={messages.length <= 1}
+                    className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-50"
+                    title="Export conversation"
+                  >
+                    <FileDown className="h-4 w-4" />
                   </Button>
                   <Sheet open={showHistory} onOpenChange={setShowHistory}>
                     <SheetTrigger asChild>

@@ -263,7 +263,7 @@ export function ChatBot({
       id: "welcome",
       type: "bot",
       content: selectedManualId
-        ? `Hello! I'm here to help you troubleshoot "${manualTitle}". What issue can I help you solve today?`
+        ? `I'm your tech assistant for ${manualTitle}. Tell me exactly what the game is doing, and I'll walk you to a fix step-by-step.`
         : `Hello! I'm your arcade troubleshooting assistant. Please select a game from the sidebar to get started.`,
       timestamp: new Date(),
     };

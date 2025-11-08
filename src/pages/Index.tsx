@@ -32,6 +32,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import productScreenshot from "@/assets/product-screenshot.png";
 import heroBackground from "@/assets/hero-background.png";
+import chatUIBackground from "@/assets/chat-ui-background.png";
 
 const Index = () => {
   const { user } = useAuth();
@@ -134,10 +135,22 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[700px] bg-background overflow-hidden">
-          <div className="mx-auto max-w-7xl px-6 py-16 relative z-10">
-            {/* Text Content - At Top */}
-            <div className="max-w-3xl mb-12">
+        <section className="relative min-h-[800px] bg-background overflow-hidden">
+          {/* Background Image - Large, positioned right */}
+          <div className="absolute top-0 right-0 bottom-0 left-1/4 z-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/60 to-transparent z-10" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background z-10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent z-10" />
+            <img
+              src={chatUIBackground}
+              alt="LevelUp Chat Interface"
+              className="w-full h-full object-cover object-left-top opacity-70"
+            />
+          </div>
+
+          <div className="mx-auto max-w-7xl px-6 py-24 relative z-20">
+            {/* Text Content - Left aligned */}
+            <div className="max-w-2xl">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
                 Stop losing money to dead games.
               </h1>
@@ -182,16 +195,6 @@ const Index = () => {
                 5 free questions · No credit card · Built inside a live FEC with 80+ games
               </p>
             </div>
-          </div>
-
-          {/* Background Image - Below Text */}
-          <div className="absolute bottom-0 left-0 right-0 h-[400px] z-0">
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-background z-10" />
-            <img
-              src={heroBackground}
-              alt="LevelUp interface preview"
-              className="w-full h-full object-cover object-top opacity-80"
-            />
           </div>
         </section>
 

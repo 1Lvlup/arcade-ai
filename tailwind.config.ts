@@ -15,8 +15,8 @@ export default {
     extend: {
       fontFamily: {
         'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        'display': ['Inter', 'sans-serif'],
-        'tech': ['Inter', 'sans-serif'],
+        'display': ['Space Grotesk', 'sans-serif'],
+        'tech': ['Space Grotesk', 'sans-serif'],
         'mono': ['Inter', 'monospace'],
       },
       colors: {

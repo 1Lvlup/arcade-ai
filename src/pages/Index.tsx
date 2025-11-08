@@ -147,24 +147,10 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[1000px] bg-background overflow-hidden flex items-start">
-          {/* Background Image - Large, positioned left with better visibility */}
-          <div className="absolute top-0 left-0 bottom-0 right-1/3 z-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-background/20 to-transparent z-10" />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-transparent to-background/80 z-10" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background z-10" />
-            <img
-              ref={heroImageRef}
-              src={chatUIBackground}
-              alt="LevelUp Chat Interface"
-              className="w-full h-full object-cover object-left-top opacity-100 brightness-110 transition-transform duration-75"
-              style={{ transform: `translateY(${scrollY * 0.3}px)` }}
-            />
-          </div>
-
-          <div className="mx-auto max-w-7xl px-6 py-16 relative z-20 w-full">
-            {/* Text Content - Top, stretched horizontally */}
-            <div className="max-w-4xl mb-12">
+        <section className="relative min-h-[900px] bg-background overflow-hidden">
+          <div className="mx-auto max-w-7xl px-6 py-16 relative z-20">
+            {/* Text Content - Top section, no overlap with image */}
+            <div className="max-w-4xl mb-8">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
                 Stop losing money to dead games.
               </h1>
@@ -210,6 +196,23 @@ const Index = () => {
               <p className="text-sm text-muted-foreground">
                 5 free questions · No credit card · Built inside a live FEC with 80+ games
               </p>
+            </div>
+
+            {/* Background Image - Main focal point, fully visible */}
+            <div className="relative w-full max-w-5xl mx-auto mt-8">
+              {/* Subtle fade overlays - only at far right and bottom */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background z-10 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/60 z-10 pointer-events-none" />
+              
+              <div className="relative rounded-lg overflow-hidden shadow-2xl">
+                <img
+                  ref={heroImageRef}
+                  src={chatUIBackground}
+                  alt="LevelUp Chat Interface"
+                  className="w-full h-auto object-contain brightness-105 transition-transform duration-75"
+                  style={{ transform: `translateY(${scrollY * 0.15}px) scale(0.95)` }}
+                />
+              </div>
             </div>
           </div>
         </section>

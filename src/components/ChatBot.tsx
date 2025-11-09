@@ -174,7 +174,7 @@ export function ChatBot({
   const [selectedImage, setSelectedImage] = useState<{url: string, title: string} | null>(null);
   const [availableGames, setAvailableGames] = useState<Array<{manual_id: string, canonical_title: string}>>([]);
 
-  const GUEST_MESSAGE_LIMIT = 5;
+  const GUEST_MESSAGE_LIMIT = 10;
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load guest message count from localStorage on mount

@@ -113,7 +113,7 @@ const Index = () => {
       <main>
         {/* Hero Section */}
         <section className="relative min-h-[700px] bg-background overflow-hidden">
-          <div className="mx-auto max-w-7xl px-6 py-8 relative z-20">
+          <div className="w-full px-6 py-8 relative z-20">
             {/* Text Content - Centered at top */}
             <div className="max-w-6xl mx-auto text-center mb-6">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-tech font-bold tracking-tight text-foreground mb-4 leading-tight">
@@ -164,7 +164,7 @@ const Index = () => {
             </div>
 
             {/* Background Image - Main focal point, fully visible */}
-            <div className="relative w-full max-w-5xl mx-auto">
+            <div className="relative w-full max-w-7xl mx-auto">
               {/* Subtle fade overlays - only at far right and bottom */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background z-10 pointer-events-none" />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/60 z-10 pointer-events-none" />
@@ -184,7 +184,7 @@ const Index = () => {
           </div>
         </section>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-12">
           {/* Stats Section */}
           <section className="py-16 border-y border-border">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">

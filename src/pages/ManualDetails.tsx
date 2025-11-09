@@ -9,14 +9,17 @@ import { SharedHeader } from '@/components/SharedHeader';
 import { SimpleChat } from '@/components/SimpleChat';
 import { ManualImages } from '@/components/ManualImages';
 import { ManualQuestions } from '@/components/ManualQuestions';
-import { FileText, Image as ImageIcon, Brain, Loader2, Database } from 'lucide-react';
+import { FileText, Image as ImageIcon, Brain, Loader2, Database, Edit2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
+import { Input } from '@/components/ui/input';
 
 export default function ManualDetails() {
   const { manualId } = useParams<{ manualId: string }>();
   const queryClient = useQueryClient();
   const [processingStatus, setProcessingStatus] = useState<any>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
 
   const { data: document } = useQuery({
     queryKey: ['document', manualId],
@@ -31,6 +34,40 @@ export default function ManualDetails() {
       return data;
     },
     enabled: !!manualId,
+  });
+
+  const { data: manualMetadata } = useQuery({
+    queryKey: ['manual_metadata', manualId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('manual_metadata')
+        .select('*')
+        .eq('manual_id', manualId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!manualId,
+  });
+
+  const updateTitleMutation = useMutation({
+    mutationFn: async (newTitle: string) => {
+      const { error } = await supabase
+        .from('manual_metadata')
+        .update({ canonical_title: newTitle })
+        .eq('manual_id', manualId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manual_metadata', manualId] });
+      toast.success('Manual name updated successfully');
+      setIsEditingTitle(false);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update manual name: ${error.message}`);
+    }
   });
 
   const { data: chunks } = useQuery({
@@ -199,10 +236,53 @@ export default function ManualDetails() {
                 <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
                   <FileText className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-tech-xl text-primary text-glow">
-                    {document?.title || 'Manual Analysis'}
-                  </h1>
+                <div className="flex-1">
+                  {isEditingTitle ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        className="text-tech-xl text-primary font-bold"
+                        autoFocus
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => updateTitleMutation.mutate(editedTitle)}
+                        disabled={updateTitleMutation.isPending || !editedTitle.trim()}
+                        className="text-green-500 hover:text-green-400"
+                      >
+                        <Check className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setIsEditingTitle(false);
+                          setEditedTitle('');
+                        }}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-tech-xl text-primary text-glow">
+                        {manualMetadata?.canonical_title || document?.title || 'Manual Analysis'}
+                      </h1>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditedTitle(manualMetadata?.canonical_title || document?.title || '');
+                          setIsEditingTitle(true);
+                        }}
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                   <p className="font-mono text-sm text-muted-foreground mt-1">
                     Source: {document?.source_filename}
                   </p>

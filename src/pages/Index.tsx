@@ -127,20 +127,19 @@ const Index = () => {
                 <div className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <span className="text-muted-foreground font-sans">
+                    Every fix across every arcade is stored into the database.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span className="text-muted-foreground font-sans">
+                    Over time it will instantly know every solution to every problem with little to no troubleshooting
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span className="text-muted-foreground font-sans">
                     Recover revenue from games that would sit dark for days or weeks.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">
-                    Give every tech instant access to the highest level arcade technician, 24/7, on their phone.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">
-                    Every fix across every arcade keeps LevelUp constantly evolving, so over time it becomes the default
-                    way modern arcades stay online.
                   </span>
                 </div>
               </div>

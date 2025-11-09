@@ -122,18 +122,18 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
     <div className="h-full bg-black border-r border-white/10 flex flex-col">
       {/* Header */}
       <div className="flex flex-col border-b border-white/10 flex-shrink-0">
-        <div className="flex items-center h-16 justify-between px-3">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Gamepad2 className="h-5 w-5 text-primary flex-shrink-0" />
-            <div className="overflow-hidden flex-1">
-              <h2 className="font-tech text-xs font-bold text-white whitespace-nowrap">
-                SELECT GAME
-              </h2>
-              <p className="text-[10px] text-muted-foreground whitespace-nowrap">
-                {manuals.length} available
-              </p>
+          <div className="flex items-center h-16 justify-between px-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Gamepad2 className="h-5 w-5 text-primary flex-shrink-0" />
+              <div className="overflow-hidden flex-1">
+                <h2 className="font-tech text-[10px] font-bold text-white whitespace-nowrap">
+                  SELECT GAME
+                </h2>
+                <p className="text-[9px] text-muted-foreground whitespace-nowrap">
+                  {manuals.length} available
+                </p>
+              </div>
             </div>
-          </div>
           <Button
             variant="ghost"
             size="icon"
@@ -164,11 +164,11 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground text-xs">
+            <div className="text-center py-8 text-muted-foreground text-[10px]">
               Loading games...
             </div>
           ) : manuals.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-xs">
+            <div className="text-center py-8 text-muted-foreground text-[10px]">
               No games available
             </div>
           ) : (
@@ -187,7 +187,7 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
                 <div className="flex items-start justify-between gap-1.5">
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      "text-xs font-medium truncate transition-colors",
+                      "text-[10px] font-medium truncate transition-colors",
                       selectedManualId === manual.manual_id
                         ? "text-primary"
                         : "text-foreground group-hover:text-primary"
@@ -195,7 +195,7 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
                       {manual.title || manual.source_filename}
                     </p>
                     {selectedManualId === manual.manual_id && (
-                      <Badge className="mt-1 bg-primary/10 text-primary border-primary/20 text-[10px] px-1.5 py-0">
+                      <Badge className="mt-1 bg-primary/10 text-primary border-primary/20 text-[9px] px-1.5 py-0">
                         Active
                       </Badge>
                     )}

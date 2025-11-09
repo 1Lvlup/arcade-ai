@@ -1385,18 +1385,18 @@ export function ChatBot({
   const renderStructuredAnswer = (answer: StructuredAnswer, messageId: string) => (
     <div className="space-y-3">
       {/* Summary */}
-      <div className="text-sm leading-relaxed">{answer.summary}</div>
+      <div className="text-xs leading-relaxed">{answer.summary}</div>
 
       {/* Steps as Checklist */}
       {answer.steps && answer.steps.length > 0 && (
         <div className="space-y-2">
-          <div className="font-semibold text-xs text-primary uppercase tracking-wider">Procedure</div>
+          <div className="font-semibold text-[10px] text-primary uppercase tracking-wider">Procedure</div>
           {answer.steps.map((stepItem, i) => (
             <div key={i} className="flex gap-2 items-start">
               <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 space-y-1">
                 <div className="flex items-start gap-2">
-                  <span className="text-sm">{stepItem.step}</span>
+                  <span className="text-xs">{stepItem.step}</span>
                   {stepItem.source && (
                     <Badge
                       variant="outline"
@@ -1411,7 +1411,7 @@ export function ChatBot({
                   )}
                 </div>
                 {stepItem.expected && (
-                  <div className="text-xs text-muted-foreground">Expected: {stepItem.expected}</div>
+                  <div className="text-[10px] text-muted-foreground">Expected: {stepItem.expected}</div>
                 )}
               </div>
             </div>
@@ -1422,9 +1422,9 @@ export function ChatBot({
       {/* Why Explanation */}
       {answer.why && answer.why.length > 0 && (
         <div className="space-y-2">
-          <div className="font-semibold text-xs text-primary uppercase tracking-wider">Why This Works</div>
+          <div className="font-semibold text-[10px] text-primary uppercase tracking-wider">Why This Works</div>
           {answer.why.map((reason, i) => (
-            <div key={i} className="text-sm text-muted-foreground pl-4 border-l-2 border-primary/20">
+            <div key={i} className="text-xs text-muted-foreground pl-4 border-l-2 border-primary/20">
               {reason}
             </div>
           ))}
@@ -1434,12 +1434,12 @@ export function ChatBot({
       {/* Expert Advice / Pro Tips */}
       {answer.expert_advice && answer.expert_advice.length > 0 && (
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-xs text-primary uppercase tracking-wider">
+          <div className="flex items-center gap-2 font-semibold text-[10px] text-primary uppercase tracking-wider">
             <Lightbulb className="h-4 w-4" />
             Pro Tips
           </div>
           {answer.expert_advice.map((tip, i) => (
-            <div key={i} className="text-sm">
+            <div key={i} className="text-xs">
               • {tip}
             </div>
           ))}
@@ -1449,12 +1449,12 @@ export function ChatBot({
       {/* Safety Warnings */}
       {answer.safety && answer.safety.length > 0 && (
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-xs text-primary uppercase tracking-wider">
+          <div className="flex items-center gap-2 font-semibold text-[10px] text-primary uppercase tracking-wider">
             <AlertTriangle className="h-4 w-4" />
             Safety
           </div>
           {answer.safety.map((warning, i) => (
-            <div key={i} className="text-sm">
+            <div key={i} className="text-xs">
               ⚠️ {warning}
             </div>
           ))}
@@ -1833,7 +1833,7 @@ export function ChatBot({
                   )}
 
                   {message.type === "user" ? (
-                    <div className="text-sm whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
+                    <div className="text-xs whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
                   ) : (
                     <>
                       <div className="flex items-center justify-between mb-3">
@@ -1850,18 +1850,18 @@ export function ChatBot({
                       </div>
                       {isStructuredAnswer(message.content) ? (
                         renderStructuredAnswer(message.content, message.id)
-                      ) : (
-                        <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                          {typeof message.content === "string" ? message.content : JSON.stringify(message.content)}
-                        </div>
-                      )}
+                  ) : (
+                    <div className="text-xs whitespace-pre-wrap leading-relaxed">
+                      {typeof message.content === "string" ? message.content : JSON.stringify(message.content)}
+                    </div>
+                  )}
                     </>
                   )}
 
                   {/* Manual Source Info */}
                   {message.type === "bot" && message.manual_id && (
                     <div className="mt-4 pt-4 border-t border-primary/10">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <FileText className="h-4 w-4" />
                         <span>Source: {message.manual_title || message.manual_id}</span>
                       </div>
@@ -1871,7 +1871,7 @@ export function ChatBot({
                   {/* Display thumbnails/images */}
                   {message.type === "bot" && message.thumbnails && message.thumbnails.length > 0 && (
                     <div className="mt-6 pt-6 border-t border-primary/10">
-                      <div className="text-sm font-semibold text-primary mb-3">Reference Images</div>
+                      <div className="text-xs font-semibold text-primary mb-3">Reference Images</div>
                       <div className="grid grid-cols-2 gap-4">
                         {message.thumbnails.map((thumb, idx) => (
                           <div 
@@ -1899,7 +1899,7 @@ export function ChatBot({
                   {message.type === "bot" && (
                     <div className="mt-4 pt-4 border-t border-primary/10 space-y-3">
                       <div className="flex items-center gap-3">
-                        <span className="text-sm text-muted-foreground mr-2">Was this helpful?</span>
+                        <span className="text-xs text-muted-foreground mr-2">Was this helpful?</span>
                         <Button
                           variant="ghost"
                           size="sm"

@@ -3,6 +3,8 @@ import { ChatBot } from '@/components/ChatBot';
 import { SharedHeader } from '@/components/SharedHeader';
 import { UsageBanner } from '@/components/UsageBanner';
 import { useAuth } from '@/hooks/useAuth';
+import { GameSidebar } from '@/components/GameSidebar';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 interface UsageInfo {
   queries_used: number;
@@ -18,6 +20,13 @@ const Chat = () => {
   const { user } = useAuth();
   const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedManualId, setSelectedManualId] = useState<string | null>(null);
+  const [manualTitle, setManualTitle] = useState<string | null>(null);
+
+  const handleManualChange = (manualId: string | null, title: string | null) => {
+    setSelectedManualId(manualId);
+    setManualTitle(title);
+  };
 
   // Listen for usage updates from ChatBot
   useEffect(() => {
@@ -44,10 +53,23 @@ const Chat = () => {
         />
       )}
       <div className="flex-1 min-h-0 w-full">
-        <ChatBot 
-          key={refreshTrigger}
-          onUsageUpdate={setUsageInfo}
-        />
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+            <GameSidebar 
+              selectedManualId={selectedManualId}
+              onManualChange={handleManualChange}
+            />
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={80}>
+            <ChatBot 
+              key={refreshTrigger}
+              selectedManualId={selectedManualId}
+              manualTitle={manualTitle}
+              onUsageUpdate={setUsageInfo}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );

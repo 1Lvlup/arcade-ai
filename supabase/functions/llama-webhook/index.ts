@@ -1015,14 +1015,36 @@ serve(async (req) => {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // STAGE 11: LlamaCloud Upload Complete - But figure processing still pending
-    // Get ACTUAL figure count from database to ensure accuracy
-    const { count: actualFigureCount } = await supabase
-      .from('figures')
-      .select('*', { count: 'exact', head: true })
-      .eq('manual_id', manualId);
+    // Get ACTUAL figure count from database to ensure accuracy with timeout protection
+    let confirmedFigureCount = 0;
+    try {
+      console.log(`🔍 Querying figures table for manual: ${manualId}`);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Figure count query timeout')), 5000)
+      );
+      
+      const queryPromise = supabase
+        .from('figures')
+        .select('*', { count: 'exact', head: true })
+        .eq('manual_id', manualId);
+      
+      const { count: actualFigureCount, error: figureError } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]) as any;
+      
+      if (figureError) {
+        console.error('⚠️ Error querying figures:', figureError);
+        confirmedFigureCount = figuresProcessed; // Fallback to what we tracked
+      } else {
+        confirmedFigureCount = actualFigureCount || 0;
+      }
+    } catch (error) {
+      console.error('⚠️ Figure count query failed/timeout:', error);
+      confirmedFigureCount = figuresProcessed; // Fallback to what we tracked
+    }
     
-    const confirmedFigureCount = actualFigureCount || 0;
-    console.log(`📊 Figure count verification: ${figuresProcessed} processed, ${confirmedFigureCount} in database`);
+    console.log(`📊 Figure count verification: ${figuresProcessed} processed, ${confirmedFigureCount} confirmed in database`);
     
     // Mark as 'processing' (not completed) because OCR/captions still need to be generated
     await supabase

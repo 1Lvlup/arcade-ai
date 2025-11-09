@@ -54,6 +54,7 @@ const Chat = () => {
 
   return (
     <div className="h-screen bg-black flex flex-col w-full">
+      <SharedHeader title="1LevelUp" titleClassName="text-lg font-semibold text-foreground" />
       {usageInfo && !usageInfo.manual_override && (
         <UsageBanner
           queriesUsed={usageInfo.queries_used}

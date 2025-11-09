@@ -33,7 +33,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import productScreenshot from "@/assets/product-screenshot.png";
 import heroBackground from "@/assets/hero-background.png";
-import chatUIBackground from "@/assets/gfgf.png";
+import chatUIBackground from "@/assets/rgrgrgr.svg";
 
 const Index = () => {
   const { user } = useAuth();

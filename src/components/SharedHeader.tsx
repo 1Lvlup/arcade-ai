@@ -68,7 +68,7 @@ export const SharedHeader = ({
   };
 
   return (
-    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden max-h-[60px]">
+    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden max-h-[70px]">
       {/* Video Background */}
       <video
         autoPlay

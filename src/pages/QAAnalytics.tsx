@@ -198,17 +198,13 @@ export default function QAAnalytics() {
   const interpretation = getGradeInterpretation();
 
   return (
-    <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="Q&A Analytics" />
-      
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Q&A Analytics Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Comprehensive analysis of all AI responses with quality grades
-            </p>
-          </div>
+    <div className="space-y-6">
+      <div className="w-full space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Analytics Dashboard</h2>
+          <p className="text-muted-foreground mt-1">
+            Comprehensive analysis of all AI responses with quality grades
+          </p>
         </div>
 
         {/* Summary Cards */}

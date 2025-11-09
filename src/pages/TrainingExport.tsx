@@ -124,15 +124,8 @@ export default function TrainingExport() {
   }
 
   return (
-    <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="Export Training Data">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/training-hub')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Hub
-        </Button>
-      </SharedHeader>
-
-      <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
+      <div className="w-full space-y-6">
         {/* Export Form */}
         <Card>
           <CardHeader>

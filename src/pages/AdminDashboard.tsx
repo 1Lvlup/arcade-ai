@@ -15,6 +15,12 @@ import { StructuredCSVImport } from '@/components/StructuredCSVImport';
 import { ManualMerge } from '@/components/ManualMerge';
 import GameManagement from './GameManagement';
 import ManualAdmin from './ManualAdmin';
+import AIConfiguration from './AIConfiguration';
+import TrainingInbox from './TrainingInbox';
+import TrainingExamples from './TrainingExamples';
+import TrainingQAGeneration from './TrainingQAGeneration';
+import TrainingExport from './TrainingExport';
+import QAAnalytics from './QAAnalytics';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('system');
@@ -213,17 +219,76 @@ const AdminDashboard = () => {
                 </Card>
               </TabsContent>
 
-              {/* AI & TRAINING TAB (Coming Soon) */}
-              <TabsContent value="ai" className="mt-0">
-                <Card>
+              {/* AI & TRAINING TAB */}
+              <TabsContent value="ai" className="space-y-6 mt-0">
+                {/* AI Configuration */}
+                <Card className="border-l-4 border-l-primary">
                   <CardHeader>
-                    <CardTitle>AI & Training</CardTitle>
-                    <CardDescription>Coming in Phase 3</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      AI Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      Manage AI models, system prompts, and search settings
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">
-                      This tab will include AI Configuration, Training Hub, and QA Analytics.
-                    </p>
+                    <AIConfiguration />
+                  </CardContent>
+                </Card>
+
+                {/* Training Hub */}
+                <Card className="border-l-4 border-l-purple-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      Training Hub
+                    </CardTitle>
+                    <CardDescription>
+                      Review queries, manage training examples, and export data
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="inbox" className="w-full">
+                      <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="inbox">Inbox</TabsTrigger>
+                        <TabsTrigger value="examples">Examples</TabsTrigger>
+                        <TabsTrigger value="qa-gen">QA Generation</TabsTrigger>
+                        <TabsTrigger value="export">Export</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="inbox" className="mt-6">
+                        <TrainingInbox />
+                      </TabsContent>
+                      
+                      <TabsContent value="examples" className="mt-6">
+                        <TrainingExamples />
+                      </TabsContent>
+                      
+                      <TabsContent value="qa-gen" className="mt-6">
+                        <TrainingQAGeneration />
+                      </TabsContent>
+                      
+                      <TabsContent value="export" className="mt-6">
+                        <TrainingExport />
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+
+                {/* QA Analytics */}
+                <Card className="border-l-4 border-l-green-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      QA Analytics
+                    </CardTitle>
+                    <CardDescription>
+                      Comprehensive analysis of AI responses with quality grades
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <QAAnalytics />
                   </CardContent>
                 </Card>
               </TabsContent>

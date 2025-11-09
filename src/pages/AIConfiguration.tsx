@@ -169,61 +169,39 @@ export default function AIConfiguration() {
   };
 
   if (isLoading) {
-  return (
-    <div className="min-h-screen mesh-gradient">
-      <SharedHeader 
-        title="AI Configuration" 
-        showBackButton={true}
-        backTo="/manuals"
-      />
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">Loading AI configuration...</div>
-        </div>
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">Loading AI configuration...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="AI Configuration" />
-      
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-4xl font-bold flex items-center gap-2">
-              <Settings className="h-8 w-8" />
-              AI Configuration
-            </h1>
-            <p className="text-muted-foreground mt-2 text-lg">
-              Manage your AI assistant's behavior, models, and search parameters
-            </p>
-          </div>
-          
-          <div className="flex gap-2">
-            {hasUnsavedChanges && (
-              <Button 
-                onClick={handleSaveChanges}
-                disabled={updateConfigMutation.isPending}
-                className="bg-primary hover:bg-primary/90"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {updateConfigMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            )}
-            <Button variant="outline" onClick={exportConfig}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Config
-            </Button>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="flex gap-2">
+        {hasUnsavedChanges && (
+          <Button 
+            onClick={handleSaveChanges}
+            disabled={updateConfigMutation.isPending}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {updateConfigMutation.isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        )}
+        <Button variant="outline" onClick={exportConfig}>
+          <Download className="h-4 w-4 mr-2" />
+          Export Config
+        </Button>
+      </div>
 
-        <Tabs defaultValue="models" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="models">Models</TabsTrigger>
-            <TabsTrigger value="prompt">System Prompt</TabsTrigger>
-            <TabsTrigger value="search">Search Settings</TabsTrigger>
-            <TabsTrigger value="test">Test Interface</TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="models" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="models">Models</TabsTrigger>
+          <TabsTrigger value="prompt">System Prompt</TabsTrigger>
+          <TabsTrigger value="search">Search Settings</TabsTrigger>
+          <TabsTrigger value="test">Test Interface</TabsTrigger>
+        </TabsList>
 
           <TabsContent value="models" className="space-y-6">
             <Card>
@@ -444,7 +422,6 @@ export default function AIConfiguration() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   );
 }

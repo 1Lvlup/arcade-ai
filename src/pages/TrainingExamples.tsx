@@ -111,15 +111,8 @@ export default function TrainingExamples() {
   );
 
   return (
-    <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="Training Examples">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/training')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Hub
-        </Button>
-      </SharedHeader>
-
-      <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
+      <div className="w-full space-y-6">
         {/* Controls */}
         <div className="flex gap-4 items-center">
           <Input

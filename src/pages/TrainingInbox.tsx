@@ -182,23 +182,16 @@ export default function TrainingInbox() {
   }
 
   return (
-    <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="Training Inbox" showBackButton backTo="/training-hub" />
-      
-      <main className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
+      <main className="w-full">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/training-hub')}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold">Review Inbox</h1>
-                <p className="text-muted-foreground">
-                  {isLoading ? 'Loading...' : `${queries.length} queries • ${selectedIds.size} selected`}
-                </p>
-              </div>
+            <div>
+              <h2 className="text-2xl font-bold">Review Inbox</h2>
+              <p className="text-muted-foreground">
+                {isLoading ? 'Loading...' : `${queries.length} queries • ${selectedIds.size} selected`}
+              </p>
             </div>
             
             <div className="flex gap-2">

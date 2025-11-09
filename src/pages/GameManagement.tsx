@@ -73,10 +73,10 @@ export default function GameManagement() {
 
     setIsLoading(true);
     try {
+      // Admin can view ALL games from the entire database
       const { data, error } = await supabase
         .from('game_submissions')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

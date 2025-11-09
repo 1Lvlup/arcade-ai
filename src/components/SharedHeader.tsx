@@ -68,7 +68,7 @@ export const SharedHeader = ({
   };
 
   return (
-    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden">
+    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden max-h-[80px]">
       {/* Video Background */}
       <video
         autoPlay
@@ -76,7 +76,7 @@ export const SharedHeader = ({
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0"
-        style={{ objectPosition: "center 50%" }}
+        style={{ objectPosition: "center 40%" }}
       >
         <source src="/AIGlitch.mp4" type="video/mp4" />
       </video>
@@ -84,7 +84,7 @@ export const SharedHeader = ({
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-black/50 z-[1]" />
 
-      <div className="container mx-auto px-6 py-6 flex items-center justify-between relative z-10">
+      <div className="container mx-auto px-6 py-3 flex items-center justify-between relative z-10">
         <div className="flex items-center space-x-6">
           {showBackButton &&
             (onBackClick ? (
@@ -102,8 +102,8 @@ export const SharedHeader = ({
             ))}
           {title && (
             <div className="flex items-center space-x-3">
-              <Brain className="h-7 w-7 text-orange" />
-              <h1 className={titleClassName || "text-2xl font-tech font-bold text-foreground"}>{title}</h1>
+              <Brain className="h-6 w-6 text-orange" />
+              <h1 className={titleClassName || "text-xl font-tech font-bold text-foreground"}>{title}</h1>
             </div>
           )}
         </div>

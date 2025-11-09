@@ -156,7 +156,7 @@ const Index = () => {
               </div>
 
               <p className="text-xs text-muted-foreground font-sans">
-                5 free questions · No credit card · Built inside a live FEC with 80+ games
+                No credit card · Built inside a live FEC with 80+ games
               </p>
             </div>
 

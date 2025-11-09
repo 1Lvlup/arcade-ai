@@ -71,7 +71,7 @@ export const PageNavigation = () => {
   const CurrentIcon = currentRoute?.icon || Home;
 
   return (
-    <div className="flex items-center gap-2 p-2 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="flex items-center gap-2 p-2 border-b border-white/20">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="minimal" className="gap-2 border-0">

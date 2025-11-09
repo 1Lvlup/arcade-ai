@@ -144,17 +144,14 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 mb-3 justify-center">
+              <div className="flex justify-center mb-3">
                 <Button
                   onClick={handleStartGeneralChat}
                   size="lg"
                   variant="orange"
-                  className="text-base font-semibold px-8"
+                  className="text-base font-semibold px-12 w-full sm:w-auto"
                 >
-                  Get started free
-                </Button>
-                <Button variant="link" size="lg" className="text-base font-semibold text-foreground hover:text-primary">
-                  Book a 15-minute walkthrough →
+                  Launch Arcade Intelligence
                 </Button>
               </div>
 

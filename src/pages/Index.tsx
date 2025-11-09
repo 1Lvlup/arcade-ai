@@ -33,7 +33,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import productScreenshot from "@/assets/product-screenshot.png";
 import heroBackground from "@/assets/hero-background.png";
-import chatUIBackground from "@/assets/hero-background-new.png";
+import chatUIBackground from "@/assets/bgimage3d.svg";
 
 const Index = () => {
   const { user } = useAuth();
@@ -175,7 +175,7 @@ const Index = () => {
                   ref={heroImageRef}
                   src={chatUIBackground}
                   alt="LevelUp Chat Interface"
-                  className="w-full h-full object-contain brightness-105"
+                  className="w-full h-full object-cover brightness-105 scale-105"
                 />
               </div>
             </div>

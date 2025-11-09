@@ -74,7 +74,7 @@ export const PageNavigation = () => {
     <div className="flex items-center gap-2 p-2 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="gap-2 bg-background">
+          <Button variant="minimal" className="gap-2">
             <CurrentIcon className="h-4 w-4" />
             <span className="hidden sm:inline">{currentRoute?.label || 'Navigation'}</span>
             <ChevronDown className="h-4 w-4 opacity-50" />

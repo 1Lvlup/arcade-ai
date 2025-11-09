@@ -17,7 +17,7 @@ export default {
         'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         'display': ['Space Grotesk', 'sans-serif'],
         'tech': ['Space Grotesk', 'sans-serif'],
-        'hero': ['droid-serif', 'serif'],
+        'hero': ['kallisto', 'serif'],
         'mono': ['Inter', 'monospace'],
       },
       colors: {

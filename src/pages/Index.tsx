@@ -114,7 +114,7 @@ const Index = () => {
         <section className="relative min-h-[700px] bg-background overflow-hidden">
           <div className="w-full relative z-20">
             {/* Text Content - Centered at top */}
-            <div className="w-full text-center mb-6 px-4 pt-1 md:pt-16 lg:pt-24">
+            <div className="w-full text-center mb-6 px-4 pt-2 md:pt-10 lg:pt-24">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-tech font-bold tracking-tight text-foreground mb-4 leading-tight">
                 Stop losing money to dead games.
               </h1>

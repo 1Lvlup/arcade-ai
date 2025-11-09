@@ -328,9 +328,7 @@ export default function TenantManagement() {
   }
 
   return (
-    <div className="min-h-screen mesh-gradient">
-      <SharedHeader title="Tenant & User Management" />
-      <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
         <Tabs defaultValue="tenants" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="tenants">Tenant Manual Access</TabsTrigger>
@@ -606,7 +604,6 @@ export default function TenantManagement() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-      </div>
     </div>
   );
 }

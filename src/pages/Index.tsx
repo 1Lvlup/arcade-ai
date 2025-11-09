@@ -21,6 +21,7 @@ import {
   Clock,
   Code,
   Check,
+  Settings,
 } from "lucide-react";
 import { ProcessingMonitor } from "@/components/ProcessingMonitor";
 import { ChatBot } from "@/components/ChatBot";
@@ -423,23 +424,23 @@ const Index = () => {
         {isAdmin && (
           <section className="py-12 border-t border-border">
             <h2 className="text-2xl font-bold text-foreground mb-6">Admin Panel</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4 max-w-2xl">
+              <Link to="/admin">
+                <Button variant="orange" size="lg" className="w-full justify-start h-20">
+                  <Settings className="mr-3 h-6 w-6" />
+                  <div className="text-left">
+                    <div className="font-bold">Admin Dashboard</div>
+                    <div className="text-xs opacity-90">Unified control center</div>
+                  </div>
+                </Button>
+              </Link>
               <Link to="/manual-management">
-                <Button variant="outline" className="w-full justify-start">
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  Manual Management
-                </Button>
-              </Link>
-              <Link to="/ai-configuration">
-                <Button variant="outline" className="w-full justify-start">
-                  <Brain className="mr-2 h-5 w-5" />
-                  AI Configuration
-                </Button>
-              </Link>
-              <Link to="/training-hub">
-                <Button variant="outline" className="w-full justify-start">
-                  <Target className="mr-2 h-5 w-5" />
-                  Training Hub
+                <Button variant="outline" size="lg" className="w-full justify-start h-20">
+                  <BookOpen className="mr-3 h-6 w-6" />
+                  <div className="text-left">
+                    <div className="font-semibold">Manual Management</div>
+                    <div className="text-xs opacity-70">Browse & manage manuals</div>
+                  </div>
                 </Button>
               </Link>
             </div>

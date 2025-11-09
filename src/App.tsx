@@ -39,6 +39,7 @@ import ManualProcessingTools from "./pages/ManualProcessingTools";
 import UserConversationHistory from "./pages/UserConversationHistory";
 import AddGames from "./pages/AddGames";
 import GameManagement from "./pages/GameManagement";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <AIConfiguration />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminDashboard />
                 </AdminRoute>
               </ProtectedRoute>
             } />

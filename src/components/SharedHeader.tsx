@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PageNavigation } from "@/components/PageNavigation";
 
 interface SharedHeaderProps {
   title?: string;
@@ -109,30 +110,8 @@ export const SharedHeader = ({
         <div className="flex items-center space-x-4">
           {children}
 
-          {/* Navigation Dropdown - Visible to all users */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="minimal" size="sm">
-                <Home className="h-4 w-4 mr-2" />
-                Menu
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-background z-50">
-              <DropdownMenuItem asChild>
-                <Link to="/" className="cursor-pointer">
-                  <Home className="h-4 w-4 mr-2" />
-                  Home
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/add-games" className="cursor-pointer">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add These Games
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Page Navigation Dropdown */}
+          <PageNavigation />
 
           {isAdmin && (
             <DropdownMenu>

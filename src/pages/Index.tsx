@@ -118,7 +118,7 @@ const Index = () => {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-tech font-bold tracking-tight text-foreground mb-4 leading-tight">
                 Stop losing money to dead games.
               </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-6 max-w-4xl mx-auto font-sans">
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 max-w-4xl mx-auto font-sans">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
                 from problem to solution, so dead cabinets start earning again fast.
               </p>

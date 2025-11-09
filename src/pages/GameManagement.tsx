@@ -73,20 +73,19 @@ export default function GameManagement() {
 
     setIsLoading(true);
     try {
-      // Fetch ALL game submissions - no user filter for admins
-      const query = supabase
+      console.log('Fetching games for user:', user.id);
+      const { data, error } = await supabase
         .from('game_submissions')
         .select('id, game_name, manufacturer, version_model_year, fec_location_name, input_by, created_at')
         .order('created_at', { ascending: false });
-
-      const { data, error } = await query;
 
       if (error) {
         console.error('Supabase error:', error);
         throw error;
       }
       
-      console.log('Loaded games:', data?.length || 0);
+      console.log('Successfully loaded games:', data?.length || 0);
+      console.log('Games data:', data);
       setGames(data || []);
       setFilteredGames(data || []);
     } catch (error) {

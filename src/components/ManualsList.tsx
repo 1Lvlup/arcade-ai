@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Calendar, Search, Activity, Database, Eye, Trash2, RefreshCw, ListOrdered, Wand2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ManualSyncButton } from './ManualSyncButton';
 
 interface Manual {
   id: string;
@@ -424,6 +425,8 @@ export function ManualsList() {
                       
                       {status.status === 'processed' && (
                         <>
+                          <ManualSyncButton manualId={manual.manual_id} size="sm" />
+                          
                           <Button
                             variant="ghost"
                             size="sm"

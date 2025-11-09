@@ -120,7 +120,7 @@ const Index = () => {
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-6 max-w-4xl mx-auto font-sans">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
-                the full troubleshooting path from symptom to fix, so dead cabinets start earning again fast.
+                from problem to solution, so dead cabinets start earning again fast.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-5xl mx-auto text-sm">

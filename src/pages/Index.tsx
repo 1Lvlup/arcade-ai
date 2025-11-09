@@ -115,7 +115,7 @@ const Index = () => {
           <div className="w-full relative z-20">
             {/* Text Content - Centered at top */}
             <div className="w-full text-center mb-6 px-4 pt-2 md:pt-16 lg:pt-24">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-tech font-bold tracking-tight text-foreground mb-4 leading-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold tracking-tight text-foreground mb-4 leading-tight">
                 Stop losing money to dead games.
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-6 max-w-4xl mx-auto font-sans">
@@ -123,7 +123,7 @@ const Index = () => {
                 the full troubleshooting path from symptom to fix, so dead cabinets start earning again fast.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-5xl mx-auto text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-5xl mx-auto text-sm font-sans">
                 <div className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <span className="text-muted-foreground font-sans">
@@ -164,8 +164,8 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Background Image - Main focal point, fully visible */}
-            <div className="relative w-full">
+            {/* Background Image - Shifted to the right */}
+            <div className="relative w-full ml-8 md:ml-12 lg:ml-16">
               {/* Dark gradient overlay for depth and readability */}
               <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/80 z-10 pointer-events-none" />
               <div className="absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-background/40 z-10 pointer-events-none" />

@@ -175,9 +175,6 @@ const Index = () => {
                   src={chatUIBackground}
                   alt="LevelUp Chat Interface"
                   className="w-full h-auto object-contain brightness-105"
-                  style={{ 
-                    transform: 'scale(1.05) scaleY(1.1)' 
-                  }}
                 />
               </div>
             </div>

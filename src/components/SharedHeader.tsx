@@ -106,12 +106,12 @@ export const SharedHeader = ({
               <h1 className={titleClassName || "text-xl font-tech font-bold text-foreground"}>{title}</h1>
             </div>
           )}
+          
+          {/* Page Navigation Dropdown */}
+          <PageNavigation />
         </div>
         <div className="flex items-center space-x-4">
           {children}
-
-          {/* Page Navigation Dropdown */}
-          <PageNavigation />
 
           {isAdmin && (
             <DropdownMenu>

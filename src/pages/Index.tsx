@@ -165,12 +165,12 @@ const Index = () => {
             </div>
 
             {/* Background Image - Main focal point, fully visible */}
-            <div className="relative w-full">
+            <div className="relative w-full mt-8">
               {/* Dark gradient overlay for depth and readability */}
               <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/80 z-10 pointer-events-none" />
               <div className="absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-background/40 z-10 pointer-events-none" />
 
-              <div className="relative rounded-lg overflow-hidden shadow-2xl">
+              <div className="relative rounded-lg overflow-hidden shadow-2xl ml-8 md:ml-12 lg:ml-20">
                 <img
                   ref={heroImageRef}
                   src={chatUIBackground}

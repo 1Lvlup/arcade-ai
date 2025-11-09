@@ -111,7 +111,7 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[500px] bg-background overflow-hidden">
+        <section className="relative min-h-[700px] bg-background overflow-hidden">
           <div className="w-full relative z-20">
             {/* Text Content - Centered at top */}
             <div className="w-full text-center mb-6 px-4">
@@ -175,7 +175,7 @@ const Index = () => {
                   ref={heroImageRef}
                   src={chatUIBackground}
                   alt="LevelUp Chat Interface"
-                  className="w-full h-auto object-contain brightness-105"
+                  className="w-full h-full object-contain brightness-105"
                 />
               </div>
             </div>

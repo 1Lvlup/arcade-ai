@@ -59,8 +59,8 @@ const Index = () => {
       setScrollY(window.scrollY);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -101,18 +101,17 @@ const Index = () => {
       return;
     }
 
-    const newUrl = `/chat${manualId ? `?manual_id=${manualId}${manualTitle ? `&title=${encodeURIComponent(manualTitle)}` : ''}` : ''}`;
+    const newUrl = `/chat${manualId ? `?manual_id=${manualId}${manualTitle ? `&title=${encodeURIComponent(manualTitle)}` : ""}` : ""}`;
     window.location.href = newUrl;
   };
 
-
   return (
     <div className="min-h-screen bg-background">
-      <SharedHeader title="1LevelUp" titleClassName="text-lg font-semibold text-foreground" />
+      <SharedHeader title="1LevelUp" titleClassName="text-sm font-semibold text-foreground" />
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[700px] bg-background overflow-hidden">
+        <section className="relative min-h-[500px] bg-background overflow-hidden">
           <div className="w-full relative z-20">
             {/* Text Content - Centered at top */}
             <div className="w-full text-center mb-6 px-4">
@@ -127,7 +126,9 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-5xl mx-auto text-sm">
                 <div className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">Recover revenue from games that would sit dark for days or weeks.</span>
+                  <span className="text-muted-foreground font-sans">
+                    Recover revenue from games that would sit dark for days or weeks.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -168,7 +169,7 @@ const Index = () => {
               {/* Subtle fade overlays - only at far right and bottom */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background z-10 pointer-events-none" />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/60 z-10 pointer-events-none" />
-              
+
               <div className="relative rounded-lg overflow-hidden shadow-2xl">
                 <img
                   ref={heroImageRef}

@@ -21,6 +21,9 @@ import TrainingExamples from './TrainingExamples';
 import TrainingQAGeneration from './TrainingQAGeneration';
 import TrainingExport from './TrainingExport';
 import QAAnalytics from './QAAnalytics';
+import UserConversationHistory from './UserConversationHistory';
+import { UsageTrackingDashboard } from '@/components/UsageTrackingDashboard';
+import { StrategicAnalytics } from '@/components/StrategicAnalytics';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('system');
@@ -293,17 +296,53 @@ const AdminDashboard = () => {
                 </Card>
               </TabsContent>
 
-              {/* ANALYTICS TAB (Coming Soon) */}
-              <TabsContent value="analytics" className="mt-0">
-                <Card>
+              {/* ANALYTICS TAB */}
+              <TabsContent value="analytics" className="space-y-6 mt-0">
+                {/* User Conversation History */}
+                <Card className="border-l-4 border-l-blue-500">
                   <CardHeader>
-                    <CardTitle>User Analytics</CardTitle>
-                    <CardDescription>Coming in Phase 4</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      User Conversation History
+                    </CardTitle>
+                    <CardDescription>
+                      View and analyze all user conversations across tenants
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">
-                      This tab will include User Conversations, Usage Tracking, and Strategic Analytics.
-                    </p>
+                    <UserConversationHistory />
+                  </CardContent>
+                </Card>
+
+                {/* Usage Tracking */}
+                <Card className="border-l-4 border-l-green-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Usage Tracking
+                    </CardTitle>
+                    <CardDescription>
+                      Monitor query usage and limits across all tenants
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <UsageTrackingDashboard />
+                  </CardContent>
+                </Card>
+
+                {/* Strategic Analytics */}
+                <Card className="border-l-4 border-l-purple-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      Strategic Analytics
+                    </CardTitle>
+                    <CardDescription>
+                      Performance metrics, trends, and insights
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <StrategicAnalytics />
                   </CardContent>
                 </Card>
               </TabsContent>

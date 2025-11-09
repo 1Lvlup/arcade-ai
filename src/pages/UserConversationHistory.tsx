@@ -161,10 +161,8 @@ export default function UserConversationHistory() {
   }, [selectedConversationId, toast]);
 
   return (
-    <div className="min-h-screen mesh-gradient flex flex-col">
-      <SharedHeader title="User Conversation History" showBackButton backTo="/" />
-
-      <main className="container mx-auto px-4 py-8 flex-1">
+    <div className="space-y-6">
+      <main className="w-full">
         <Card className="tech-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-foreground">
@@ -299,8 +297,6 @@ export default function UserConversationHistory() {
           </CardContent>
         </Card>
       </main>
-
-      <Footer />
     </div>
   );
 }

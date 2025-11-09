@@ -103,7 +103,7 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
 
   if (isCollapsed) {
     return (
-      <div className="h-full w-full bg-black border-r border-white/10 flex flex-col items-center py-4">
+      <div className="h-full bg-black border-r border-white/10 flex flex-col items-center py-4">
         <Button
           variant="ghost"
           size="icon"
@@ -119,7 +119,7 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
   }
 
   return (
-    <div className="h-full w-full bg-black border-r border-white/10 flex flex-col">
+    <div className="h-full bg-black border-r border-white/10 flex flex-col">
       {/* Header */}
       <div className="flex flex-col border-b border-white/10 flex-shrink-0">
         <div className="flex items-center h-16 justify-between px-3">

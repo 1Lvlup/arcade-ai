@@ -219,7 +219,9 @@ const App = () => (
             } />
             <Route path="/game-management" element={
               <ProtectedRoute>
-                <GameManagement />
+                <AdminRoute>
+                  <GameManagement />
+                </AdminRoute>
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

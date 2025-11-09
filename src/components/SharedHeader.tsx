@@ -17,6 +17,7 @@ import {
   Upload,
   MessageCircle,
   Plus,
+  Gamepad2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -152,6 +153,12 @@ export const SharedHeader = ({
                   <Link to="/manual-admin" className="cursor-pointer">
                     <Database className="h-4 w-4 mr-2" />
                     Manual Management
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/game-management" className="cursor-pointer">
+                    <Gamepad2 className="h-4 w-4 mr-2" />
+                    Game Management
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

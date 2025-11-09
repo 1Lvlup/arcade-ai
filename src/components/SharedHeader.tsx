@@ -81,8 +81,8 @@ export const SharedHeader = ({
         <source src="/AIGlitch.mp4" type="video/mp4" />
       </video>
 
-      {/* Lighter overlay for more transparency */}
-      <div className="absolute inset-0 bg-black/40 z-[1]" />
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-black/70 z-[1]" />
 
       <div className="container mx-auto px-6 py-6 flex items-center justify-between relative z-10">
         <div className="flex items-center space-x-6">
@@ -107,7 +107,7 @@ export const SharedHeader = ({
             </div>
           )}
         </div>
-        <div className="flex items-center space-x-4 ml-auto pr-8">
+        <div className="flex items-center space-x-4">
           {children}
 
           {/* Page Navigation Dropdown */}

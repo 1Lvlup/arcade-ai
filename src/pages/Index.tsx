@@ -116,7 +116,7 @@ const Index = () => {
             {/* Text Content - Centered at top */}
             <div className="w-full text-center mb-6 px-4 pt-2 md:pt-10 lg:pt-16">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-hero font-medium tracking-tight text-foreground mb-4 leading-tight">
-                Stop losing money to dead games.
+                STOP LOSING MONEY TO DEAD GAMES
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 max-w-4xl mx-auto font-sans">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through

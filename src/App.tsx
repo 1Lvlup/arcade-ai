@@ -38,6 +38,7 @@ import ReIngestManual from "./pages/ReIngestManual";
 import ManualProcessingTools from "./pages/ManualProcessingTools";
 import UserConversationHistory from "./pages/UserConversationHistory";
 import AddGames from "./pages/AddGames";
+import GameManagement from "./pages/GameManagement";
 
 const queryClient = new QueryClient();
 
@@ -214,6 +215,11 @@ const App = () => (
             <Route path="/add-games" element={
               <ProtectedRoute>
                 <AddGames />
+              </ProtectedRoute>
+            } />
+            <Route path="/game-management" element={
+              <ProtectedRoute>
+                <GameManagement />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

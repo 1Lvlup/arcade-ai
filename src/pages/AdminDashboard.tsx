@@ -7,6 +7,13 @@ import { Settings, Database, Users, Activity } from 'lucide-react';
 import { CleanupStaleJobs } from '@/components/CleanupStaleJobs';
 import { Badge } from '@/components/ui/badge';
 import TenantManagement from './TenantManagement';
+import { ManualUpload } from '@/components/ManualUpload';
+import { ManualsList } from '@/components/ManualsList';
+import { BulkManualImport } from '@/components/BulkManualImport';
+import { StructuredCSVImport } from '@/components/StructuredCSVImport';
+import { ManualMerge } from '@/components/ManualMerge';
+import GameManagement from './GameManagement';
+import ManualAdmin from './ManualAdmin';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('system');
@@ -30,7 +37,7 @@ const AdminDashboard = () => {
               <Activity className="h-4 w-4" />
               System
             </TabsTrigger>
-            <TabsTrigger value="content" className="gap-2" disabled>
+            <TabsTrigger value="content" className="gap-2">
               <Database className="h-4 w-4" />
               Content
             </TabsTrigger>
@@ -156,17 +163,56 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* CONTENT MANAGEMENT TAB (Coming Soon) */}
-          <TabsContent value="content">
-            <Card>
+          {/* CONTENT MANAGEMENT TAB */}
+          <TabsContent value="content" className="space-y-6">
+            {/* Manual Administration */}
+            <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
-                <CardTitle>Content Management</CardTitle>
-                <CardDescription>Coming in Phase 2</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Manual Administration
+                </CardTitle>
+                <CardDescription>
+                  Manage manual metadata, indexing, and backfill operations
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  This tab will include Manual Management, Upload Documents, and Game Management.
-                </p>
+                <ManualAdmin />
+              </CardContent>
+            </Card>
+
+            {/* Document Upload & Processing */}
+            <Card className="border-l-4 border-l-green-500">
+              <CardHeader>
+                <CardTitle>Document Upload & Processing</CardTitle>
+                <CardDescription>
+                  Upload and manage individual documents and bulk imports
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <ManualUpload />
+                  <ManualsList />
+                </div>
+                
+                <div className="space-y-6">
+                  <StructuredCSVImport />
+                  <BulkManualImport />
+                  <ManualMerge />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Game Management */}
+            <Card className="border-l-4 border-l-purple-500">
+              <CardHeader>
+                <CardTitle>Game Management</CardTitle>
+                <CardDescription>
+                  Manage game submissions and metadata
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <GameManagement />
               </CardContent>
             </Card>
           </TabsContent>

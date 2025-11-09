@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { SharedHeader } from '@/components/SharedHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -209,11 +208,8 @@ export default function GameManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <SharedHeader title="Game Management" showBackButton backTo="/" />
-
-      <main className="container mx-auto px-4 py-8">
-        <Card>
+    <>
+      <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="text-2xl font-tech">Manage Games</CardTitle>
@@ -399,25 +395,24 @@ export default function GameManagement() {
             )}
           </CardContent>
         </Card>
-      </main>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {gamesToDelete.length} game{gamesToDelete.length > 1 ? 's' : ''}?
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setGamesToDelete([])}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteGames} className="bg-destructive hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {gamesToDelete.length} game{gamesToDelete.length > 1 ? 's' : ''}?
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setGamesToDelete([])}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={deleteGames} className="bg-destructive hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+    </>
   );
 }

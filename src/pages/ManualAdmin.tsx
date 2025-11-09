@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { SharedHeader } from '@/components/SharedHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -202,29 +201,26 @@ const ManualAdmin = () => {
   const uniqueDocTypes = Array.from(new Set(manuals?.map(m => m.doc_type).filter(Boolean)));
 
   return (
-    <div className="min-h-screen bg-black">
-      <SharedHeader title="Manual Administration" />
-      
-      <main className="container mx-auto py-8 px-4">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold neon-text mb-2">Manual Administration</h1>
-            <p className="text-muted-foreground">Manage manual metadata and indexing</p>
-          </div>
-          <Button 
-            onClick={() => navigate('/manual-admin/new')}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Manual
-          </Button>
+    <>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Manual Metadata & Indexing</h2>
+          <p className="text-muted-foreground">Manage manual metadata and backfill operations</p>
         </div>
+        <Button 
+          onClick={() => navigate('/manual-admin/new')}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Manual
+        </Button>
+      </div>
 
-        <Card className="border-primary/20 mb-6">
-          <CardHeader>
-            <CardTitle>Filters & Search</CardTitle>
-            <CardDescription>Find and filter manuals</CardDescription>
-          </CardHeader>
+      <Card className="border-primary/20 mb-6">
+        <CardHeader>
+          <CardTitle>Filters & Search</CardTitle>
+          <CardDescription>Find and filter manuals</CardDescription>
+        </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
@@ -265,11 +261,11 @@ const ManualAdmin = () => {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
 
-        <Card className="border-primary/20">
-          <CardContent className="p-0">
+      <Card className="border-primary/20">
+        <CardContent className="p-0">
             {isLoading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
@@ -415,62 +411,61 @@ const ManualAdmin = () => {
                   ))}
                 </TableBody>
               </Table>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </CardContent>
+      </Card>
 
-        <div className="mt-6">
-          <QuickTestConsole />
-        </div>
+      <div className="mt-6">
+        <QuickTestConsole />
+      </div>
 
-        <Dialog open={backfillDialog.open} onOpenChange={(open) => 
-          setBackfillDialog({ ...backfillDialog, open })
-        }>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Populate Metadata for {backfillDialog.manualTitle}</DialogTitle>
-              <DialogDescription>
-                This will update chunk metadata with game title, platform, manufacturer, and other fields from manual_metadata.
-              </DialogDescription>
-            </DialogHeader>
-            
-            {backfillDialog.dryRunResult && (
-              <div className="space-y-4">
-                <div className="rounded-lg bg-muted p-4">
-                  <h4 className="font-semibold mb-2">Preview:</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>• Would update <strong>{backfillDialog.dryRunResult.would_update_chunks_text || 0}</strong> chunks in chunks_text</p>
-                    <p>• Would update <strong>{backfillDialog.dryRunResult.would_update_rag_chunks || 0}</strong> chunks in rag_chunks</p>
-                    <p className="font-semibold mt-2">Total: {backfillDialog.dryRunResult.would_update_total || 0} chunks</p>
-                  </div>
+      <Dialog open={backfillDialog.open} onOpenChange={(open) => 
+        setBackfillDialog({ ...backfillDialog, open })
+      }>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Populate Metadata for {backfillDialog.manualTitle}</DialogTitle>
+            <DialogDescription>
+              This will update chunk metadata with game title, platform, manufacturer, and other fields from manual_metadata.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {backfillDialog.dryRunResult && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted p-4">
+                <h4 className="font-semibold mb-2">Preview:</h4>
+                <div className="space-y-1 text-sm">
+                  <p>• Would update <strong>{backfillDialog.dryRunResult.would_update_chunks_text || 0}</strong> chunks in chunks_text</p>
+                  <p>• Would update <strong>{backfillDialog.dryRunResult.would_update_rag_chunks || 0}</strong> chunks in rag_chunks</p>
+                  <p className="font-semibold mt-2">Total: {backfillDialog.dryRunResult.would_update_total || 0} chunks</p>
                 </div>
-                
-                {backfillDialog.dryRunResult.metadata_preview && (
-                  <div className="rounded-lg border p-4">
-                    <h4 className="font-semibold mb-2 text-sm">Metadata to be added:</h4>
-                    <pre className="text-xs bg-muted p-2 rounded overflow-auto">
-                      {JSON.stringify(backfillDialog.dryRunResult.metadata_preview, null, 2)}
-                    </pre>
-                  </div>
-                )}
               </div>
-            )}
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => 
-                setBackfillDialog({ open: false, manualId: '', manualTitle: '', dryRunResult: null })
-              }>
-                Cancel
-              </Button>
-              <Button onClick={handleBackfillRun}>
-                <Play className="mr-2 h-4 w-4" />
-                Run Backfill
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
-    </div>
+              
+              {backfillDialog.dryRunResult.metadata_preview && (
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold mb-2 text-sm">Metadata to be added:</h4>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-auto">
+                    {JSON.stringify(backfillDialog.dryRunResult.metadata_preview, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => 
+              setBackfillDialog({ open: false, manualId: '', manualTitle: '', dryRunResult: null })
+            }>
+              Cancel
+            </Button>
+            <Button onClick={handleBackfillRun}>
+              <Play className="mr-2 h-4 w-4" />
+              Run Backfill
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

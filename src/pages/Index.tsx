@@ -81,15 +81,7 @@ const Index = () => {
       window.location.href = "/auth";
       return;
     }
-    setSelectedManualId(undefined);
-    setSelectedManualTitle(undefined);
-    setShowChat(true);
-
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set("chat", "true");
-    newUrl.searchParams.delete("manual_id");
-    newUrl.searchParams.delete("title");
-    window.history.pushState({}, "", newUrl.toString());
+    window.location.href = "/chat";
   };
 
   const handleBackToHome = () => {
@@ -108,38 +100,10 @@ const Index = () => {
       return;
     }
 
-    setSelectedManualId(manualId || undefined);
-    setSelectedManualTitle(manualTitle || undefined);
-    setShowChat(true);
-
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set("chat", "true");
-    if (manualId) {
-      newUrl.searchParams.set("manual_id", manualId);
-      if (manualTitle) {
-        newUrl.searchParams.set("title", manualTitle);
-      }
-    }
-    window.history.pushState({}, "", newUrl.toString());
+    const newUrl = `/chat${manualId ? `?manual_id=${manualId}${manualTitle ? `&title=${encodeURIComponent(manualTitle)}` : ''}` : ''}`;
+    window.location.href = newUrl;
   };
 
-  if (showChat) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <GameSidebar selectedManualId={selectedManualId} onManualChange={handleManualChange} />
-        <SharedHeader
-          title={selectedManualId ? `AI Assistant: ${selectedManualTitle}` : "AI Assistant"}
-          showBackButton={true}
-          backTo="/"
-          onBackClick={handleBackToHome}
-        />
-        <main className="flex-1 ml-56 container mx-auto px-4 py-8">
-          <ChatBot selectedManualId={selectedManualId} manualTitle={selectedManualTitle} />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">

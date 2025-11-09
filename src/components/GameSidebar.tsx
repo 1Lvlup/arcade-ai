@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Gamepad2, ChevronRight, Plus } from 'lucide-react';
+import { Gamepad2, ChevronRight, Plus, ChevronLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,9 +18,11 @@ interface Manual {
 interface GameSidebarProps {
   selectedManualId?: string;
   onManualChange: (manualId: string | null, manualTitle: string | null) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarProps) {
+export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onToggleCollapse }: GameSidebarProps) {
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -92,13 +94,30 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
     onManualChange(manual.manual_id, manual.title || manual.source_filename);
   };
 
+  if (isCollapsed) {
+    return (
+      <div className="h-full w-full bg-black border-r border-white/10 flex flex-col items-center py-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleCollapse}
+          className="text-primary hover:text-primary hover:bg-primary/10"
+          title="Expand game list"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+        <Gamepad2 className="h-5 w-5 text-primary mt-4" />
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed left-0 top-0 h-full w-56 bg-black border-r border-white/10 flex flex-col z-40">
+    <div className="h-full w-full bg-black border-r border-white/10 flex flex-col">
       {/* Header */}
       <div className="flex flex-col border-b border-white/10 flex-shrink-0">
         <div className="flex items-center h-16 justify-between px-3">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Gamepad2 className="h-5 w-5 text-orange flex-shrink-0" />
+            <Gamepad2 className="h-5 w-5 text-primary flex-shrink-0" />
             <div className="overflow-hidden flex-1">
               <h2 className="font-tech text-xs font-bold text-white whitespace-nowrap">
                 SELECT GAME
@@ -108,6 +127,15 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
               </p>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleCollapse}
+            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
+            title="Collapse game list"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
         </div>
         <div className="px-3 pb-3">
           <GameRequestDialog
@@ -115,7 +143,7 @@ export function GameSidebar({ selectedManualId, onManualChange }: GameSidebarPro
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full h-8 text-orange hover:text-orange/80 hover:bg-orange/10 border-orange/30 gap-2"
+                className="w-full h-8 text-primary hover:text-primary/80 hover:bg-primary/10 border-primary/30 gap-2"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span className="text-xs font-medium">Request New Game</span>

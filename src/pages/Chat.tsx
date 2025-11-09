@@ -22,10 +22,22 @@ const Chat = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedManualId, setSelectedManualId] = useState<string | null>(null);
   const [manualTitle, setManualTitle] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('gameSidebarCollapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const handleManualChange = (manualId: string | null, title: string | null) => {
     setSelectedManualId(manualId);
     setManualTitle(title);
+  };
+
+  const handleToggleCollapse = () => {
+    setIsSidebarCollapsed((prev: boolean) => {
+      const newValue = !prev;
+      localStorage.setItem('gameSidebarCollapsed', JSON.stringify(newValue));
+      return newValue;
+    });
   };
 
   // Listen for usage updates from ChatBot
@@ -54,14 +66,21 @@ const Chat = () => {
       )}
       <div className="flex-1 min-h-0 w-full">
         <ResizablePanelGroup direction="horizontal" className="h-full">
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+          <ResizablePanel 
+            defaultSize={isSidebarCollapsed ? 3 : 20} 
+            minSize={isSidebarCollapsed ? 3 : 15} 
+            maxSize={isSidebarCollapsed ? 3 : 40}
+            collapsible={false}
+          >
             <GameSidebar 
               selectedManualId={selectedManualId}
               onManualChange={handleManualChange}
+              isCollapsed={isSidebarCollapsed}
+              onToggleCollapse={handleToggleCollapse}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={80}>
+          <ResizablePanel defaultSize={isSidebarCollapsed ? 97 : 80}>
             <ChatBot 
               key={refreshTrigger}
               selectedManualId={selectedManualId}

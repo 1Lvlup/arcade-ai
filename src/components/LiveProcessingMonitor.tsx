@@ -47,6 +47,18 @@ export const LiveProcessingMonitor = () => {
 
       if (data) {
         setActiveJobs(data);
+        
+        // Auto-cleanup stale jobs on mount
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const staleJobs = data.filter(job => 
+          job.updated_at < twoHoursAgo && 
+          ['starting', 'processing', 'pending'].includes(job.status)
+        );
+        
+        if (staleJobs.length > 0) {
+          console.log('Auto-cleaning stale jobs:', staleJobs.length);
+          supabase.functions.invoke('cleanup-stale-jobs').catch(console.error);
+        }
       }
     };
 

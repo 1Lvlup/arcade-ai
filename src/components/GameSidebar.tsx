@@ -94,13 +94,20 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
     onManualChange(manual.manual_id, manual.title || manual.source_filename);
   };
 
+  const handleToggle = () => {
+    console.log('Toggle clicked, current collapsed:', isCollapsed);
+    if (onToggleCollapse) {
+      onToggleCollapse();
+    }
+  };
+
   if (isCollapsed) {
     return (
       <div className="h-full w-full bg-black border-r border-white/10 flex flex-col items-center py-4">
         <Button
           variant="ghost"
           size="icon"
-          onClick={onToggleCollapse}
+          onClick={handleToggle}
           className="text-primary hover:text-primary hover:bg-primary/10"
           title="Expand game list"
         >
@@ -130,7 +137,7 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
           <Button
             variant="ghost"
             size="icon"
-            onClick={onToggleCollapse}
+            onClick={handleToggle}
             className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
             title="Collapse game list"
           >

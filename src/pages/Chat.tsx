@@ -53,7 +53,7 @@ const Chat = () => {
   }, []);
 
   return (
-    <div className="h-screen bg-black flex flex-col w-full overflow-hidden">
+    <div className="h-screen bg-black flex flex-col w-full">
       {usageInfo && !usageInfo.manual_override && (
         <UsageBanner
           queriesUsed={usageInfo.queries_used}
@@ -64,8 +64,8 @@ const Chat = () => {
           signupRequired={usageInfo.signup_required}
         />
       )}
-      <div className="flex-1 min-h-0 w-full">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
+      <div className="flex-1 min-h-0">
+        <ResizablePanelGroup direction="horizontal" className="h-full w-full">
           <ResizablePanel 
             defaultSize={isSidebarCollapsed ? 3 : 20} 
             minSize={isSidebarCollapsed ? 3 : 15} 

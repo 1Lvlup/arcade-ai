@@ -1018,7 +1018,7 @@ serve(async (req) => {
     // Get ACTUAL figure count from database to ensure accuracy with timeout protection
     let confirmedFigureCount = 0;
     try {
-      console.log(`🔍 Querying figures table for manual: ${manualId}`);
+      console.log(`🔍 Querying figures table for manual: ${document.manual_id}`);
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Figure count query timeout')), 5000)
       );
@@ -1026,7 +1026,7 @@ serve(async (req) => {
       const queryPromise = supabase
         .from('figures')
         .select('*', { count: 'exact', head: true })
-        .eq('manual_id', manualId);
+        .eq('manual_id', document.manual_id);
       
       const { count: actualFigureCount, error: figureError } = await Promise.race([
         queryPromise,

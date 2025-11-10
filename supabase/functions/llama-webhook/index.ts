@@ -752,9 +752,9 @@ serve(async (req) => {
       console.error('❌ Error in manual_metadata creation:', metadataErr);
     }
 
-    // STEP 5: Process images from LlamaCloud
-    let figuresProcessed = 0;
-    console.log(`📡 Processing ${images?.length || 0} images from LlamaCloud...`);
+    // STEP 5: Queue images for background processing
+    let imagesToProcess: any[] = [];
+    console.log(`📡 Analyzing ${images?.length || 0} images from LlamaCloud...`);
     
     const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
     console.log(`🎛️ KEEP_ALL_IMAGES override: ${keepAllImages}`);
@@ -772,222 +772,30 @@ serve(async (req) => {
     }
     
     if (images && images.length > 0) {
-      console.log(`🖼️ Processing ${images.length} raw images from LlamaCloud...`);
+      console.log(`🖼️ Analyzing ${images.length} raw images from LlamaCloud...`);
       
       // Pre-filter images to get accurate count
-      const keepAllImages = Deno.env.get('KEEP_ALL_IMAGES') === 'true';
       const filteredImages = keepAllImages ? images : images.filter((img: any) => {
         const metadata = typeof img === 'object' ? img : { name: img };
         return shouldKeepImage(metadata);
       });
       
-      console.log(`✅ After filtering: ${filteredImages.length} images (${images.length - filteredImages.length} decorative/small images skipped)`);
+      console.log(`✅ After filtering: ${filteredImages.length} images to process (${images.length - filteredImages.length} decorative/small images skipped)`);
+      imagesToProcess = filteredImages;
       
-      // STAGE 8: Visual Asset Extraction Pipeline with ACCURATE count
+      // Update status with image count
       await supabase
         .from('processing_status')
         .update({
           status: 'processing',
-          stage: 'visual_asset_extraction',
-          current_task: `Initializing visual asset extraction pipeline for ${filteredImages.length} diagrams and schematics (${images.length - filteredImages.length} decorative items filtered out)`,
-          total_figures: filteredImages.length,  // Use filtered count!
+          stage: 'image_queued',
+          current_task: `Queued ${filteredImages.length} images for background processing`,
+          total_figures: filteredImages.length,
           progress_percent: 80
         })
         .eq('job_id', jobId);
-
-      // Process filtered images in parallel batches
-      const batchSize = 10;
-      const insertedFigureIds: { id: string, figureName: string }[] = [];
       
-      for (let i = 0; i < filteredImages.length; i += batchSize) {
-        const batch = filteredImages.slice(i, i + batchSize);
-        
-      // Update progress for this image batch
-      const imageProgress = Math.round(80 + ((i + batch.length) / filteredImages.length) * 10);
-      await supabase
-        .from('processing_status')
-        .update({
-          stage: 'image_ingestion',
-          current_task: `Processing visual assets: ${Math.min(i + batch.length, filteredImages.length)}/${filteredImages.length} diagrams extracted and cataloged`,
-          figures_processed: Math.min(i + batch.length, filteredImages.length),
-          progress_percent: imageProgress
-        })
-        .eq('job_id', jobId);
-
-      const batchResults = await Promise.all(batch.map(async (imageItem: any, batchIdx: number) => {
-        try {
-          const imageIndex = i + batchIdx;
-          
-          // CRITICAL: Handle both string and object formats from LlamaCloud
-          // LlamaCloud returns objects like: {name: "img_p0_1.png", x: 24.96, y: 245.52, width: 492.12, height: 37.92}
-          let imageName: string;
-          
-          if (typeof imageItem === 'string') {
-            imageName = imageItem;
-          } else if (imageItem && typeof imageItem === 'object' && imageItem.name) {
-            imageName = imageItem.name;
-          } else {
-            console.error(`❌ Invalid image format at index ${imageIndex}:`, JSON.stringify(imageItem));
-            return null;
-          }
-          
-          if (!imageName || typeof imageName !== 'string') {
-            console.error(`❌ Image name is not a string at index ${imageIndex}:`, imageName);
-            return null;
-          }
-          
-          console.log(`🔄 [${imageIndex + 1}/${filteredImages.length}] Processing: ${imageName}`);
-          
-          // Note: Images already pre-filtered above, but keep the check for safety
-          const metadata = typeof imageItem === 'object' ? imageItem : { name: imageName };
-          if (!keepAllImages && !shouldKeepImage(metadata)) {
-            console.log(`  ⏭️ SKIPPED (should have been filtered earlier): ${imageName}`);
-            return null;
-          }
-          
-          // Extract OCR text from LlamaCloud image metadata (if return_image_ocr was enabled)
-          const extractedOcrText = (imageItem && typeof imageItem === 'object' && imageItem.ocr_text) ? imageItem.ocr_text : null;
-          if (extractedOcrText) {
-            console.log(`  📄 LlamaCloud OCR found: ${extractedOcrText.substring(0, 100)}...`);
-          }
-          
-          // Extract page number and metadata from LlamaCloud image naming
-          // LlamaCloud formats: img_p{page}_{index}.png (e.g., img_p0_1.png, img_p12_3.png)
-          let pageNumber: number | null = null;
-          let figureLabel: string | null = null;
-          
-          // Try LlamaCloud format: img_p{page}_{index}
-          const llamaMatch = imageName.match(/img_p(\d+)_(\d+)/i);
-          if (llamaMatch) {
-            pageNumber = parseInt(llamaMatch[1], 10) + 1; // LlamaCloud is 0-indexed
-            figureLabel = `Figure ${llamaMatch[2]}`;
-            console.log(`  📄 Extracted page ${pageNumber}, ${figureLabel}`);
-          } else {
-            // Fallback formats
-            const pageMatch = imageName.match(/(?:page|p)[_-]?(\d+)/i);
-            if (pageMatch) {
-              pageNumber = parseInt(pageMatch[1], 10);
-              console.log(`  📄 Extracted page number: ${pageNumber}`);
-            } else {
-              console.log(`  ⚠️ Could not extract page number from: ${imageName}`);
-            }
-          }
-          
-          // Download image from LlamaCloud API
-          const imageUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${encodeURIComponent(imageName)}`;
-          console.log(`  📥 Downloading from: ${imageUrl}`);
-            
-          const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY');
-          if (!llamaApiKey) {
-            console.error(`  ❌ LLAMACLOUD_API_KEY not configured`);
-            return null;
-          }
-          
-          const imageResponse = await fetch(imageUrl, {
-            headers: { 'Authorization': `Bearer ${llamaApiKey}` }
-          });
-          
-          if (!imageResponse.ok) {
-            const errorText = await imageResponse.text();
-            console.error(`  ❌ Download failed (${imageResponse.status}): ${errorText}`);
-            return null;
-          }
-          
-          console.log(`  ✅ Downloaded ${imageResponse.headers.get('content-length')} bytes`);
-          
-          const imageBlob = await imageResponse.blob();
-          const imageBuffer = await imageBlob.arrayBuffer();
-          
-          // Upload to Supabase Storage (postparse bucket is public)
-          const storagePath = `${document.manual_id}/${imageName}`;
-          const contentType = imageName.endsWith('.png') ? 'image/png' : 'image/jpeg';
-          
-          console.log(`  ☁️ Uploading to: postparse/${storagePath}`);
-          
-          const { error: uploadError } = await supabase.storage
-            .from('postparse')
-            .upload(storagePath, imageBuffer, {
-              contentType,
-              upsert: true
-            });
-          
-          if (uploadError) {
-            console.error(`  ❌ Storage upload failed:`, uploadError);
-            return null;
-          }
-          
-          console.log(`  ✅ Uploaded to storage`);
-          
-          // Get public URL for the image
-          const { data: urlData } = supabase.storage
-            .from('postparse')
-            .getPublicUrl(storagePath);
-          
-          const storageUrl = urlData.publicUrl;
-          console.log(`  🔗 Storage URL: ${storageUrl}`);
-          
-          // Extract additional metadata from image object if available
-          const topics: string[] = [];
-          const component: string | null = null;
-          
-          // Insert figure metadata into database with all required fields
-          const figureData = {
-            manual_id: document.manual_id,
-            doc_id: document.manual_id,
-            figure_id: imageName,
-            storage_path: storagePath,
-            storage_url: storageUrl,
-            page_number: pageNumber,
-            figure_label: figureLabel,
-            topics: topics,
-            component: component,
-            file_path: storagePath,
-            llama_asset_name: imageName,
-            fec_tenant_id: document.fec_tenant_id,
-            raw_image_metadata: imageItem && typeof imageItem === 'object' ? imageItem : { name: imageName },
-            ocr_text: extractedOcrText, // Use LlamaCloud OCR if available
-            ocr_confidence: extractedOcrText ? 0.95 : null, // LlamaCloud OCR is high quality
-            ocr_status: extractedOcrText ? 'completed' : 'pending' // Mark as completed if we have OCR
-          };
-          
-          console.log(`  💾 Inserting figure record...`);
-          
-          const { data: insertedFigure, error: figureError } = await supabase
-            .from('figures')
-            .insert(figureData)
-            .select()
-            .single();
-            
-          if (figureError) {
-            console.error(`  ❌ DB insert failed:`, figureError);
-            return null;
-          }
-          
-          figuresProcessed++;
-          console.log(`  ✅ [${figuresProcessed}/${images.length}] Figure stored successfully!`);
-          return { 
-            id: insertedFigure.id, 
-            figureName: imageName,
-            hasOcr: !!extractedOcrText // Track if this figure already has OCR from LlamaCloud
-          };
-          
-        } catch (error) {
-          console.error(`  ❌ Exception processing image:`, error);
-          if (error instanceof Error) {
-            console.error(`  ❌ Error stack:`, error.stack);
-          }
-          return null;
-        }
-      }));
-        
-        // Collect successful inserts for caption generation
-        insertedFigureIds.push(...batchResults.filter(r => r !== null));
-      }
-      
-      console.log(`✅ All ${figuresProcessed} images stored, starting background caption generation...`);
-      
-      // No inline processing needed - process-figure-captions will handle it faster
-      console.log(`📸 Stored ${figuresProcessed} figures - caption/OCR will be triggered automatically`);
+      console.log(`📋 ${filteredImages.length} images queued for background download & storage`);
     }
 
     // STAGE 9: Quality Assurance & Validation
@@ -1014,69 +822,198 @@ serve(async (req) => {
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // STAGE 11: LlamaCloud Upload Complete - But figure processing still pending
-    // Get ACTUAL figure count from database to ensure accuracy with timeout protection
-    let confirmedFigureCount = 0;
-    try {
-      console.log(`🔍 Querying figures table for manual: ${document.manual_id}`);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Figure count query timeout')), 5000)
-      );
-      
-      const queryPromise = supabase
-        .from('figures')
-        .select('*', { count: 'exact', head: true })
-        .eq('manual_id', document.manual_id);
-      
-      const { count: actualFigureCount, error: figureError } = await Promise.race([
-        queryPromise,
-        timeoutPromise
-      ]) as any;
-      
-      if (figureError) {
-        console.error('⚠️ Error querying figures:', figureError);
-        confirmedFigureCount = figuresProcessed; // Fallback to what we tracked
-      } else {
-        confirmedFigureCount = actualFigureCount || 0;
-      }
-    } catch (error) {
-      console.error('⚠️ Figure count query failed/timeout:', error);
-      confirmedFigureCount = figuresProcessed; // Fallback to what we tracked
-    }
-    
-    console.log(`📊 Figure count verification: ${figuresProcessed} processed, ${confirmedFigureCount} confirmed in database`);
-    
-    // Mark as 'processing' (not completed) because OCR/captions still need to be generated
+    // STAGE 11: Text Processing Complete - Mark initial status
     await supabase
       .from('processing_status')
       .update({
-        status: confirmedFigureCount > 0 ? 'processing' : 'completed',
-        stage: confirmedFigureCount > 0 ? 'figure_processing_pending' : 'completed',
-        current_task: confirmedFigureCount > 0 
-          ? `Upload complete: ${processedCount} text chunks, ${confirmedFigureCount} images extracted. Starting caption+OCR...`
+        status: 'processing',
+        stage: imagesToProcess.length > 0 ? 'image_downloading' : 'completed',
+        current_task: imagesToProcess.length > 0 
+          ? `Text complete: ${processedCount} chunks. Downloading ${imagesToProcess.length} images in background...`
           : `Upload complete: ${processedCount} text chunks, no images`,
-        progress_percent: confirmedFigureCount > 0 ? 50 : 100,
+        progress_percent: imagesToProcess.length > 0 ? 85 : 100,
         chunks_processed: processedCount,
         total_chunks: processedCount,
-        total_figures: confirmedFigureCount,  // Use actual DB count, not figuresProcessed
+        total_figures: imagesToProcess.length,
         figures_processed: 0
       })
       .eq('job_id', jobId);
 
-    console.log(`✅ LlamaCloud processing complete: ${processedCount} chunks, ${figuresProcessed} figures stored`);
-    console.log(`🔄 Triggering caption+OCR generation as separate background process (doesn't affect upload progress)...`);
+    console.log(`✅ Text processing complete: ${processedCount} chunks`);
+    console.log(`🔄 Starting background image download for ${imagesToProcess.length} images...`);
     
-    // Trigger OCR processing in background as a separate task (doesn't affect main upload progress)
-    if (figuresProcessed > 0) {
+    // Trigger image download + OCR processing in background
+    if (imagesToProcess.length > 0) {
       EdgeRuntime.waitUntil((async () => {
+        console.log(`🚀 Background task started: Processing ${imagesToProcess.length} images`);
+        let figuresProcessed = 0;
+        
         try {
-          console.log(`🤖 Invoking process-figure-captions for manual: ${document.manual_id}`);
-          
-          // Create an admin supabase client for function invocation
+          // Create admin client for background operations
           const adminClient = createClient(
             Deno.env.get('SUPABASE_URL')!,
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
           );
+          
+          const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY');
+          if (!llamaApiKey) {
+            console.error('❌ LLAMACLOUD_API_KEY not configured');
+            return;
+          }
+          
+          // Process images in batches of 20 for background task
+          const batchSize = 20;
+          
+          for (let i = 0; i < imagesToProcess.length; i += batchSize) {
+            const batch = imagesToProcess.slice(i, i + batchSize);
+            console.log(`📦 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(imagesToProcess.length/batchSize)}: images ${i+1}-${Math.min(i+batch.length, imagesToProcess.length)}`);
+            
+            // Update progress
+            const imageProgress = Math.round(85 + ((i + batch.length) / imagesToProcess.length) * 10);
+            await adminClient
+              .from('processing_status')
+              .update({
+                stage: 'image_downloading',
+                current_task: `Downloading images: ${Math.min(i + batch.length, imagesToProcess.length)}/${imagesToProcess.length} processed`,
+                figures_processed: figuresProcessed,
+                progress_percent: imageProgress
+              })
+              .eq('job_id', jobId);
+            
+            // Process batch in parallel
+            const batchResults = await Promise.all(batch.map(async (imageItem: any) => {
+              try {
+                let imageName: string;
+                if (typeof imageItem === 'string') {
+                  imageName = imageItem;
+                } else if (imageItem && typeof imageItem === 'object' && imageItem.name) {
+                  imageName = imageItem.name;
+                } else {
+                  console.error('❌ Invalid image format:', imageItem);
+                  return null;
+                }
+                
+                // Extract page number
+                let pageNumber: number | null = null;
+                let figureLabel: string | null = null;
+                const llamaMatch = imageName.match(/img_p(\d+)_(\d+)/i);
+                if (llamaMatch) {
+                  pageNumber = parseInt(llamaMatch[1], 10) + 1;
+                  figureLabel = `Figure ${llamaMatch[2]}`;
+                } else {
+                  const pageMatch = imageName.match(/(?:page|p)[_-]?(\d+)/i);
+                  if (pageMatch) {
+                    pageNumber = parseInt(pageMatch[1], 10);
+                  }
+                }
+                
+                // Download from LlamaCloud
+                const imageUrl = `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/image/${encodeURIComponent(imageName)}`;
+                const imageResponse = await fetch(imageUrl, {
+                  headers: { 'Authorization': `Bearer ${llamaApiKey}` }
+                });
+                
+                if (!imageResponse.ok) {
+                  console.error(`❌ Download failed for ${imageName}: ${imageResponse.status}`);
+                  return null;
+                }
+                
+                const imageBlob = await imageResponse.blob();
+                const imageBuffer = await imageBlob.arrayBuffer();
+                
+                // Upload to Supabase Storage
+                const storagePath = `${document.manual_id}/${imageName}`;
+                const contentType = imageName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+                
+                const { error: uploadError } = await adminClient.storage
+                  .from('postparse')
+                  .upload(storagePath, imageBuffer, {
+                    contentType,
+                    upsert: true
+                  });
+                
+                if (uploadError) {
+                  console.error(`❌ Upload failed for ${imageName}:`, uploadError);
+                  return null;
+                }
+                
+                // Get public URL
+                const { data: urlData } = adminClient.storage
+                  .from('postparse')
+                  .getPublicUrl(storagePath);
+                
+                // Extract OCR if available from LlamaCloud
+                const extractedOcrText = (imageItem && typeof imageItem === 'object' && imageItem.ocr_text) ? imageItem.ocr_text : null;
+                
+                // Insert figure record
+                const figureData = {
+                  manual_id: document.manual_id,
+                  doc_id: document.manual_id,
+                  figure_id: imageName,
+                  storage_path: storagePath,
+                  storage_url: urlData.publicUrl,
+                  page_number: pageNumber,
+                  figure_label: figureLabel,
+                  topics: [],
+                  component: null,
+                  file_path: storagePath,
+                  llama_asset_name: imageName,
+                  fec_tenant_id: document.fec_tenant_id,
+                  raw_image_metadata: imageItem && typeof imageItem === 'object' ? imageItem : { name: imageName },
+                  ocr_text: extractedOcrText,
+                  ocr_confidence: extractedOcrText ? 0.95 : null,
+                  ocr_status: extractedOcrText ? 'completed' : 'pending'
+                };
+                
+                const { data: insertedFigure, error: figureError } = await adminClient
+                  .from('figures')
+                  .insert(figureData)
+                  .select()
+                  .single();
+                
+                if (figureError) {
+                  // Ignore duplicate errors
+                  if (figureError.code !== '23505') {
+                    console.error(`❌ DB insert failed for ${imageName}:`, figureError);
+                  }
+                  return null;
+                }
+                
+                return { id: insertedFigure.id, name: imageName };
+              } catch (error) {
+                console.error('❌ Error processing image:', error);
+                return null;
+              }
+            }));
+            
+            figuresProcessed += batchResults.filter(r => r !== null).length;
+            
+            // Small delay between batches to avoid overwhelming
+            if (i + batchSize < imagesToProcess.length) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+          
+          console.log(`✅ Background image download complete: ${figuresProcessed}/${imagesToProcess.length} images stored`);
+          
+          // Update status to show images are ready for OCR
+          await adminClient
+            .from('processing_status')
+            .update({
+              stage: 'images_ready',
+              current_task: `Images downloaded: ${figuresProcessed}/${imagesToProcess.length}. Starting OCR...`,
+              figures_processed: figuresProcessed,
+              progress_percent: 95
+            })
+            .eq('job_id', jobId);
+          
+        } catch (error) {
+          console.error('❌ Background image processing error:', error);
+        }
+        
+        // Now trigger OCR processing
+        try {
+          console.log(`🤖 Invoking process-figure-captions for manual: ${document.manual_id}`);
           
           const ocrResponse = await adminClient.functions.invoke('process-figure-captions', {
             body: { manual_id: document.manual_id }
@@ -1122,8 +1059,10 @@ serve(async (req) => {
       success: true, 
       chunks_processed: processedCount,
       total_chunks: allChunks.length,
-      figures_processed: figuresProcessed,
-      total_figures: images?.length || 0
+      images_queued: imagesToProcess.length,
+      message: imagesToProcess.length > 0 
+        ? `Text processing complete. ${imagesToProcess.length} images queued for background download.`
+        : 'Processing complete.'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

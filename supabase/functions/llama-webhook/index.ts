@@ -1072,7 +1072,13 @@ serve(async (req) => {
         try {
           console.log(`🤖 Invoking process-figure-captions for manual: ${document.manual_id}`);
           
-          const ocrResponse = await supabase.functions.invoke('process-figure-captions', {
+          // Create an admin supabase client for function invocation
+          const adminClient = createClient(
+            Deno.env.get('SUPABASE_URL')!,
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+          );
+          
+          const ocrResponse = await adminClient.functions.invoke('process-figure-captions', {
             body: { manual_id: document.manual_id }
           });
           
@@ -1088,7 +1094,7 @@ serve(async (req) => {
         // Trigger automatic page detection
         try {
           console.log('🔍 Invoking automatic page detection...');
-          const pageDetectResponse = await supabase.functions.invoke('detect-pages', {
+          const pageDetectResponse = await adminClient.functions.invoke('detect-pages', {
             body: { manual_id: document.manual_id }
           });
           
@@ -1096,8 +1102,8 @@ serve(async (req) => {
             console.error('❌ Page detection failed:', pageDetectResponse.error);
           } else if (pageDetectResponse.data?.confidence > 0.9 && pageDetectResponse.data?.page_map) {
             console.log(`✅ Auto-applying page remapping (confidence: ${pageDetectResponse.data.confidence})`);
-            await supabase.functions.invoke('repage-manual', {
-              body: { 
+            await adminClient.functions.invoke('repage-manual', {
+              body: {
                 manual_id: document.manual_id,
                 page_map: pageDetectResponse.data.page_map,
                 auto_applied: true

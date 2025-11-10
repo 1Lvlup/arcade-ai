@@ -4,20 +4,21 @@ This file tracks all the custom fonts added to the project for easy reference an
 
 ## Adobe Typekit Fonts
 
-### Kallisto (Currently Active - Hero)
+### Freight Big Pro (Currently Active - Hero)
+```html
+<link rel="stylesheet" href="https://use.typekit.net/xpc3lfu.css">
+```
+- Font family: `freight-big-pro`
+- Usage: Hero heading
+- Tailwind class: `font-hero`
+
+### Kallisto (Available)
 ```html
 <link rel="stylesheet" href="https://use.typekit.net/gwt3dkm.css">
 ```
 - Font family: `Kallisto`
-- Usage: Hero heading
-- Tailwind class: `font-hero`
-
-### New Font Kit (xpc3lfu)
-```html
-<link rel="stylesheet" href="https://use.typekit.net/xpc3lfu.css">
-```
-- Font family: [To be specified]
-- Usage: [Not yet configured]
+- Usage: Available for use
+- Tailwind class: Currently fallback in `font-hero`
 
 ## How to Add New Fonts
 

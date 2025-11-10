@@ -4,11 +4,11 @@ This file tracks all the custom fonts added to the project for easy reference an
 
 ## Adobe Typekit Fonts
 
-### Freight Big Pro (Currently Active - Hero)
+### PF Fuel Decay (Currently Active - Hero)
 ```html
 <link rel="stylesheet" href="https://use.typekit.net/xpc3lfu.css">
 ```
-- Font family: `freight-big-pro`
+- Font family: `"PF Fuel Decay"`
 - Usage: Hero heading
 - Tailwind class: `font-hero`
 

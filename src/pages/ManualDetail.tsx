@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Database, Image, MessageCircle, Brain, Activity, RefreshCw, Sparkles, Eye, Download } from 'lucide-react';
+import { ArrowLeft, Database, Image, MessageCircle, Brain, Activity, RefreshCw, Sparkles, Eye, Download, Zap } from 'lucide-react';
 import { SharedHeader } from '@/components/SharedHeader';
 import { ManualQuestions } from '@/components/ManualQuestions';
 import { ManualImages } from '@/components/ManualImages';
@@ -66,6 +66,7 @@ export function ManualDetail() {
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [processingCaptions, setProcessingCaptions] = useState(false);
   const [captionProgress, setCaptionProgress] = useState<{ current: number; total: number } | null>(null);
+  const [retryingOCR, setRetryingOCR] = useState(false);
 
   useEffect(() => {
     if (manualId) {
@@ -228,6 +229,45 @@ export function ManualDetail() {
       });
     } finally {
       setGeneratingQuestions(false);
+    }
+  };
+
+  const retryOCRProcessing = async () => {
+    if (!manualId) return;
+    
+    setRetryingOCR(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('retry-processing', {
+        body: { manual_id: manualId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'OCR Processing Started',
+        description: `Processing ${data.pending_figures || stats.figures} figures. This may take several minutes.`,
+      });
+      
+      // Refresh processing status
+      fetchProcessingStatus();
+      
+      // Poll for completion
+      const pollInterval = setInterval(() => {
+        fetchStats();
+        fetchProcessingStatus();
+      }, 5000);
+      
+      // Clear polling after 5 minutes
+      setTimeout(() => clearInterval(pollInterval), 300000);
+    } catch (error) {
+      console.error('Error retrying OCR:', error);
+      toast({
+        title: 'OCR Retry Failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setRetryingOCR(false);
     }
   };
 
@@ -424,6 +464,20 @@ export function ManualDetail() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mt-6">
+              {processingStatus?.status === 'processing' && processingStatus.progress_percent > 90 && processingStatus.progress_percent < 100 && (
+                <Button 
+                  onClick={retryOCRProcessing}
+                  disabled={retryingOCR}
+                  className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white"
+                >
+                  {retryingOCR ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Zap className="h-4 w-4 mr-2" />
+                  )}
+                  Restart OCR Processing
+                </Button>
+              )}
               {stats.figuresWithoutCaptions > 0 && (
                 <Button 
                   onClick={processCaptions}

@@ -33,7 +33,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import productScreenshot from "@/assets/product-screenshot.png";
 import heroBackground from "@/assets/hero-background.png";
-import chatUIBackground from "@/assets/rgrgrgr.svg";
+import heroImage from "/levelup-hero-chat.webp";
 
 const Index = () => {
   const { user } = useAuth();
@@ -169,9 +169,12 @@ const Index = () => {
               <div className="relative rounded-lg overflow-hidden shadow-2xl ml-8 md:ml-12 lg:ml-20">
                 <img
                   ref={heroImageRef}
-                  src={chatUIBackground}
-                  alt="LevelUp Chat Interface"
+                  src={heroImage}
+                  alt="LevelUp AI Arcade Technician - AI-powered diagnostic interface for arcade machines"
                   className="w-full h-full object-cover brightness-105 scale-105"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
               </div>
             </div>

@@ -15,6 +15,7 @@ import { StructuredCSVImport } from '@/components/StructuredCSVImport';
 import { ManualMerge } from '@/components/ManualMerge';
 import GameManagement from './GameManagement';
 import ManualAdmin from './ManualAdmin';
+import { GameRequestsList } from '@/components/GameRequestsList';
 import AIConfiguration from './AIConfiguration';
 import TrainingInbox from './TrainingInbox';
 import TrainingExamples from './TrainingExamples';
@@ -205,6 +206,19 @@ const AdminDashboard = () => {
                       <BulkManualImport />
                       <ManualMerge />
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Game Requests */}
+                <Card className="border-l-4 border-l-yellow-500">
+                  <CardHeader>
+                    <CardTitle>Game Requests</CardTitle>
+                    <CardDescription>
+                      View and manage game requests from users
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <GameRequestsList />
                   </CardContent>
                 </Card>
 

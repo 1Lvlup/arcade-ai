@@ -74,6 +74,34 @@ export function ManualDetail() {
       fetchProcessingStatus();
       fetchStats();
       
+      // Auto-sync processing status if it seems stuck
+      const autoSyncStatus = async () => {
+        const { data: status } = await supabase
+          .from('processing_status')
+          .select('progress_percent, status')
+          .eq('manual_id', manualId)
+          .single();
+        
+        // If stuck at 90-99% or processing, try to sync
+        if (status && ((status.progress_percent >= 90 && status.progress_percent < 100) || status.status === 'processing')) {
+          console.log('🔄 Auto-syncing processing status...');
+          try {
+            await supabase.functions.invoke('sync-processing-status', {
+              body: { manual_id: manualId }
+            });
+            // Refresh after sync
+            setTimeout(() => {
+              fetchProcessingStatus();
+              fetchStats();
+            }, 1000);
+          } catch (error) {
+            console.error('Auto-sync failed:', error);
+          }
+        }
+      };
+      
+      autoSyncStatus();
+      
       // Set up real-time subscription for processing status updates
       const channel = supabase
         .channel(`processing-status-${manualId}`)

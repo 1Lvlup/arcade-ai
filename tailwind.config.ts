@@ -17,7 +17,7 @@ export default {
         'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         'display': ['Space Grotesk', 'sans-serif'],
         'tech': ['Space Grotesk', 'sans-serif'],
-        'hero': ['"PF Fuel Decay"', 'Kallisto', 'serif'],
+        'hero': ['pf-fuel-decay', 'PF Fuel Decay', 'Kallisto', 'serif'],
         'mono': ['Inter', 'monospace'],
       },
       colors: {

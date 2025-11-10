@@ -171,7 +171,7 @@ const Index = () => {
                   ref={heroImageRef}
                   src={chatUIBackground}
                   alt="LevelUp Chat Interface"
-                  className="w-full h-full object-cover brightness-105 scale-105"
+                  className="w-full h-auto brightness-105"
                   loading="lazy"
                   decoding="async"
                 />

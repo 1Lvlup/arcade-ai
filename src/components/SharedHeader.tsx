@@ -191,8 +191,14 @@ export const SharedHeader = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background z-50">
                 <DropdownMenuItem asChild>
-                  <Link to="/account-settings" className="cursor-pointer">
+                  <Link to="/profile" className="cursor-pointer">
                     <User className="h-4 w-4 mr-2" />
+                    My Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/account-settings" className="cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
                     Account Settings
                   </Link>
                 </DropdownMenuItem>

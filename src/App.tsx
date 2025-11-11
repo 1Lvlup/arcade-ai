@@ -40,6 +40,7 @@ import UserConversationHistory from "./pages/UserConversationHistory";
 import AddGames from "./pages/AddGames";
 import GameManagement from "./pages/GameManagement";
 import AdminDashboard from "./pages/AdminDashboard";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -143,6 +144,11 @@ const App = () => (
             <Route path="/account-settings" element={
               <ProtectedRoute>
                 <AccountSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
             <Route path="/support" element={

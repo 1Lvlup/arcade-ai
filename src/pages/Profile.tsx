@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, User } from 'lucide-react';
-import SharedHeader from '@/components/SharedHeader';
+import { SharedHeader } from '@/components/SharedHeader';
 
 interface Profile {
   display_name: string | null;
@@ -45,13 +45,20 @@ export default function Profile() {
       const { data, error } = await supabase
         .from('profiles')
         .select('display_name, bio, avatar_url')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 is "not found" - acceptable for new users
+        throw error;
+      }
 
       if (data) {
-        setProfile(data);
+        setProfile({
+          display_name: data.display_name,
+          bio: data.bio,
+          avatar_url: data.avatar_url,
+        });
       }
     } catch (error: any) {
       console.error('Error loading profile:', error);
@@ -92,8 +99,8 @@ export default function Profile() {
       // Update profile
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: avatarUrl })
-        .eq('id', user.id);
+        .update({ avatar_url: avatarUrl } as any)
+        .eq('user_id', user.id);
 
       if (updateError) throw updateError;
 
@@ -127,8 +134,8 @@ export default function Profile() {
         .update({
           display_name: profile.display_name || null,
           bio: profile.bio || null,
-        })
-        .eq('id', user.id);
+        } as any)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 

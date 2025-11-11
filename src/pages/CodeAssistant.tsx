@@ -315,15 +315,15 @@ export function CodeAssistant() {
     setInput('');
     setIsLoading(true);
 
-    await supabase
-      .from('code_assistant_messages')
-      .insert({
-        conversation_id: currentConversation,
-        role: 'user',
-        content: input
-      });
-
     try {
+      await supabase
+        .from('code_assistant_messages')
+        .insert({
+          conversation_id: currentConversation,
+          role: 'user',
+          content: input
+        });
+
       const codebaseContext = codeFiles.length > 0 
         ? `# Project Files:\n\n${codeFiles.map(f => `## ${f.file_path}\n\n\`\`\`${f.language}\n${f.file_content}\n\`\`\``).join('\n\n')}`
         : '';
@@ -360,13 +360,16 @@ export function CodeAssistant() {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', currentConversation);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to send message',
+        description: error?.message || 'Failed to send message',
         variant: 'destructive',
       });
+      
+      // Remove the user message from UI if the API call failed
+      setMessages(prev => prev.filter(m => m.timestamp !== userMessage.timestamp));
     } finally {
       setIsLoading(false);
     }

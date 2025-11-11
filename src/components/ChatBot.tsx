@@ -1763,9 +1763,55 @@ export function ChatBot({
           <div key={index} className="my-4">
             <DiagnosticWizard
               scenario={component.data.scenario}
-              onComplete={(results) => {
-                console.log("Wizard complete:", results);
+              manualId={selectedManualId || undefined}
+              deviceType={component.data.deviceType}
+              onComplete={(results, analysis) => {
+                console.log("Wizard complete:", results, analysis);
                 handleComponentInteraction(componentId, "complete", results);
+                
+                // Display AI recommendations if available
+                if (analysis) {
+                  const recommendationsMessage: ChatMessage = {
+                    id: Date.now().toString(),
+                    type: "bot",
+                    content: {
+                      summary: `## Diagnostic Analysis Complete\n\n${analysis.diagnosis_summary}\n\n**Most Likely Cause:** ${analysis.likely_cause}\n**Confidence:** ${analysis.confidence}${analysis.safety_warnings && analysis.safety_warnings.length > 0 ? `\n\n⚠️ **Safety Warnings:**\n${analysis.safety_warnings.map((w: string) => `- ${w}`).join('\n')}` : ''}`,
+                      steps: analysis.recommendations?.flatMap((rec: any) => 
+                        rec.steps.map((step: string) => ({
+                          step: `[${rec.priority.toUpperCase()}] ${rec.title}: ${step}`,
+                          expected: rec.estimated_time
+                        }))
+                      ),
+                      expert_advice: analysis.follow_up_questions || [],
+                      safety: analysis.safety_warnings || [],
+                      interactive_components: analysis.recommendations?.map((rec: any, idx: number) => ({
+                        type: "status",
+                        data: {
+                          title: rec.title,
+                          message: rec.description,
+                          status: rec.priority === "critical" ? "error" : rec.priority === "high" ? "warning" : "info",
+                          icon: rec.priority === "critical" ? "🔴" : rec.priority === "high" ? "🟡" : "🟢"
+                        }
+                      })) || []
+                    },
+                    timestamp: new Date(),
+                  };
+                  setMessages((prev) => [...prev, recommendationsMessage]);
+                  
+                  if (analysis.escalation_needed) {
+                    toast({
+                      title: "Professional Support Recommended",
+                      description: "Based on the diagnosis, we recommend contacting professional support.",
+                      variant: "destructive",
+                    });
+                  }
+                } else {
+                  toast({
+                    title: "Analysis Failed",
+                    description: "Could not analyze diagnostic results. Please try again.",
+                    variant: "destructive",
+                  });
+                }
               }}
             />
           </div>

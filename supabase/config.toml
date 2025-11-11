@@ -164,3 +164,6 @@ verify_jwt = false
 
 [functions.cleanup-stale-jobs]
 verify_jwt = true
+
+[functions.analyze-diagnostic-wizard]
+verify_jwt = false

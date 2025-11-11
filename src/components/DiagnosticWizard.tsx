@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, AlertCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import { CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WizardField {
   id: string;
@@ -29,8 +30,10 @@ interface WizardStep {
 
 interface DiagnosticWizardProps {
   scenario: "power" | "display" | "audio" | "network" | "custom";
-  onComplete?: (results: Record<string, string>) => void;
+  onComplete?: (results: Record<string, string>, analysis?: any) => void;
   customSteps?: WizardStep[];
+  manualId?: string;
+  deviceType?: string;
 }
 
 const TROUBLESHOOTING_SCENARIOS: Record<string, WizardStep[]> = {
@@ -481,12 +484,13 @@ const TROUBLESHOOTING_SCENARIOS: Record<string, WizardStep[]> = {
   ]
 };
 
-export function DiagnosticWizard({ scenario, onComplete, customSteps }: DiagnosticWizardProps) {
+export function DiagnosticWizard({ scenario, onComplete, customSteps, manualId, deviceType }: DiagnosticWizardProps) {
   const steps = customSteps || TROUBLESHOOTING_SCENARIOS[scenario] || [];
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [stepHistory, setStepHistory] = useState<string[]>(["initial"]);
   const [isComplete, setIsComplete] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const currentStep = steps.find(s => s.id === stepHistory[currentStepIndex]);
 
@@ -512,6 +516,33 @@ export function DiagnosticWizard({ scenario, onComplete, customSteps }: Diagnost
     setAnswers(prev => ({ ...prev, [fieldId]: value }));
   };
 
+  const analyzeResults = async () => {
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-diagnostic-wizard', {
+        body: {
+          scenario,
+          results: answers,
+          device_context: {
+            manual_id: manualId,
+            device_type: deviceType || answers.device_type,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      setIsComplete(true);
+      onComplete?.(answers, data);
+    } catch (error) {
+      console.error('Error analyzing diagnostic wizard:', error);
+      setIsComplete(true);
+      onComplete?.(answers, null);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleNext = () => {
     const requiredFieldsFilled = currentStep.fields
       .filter(f => f.required)
@@ -528,14 +559,12 @@ export function DiagnosticWizard({ scenario, onComplete, customSteps }: Diagnost
         setStepHistory(newHistory);
         setCurrentStepIndex(currentStepIndex + 1);
       } else {
-        // No next step means we're done
-        setIsComplete(true);
-        onComplete?.(answers);
+        // No next step means we're done - analyze results
+        analyzeResults();
       }
     } else if (currentStep.isComplete) {
-      // This is a final step
-      setIsComplete(true);
-      onComplete?.(answers);
+      // This is a final step - analyze results
+      analyzeResults();
     } else {
       // Move to next step in sequence if it exists
       if (currentStepIndex < steps.length - 1) {
@@ -544,8 +573,7 @@ export function DiagnosticWizard({ scenario, onComplete, customSteps }: Diagnost
         setStepHistory(newHistory);
         setCurrentStepIndex(currentStepIndex + 1);
       } else {
-        setIsComplete(true);
-        onComplete?.(answers);
+        analyzeResults();
       }
     }
   };
@@ -645,16 +673,16 @@ export function DiagnosticWizard({ scenario, onComplete, customSteps }: Diagnost
     }
   };
 
-  if (isComplete) {
+  if (isAnalyzing) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-            Diagnosis Complete
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Analyzing Diagnostic Results
           </CardTitle>
           <CardDescription>
-            Thank you for providing the information. Here's what we found:
+            Our AI is analyzing your responses to provide personalized recommendations...
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -666,10 +694,23 @@ export function DiagnosticWizard({ scenario, onComplete, customSteps }: Diagnost
               </div>
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Based on your responses, our AI will analyze the issue and provide specific recommendations.
-          </p>
         </CardContent>
+      </Card>
+    );
+  }
+
+  if (isComplete) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            Diagnosis Complete
+          </CardTitle>
+          <CardDescription>
+            Analysis complete. Recommendations are displayed above.
+          </CardDescription>
+        </CardHeader>
       </Card>
     );
   }

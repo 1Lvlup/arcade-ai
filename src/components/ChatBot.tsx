@@ -1209,7 +1209,7 @@ export function ChatBot({
         body: JSON.stringify({
           query,
           manual_id: selectedManualId ?? null,
-          stream: true,
+          stream: false, // ✨ NON-STREAMING MODE for two-stage pipeline
           messages: conversationHistory,
         }),
       });
@@ -1218,88 +1218,72 @@ export function ChatBot({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let accumulatedContent = "";
+      // Non-streaming response handling
+      const result = await response.json();
+      console.log("📦 Received non-streaming response:", result);
 
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      const accumulatedContent = result.answer || "";
+      const interactiveComponents = result.interactive_components || [];
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+      // Handle usage info
+      if (result.usage) {
+        onUsageUpdate?.(result.usage);
+      }
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") continue;
+      // Auto-set manual when detected
+      if (result.auto_detected && result.manual_id && result.detected_manual_title) {
+        const detectedId = result.manual_id;
+        const detectedTitle = result.detected_manual_title;
 
-            try {
-              const parsed = JSON.parse(data);
-
-              if (parsed.type === "content") {
-                // Ensure data is always a string
-                const contentChunk = typeof parsed.data === "string" ? parsed.data : JSON.stringify(parsed.data);
-                accumulatedContent += contentChunk;
-                setMessages((prev) =>
-                  prev.map((msg) => (msg.id === botMessageId ? { ...msg, content: accumulatedContent } : msg)),
-                );
-              } else if (parsed.type === "metadata") {
-                console.log("📊 Received metadata:", parsed.data);
-
-                // Handle usage info
-                if (parsed.data?.usage) {
-                  onUsageUpdate?.(parsed.data.usage);
-                }
-
-                // 🔥 LAYER 3: Auto-set manual when detected
-                if (parsed.data.auto_detected && parsed.data.manual_id && parsed.data.detected_manual_title) {
-                  const detectedId = parsed.data.manual_id;
-                  const detectedTitle = parsed.data.detected_manual_title;
-
-                  // Only auto-set if different from current selection
-                  if (detectedId !== selectedManualId) {
-                    setSelectedManualId(detectedId);
-                    setManualTitle(detectedTitle);
-                    toast({
-                      title: "🔄 Manual Auto-Detected",
-                      description: `Switched to: ${detectedTitle}`,
-                      duration: 4000,
-                    });
-                    console.log(`✅ Auto-set manual: ${detectedTitle} (${detectedId})`);
-                  } else {
-                    toast({
-                      title: "Manual Confirmed",
-                      description: `Searching in: ${detectedTitle}`,
-                      duration: 3000,
-                    });
-                  }
-                }
-
-                // Store metadata including thumbnails and manual_id
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === botMessageId
-                      ? {
-                          ...msg,
-                          thumbnails: parsed.data?.thumbnails,
-                          manual_id: parsed.data?.manual_id,
-                          manual_title: parsed.data?.manual_title,
-                        }
-                      : msg,
-                  ),
-                );
-              }
-            } catch (e) {
-              console.error("Failed to parse SSE data:", e);
-            }
-          }
+        if (detectedId !== selectedManualId) {
+          setSelectedManualId(detectedId);
+          setManualTitle(detectedTitle);
+          toast({
+            title: "🔄 Manual Auto-Detected",
+            description: `Switched to: ${detectedTitle}`,
+            duration: 4000,
+          });
+          console.log(`✅ Auto-set manual: ${detectedTitle} (${detectedId})`);
+        } else {
+          toast({
+            title: "Manual Confirmed",
+            description: `Searching in: ${detectedTitle}`,
+            duration: 3000,
+          });
         }
       }
 
-      console.log("✅ Streaming complete");
+      // Update bot message with answer and interactive components
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === botMessageId
+            ? {
+                ...msg,
+                content: accumulatedContent,
+                thumbnails: result.sources?.map((s: any) => s.thumbnail).filter(Boolean),
+                manual_id: result.manual_id,
+                manual_title: result.manual_title,
+              }
+            : msg,
+        ),
+      );
+
+      // Add interactive components as a separate message
+      if (interactiveComponents.length > 0) {
+        console.log(`✨ Adding ${interactiveComponents.length} interactive components`);
+        const componentMessage: ChatMessage = {
+          id: `${botMessageId}-components`,
+          type: "bot",
+          content: {
+            summary: "",
+            interactive_components: interactiveComponents,
+          },
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, componentMessage]);
+      }
+
+      console.log("✅ Response received (non-streaming)");
 
       // Mark user message as sent
       setMessages((prev) => prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: "sent" as const } : msg)));

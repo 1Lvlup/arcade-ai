@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { GameSidebar } from "@/components/GameSidebar";
 import { DetailedFeedbackDialog } from "@/components/DetailedFeedbackDialog";
 import { GameRequestDialog } from "@/components/GameRequestDialog";
+import { InteractiveComponentLibrary } from "@/components/InteractiveComponentLibrary";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1965,6 +1966,7 @@ export function ChatBot({
               )}
             </div>
             <div className="flex items-center gap-2">
+              <InteractiveComponentLibrary />
               <Button
                 variant="ghost"
                 size="sm"

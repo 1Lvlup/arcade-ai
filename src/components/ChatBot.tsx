@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { GameSidebar } from "@/components/GameSidebar";
@@ -77,6 +78,11 @@ interface AnswerSource {
   note: string;
 }
 
+interface InteractiveComponent {
+  type: "progress" | "status" | "checklist" | "code" | "image";
+  data: any;
+}
+
 interface StructuredAnswer {
   summary: string;
   steps?: AnswerStep[];
@@ -84,6 +90,7 @@ interface StructuredAnswer {
   expert_advice?: string[];
   safety?: string[];
   sources?: AnswerSource[];
+  interactive_components?: InteractiveComponent[];
 }
 
 interface ChatMessage {
@@ -1382,10 +1389,108 @@ export function ChatBot({
     return typeof content === "object" && content !== null && "summary" in content;
   };
 
+  const renderInteractiveComponent = (component: InteractiveComponent, index: number) => {
+    switch (component.type) {
+      case "progress":
+        return (
+          <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium">{component.data.label || "Progress"}</span>
+              <span className="text-xs text-muted-foreground">{component.data.value || 0}%</span>
+            </div>
+            <Progress value={component.data.value || 0} className="h-2" />
+            {component.data.description && (
+              <p className="text-xs text-muted-foreground">{component.data.description}</p>
+            )}
+          </div>
+        );
+      
+      case "status":
+        return (
+          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border">
+            {component.data.icon && (
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                component.data.status === "success" ? "bg-green-500/20 text-green-500" :
+                component.data.status === "error" ? "bg-red-500/20 text-red-500" :
+                component.data.status === "warning" ? "bg-yellow-500/20 text-yellow-500" :
+                "bg-blue-500/20 text-blue-500"
+              }`}>
+                {component.data.icon}
+              </div>
+            )}
+            <div className="flex-1">
+              <div className="text-xs font-medium">{component.data.title}</div>
+              {component.data.message && (
+                <div className="text-xs text-muted-foreground">{component.data.message}</div>
+              )}
+            </div>
+          </div>
+        );
+      
+      case "checklist":
+        return (
+          <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
+            {component.data.title && (
+              <div className="text-xs font-semibold mb-2">{component.data.title}</div>
+            )}
+            {component.data.items?.map((item: any, i: number) => (
+              <div key={i} className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={item.checked || false}
+                  readOnly
+                  className="mt-1 h-4 w-4 rounded border-border"
+                />
+                <div className="flex-1">
+                  <div className="text-xs">{item.label}</div>
+                  {item.description && (
+                    <div className="text-xs text-muted-foreground">{item.description}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      
+      case "code":
+        return (
+          <div key={index} className="p-4 bg-black/50 rounded-lg border border-border font-mono text-xs overflow-x-auto">
+            <pre className="text-primary">{component.data.code}</pre>
+          </div>
+        );
+      
+      case "image":
+        return (
+          <div key={index} className="space-y-2">
+            <img
+              src={component.data.url}
+              alt={component.data.alt || "Image"}
+              className="rounded-lg border border-border max-w-full h-auto"
+            />
+            {component.data.caption && (
+              <p className="text-xs text-muted-foreground text-center">{component.data.caption}</p>
+            )}
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
   const renderStructuredAnswer = (answer: StructuredAnswer, messageId: string) => (
     <div className="space-y-3">
       {/* Summary */}
       <div className="text-xs leading-relaxed">{answer.summary}</div>
+
+      {/* Interactive Components */}
+      {answer.interactive_components && answer.interactive_components.length > 0 && (
+        <div className="space-y-3">
+          {answer.interactive_components.map((component, index) => 
+            renderInteractiveComponent(component, index)
+          )}
+        </div>
+      )}
 
       {/* Steps as Checklist */}
       {answer.steps && answer.steps.length > 0 && (

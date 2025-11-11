@@ -10,6 +10,7 @@ import { GameSidebar } from "@/components/GameSidebar";
 import { DetailedFeedbackDialog } from "@/components/DetailedFeedbackDialog";
 import { GameRequestDialog } from "@/components/GameRequestDialog";
 import { InteractiveComponentLibrary } from "@/components/InteractiveComponentLibrary";
+import { DiagnosticWizard } from "@/components/DiagnosticWizard";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -83,7 +84,7 @@ interface AnswerSource {
 }
 
 interface InteractiveComponent {
-  type: "progress" | "status" | "checklist" | "code" | "image" | "button" | "button_group" | "form" | "input" | "select" | "slider";
+  type: "progress" | "status" | "checklist" | "code" | "image" | "button" | "button_group" | "form" | "input" | "select" | "slider" | "wizard";
   data: any;
   id?: string;
 }
@@ -1754,6 +1755,19 @@ export function ChatBot({
             {component.data.caption && (
               <p className="text-xs text-muted-foreground text-center">{component.data.caption}</p>
             )}
+          </div>
+        );
+      
+      case "wizard":
+        return (
+          <div key={index} className="my-4">
+            <DiagnosticWizard
+              scenario={component.data.scenario}
+              onComplete={(results) => {
+                console.log("Wizard complete:", results);
+                handleComponentInteraction(componentId, "complete", results);
+              }}
+            />
           </div>
         );
       

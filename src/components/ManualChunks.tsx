@@ -64,11 +64,23 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
     }
   };
 
-  const highlightSearchTerm = (text: string, searchTerm: string) => {
-    if (!searchTerm.trim()) return text;
+  const HighlightedText = ({ text, searchTerm }: { text: string; searchTerm: string }) => {
+    if (!searchTerm.trim()) return <>{text}</>;
     
     const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.replace(regex, '<mark class="bg-yellow-200">$1</mark>');
+    const parts = text.split(regex);
+    
+    return (
+      <>
+        {parts.map((part, i) => 
+          regex.test(part) ? (
+            <mark key={i} className="bg-yellow-200">{part}</mark>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </>
+    );
   };
 
   if (loading) {
@@ -164,12 +176,9 @@ export function ManualChunks({ manualId }: ManualChunksProps) {
                     </div>
                   </div>
                   
-                  <div 
-                    className="text-foreground leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto custom-scrollbar"
-                    dangerouslySetInnerHTML={{
-                      __html: highlightSearchTerm(chunk.content, searchTerm)
-                    }}
-                  />
+                  <div className="text-foreground leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto custom-scrollbar">
+                    <HighlightedText text={chunk.content} searchTerm={searchTerm} />
+                  </div>
                 </CardContent>
               </Card>
             ))}

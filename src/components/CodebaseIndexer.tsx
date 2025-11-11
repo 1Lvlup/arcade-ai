@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Folder, Trash2, CheckCircle, Loader2 } from 'lucide-react';
+import { Upload, Folder, Trash2, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CodebaseIndexerProps {
@@ -16,6 +16,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [indexedCount, setIndexedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [progress, setProgress] = useState(0);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const shouldIndexFile = (path: string): boolean => {
@@ -50,60 +51,37 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
     return allowedExtensions.some(ext => path.endsWith(ext));
   };
 
-  const readDirectory = async (dirHandle: any, path = ''): Promise<any[]> => {
-    const files: any[] = [];
-    
-    try {
-      // @ts-ignore - File System Access API
-      for await (const entry of dirHandle.values()) {
-        const entryPath = path ? `${path}/${entry.name}` : entry.name;
-        
-        if (entry.kind === 'file') {
-          if (shouldIndexFile(entryPath)) {
-            const file = await entry.getFile();
-            // Skip files larger than 500KB
-            if (file.size > 500000) continue;
-            
-            try {
-              const content = await file.text();
-              files.push({
-                path: entryPath,
-                content,
-              });
-            } catch (error) {
-              console.warn(`Failed to read ${entryPath}:`, error);
-            }
-          }
-        } else if (entry.kind === 'directory') {
-          // Recursively read subdirectories
-          const subFiles = await readDirectory(entry, entryPath);
-          files.push(...subFiles);
-        }
-      }
-    } catch (error) {
-      console.error('Error reading directory:', error);
-    }
-    
-    return files;
-  };
+  const handleFolderSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  const indexCodebase = async () => {
     setIsIndexing(true);
     setProgress(0);
     
     try {
-      // Request directory access
-      const dirHandle = await (window as any).showDirectoryPicker({
-        mode: 'read',
-      });
+      toast({ title: 'Processing files...', description: 'Reading and filtering your codebase' });
 
-      toast({ title: 'Scanning directory...', description: 'Please wait while we scan your codebase' });
+      // Convert FileList to array and filter
+      const filesToIndex: any[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // @ts-ignore - webkitRelativePath is available on File objects from directory input
+        const path = file.webkitRelativePath || file.name;
+        
+        if (shouldIndexFile(path) && file.size <= 500000) {
+          try {
+            const content = await file.text();
+            filesToIndex.push({ path, content });
+          } catch (error) {
+            console.warn(`Failed to read ${path}:`, error);
+          }
+        }
+      }
 
-      // Read all files
-      const files = await readDirectory(dirHandle);
-      setTotalFiles(files.length);
+      setTotalFiles(filesToIndex.length);
 
-      if (files.length === 0) {
+      if (filesToIndex.length === 0) {
         toast({ 
           title: 'No files found', 
           description: 'No indexable files found in the selected directory',
@@ -114,8 +92,8 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
 
       // Index files in batches
       const batchSize = 50;
-      for (let i = 0; i < files.length; i += batchSize) {
-        const batch = files.slice(i, i + batchSize);
+      for (let i = 0; i < filesToIndex.length; i += batchSize) {
+        const batch = filesToIndex.slice(i, i + batchSize);
         
         const { error } = await supabase.functions.invoke('index-codebase', {
           body: {
@@ -126,37 +104,31 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
 
         if (error) throw error;
 
-        setIndexedCount(Math.min(i + batchSize, files.length));
-        setProgress((Math.min(i + batchSize, files.length) / files.length) * 100);
+        setIndexedCount(Math.min(i + batchSize, filesToIndex.length));
+        setProgress((Math.min(i + batchSize, filesToIndex.length) / filesToIndex.length) * 100);
       }
 
       toast({ 
         title: 'Success!', 
-        description: `Indexed ${files.length} files from your codebase` 
+        description: `Indexed ${filesToIndex.length} files from your codebase` 
       });
 
       onIndexComplete?.();
     } catch (error: any) {
       console.error('Error indexing codebase:', error);
-      
-      if (error.name === 'SecurityError' || error.message?.includes('user aborted')) {
-        toast({ 
-          title: 'Cancelled', 
-          description: 'Directory selection was cancelled',
-          variant: 'destructive' 
-        });
-      } else {
-        toast({ 
-          title: 'Error', 
-          description: error.message || 'Failed to index codebase',
-          variant: 'destructive' 
-        });
-      }
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to index codebase',
+        variant: 'destructive' 
+      });
     } finally {
       setIsIndexing(false);
       setProgress(0);
       setIndexedCount(0);
       setTotalFiles(0);
+      if (folderInputRef.current) {
+        folderInputRef.current.value = '';
+      }
     }
   };
 
@@ -194,7 +166,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
       <CardContent className="space-y-4">
         <Alert>
           <AlertDescription>
-            This will scan your project directory and index all code files. The AI will then have full context of your codebase.
+            Select your project folder to index all code files. The AI will have full context of your codebase.
           </AlertDescription>
         </Alert>
 
@@ -208,9 +180,20 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
           </div>
         )}
 
+        <input
+          ref={folderInputRef}
+          type="file"
+          // @ts-ignore - webkitdirectory is supported but not in types
+          webkitdirectory=""
+          directory=""
+          multiple
+          onChange={handleFolderSelect}
+          className="hidden"
+        />
+
         <div className="flex gap-2">
           <Button 
-            onClick={indexCodebase} 
+            onClick={() => folderInputRef.current?.click()}
             disabled={isIndexing}
             className="flex-1"
           >
@@ -222,7 +205,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
             ) : (
               <>
                 <Upload className="h-4 w-4 mr-2" />
-                Index Directory
+                Select Folder
               </>
             )}
           </Button>

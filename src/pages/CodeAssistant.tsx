@@ -17,6 +17,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Label } from '@/components/ui/label';
+import { CodebaseIndexer } from '@/components/CodebaseIndexer';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -459,9 +460,11 @@ export function CodeAssistant() {
               </TabsList>
 
               <TabsContent value="files" className="p-4 space-y-4">
-                <div className="bg-muted/50 p-3 rounded-lg mb-4">
+                <CodebaseIndexer onIndexComplete={loadConversationData} />
+
+                <div className="bg-muted/50 p-3 rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    Upload or paste your code files to give the AI context about your project
+                    Or manually add specific files:
                   </p>
                 </div>
 
@@ -477,6 +480,7 @@ export function CodeAssistant() {
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full" 
                   size="sm"
+                  variant="outline"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Files

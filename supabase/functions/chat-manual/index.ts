@@ -436,31 +436,25 @@ async function generateAnswer(
 
   const shouldStream = opts?.stream !== false; // Default to streaming
 
-  // Use Responses API for better performance and caching
-  const url = "https://api.openai.com/v1/responses";
+  // Use Chat Completions API for non-streaming (better for structured output in two-stage pipeline)
+  const url = shouldStream 
+    ? "https://api.openai.com/v1/responses"
+    : "https://api.openai.com/v1/chat/completions";
 
-  // Build input array with conversation history (Responses API uses "input" instead of "messages")
-  const conversationInput = [
+  // Build messages array
+  const messages = [
     { role: "system", content: systemPrompt },
     ...(opts?.conversationHistory || []),
     { role: "user", content: userPrompt },
   ];
 
-  const body: any = isGpt5(model)
-    ? {
-        model,
-        input: conversationInput,
-        max_output_tokens: 8000,
-        stream: shouldStream,
-        store: true,
-      }
-    : {
-        model,
-        input: conversationInput,
-        max_output_tokens: 2000,
-        stream: shouldStream,
-        store: true,
-      };
+  const body: any = shouldStream
+    ? (isGpt5(model)
+        ? { model, input: messages, max_output_tokens: 8000, stream: true, store: true }
+        : { model, input: messages, max_output_tokens: 2000, stream: true, store: true })
+    : (isGpt5(model)
+        ? { model, messages, max_completion_tokens: 8000 }
+        : { model, messages, max_tokens: 2000, temperature: 0.7 });
 
   console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
 
@@ -480,40 +474,103 @@ async function generateAnswer(
     throw new Error(`OpenAI API error: ${response.statusText}`);
   }
 
-  // Non-streaming: collect full response
+  // Non-streaming: Chat Completions API returns JSON
   if (!shouldStream) {
+    const data = await response.json();
+    const fullText = data.choices?.[0]?.message?.content || '';
+    console.log(`✅ Non-streaming response: ${fullText.length} characters`);
+    return fullText;
+  }
+    
+    // Otherwise, it's a stream even though we requested non-streaming
+    console.log(`📦 Response is a stream, processing as SSE`);
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
     let fullText = "";
+    let isDone = false;
+    let chunkCount = 0;
     
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        console.log(`📦 Stream ended after ${chunkCount} chunks`);
+        break;
+      }
       
+      chunkCount++;
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() || "";
       
       for (const line of lines) {
-        if (!line.trim() || line.startsWith(':') || line.startsWith('event:')) continue;
+        if (!line.trim()) continue;
+        
+        if (line.startsWith(':') || line.startsWith('event:')) {
+          console.log(`📌 Meta line: ${line.slice(0, 50)}`);
+          continue;
+        }
+        
         if (line.startsWith('data: ')) {
           const dataContent = line.slice(6);
-          if (dataContent === '[DONE]') break;
+          if (dataContent === '[DONE]') {
+            console.log(`✅ Received [DONE] signal`);
+            isDone = true;
+            continue;
+          }
           
           try {
             const parsed = JSON.parse(dataContent);
+            console.log(`📦 Parsed:`, JSON.stringify(parsed).slice(0, 150));
+            
+            // Try different field names
             if (parsed.delta) {
               fullText += parsed.delta;
+              console.log(`✅ Added delta: ${parsed.delta.slice(0, 50)}`);
+            } else if (parsed.text) {
+              fullText += parsed.text;
+              console.log(`✅ Added text: ${parsed.text.slice(0, 50)}`);
+            } else if (parsed.content) {
+              fullText += parsed.content;
+              console.log(`✅ Added content: ${parsed.content.slice(0, 50)}`);
+            } else {
+              console.log(`⚠️ Unknown format, fields:`, Object.keys(parsed));
             }
           } catch (e) {
-            // Ignore parse errors
+            console.error('❌ Parse error:', e, 'Data:', dataContent.slice(0, 100));
+          }
+        }
+      }
+      
+      if (isDone) break;
+    }
+    
+    // Process any remaining buffer
+    if (buffer.trim()) {
+      console.log(`📦 Processing final buffer: ${buffer.length} chars`);
+      const lines = buffer.split('\n');
+      for (const line of lines) {
+        if (!line.trim() || line.startsWith(':') || line.startsWith('event:')) continue;
+        if (line.startsWith('data: ')) {
+          const dataContent = line.slice(6);
+          if (dataContent !== '[DONE]') {
+            try {
+              const parsed = JSON.parse(dataContent);
+              if (parsed.delta) fullText += parsed.delta;
+              else if (parsed.text) fullText += parsed.text;
+              else if (parsed.content) fullText += parsed.content;
+            } catch (e) {
+              // Ignore parse errors
+            }
           }
         }
       }
     }
     
     console.log(`✅ Non-streaming response collected: ${fullText.length} characters`);
+    if (fullText.length === 0) {
+      console.error(`❌ WARNING: Empty response after processing ${chunkCount} chunks!`);
+    }
     return fullText;
   }
 

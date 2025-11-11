@@ -391,10 +391,9 @@ const Index = () => {
               </div>
             </div>
           </section>
-        </div>
 
-        {/* Admin Panel */}
-        {isAdmin && (
+          {/* Admin Panel */}
+          {isAdmin && (
           <section className="py-12 border-t border-border">
             <h2 className="text-2xl font-bold text-foreground mb-6">Admin Panel</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4 max-w-2xl">
@@ -418,13 +417,13 @@ const Index = () => {
               </Link>
             </div>
           </section>
-        )}
-      </main>
+          )}
+        </main>
 
-      <Footer />
-      <ProcessingMonitor />
-      <LiveProcessingMonitor />
-    </div>
+        <Footer />
+        <ProcessingMonitor />
+        <LiveProcessingMonitor />
+      </div>
   );
 };
 

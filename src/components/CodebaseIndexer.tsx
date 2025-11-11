@@ -272,7 +272,38 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
         return;
       }
 
-      // Add files to current conversation
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get active conversation
+      const { data: conversations } = await supabase
+        .from('code_assistant_conversations')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!conversations || conversations.length === 0) {
+        throw new Error('No active conversation found. Please create a conversation first.');
+      }
+
+      const conversationId = conversations[0].id;
+
+      // Insert files into code_assistant_files table
+      const filesToInsert = filesToLoad.map(file => ({
+        conversation_id: conversationId,
+        file_path: file.file_path,
+        file_content: file.file_content,
+        language: file.language,
+      }));
+
+      const { error } = await supabase
+        .from('code_assistant_files')
+        .insert(filesToInsert);
+
+      if (error) throw error;
+
       toast({ 
         title: 'Success', 
         description: `Loaded ${filesToLoad.length} file(s) into conversation` 
@@ -280,11 +311,11 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
 
       onIndexComplete?.();
       setSelectedFiles(new Set());
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading indexed files:', error);
       toast({ 
         title: 'Error', 
-        description: 'Failed to load indexed files',
+        description: error.message || 'Failed to load indexed files',
         variant: 'destructive' 
       });
     } finally {

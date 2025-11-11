@@ -180,29 +180,6 @@ const Index = () => {
           </div>
         </section>
 
-        <div className="w-full px-4 sm:px-6 lg:px-12">
-          {/* Stats Section */}
-          <section className="py-16 border-y border-border">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div>
-                <div className="text-3xl font-bold text-foreground mb-1">2.3ms</div>
-                <div className="text-sm text-muted-foreground">Average response time</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-foreground mb-1">99.9%</div>
-                <div className="text-sm text-muted-foreground">Accuracy rate</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-foreground mb-1">1.2B+</div>
-                <div className="text-sm text-muted-foreground">Training parameters</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-foreground mb-1">24/7</div>
-                <div className="text-sm text-muted-foreground">Always available</div>
-              </div>
-            </div>
-          </section>
-
           {/* Features Section */}
           <section className="py-20">
             <div className="mb-12">

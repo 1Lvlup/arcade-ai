@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Folder, Trash2, Loader2, FileCode, CheckSquare, Square } from 'lucide-react';
+import { Upload, Folder, Trash2, Loader2, FileCode, CheckSquare, Square, RefreshCw, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 
 interface CodebaseIndexerProps {
   onIndexComplete?: () => void;
@@ -18,10 +19,19 @@ interface IndexedFile {
   file_path: string;
   file_content: string;
   language: string | null;
+  last_modified: string;
+}
+
+interface SyncResult {
+  added: number;
+  updated: number;
+  unchanged: number;
+  removed: number;
 }
 
 export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [isIndexing, setIsIndexing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingIndexed, setIsLoadingIndexed] = useState(false);
   const [indexedCount, setIndexedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
@@ -29,6 +39,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [indexedFiles, setIndexedFiles] = useState<IndexedFile[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [showFileList, setShowFileList] = useState(false);
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -66,6 +77,37 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
 
     // Only include files with allowed extensions
     return allowedExtensions.some(ext => path.endsWith(ext));
+  };
+
+  const generateFileHash = (content: string): string => {
+    // Simple hash function for content comparison
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return hash.toString(36);
+  };
+
+  const detectLanguage = (path: string): string => {
+    const ext = path.split('.').pop()?.toLowerCase();
+    const langMap: Record<string, string> = {
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'js': 'javascript',
+      'jsx': 'javascript',
+      'py': 'python',
+      'css': 'css',
+      'html': 'html',
+      'json': 'json',
+      'md': 'markdown',
+      'sql': 'sql',
+      'toml': 'toml',
+      'yaml': 'yaml',
+      'yml': 'yaml',
+    };
+    return langMap[ext || ''] || 'text';
   };
 
   const handleFolderSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,7 +215,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
     try {
       const { data, error } = await supabase
         .from('indexed_codebase')
-        .select('id, file_path, file_content, language')
+        .select('id, file_path, file_content, language, last_modified')
         .order('file_path');
 
       if (error) throw error;
@@ -240,6 +282,158 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
     setSelectedFiles(new Set());
   };
 
+  const syncFiles = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    
+    try {
+      // Request directory access
+      const dirHandle = await (window as any).showDirectoryPicker({
+        mode: 'read',
+      });
+
+      toast({ title: 'Scanning for changes...', description: 'Comparing with indexed files' });
+
+      // Read all files from directory
+      const newFiles: any[] = [];
+      await readDirectoryRecursive(dirHandle, '', newFiles);
+
+      // Get current indexed files
+      const { data: currentFiles, error: fetchError } = await supabase
+        .from('indexed_codebase')
+        .select('*');
+
+      if (fetchError) throw fetchError;
+
+      const currentFilesMap = new Map(
+        (currentFiles || []).map(f => [f.file_path, f])
+      );
+
+      let added = 0;
+      let updated = 0;
+      let unchanged = 0;
+
+      // Process files in batches
+      const batchSize = 20;
+      for (let i = 0; i < newFiles.length; i += batchSize) {
+        const batch = newFiles.slice(i, i + batchSize);
+        
+        for (const newFile of batch) {
+          const existing = currentFilesMap.get(newFile.path);
+          const newHash = generateFileHash(newFile.content);
+          
+          if (!existing) {
+            // New file - insert
+            await supabase.from('indexed_codebase').insert({
+              file_path: newFile.path,
+              file_content: newFile.content,
+              language: detectLanguage(newFile.path),
+            });
+            added++;
+          } else {
+            const existingHash = generateFileHash(existing.file_content);
+            if (existingHash !== newHash) {
+              // File changed - update
+              await supabase
+                .from('indexed_codebase')
+                .update({
+                  file_content: newFile.content,
+                  last_modified: new Date().toISOString(),
+                })
+                .eq('id', existing.id);
+              updated++;
+            } else {
+              unchanged++;
+            }
+          }
+        }
+        
+        setProgress(((i + batch.length) / newFiles.length) * 100);
+      }
+
+      // Find removed files
+      const newFilePaths = new Set(newFiles.map(f => f.path));
+      const removedFiles = (currentFiles || []).filter(
+        f => !newFilePaths.has(f.file_path)
+      );
+
+      // Optionally remove deleted files
+      if (removedFiles.length > 0) {
+        await supabase
+          .from('indexed_codebase')
+          .delete()
+          .in('id', removedFiles.map(f => f.id));
+      }
+
+      const result = {
+        added,
+        updated,
+        unchanged,
+        removed: removedFiles.length,
+      };
+
+      setSyncResult(result);
+      await loadIndexedFilesList();
+
+      toast({ 
+        title: 'Sync Complete!', 
+        description: `${added} added, ${updated} updated, ${removedFiles.length} removed`,
+      });
+
+      onIndexComplete?.();
+    } catch (error: any) {
+      console.error('Error syncing files:', error);
+      
+      if (error.name === 'SecurityError' || error.message?.includes('user aborted')) {
+        toast({ 
+          title: 'Cancelled', 
+          description: 'Sync was cancelled',
+          variant: 'destructive' 
+        });
+      } else {
+        toast({ 
+          title: 'Error', 
+          description: error.message || 'Failed to sync files',
+          variant: 'destructive' 
+        });
+      }
+    } finally {
+      setIsSyncing(false);
+      setProgress(0);
+    }
+  };
+
+  const readDirectoryRecursive = async (
+    dirHandle: any,
+    path: string,
+    files: any[]
+  ) => {
+    try {
+      // @ts-ignore - File System Access API
+      for await (const entry of dirHandle.values()) {
+        const entryPath = path ? `${path}/${entry.name}` : entry.name;
+        
+        if (entry.kind === 'file') {
+          if (shouldIndexFile(entryPath)) {
+            const file = await entry.getFile();
+            if (file.size <= 500000) {
+              try {
+                const content = await file.text();
+                files.push({ path: entryPath, content });
+              } catch (error) {
+                console.warn(`Failed to read ${entryPath}:`, error);
+              }
+            }
+          }
+        } else if (entry.kind === 'directory') {
+          await readDirectoryRecursive(entry, entryPath, files);
+        }
+      }
+    } catch (error) {
+      console.error('Error reading directory:', error);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -254,14 +448,51 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
       <CardContent className="space-y-4">
         <Alert>
           <AlertDescription className="space-y-2">
-            <p className="font-medium">Current Status: {indexedFiles.length} file(s) indexed</p>
+            <div className="flex items-center justify-between">
+              <p className="font-medium">Current Status: {indexedFiles.length} file(s) indexed</p>
+              {indexedFiles.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={syncFiles}
+                  disabled={isSyncing || isIndexing}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                  Sync
+                </Button>
+              )}
+            </div>
             <p className="text-sm">
               {indexedFiles.length === 0 
                 ? 'Upload files from your computer to build your indexed codebase. Then you can selectively load them into conversations.'
-                : 'Select files below to load into the conversation, or upload more files.'}
+                : 'Select files below to load into the conversation, sync to update, or upload more files.'}
             </p>
           </AlertDescription>
         </Alert>
+
+        {syncResult && (
+          <Alert>
+            <AlertDescription>
+              <p className="font-medium mb-1">Last Sync Results:</p>
+              <div className="text-sm space-y-1">
+                <p>✅ {syncResult.added} files added</p>
+                <p>🔄 {syncResult.updated} files updated</p>
+                <p>📋 {syncResult.unchanged} files unchanged</p>
+                {syncResult.removed > 0 && <p>🗑️ {syncResult.removed} files removed</p>}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isSyncing && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Syncing files...</span>
+              <span>{progress.toFixed(0)}%</span>
+            </div>
+            <Progress value={progress} />
+          </div>
+        )}
 
         {isIndexing && (
           <div className="space-y-2">
@@ -332,9 +563,17 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
                         <p className="text-sm font-mono truncate" title={file.file_path}>
                           {file.file_path}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {file.language} • {(file.file_content.length / 1024).toFixed(1)}KB
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">
+                            {file.language} • {(file.file_content.length / 1024).toFixed(1)}KB
+                          </p>
+                          {file.last_modified && (
+                            <Badge variant="outline" className="text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {new Date(file.last_modified).toLocaleDateString()}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

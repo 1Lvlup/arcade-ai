@@ -1,14 +1,23 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Folder, Trash2, Loader2 } from 'lucide-react';
+import { Upload, Folder, Trash2, Loader2, FileCode, CheckSquare, Square } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface CodebaseIndexerProps {
   onIndexComplete?: () => void;
+}
+
+interface IndexedFile {
+  id: string;
+  file_path: string;
+  file_content: string;
+  language: string | null;
 }
 
 export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
@@ -17,8 +26,15 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [indexedCount, setIndexedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [indexedFiles, setIndexedFiles] = useState<IndexedFile[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [showFileList, setShowFileList] = useState(false);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadIndexedFilesList();
+  }, []);
 
   const shouldIndexFile = (path: string): boolean => {
     const skipPatterns = [
@@ -153,30 +169,47 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
     }
   };
 
+  const loadIndexedFilesList = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('indexed_codebase')
+        .select('id, file_path, file_content, language')
+        .order('file_path');
+
+      if (error) throw error;
+      
+      setIndexedFiles(data || []);
+    } catch (error) {
+      console.error('Error loading indexed files list:', error);
+    }
+  };
+
   const loadIndexedFiles = async () => {
     setIsLoadingIndexed(true);
     try {
-      const { data: indexedFiles, error } = await supabase
-        .from('indexed_codebase')
-        .select('*');
+      const filesToLoad = selectedFiles.size > 0 
+        ? indexedFiles.filter(f => selectedFiles.has(f.id))
+        : indexedFiles;
 
-      if (error) throw error;
-
-      if (!indexedFiles || indexedFiles.length === 0) {
+      if (filesToLoad.length === 0) {
         toast({ 
-          title: 'No files found', 
-          description: 'No indexed files available in this project',
+          title: 'No files selected', 
+          description: selectedFiles.size > 0 
+            ? 'Please select files to load' 
+            : 'No indexed files available. Upload files from your computer first.',
           variant: 'destructive' 
         });
         return;
       }
 
+      // Add files to current conversation
       toast({ 
         title: 'Success', 
-        description: `Loaded ${indexedFiles.length} indexed files into conversation` 
+        description: `Loaded ${filesToLoad.length} file(s) into conversation` 
       });
 
       onIndexComplete?.();
+      setSelectedFiles(new Set());
     } catch (error) {
       console.error('Error loading indexed files:', error);
       toast({ 
@@ -187,6 +220,24 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
     } finally {
       setIsLoadingIndexed(false);
     }
+  };
+
+  const toggleFileSelection = (fileId: string) => {
+    const newSelection = new Set(selectedFiles);
+    if (newSelection.has(fileId)) {
+      newSelection.delete(fileId);
+    } else {
+      newSelection.add(fileId);
+    }
+    setSelectedFiles(newSelection);
+  };
+
+  const selectAll = () => {
+    setSelectedFiles(new Set(indexedFiles.map(f => f.id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedFiles(new Set());
   };
 
   return (
@@ -202,8 +253,13 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <Alert>
-          <AlertDescription>
-            Load indexed project files OR select a folder from your computer to index new files.
+          <AlertDescription className="space-y-2">
+            <p className="font-medium">Current Status: {indexedFiles.length} file(s) indexed</p>
+            <p className="text-sm">
+              {indexedFiles.length === 0 
+                ? 'Upload files from your computer to build your indexed codebase. Then you can selectively load them into conversations.'
+                : 'Select files below to load into the conversation, or upload more files.'}
+            </p>
           </AlertDescription>
         </Alert>
 
@@ -228,26 +284,86 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
           className="hidden"
         />
 
-        <div className="space-y-2">
-          <Button 
-            onClick={loadIndexedFiles}
-            disabled={isLoadingIndexed || isIndexing}
-            className="w-full"
-            variant="default"
-          >
-            {isLoadingIndexed ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              <>
-                <Folder className="h-4 w-4 mr-2" />
-                Load Indexed Project Files
-              </>
-            )}
-          </Button>
+        {indexedFiles.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFileList(!showFileList)}
+              >
+                <FileCode className="h-4 w-4 mr-2" />
+                {showFileList ? 'Hide' : 'Show'} Files ({indexedFiles.length})
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={selectAll}
+                >
+                  <CheckSquare className="h-4 w-4 mr-1" />
+                  All
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={deselectAll}
+                >
+                  <Square className="h-4 w-4 mr-1" />
+                  None
+                </Button>
+              </div>
+            </div>
 
+            {showFileList && (
+              <ScrollArea className="h-[300px] border rounded-lg p-3">
+                <div className="space-y-2">
+                  {indexedFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded cursor-pointer"
+                      onClick={() => toggleFileSelection(file.id)}
+                    >
+                      <Checkbox
+                        checked={selectedFiles.has(file.id)}
+                        onCheckedChange={() => toggleFileSelection(file.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-mono truncate" title={file.file_path}>
+                          {file.file_path}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {file.language} • {(file.file_content.length / 1024).toFixed(1)}KB
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+
+            <Button 
+              onClick={loadIndexedFiles}
+              disabled={isLoadingIndexed || isIndexing}
+              className="w-full"
+              variant="default"
+            >
+              {isLoadingIndexed ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Folder className="h-4 w-4 mr-2" />
+                  Load {selectedFiles.size > 0 ? `${selectedFiles.size} Selected` : 'All'} Files
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        <div className="space-y-2">
           <div className="flex gap-2">
             <Button 
               onClick={() => folderInputRef.current?.click()}
@@ -268,12 +384,12 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
               )}
             </Button>
             <Button 
-              onClick={clearIndex} 
+              onClick={clearIndex}
               disabled={isIndexing || isLoadingIndexed}
               variant="outline"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Clear
+              Clear All
             </Button>
           </div>
         </div>

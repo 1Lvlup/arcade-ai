@@ -13,6 +13,7 @@ interface CodebaseIndexerProps {
 
 export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [isIndexing, setIsIndexing] = useState(false);
+  const [isLoadingIndexed, setIsLoadingIndexed] = useState(false);
   const [indexedCount, setIndexedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -152,6 +153,42 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
     }
   };
 
+  const loadIndexedFiles = async () => {
+    setIsLoadingIndexed(true);
+    try {
+      const { data: indexedFiles, error } = await supabase
+        .from('indexed_codebase')
+        .select('*');
+
+      if (error) throw error;
+
+      if (!indexedFiles || indexedFiles.length === 0) {
+        toast({ 
+          title: 'No files found', 
+          description: 'No indexed files available in this project',
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      toast({ 
+        title: 'Success', 
+        description: `Loaded ${indexedFiles.length} indexed files into conversation` 
+      });
+
+      onIndexComplete?.();
+    } catch (error) {
+      console.error('Error loading indexed files:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to load indexed files',
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsLoadingIndexed(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -166,7 +203,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
       <CardContent className="space-y-4">
         <Alert>
           <AlertDescription>
-            Select your project folder to index all code files. The AI will have full context of your codebase.
+            Load indexed project files OR select a folder from your computer to index new files.
           </AlertDescription>
         </Alert>
 
@@ -191,32 +228,54 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
           className="hidden"
         />
 
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <Button 
-            onClick={() => folderInputRef.current?.click()}
-            disabled={isIndexing}
-            className="flex-1"
+            onClick={loadIndexedFiles}
+            disabled={isLoadingIndexed || isIndexing}
+            className="w-full"
+            variant="default"
           >
-            {isIndexing ? (
+            {isLoadingIndexed ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Indexing...
+                Loading...
               </>
             ) : (
               <>
-                <Upload className="h-4 w-4 mr-2" />
-                Select Folder
+                <Folder className="h-4 w-4 mr-2" />
+                Load Indexed Project Files
               </>
             )}
           </Button>
-          <Button 
-            onClick={clearIndex} 
-            disabled={isIndexing}
-            variant="outline"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Clear Index
-          </Button>
+
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => folderInputRef.current?.click()}
+              disabled={isIndexing || isLoadingIndexed}
+              className="flex-1"
+              variant="outline"
+            >
+              {isIndexing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Indexing...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Index from Computer
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={clearIndex} 
+              disabled={isIndexing || isLoadingIndexed}
+              variant="outline"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          </div>
         </div>
 
         <p className="text-xs text-muted-foreground">

@@ -434,6 +434,8 @@ async function generateAnswer(
   
   console.log(`🤖 Generating answer with model: ${model}`);
 
+  const shouldStream = opts?.stream !== false; // Default to streaming
+
   // Use Responses API for better performance and caching
   const url = "https://api.openai.com/v1/responses";
 
@@ -447,21 +449,20 @@ async function generateAnswer(
   const body: any = isGpt5(model)
     ? {
         model,
-        input: conversationInput, // Responses API uses "input"
-        max_output_tokens: 8000, // Responses API uses "max_output_tokens"
-        stream: true, // Explicitly true
-        store: true, // Enable stateful context for better performance
+        input: conversationInput,
+        max_output_tokens: 8000,
+        stream: shouldStream,
+        store: true,
       }
     : {
         model,
-        input: conversationInput, // Responses API uses "input"
+        input: conversationInput,
         max_output_tokens: 2000,
-        stream: true, // Explicitly true
+        stream: shouldStream,
         store: true,
       };
 
-  console.log(`📤 [Responses API] Calling ${url} with model ${model}`);
-  console.log(`📝 Body preview:`, JSON.stringify(body).slice(0, 400));
+  console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
 
   const response = await fetch(url, {
     method: "POST",
@@ -479,7 +480,44 @@ async function generateAnswer(
     throw new Error(`OpenAI API error: ${response.statusText}`);
   }
 
-  // Transform Responses API stream to Chat Completions API format
+  // Non-streaming: collect full response
+  if (!shouldStream) {
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let fullText = "";
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || "";
+      
+      for (const line of lines) {
+        if (!line.trim() || line.startsWith(':') || line.startsWith('event:')) continue;
+        if (line.startsWith('data: ')) {
+          const dataContent = line.slice(6);
+          if (dataContent === '[DONE]') break;
+          
+          try {
+            const parsed = JSON.parse(dataContent);
+            if (parsed.delta) {
+              fullText += parsed.delta;
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+    }
+    
+    console.log(`✅ Non-streaming response collected: ${fullText.length} characters`);
+    return fullText;
+  }
+
+  // Streaming: Transform Responses API stream to Chat Completions API format
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
   
@@ -494,15 +532,12 @@ async function generateAnswer(
           
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
-          
-          // Keep the last incomplete line in the buffer
           buffer = lines.pop() || "";
           
           for (const line of lines) {
             if (!line.trim() || line.startsWith(':')) continue;
             
             if (line.startsWith('event:')) {
-              // Skip event lines, we'll process the data lines
               continue;
             }
             
@@ -510,7 +545,6 @@ async function generateAnswer(
               const dataContent = line.slice(6);
               
               if (dataContent === '[DONE]') {
-                // Transform to Chat Completions format
                 controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
                 continue;
               }
@@ -518,7 +552,6 @@ async function generateAnswer(
               try {
                 const parsed = JSON.parse(dataContent);
                 
-                // Transform Responses API format to Chat Completions format
                 if (parsed.delta) {
                   const transformed = {
                     choices: [{
@@ -545,6 +578,112 @@ async function generateAnswer(
   });
 
   return transformedStream;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// STAGE 2: Interactive Elements Analyzer (Cheap Model)
+// ─────────────────────────────────────────────────────────────────────────
+async function analyzeForInteractiveElements(
+  answerText: string,
+  originalQuestion: string,
+  context: { isWeak: boolean; hasFigures: boolean }
+): Promise<{ interactive_components: any[] }> {
+  
+  const systemPrompt = `You are an interactive component selector for a troubleshooting chatbot.
+
+Given a troubleshooting answer, determine which interactive UI elements would enhance the user experience.
+
+Available components:
+- button_group: For multiple choice actions (e.g., "Did this help?" with Yes/No buttons)
+- checklist: For step-by-step procedures
+- button: For single actions (e.g., "Show wiring diagram")
+- input: For collecting user input (measurements, part numbers, etc.)
+- select: For dropdown choices
+- form: For multi-field data collection
+- progress: For multi-step processes
+- status: For success/warning/error states
+- code: For technical values or settings
+- slider: For adjustable values
+
+Return JSON with this exact structure:
+{
+  "interactive_components": [
+    {
+      "type": "button_group",
+      "props": {
+        "label": "Did this help?",
+        "buttons": [
+          { "label": "Yes", "value": "yes", "variant": "default" },
+          { "label": "No", "value": "no", "variant": "outline" }
+        ]
+      }
+    },
+    {
+      "type": "checklist",
+      "props": {
+        "items": [
+          { "label": "Step 1: Check power", "checked": false },
+          { "label": "Step 2: Test voltage", "checked": false }
+        ]
+      }
+    }
+  ]
+}
+
+Rules:
+- Only add components that genuinely enhance the answer
+- Don't add components just for the sake of it
+- Maximum 2-3 components per answer
+- If no components would help, return empty array
+- For multi-step procedures, always use checklist
+- For feedback questions, use button_group
+- Keep labels concise and actionable`;
+
+  const userPrompt = `Original Question: ${originalQuestion}
+
+Answer Generated:
+${answerText}
+
+Context:
+- Retrieval quality: ${context.isWeak ? 'weak' : 'strong'}
+- Contains figures: ${context.hasFigures}
+
+Analyze this answer and determine which interactive components would enhance it.`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+        ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        response_format: { type: 'json_object' },
+        max_tokens: 1000,
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      console.error('❌ Interactive elements analysis failed:', response.statusText);
+      return { interactive_components: [] };
+    }
+
+    const data = await response.json();
+    const result = JSON.parse(data.choices[0].message.content);
+    
+    console.log(`✅ Generated ${result.interactive_components?.length || 0} interactive components`);
+    return result;
+  } catch (error) {
+    console.error('❌ Error in analyzeForInteractiveElements:', error);
+    return { interactive_components: [] };
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -678,7 +817,7 @@ Keep it short (2-3 sentences max) and friendly.`;
     };
   }
 
-  console.log(`🎯 STAGE 1: Generating answer with model: ${model || CHAT_MODEL}`);
+  console.log(`🎯 STAGE 1: Generating answer content with ${model || CHAT_MODEL}`);
   const retrievalWeak = weak || topChunks.length < 2;
   
   // Compute signals for Answer Style V2
@@ -688,14 +827,26 @@ Keep it short (2-3 sentences max) and friendly.`;
     retrievalWeak,
     signals,
     existingWeak: weak,
-    stream: false,
+    stream: false, // Must be false for two-stage approach
     conversationHistory
   });
 
-  console.log("✅ [RAG V3] Pipeline complete\n");
+  // STAGE 2: Analyze answer and add interactive elements with cheap model
+  console.log(`🎨 STAGE 2: Analyzing for interactive elements with gpt-4o-mini`);
+  const elementsResult = await analyzeForInteractiveElements(
+    answer as string, // Type assertion since stream is false
+    query,
+    {
+      isWeak: weak,
+      hasFigures: (figureResults?.length ?? 0) > 0
+    }
+  );
+
+  console.log(`✅ [RAG V3] Pipeline complete - added ${elementsResult.interactive_components.length} interactive components\n`);
 
   return {
     answer,
+    interactive_components: elementsResult.interactive_components,
     sources: topChunks.map((c: any) => ({
       manual_id: c.manual_id,
       content: c.content.substring(0, 200) + "...",

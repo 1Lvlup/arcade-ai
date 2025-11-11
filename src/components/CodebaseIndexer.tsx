@@ -131,7 +131,11 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
         if (shouldIndexFile(path) && file.size <= 500000) {
           try {
             const content = await file.text();
-            filesToIndex.push({ path, content });
+            filesToIndex.push({ 
+              path, 
+              content,
+              language: detectLanguage(path)
+            });
           } catch (error) {
             console.warn(`Failed to read ${path}:`, error);
           }
@@ -149,27 +153,51 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
         return;
       }
 
-      // Index files in batches
-      const batchSize = 50;
+      // Get current user's tenant
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('fec_tenant_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile) throw new Error('Profile not found');
+
+      // Insert files directly to database in smaller batches
+      const batchSize = 10;
+      let processed = 0;
+
       for (let i = 0; i < filesToIndex.length; i += batchSize) {
         const batch = filesToIndex.slice(i, i + batchSize);
         
-        const { error } = await supabase.functions.invoke('index-codebase', {
-          body: {
-            action: 'index',
-            files: batch,
-          }
-        });
+        const filesToInsert = batch.map(file => ({
+          fec_tenant_id: profile.fec_tenant_id,
+          file_path: file.path,
+          file_content: file.content,
+          language: file.language,
+        }));
 
-        if (error) throw error;
+        const { error } = await supabase
+          .from('indexed_codebase')
+          .insert(filesToInsert);
 
-        setIndexedCount(Math.min(i + batchSize, filesToIndex.length));
-        setProgress((Math.min(i + batchSize, filesToIndex.length) / filesToIndex.length) * 100);
+        if (error) {
+          console.error('Batch insert error:', error);
+          // Continue with next batch even if one fails
+        }
+
+        processed += batch.length;
+        setIndexedCount(processed);
+        setProgress((processed / filesToIndex.length) * 100);
       }
+
+      await loadIndexedFilesList();
 
       toast({ 
         title: 'Success!', 
-        description: `Indexed ${filesToIndex.length} files from your codebase` 
+        description: `Indexed ${processed} files from your codebase` 
       });
 
       onIndexComplete?.();
@@ -309,12 +337,24 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
         (currentFiles || []).map(f => [f.file_path, f])
       );
 
+      // Get current user's tenant
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('fec_tenant_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile) throw new Error('Profile not found');
+
       let added = 0;
       let updated = 0;
       let unchanged = 0;
 
       // Process files in batches
-      const batchSize = 20;
+      const batchSize = 10;
       for (let i = 0; i < newFiles.length; i += batchSize) {
         const batch = newFiles.slice(i, i + batchSize);
         
@@ -325,6 +365,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
           if (!existing) {
             // New file - insert
             await supabase.from('indexed_codebase').insert({
+              fec_tenant_id: profile.fec_tenant_id,
               file_path: newFile.path,
               file_content: newFile.content,
               language: detectLanguage(newFile.path),

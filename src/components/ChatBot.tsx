@@ -10,6 +10,9 @@ import { GameSidebar } from "@/components/GameSidebar";
 import { DetailedFeedbackDialog } from "@/components/DetailedFeedbackDialog";
 import { GameRequestDialog } from "@/components/GameRequestDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,8 +82,16 @@ interface AnswerSource {
 }
 
 interface InteractiveComponent {
-  type: "progress" | "status" | "checklist" | "code" | "image";
+  type: "progress" | "status" | "checklist" | "code" | "image" | "button" | "button_group" | "form" | "input" | "select" | "slider";
   data: any;
+  id?: string;
+}
+
+interface ComponentInteraction {
+  componentId: string;
+  type: string;
+  value: any;
+  timestamp: Date;
 }
 
 interface StructuredAnswer {
@@ -179,6 +190,8 @@ export function ChatBot({
   const { toast } = useToast();
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{url: string, title: string} | null>(null);
+  const [componentInteractions, setComponentInteractions] = useState<Map<string, any>>(new Map());
+  const [formValues, setFormValues] = useState<Map<string, Record<string, any>>>(new Map());
   const [availableGames, setAvailableGames] = useState<Array<{manual_id: string, canonical_title: string}>>([]);
 
   const GUEST_MESSAGE_LIMIT = 10;
@@ -1389,7 +1402,52 @@ export function ChatBot({
     return typeof content === "object" && content !== null && "summary" in content;
   };
 
+  const handleComponentInteraction = (componentId: string, type: string, value: any) => {
+    const interaction: ComponentInteraction = {
+      componentId,
+      type,
+      value,
+      timestamp: new Date(),
+    };
+    
+    setComponentInteractions(prev => {
+      const newMap = new Map(prev);
+      newMap.set(componentId, value);
+      return newMap;
+    });
+
+    // If it's a button click, you could trigger an automated response
+    if (type === 'button_click') {
+      toast({
+        title: "Action triggered",
+        description: `${value.label} clicked`,
+      });
+      
+      // Auto-send a message if configured
+      if (value.autoSendMessage) {
+        setInputValue(value.autoSendMessage);
+        // Could automatically send it here if desired
+      }
+    }
+  };
+
+  const handleFormSubmit = (componentId: string, formData: Record<string, any>) => {
+    const formattedMessage = Object.entries(formData)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('\n');
+    
+    toast({
+      title: "Form submitted",
+      description: "Processing your input...",
+    });
+
+    // Auto-send the form data as a message
+    setInputValue(`Form Response:\n${formattedMessage}`);
+  };
+
   const renderInteractiveComponent = (component: InteractiveComponent, index: number) => {
+    const componentId = component.id || `component-${index}`;
+    
     switch (component.type) {
       case "progress":
         return (
@@ -1427,28 +1485,252 @@ export function ChatBot({
           </div>
         );
       
+      case "button":
+        return (
+          <Button
+            key={index}
+            variant={component.data.variant || "default"}
+            size={component.data.size || "sm"}
+            onClick={() => handleComponentInteraction(
+              componentId,
+              'button_click',
+              { label: component.data.label, action: component.data.action, autoSendMessage: component.data.autoSendMessage }
+            )}
+            className={component.data.className}
+            disabled={component.data.disabled}
+          >
+            {component.data.icon && <span className="mr-2">{component.data.icon}</span>}
+            {component.data.label}
+          </Button>
+        );
+      
+      case "button_group":
+        return (
+          <div key={index} className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border border-border">
+            {component.data.title && (
+              <div className="w-full text-xs font-medium mb-1">{component.data.title}</div>
+            )}
+            {component.data.buttons?.map((btn: any, i: number) => (
+              <Button
+                key={i}
+                variant={btn.variant || "outline"}
+                size="sm"
+                onClick={() => handleComponentInteraction(
+                  `${componentId}-btn-${i}`,
+                  'button_click',
+                  { label: btn.label, action: btn.action, autoSendMessage: btn.autoSendMessage }
+                )}
+                disabled={btn.disabled}
+              >
+                {btn.icon && <span className="mr-2">{btn.icon}</span>}
+                {btn.label}
+              </Button>
+            ))}
+          </div>
+        );
+      
+      case "input":
+        return (
+          <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
+            {component.data.label && (
+              <Label htmlFor={componentId} className="text-xs font-medium">
+                {component.data.label}
+              </Label>
+            )}
+            <Input
+              id={componentId}
+              type={component.data.inputType || "text"}
+              placeholder={component.data.placeholder}
+              value={componentInteractions.get(componentId) || ''}
+              onChange={(e) => handleComponentInteraction(componentId, 'input_change', e.target.value)}
+              className="text-xs"
+              maxLength={component.data.maxLength}
+            />
+            {component.data.description && (
+              <p className="text-xs text-muted-foreground">{component.data.description}</p>
+            )}
+          </div>
+        );
+      
+      case "select":
+        return (
+          <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
+            {component.data.label && (
+              <Label htmlFor={componentId} className="text-xs font-medium">
+                {component.data.label}
+              </Label>
+            )}
+            <Select
+              value={componentInteractions.get(componentId) || component.data.defaultValue}
+              onValueChange={(value) => handleComponentInteraction(componentId, 'select_change', value)}
+            >
+              <SelectTrigger id={componentId} className="text-xs">
+                <SelectValue placeholder={component.data.placeholder || "Select an option"} />
+              </SelectTrigger>
+              <SelectContent>
+                {component.data.options?.map((option: any, i: number) => (
+                  <SelectItem key={i} value={option.value} className="text-xs">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {component.data.description && (
+              <p className="text-xs text-muted-foreground">{component.data.description}</p>
+            )}
+          </div>
+        );
+      
+      case "slider":
+        return (
+          <div key={index} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
+            <div className="flex items-center justify-between">
+              {component.data.label && (
+                <Label htmlFor={componentId} className="text-xs font-medium">
+                  {component.data.label}
+                </Label>
+              )}
+              <span className="text-xs text-muted-foreground">
+                {componentInteractions.get(componentId) ?? component.data.defaultValue ?? component.data.min ?? 0}
+                {component.data.unit || ''}
+              </span>
+            </div>
+            <Slider
+              id={componentId}
+              min={component.data.min || 0}
+              max={component.data.max || 100}
+              step={component.data.step || 1}
+              value={[componentInteractions.get(componentId) ?? component.data.defaultValue ?? component.data.min ?? 0]}
+              onValueChange={(values) => handleComponentInteraction(componentId, 'slider_change', values[0])}
+              className="w-full"
+            />
+            {component.data.description && (
+              <p className="text-xs text-muted-foreground">{component.data.description}</p>
+            )}
+          </div>
+        );
+      
+      case "form":
+        const currentFormValues = formValues.get(componentId) || {};
+        return (
+          <div key={index} className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border">
+            {component.data.title && (
+              <h4 className="text-sm font-semibold">{component.data.title}</h4>
+            )}
+            {component.data.description && (
+              <p className="text-xs text-muted-foreground">{component.data.description}</p>
+            )}
+            <div className="space-y-3">
+              {component.data.fields?.map((field: any, i: number) => {
+                const fieldId = `${componentId}-${field.name}`;
+                return (
+                  <div key={i} className="space-y-1">
+                    <Label htmlFor={fieldId} className="text-xs font-medium">
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                    {field.type === 'select' ? (
+                      <Select
+                        value={currentFormValues[field.name] || ''}
+                        onValueChange={(value) => {
+                          setFormValues(prev => {
+                            const newMap = new Map(prev);
+                            const formData = newMap.get(componentId) || {};
+                            newMap.set(componentId, { ...formData, [field.name]: value });
+                            return newMap;
+                          });
+                        }}
+                      >
+                        <SelectTrigger id={fieldId} className="text-xs">
+                          <SelectValue placeholder={field.placeholder} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options?.map((opt: any, j: number) => (
+                            <SelectItem key={j} value={opt.value} className="text-xs">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : field.type === 'textarea' ? (
+                      <textarea
+                        id={fieldId}
+                        placeholder={field.placeholder}
+                        value={currentFormValues[field.name] || ''}
+                        onChange={(e) => {
+                          setFormValues(prev => {
+                            const newMap = new Map(prev);
+                            const formData = newMap.get(componentId) || {};
+                            newMap.set(componentId, { ...formData, [field.name]: e.target.value });
+                            return newMap;
+                          });
+                        }}
+                        className="w-full min-h-[80px] px-3 py-2 text-xs rounded-md border border-input bg-background"
+                        maxLength={field.maxLength}
+                      />
+                    ) : (
+                      <Input
+                        id={fieldId}
+                        type={field.type || 'text'}
+                        placeholder={field.placeholder}
+                        value={currentFormValues[field.name] || ''}
+                        onChange={(e) => {
+                          setFormValues(prev => {
+                            const newMap = new Map(prev);
+                            const formData = newMap.get(componentId) || {};
+                            newMap.set(componentId, { ...formData, [field.name]: e.target.value });
+                            return newMap;
+                          });
+                        }}
+                        className="text-xs"
+                        maxLength={field.maxLength}
+                      />
+                    )}
+                    {field.description && (
+                      <p className="text-xs text-muted-foreground">{field.description}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <Button
+              size="sm"
+              onClick={() => handleFormSubmit(componentId, currentFormValues)}
+              disabled={component.data.fields?.some((f: any) => f.required && !currentFormValues[f.name])}
+              className="w-full"
+            >
+              {component.data.submitLabel || "Submit"}
+            </Button>
+          </div>
+        );
+      
       case "checklist":
         return (
           <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
             {component.data.title && (
               <div className="text-xs font-semibold mb-2">{component.data.title}</div>
             )}
-            {component.data.items?.map((item: any, i: number) => (
-              <div key={i} className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  checked={item.checked || false}
-                  readOnly
-                  className="mt-1 h-4 w-4 rounded border-border"
-                />
-                <div className="flex-1">
-                  <div className="text-xs">{item.label}</div>
-                  {item.description && (
-                    <div className="text-xs text-muted-foreground">{item.description}</div>
-                  )}
+            {component.data.items?.map((item: any, i: number) => {
+              const itemId = `${componentId}-item-${i}`;
+              const isChecked = componentInteractions.get(itemId) ?? item.checked ?? false;
+              return (
+                <div key={i} className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    id={itemId}
+                    checked={isChecked}
+                    onChange={(e) => handleComponentInteraction(itemId, 'checkbox_change', e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-border cursor-pointer"
+                  />
+                  <label htmlFor={itemId} className="flex-1 cursor-pointer">
+                    <div className="text-xs">{item.label}</div>
+                    {item.description && (
+                      <div className="text-xs text-muted-foreground">{item.description}</div>
+                    )}
+                  </label>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         );
       
@@ -1465,7 +1747,8 @@ export function ChatBot({
             <img
               src={component.data.url}
               alt={component.data.alt || "Image"}
-              className="rounded-lg border border-border max-w-full h-auto"
+              className="rounded-lg border border-border max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => component.data.clickable && setSelectedImage({ url: component.data.url, title: component.data.caption || '' })}
             />
             {component.data.caption && (
               <p className="text-xs text-muted-foreground text-center">{component.data.caption}</p>

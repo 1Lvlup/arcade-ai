@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -34,6 +35,7 @@ export default function Auth() {
   const [facilityName, setFacilityName] = useState('');
   const [totalGames, setTotalGames] = useState('');
   const [position, setPosition] = useState('');
+  const [experience, setExperience] = useState('');
   
   // Modal states
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -72,7 +74,7 @@ export default function Auth() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password || !facilityName || !totalGames || !position) {
+    if (!email || !password || !facilityName || !totalGames || !position || !experience) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -102,6 +104,7 @@ export default function Auth() {
               facility_name: facilityName,
               total_games: parseInt(totalGames),
               position: position,
+              bio: experience,
             })
             .eq('user_id', user.id);
         }
@@ -369,6 +372,19 @@ export default function Auth() {
                       required
                       placeholder="e.g., Technician, Owner, GM"
                       className="border-primary/30 focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="experience">Experience with Arcade Games/Bowling Alleys</Label>
+                    <Textarea
+                      id="experience"
+                      value={experience}
+                      onChange={(e) => setExperience(e.target.value)}
+                      required
+                      placeholder="How long have you been working on arcade games/bowling alleys?"
+                      className="border-primary/30 focus:border-primary min-h-[80px]"
+                      maxLength={500}
                     />
                   </div>
 

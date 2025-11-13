@@ -16,6 +16,9 @@ interface Profile {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  facility_name: string | null;
+  total_games: number | null;
+  position: string | null;
 }
 
 export default function Profile() {
@@ -28,6 +31,9 @@ export default function Profile() {
     display_name: null,
     bio: null,
     avatar_url: null,
+    facility_name: null,
+    total_games: null,
+    position: null,
   });
 
   useEffect(() => {
@@ -44,7 +50,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url')
+        .select('display_name, bio, avatar_url, facility_name, total_games, position')
         .eq('user_id', user.id)
         .single();
 
@@ -58,6 +64,9 @@ export default function Profile() {
           display_name: data.display_name,
           bio: data.bio,
           avatar_url: data.avatar_url,
+          facility_name: data.facility_name,
+          total_games: data.total_games,
+          position: data.position,
         });
       }
     } catch (error: any) {
@@ -134,6 +143,9 @@ export default function Profile() {
         .update({
           display_name: profile.display_name || null,
           bio: profile.bio || null,
+          facility_name: profile.facility_name || null,
+          total_games: profile.total_games || null,
+          position: profile.position || null,
         } as any)
         .eq('user_id', user.id);
 
@@ -268,6 +280,52 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground text-right">
                   {profile.bio?.length || 0} / 500
                 </p>
+              </div>
+
+              {/* Facility Name */}
+              <div className="space-y-2">
+                <Label htmlFor="facility_name">Facility Name</Label>
+                <Input
+                  id="facility_name"
+                  type="text"
+                  value={profile.facility_name || ''}
+                  onChange={(e) =>
+                    setProfile({ ...profile, facility_name: e.target.value })
+                  }
+                  placeholder="Enter your facility name"
+                  className="border-primary/30 focus:border-primary"
+                />
+              </div>
+
+              {/* Total Games */}
+              <div className="space-y-2">
+                <Label htmlFor="total_games">Total Number of Games</Label>
+                <Input
+                  id="total_games"
+                  type="number"
+                  value={profile.total_games?.toString() || ''}
+                  onChange={(e) =>
+                    setProfile({ ...profile, total_games: parseInt(e.target.value) || null })
+                  }
+                  placeholder="Total games across all facilities"
+                  min="1"
+                  className="border-primary/30 focus:border-primary"
+                />
+              </div>
+
+              {/* Position */}
+              <div className="space-y-2">
+                <Label htmlFor="position">Position</Label>
+                <Input
+                  id="position"
+                  type="text"
+                  value={profile.position || ''}
+                  onChange={(e) =>
+                    setProfile({ ...profile, position: e.target.value })
+                  }
+                  placeholder="e.g., Technician, Owner, GM"
+                  className="border-primary/30 focus:border-primary"
+                />
               </div>
 
               {/* Action Buttons */}

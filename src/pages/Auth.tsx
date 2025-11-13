@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Brain } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,11 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // Signup additional fields
+  const [facilityName, setFacilityName] = useState('');
+  const [totalGames, setTotalGames] = useState('');
+  const [position, setPosition] = useState('');
   
   // Modal states
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -66,7 +72,7 @@ export default function Auth() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!email || !password || !facilityName || !totalGames || !position) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -86,6 +92,23 @@ export default function Auth() {
         variant: "destructive",
       });
     } else {
+      // Update profile with additional fields
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('profiles')
+            .update({
+              facility_name: facilityName,
+              total_games: parseInt(totalGames),
+              position: position,
+            })
+            .eq('user_id', user.id);
+        }
+      } catch (err) {
+        console.error('Error updating profile:', err);
+      }
+      
       toast({
         title: "Success!",
         description: "Please check your email to confirm your account, then choose a plan to get started.",
@@ -305,6 +328,46 @@ export default function Auth() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      className="border-primary/30 focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="facility-name">Facility Name</Label>
+                    <Input
+                      id="facility-name"
+                      type="text"
+                      value={facilityName}
+                      onChange={(e) => setFacilityName(e.target.value)}
+                      required
+                      placeholder="e.g., Arcade Express"
+                      className="border-primary/30 focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="total-games">Total Number of Games</Label>
+                    <Input
+                      id="total-games"
+                      type="number"
+                      value={totalGames}
+                      onChange={(e) => setTotalGames(e.target.value)}
+                      required
+                      placeholder="e.g., 50"
+                      min="1"
+                      className="border-primary/30 focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="position">Position</Label>
+                    <Input
+                      id="position"
+                      type="text"
+                      value={position}
+                      onChange={(e) => setPosition(e.target.value)}
+                      required
+                      placeholder="e.g., Technician, Owner, GM"
                       className="border-primary/30 focus:border-primary"
                     />
                   </div>

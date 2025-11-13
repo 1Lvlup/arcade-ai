@@ -1101,8 +1101,11 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string
+          facility_name: string | null
           fec_tenant_id: string
           id: string
+          position: string | null
+          total_games: number | null
           updated_at: string
           user_id: string
         }
@@ -1112,8 +1115,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email: string
+          facility_name?: string | null
           fec_tenant_id: string
           id?: string
+          position?: string | null
+          total_games?: number | null
           updated_at?: string
           user_id: string
         }
@@ -1123,8 +1129,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string
+          facility_name?: string | null
           fec_tenant_id?: string
           id?: string
+          position?: string | null
+          total_games?: number | null
           updated_at?: string
           user_id?: string
         }

@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ADMIN_ROUTES = [
   { path: '/', label: 'Home', icon: Home },
+  { path: '/forum', label: 'Community Forum', icon: MessageSquare },
   { path: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard },
   { path: '/manuals', label: 'Manual Management', icon: FileText },
   { path: '/chat', label: 'Chat', icon: MessageSquare },
@@ -40,6 +41,7 @@ const ADMIN_ROUTES = [
 
 const USER_ROUTES = [
   { path: '/', label: 'Home', icon: Home },
+  { path: '/forum', label: 'Community Forum', icon: MessageSquare },
 ];
 
 export const PageNavigation = () => {

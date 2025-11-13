@@ -635,6 +635,86 @@ export type Database = {
           },
         ]
       }
+      forum_comments: {
+        Row: {
+          content: string
+          created_at: string
+          fec_tenant_id: string
+          id: string
+          is_solution: boolean | null
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          fec_tenant_id?: string
+          id?: string
+          is_solution?: boolean | null
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          fec_tenant_id?: string
+          id?: string
+          is_solution?: boolean | null
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_posts: {
+        Row: {
+          content: string
+          created_at: string
+          fec_tenant_id: string
+          game_name: string | null
+          id: string
+          is_resolved: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          fec_tenant_id?: string
+          game_name?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          fec_tenant_id?: string
+          game_name?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       game_requests: {
         Row: {
           created_at: string

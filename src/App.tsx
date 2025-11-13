@@ -41,6 +41,8 @@ import AddGames from "./pages/AddGames";
 import GameManagement from "./pages/GameManagement";
 import AdminDashboard from "./pages/AdminDashboard";
 import Profile from "./pages/Profile";
+import Forum from "./pages/Forum";
+import ForumPost from "./pages/ForumPost";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +67,8 @@ const App = () => (
                 <Chat />
               </ProtectedRoute>
             } />
+            <Route path="/forum" element={<Forum />} />
+            <Route path="/forum/:id" element={<ForumPost />} />
             <Route path="/manuals/:manualId" element={
               <ProtectedRoute>
                 <ManualDetail />

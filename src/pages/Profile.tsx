@@ -266,14 +266,14 @@ export default function Profile() {
                 </p>
               </div>
 
-              {/* Bio */}
+              {/* Experience */}
               <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
+                <Label htmlFor="bio">Experience with Arcade Games/Bowling Alleys</Label>
                 <Textarea
                   id="bio"
                   value={profile.bio || ''}
                   onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                  placeholder="Tell us about yourself"
+                  placeholder="How long have you been working on arcade games/bowling alleys?"
                   className="border-primary/30 focus:border-primary min-h-[100px]"
                   maxLength={500}
                 />

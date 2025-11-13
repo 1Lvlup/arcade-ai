@@ -639,31 +639,37 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          downvote_count: number
           fec_tenant_id: string
           id: string
           is_solution: boolean | null
           post_id: string
           updated_at: string
+          upvote_count: number
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
+          downvote_count?: number
           fec_tenant_id?: string
           id?: string
           is_solution?: boolean | null
           post_id: string
           updated_at?: string
+          upvote_count?: number
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          downvote_count?: number
           fec_tenant_id?: string
           id?: string
           is_solution?: boolean | null
           post_id?: string
           updated_at?: string
+          upvote_count?: number
           user_id?: string
         }
         Relationships: [
@@ -680,6 +686,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          downvote_count: number
           fec_tenant_id: string
           game_name: string | null
           id: string
@@ -687,11 +694,13 @@ export type Database = {
           tags: string[] | null
           title: string
           updated_at: string
+          upvote_count: number
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
+          downvote_count?: number
           fec_tenant_id?: string
           game_name?: string | null
           id?: string
@@ -699,11 +708,13 @@ export type Database = {
           tags?: string[] | null
           title: string
           updated_at?: string
+          upvote_count?: number
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          downvote_count?: number
           fec_tenant_id?: string
           game_name?: string | null
           id?: string
@@ -711,9 +722,52 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string
+          upvote_count?: number
           user_id?: string
         }
         Relationships: []
+      }
+      forum_votes: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          id: string
+          post_id: string | null
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_votes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "forum_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_votes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       game_requests: {
         Row: {

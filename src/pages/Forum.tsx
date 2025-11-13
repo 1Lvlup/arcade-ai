@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, CheckCircle2, Plus, Loader2 } from "lucide-react";
+import { MessageSquare, CheckCircle2, Plus, Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { SharedHeader } from "@/components/SharedHeader";
 
@@ -22,7 +22,10 @@ interface ForumPost {
   is_resolved: boolean;
   created_at: string;
   user_id: string;
+  upvote_count: number;
+  downvote_count: number;
   forum_comments: { count: number }[];
+  user_vote?: { vote_type: string } | null;
 }
 
 export default function Forum() {
@@ -38,20 +41,30 @@ export default function Forum() {
     game_name: "",
     tags: "",
   });
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchPosts();
+    getCurrentUser();
   }, [filterResolved]);
+
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUser(user);
+  };
 
   const fetchPosts = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       let query = supabase
         .from("forum_posts")
         .select(`
           *,
-          forum_comments(count)
+          forum_comments(count),
+          user_vote:forum_votes!forum_votes_post_id_fkey(vote_type)
         `)
         .order("created_at", { ascending: false });
 
@@ -59,10 +72,23 @@ export default function Forum() {
         query = query.eq("is_resolved", filterResolved);
       }
 
+      if (user) {
+        query = query.eq("forum_votes.user_id", user.id);
+      }
+
       const { data, error } = await query;
 
       if (error) throw error;
-      setPosts(data || []);
+      
+      // Transform the data to handle the user_vote relationship
+      const transformedData = data?.map(post => ({
+        ...post,
+        user_vote: Array.isArray(post.user_vote) && post.user_vote.length > 0 
+          ? post.user_vote[0] 
+          : null
+      }));
+      
+      setPosts(transformedData || []);
     } catch (error: any) {
       toast({
         title: "Error loading posts",
@@ -115,6 +141,63 @@ export default function Forum() {
       });
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleVote = async (postId: string, voteType: 'upvote' | 'downvote', e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!currentUser) {
+      toast({
+        title: "Login required",
+        description: "Please login to vote",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const post = posts.find(p => p.id === postId);
+      const existingVote = post?.user_vote;
+
+      if (existingVote?.vote_type === voteType) {
+        // Remove vote if clicking the same button
+        const { error } = await supabase
+          .from("forum_votes")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", currentUser.id);
+
+        if (error) throw error;
+      } else if (existingVote) {
+        // Update existing vote
+        const { error } = await supabase
+          .from("forum_votes")
+          .update({ vote_type: voteType })
+          .eq("post_id", postId)
+          .eq("user_id", currentUser.id);
+
+        if (error) throw error;
+      } else {
+        // Create new vote
+        const { error } = await supabase
+          .from("forum_votes")
+          .insert({
+            post_id: postId,
+            user_id: currentUser.id,
+            vote_type: voteType,
+          });
+
+        if (error) throw error;
+      }
+
+      fetchPosts();
+    } catch (error: any) {
+      toast({
+        title: "Error voting",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -254,7 +337,30 @@ export default function Forum() {
                 onClick={() => navigate(`/forum/${post.id}`)}
               >
                 <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    {/* Vote buttons */}
+                    <div className="flex flex-col items-center gap-1 pt-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 w-8 p-0 ${post.user_vote?.vote_type === 'upvote' ? 'text-primary' : 'text-muted-foreground'}`}
+                        onClick={(e) => handleVote(post.id, 'upvote', e)}
+                      >
+                        <ArrowUp className="w-5 h-5" />
+                      </Button>
+                      <span className="text-sm font-semibold">
+                        {post.upvote_count - post.downvote_count}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 w-8 p-0 ${post.user_vote?.vote_type === 'downvote' ? 'text-destructive' : 'text-muted-foreground'}`}
+                        onClick={(e) => handleVote(post.id, 'downvote', e)}
+                      >
+                        <ArrowDown className="w-5 h-5" />
+                      </Button>
+                    </div>
+                    
                     <div className="flex-1">
                       <CardTitle className="text-xl mb-2 flex items-center gap-2">
                         {post.title}

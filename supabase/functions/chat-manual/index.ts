@@ -698,8 +698,7 @@ Analyze this answer and determine which interactive components would enhance it.
         response_format: { type: 'json_object' },
         max_output_tokens: 1000,
         stream: false,
-        store: true,
-        reasoning: { effort: 'medium' }
+        store: true
       })
     });
 
@@ -1256,7 +1255,7 @@ serve(async (req) => {
     
     const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images);
 
-    const { answer, sources, strategy, chunks } = result;
+    const { answer, sources, strategy, chunks, interactive_components } = result;
 
     // ============ AUTOMATED QUALITY CHECKS FOR TRAINING ============
     const response_text = typeof answer === 'string' ? answer : JSON.stringify(answer);
@@ -1399,6 +1398,7 @@ serve(async (req) => {
         metadata,
         context_seen: contextSeen,
         query_log_id: queryLogId,
+        interactive_components: interactive_components || [],
         usage: usageInfo ? {
           queries_used: usageInfo.queries_used,
           queries_remaining: usageInfo.queries_remaining,

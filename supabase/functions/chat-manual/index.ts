@@ -681,8 +681,8 @@ Context:
 Analyze this answer and determine which interactive components would enhance it.`;
 
   try {
-    // Use Responses API with gpt-5-mini-2025-08-07 for structured output
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    // Use gpt-4o-mini for interactive component analysis
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
@@ -690,15 +690,14 @@ Analyze this answer and determine which interactive components would enhance it.
         ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07',
-        input: [
+        model: 'gpt-4o-mini',
+        messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
         response_format: { type: 'json_object' },
-        max_output_tokens: 1000,
-        stream: false,
-        store: true
+        max_tokens: 1000,
+        stream: false
       })
     });
 
@@ -708,20 +707,7 @@ Analyze this answer and determine which interactive components would enhance it.
     }
 
     const data = await response.json();
-    
-    // Handle different response formats
-    let contentText = '';
-    if (Array.isArray(data.output)) {
-      // New format with reasoning: output is an array of objects
-      const messageOutput = data.output.find((item: any) => item.type === 'message');
-      if (messageOutput && Array.isArray(messageOutput.content)) {
-        const textContent = messageOutput.content.find((item: any) => item.type === 'output_text');
-        contentText = textContent?.text || '';
-      }
-    } else if (data.output?.content) {
-      // Old format: output.content directly
-      contentText = data.output.content;
-    }
+    const contentText = data.choices[0]?.message?.content || '';
     
     if (!contentText) {
       console.error('❌ Empty content from interactive elements analysis');

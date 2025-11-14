@@ -455,10 +455,8 @@ Reference specific observations from the images in your response and provide det
 
   const shouldStream = opts?.stream !== false; // Default to streaming
 
-  // Use Chat Completions API for non-streaming (better for structured output in two-stage pipeline)
-  const url = shouldStream 
-    ? "https://api.openai.com/v1/responses"
-    : "https://api.openai.com/v1/chat/completions";
+  // Always use Responses API - supports both streaming and non-streaming
+  const url = "https://api.openai.com/v1/responses";
 
   // Build messages array with vision support
   const baseMessages: any[] = [
@@ -484,13 +482,14 @@ Reference specific observations from the images in your response and provide det
 
   const messages = baseMessages;
 
-  const body: any = shouldStream
-    ? (isGpt5(model)
-        ? { model, input: messages, max_output_tokens: 8000, stream: true, store: true }
-        : { model, input: messages, max_output_tokens: 2000, stream: true, store: true })
-    : (isGpt5(model)
-        ? { model, messages, max_completion_tokens: 8000, stream: false }
-        : { model, messages, max_tokens: 2000, temperature: 0.7, stream: false });
+  // Responses API uses 'input' and 'max_output_tokens' for all models
+  const body: any = {
+    model,
+    input: messages,
+    max_output_tokens: isGpt5(model) ? 8000 : 2000,
+    stream: shouldStream,
+    store: true // Enable caching for 40-80% cost reduction
+  };
 
   console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
 
@@ -510,13 +509,13 @@ Reference specific observations from the images in your response and provide det
     throw new Error(`OpenAI API error: ${response.statusText}`);
   }
 
-  // Non-streaming: Chat Completions API returns JSON
+  // Non-streaming: Responses API returns JSON with 'output' field
   if (!shouldStream) {
-    console.log(`📦 Processing non-streaming response from Chat Completions API`);
+    console.log(`📦 Processing non-streaming response from Responses API`);
     try {
       const data = await response.json();
       console.log(`📦 Received JSON response:`, JSON.stringify(data).slice(0, 200));
-      const fullText = data.choices?.[0]?.message?.content || '';
+      const fullText = data.output?.content || '';
       console.log(`✅ Non-streaming response: ${fullText.length} characters`);
       if (!fullText) {
         console.error(`❌ Empty content! Response structure:`, JSON.stringify(data, null, 2));
@@ -662,7 +661,8 @@ Context:
 Analyze this answer and determine which interactive components would enhance it.`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Use Responses API with gpt-5-mini-2025-08-07 for structured output
+    const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
@@ -670,14 +670,15 @@ Analyze this answer and determine which interactive components would enhance it.
         ...(openaiProjectId && { 'OpenAI-Project': openaiProjectId }),
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
+        model: 'gpt-5-mini-2025-08-07',
+        input: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
         response_format: { type: 'json_object' },
-        max_tokens: 1000,
-        temperature: 0.3
+        max_output_tokens: 1000,
+        stream: false,
+        store: true
       })
     });
 
@@ -687,7 +688,7 @@ Analyze this answer and determine which interactive components would enhance it.
     }
 
     const data = await response.json();
-    const result = JSON.parse(data.choices[0].message.content);
+    const result = JSON.parse(data.output.content);
     
     console.log(`✅ Generated ${result.interactive_components?.length || 0} interactive components`);
     return result;

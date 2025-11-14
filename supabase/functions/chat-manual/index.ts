@@ -397,10 +397,16 @@ async function generateAnswer(
     existingWeak?: boolean;
     stream?: boolean;
     conversationHistory?: Array<{ role: string; content: string }>;
+    images?: string[];
   }
 ): Promise<string | ReadableStream> {
   let systemPrompt: string;
   let userPrompt: string;
+
+  // Enhance system prompt when images are present
+  if (opts?.images && opts.images.length > 0) {
+    console.log(`🖼️ Processing ${opts.images.length} image(s) for vision analysis`);
+  }
 
   // Use Answer Style V2 - adaptive prompts based on retrieval quality
   console.log(`✅ [Answer Style V2] Adaptive prompt system enabled`);
@@ -428,6 +434,19 @@ async function generateAnswer(
   });
 
   systemPrompt = shaped.system;
+  
+  // Add vision-specific instructions when images are present
+  if (opts?.images && opts.images.length > 0) {
+    systemPrompt += `\n\nIMPORTANT: The user has provided ${opts.images.length} image(s) showing their arcade game issue. Analyze these images carefully for:
+- Component identification (circuit boards, connectors, parts)
+- Visible damage (burns, corrosion, broken components)
+- Error codes or displays shown
+- Wiring issues or loose connections
+- Physical condition of parts
+
+Reference specific observations from the images in your response and provide detailed analysis based on what you see.`;
+  }
+  
   userPrompt = shaped.user;
 
   console.log(`📊 [Answer Style V2] Weak: ${shaped.isWeak}, Top: ${signals.topScore.toFixed(3)}, Avg3: ${signals.avgTop3.toFixed(3)}, Strong: ${signals.strongHits}`);
@@ -441,12 +460,29 @@ async function generateAnswer(
     ? "https://api.openai.com/v1/responses"
     : "https://api.openai.com/v1/chat/completions";
 
-  // Build messages array
-  const messages = [
+  // Build messages array with vision support
+  const baseMessages: any[] = [
     { role: "system", content: systemPrompt },
     ...(opts?.conversationHistory || []),
-    { role: "user", content: userPrompt },
   ];
+  
+  // Add user message with images if present
+  if (opts?.images && opts.images.length > 0) {
+    baseMessages.push({
+      role: "user",
+      content: [
+        { type: "text", text: userPrompt },
+        ...opts.images.map(url => ({
+          type: "image_url",
+          image_url: { url, detail: "high" }
+        }))
+      ]
+    });
+  } else {
+    baseMessages.push({ role: "user", content: userPrompt });
+  }
+
+  const messages = baseMessages;
 
   const body: any = shouldStream
     ? (isGpt5(model)
@@ -699,7 +735,8 @@ async function runRagPipelineV3(
   manual_id?: string, 
   tenant_id?: string, 
   model?: string,
-  conversationHistory?: Array<{ role: string; content: string }>
+  conversationHistory?: Array<{ role: string; content: string }>,
+  images?: string[]
 ) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
 
@@ -803,7 +840,8 @@ Keep it short (2-3 sentences max) and friendly.`;
     signals,
     existingWeak: weak,
     stream: false, // Must be false for two-stage approach
-    conversationHistory
+    conversationHistory,
+    images
   });
 
   // STAGE 2: Analyze answer and add interactive elements with cheap model
@@ -872,13 +910,14 @@ serve(async (req) => {
       messages: z.array(z.object({
         role: z.enum(['user', 'assistant', 'system']),
         content: z.string().max(10000, "Message content too long")
-      })).max(50, "Too many messages (max 50)").optional()
+      })).max(50, "Too many messages (max 50)").optional(),
+      images: z.array(z.string().url()).max(4, "Maximum 4 images allowed").optional()
     });
     
     // Parse and validate request body
     const rawBody = await req.json();
     const validatedBody = chatRequestSchema.parse(rawBody);
-    const { query, manual_id, stream, messages } = validatedBody;
+    const { query, manual_id, stream, messages, images } = validatedBody;
 
     console.log("\n=================================");
     console.log("🔍 NEW CHAT REQUEST");
@@ -994,7 +1033,7 @@ serve(async (req) => {
     // If streaming is requested, handle it differently
     if (stream) {
       console.log("📡 Starting streaming response");
-      const ragResult = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages);
+      const ragResult = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images);
       const { sources, strategy, chunks, figureResults } = ragResult;
       
       // Log the query to get query_log_id for feedback
@@ -1173,7 +1212,7 @@ serve(async (req) => {
       });
     }
     
-    const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages);
+    const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images);
 
     const { answer, sources, strategy, chunks } = result;
 

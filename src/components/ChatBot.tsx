@@ -1377,7 +1377,12 @@ export function ChatBot({
           msg.id === botMessageId
             ? {
                 ...msg,
-                content: accumulatedContent,
+                content: interactiveComponents.length > 0 
+                  ? {
+                      summary: accumulatedContent,
+                      interactive_components: interactiveComponents,
+                    }
+                  : accumulatedContent,
                 thumbnails: result.sources?.map((s: any) => s.thumbnail).filter(Boolean),
                 manual_id: result.manual_id,
                 manual_title: result.manual_title,
@@ -1385,21 +1390,6 @@ export function ChatBot({
             : msg,
         ),
       );
-
-      // Add interactive components as a separate message
-      if (interactiveComponents.length > 0) {
-        console.log(`✨ Adding ${interactiveComponents.length} interactive components`);
-        const componentMessage: ChatMessage = {
-          id: `${botMessageId}-components`,
-          type: "bot",
-          content: {
-            summary: "",
-            interactive_components: interactiveComponents,
-          },
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, componentMessage]);
-      }
 
       console.log("✅ Response received (non-streaming)");
 

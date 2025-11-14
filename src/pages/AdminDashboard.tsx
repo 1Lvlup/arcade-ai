@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Settings, Database, Users, Activity } from 'lucide-react';
+import { Settings, Database, Users, Activity, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { CleanupStaleJobs } from '@/components/CleanupStaleJobs';
 import { Badge } from '@/components/ui/badge';
 import TenantManagement from './TenantManagement';
@@ -38,6 +39,12 @@ const AdminDashboard = () => {
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
             <SidebarTrigger className="-ml-1" />
+            <Link to="/">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </Button>
+            </Link>
             <div className="flex items-center gap-3">
               <Settings className="h-6 w-6 text-primary" />
               <div>

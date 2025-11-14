@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, XCircle, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ProcessingStatus {
   id: string;
@@ -31,6 +32,7 @@ interface ProcessingLog {
 export const LiveProcessingMonitor = () => {
   const [activeJobs, setActiveJobs] = useState<ProcessingStatus[]>([]);
   const [logs, setLogs] = useState<Record<string, ProcessingLog[]>>({});
+  const [dismissedJobs, setDismissedJobs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Load initial active jobs (only from last 6 hours)
@@ -171,23 +173,37 @@ export const LiveProcessingMonitor = () => {
     }
   };
 
+  const handleDismissJob = (jobId: string) => {
+    setDismissedJobs(prev => new Set(prev).add(jobId));
+  };
+
   if (activeJobs.length === 0) {
     return null;
   }
 
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-md w-full space-y-2">
-      {activeJobs.map((job) => (
+      {activeJobs.filter(job => !dismissedJobs.has(job.job_id)).map((job) => (
         <Card key={job.id} className="premium-card border-orange/30">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-tech flex items-center gap-2">
-                {getStatusIcon(job.status)}
-                Processing: {job.manual_id.slice(0, 12)}...
-              </CardTitle>
-              <Badge variant="outline" className={getStatusColor(job.status)}>
-                {job.status}
-              </Badge>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <CardTitle className="text-sm font-tech flex items-center gap-2 truncate">
+                  {getStatusIcon(job.status)}
+                  Processing: {job.manual_id.slice(0, 12)}...
+                </CardTitle>
+                <Badge variant="outline" className={getStatusColor(job.status)}>
+                  {job.status}
+                </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 shrink-0"
+                onClick={() => handleDismissJob(job.job_id)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">

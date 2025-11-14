@@ -68,13 +68,13 @@ Be concise but thorough. Focus on practical, working solutions.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-5',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
         ],
-        max_completion_tokens: 8000,
-        reasoning_effort: 'medium',
+        temperature: 0.7,
+        max_tokens: 4000,
       }),
     });
 

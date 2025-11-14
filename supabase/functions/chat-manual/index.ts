@@ -640,17 +640,20 @@ Return JSON with this exact structure:
   "interactive_components": [
     {
       "type": "button_group",
-      "props": {
-        "label": "Did this help?",
+      "id": "feedback",
+      "data": {
+        "title": "Did this help?",
         "buttons": [
-          { "label": "Yes", "value": "yes", "variant": "default" },
-          { "label": "No", "value": "no", "variant": "outline" }
+          { "label": "Yes", "variant": "default", "autoSendMessage": "Yes, that helped" },
+          { "label": "No", "variant": "outline", "autoSendMessage": "No, still need help" }
         ]
       }
     },
     {
       "type": "checklist",
-      "props": {
+      "id": "steps",
+      "data": {
+        "title": "Follow these steps",
         "items": [
           { "label": "Step 1: Check power", "checked": false },
           { "label": "Step 2: Test voltage", "checked": false }
@@ -661,12 +664,14 @@ Return JSON with this exact structure:
 }
 
 Rules:
+- CRITICAL: Each component MUST have an "id" field and a "data" object (not "props")
+- For button_group: include "title" in data and "autoSendMessage" in each button
 - Only add components that genuinely enhance the answer
 - Don't add components just for the sake of it
 - Maximum 2-3 components per answer
 - If no components would help, return empty array
 - For multi-step procedures, always use checklist
-- For feedback questions, use button_group
+- For feedback questions, use button_group with autoSendMessage
 - Keep labels concise and actionable`;
 
   const userPrompt = `Original Question: ${originalQuestion}

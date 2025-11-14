@@ -520,7 +520,22 @@ Reference specific observations from the images in your response and provide det
     try {
       const data = await response.json();
       console.log(`📦 Received JSON response:`, JSON.stringify(data).slice(0, 200));
-      const fullText = data.output?.content || '';
+      
+      let fullText = '';
+      
+      // Handle different response formats
+      if (Array.isArray(data.output)) {
+        // New format with reasoning_effort: output is an array of objects
+        const messageOutput = data.output.find((item: any) => item.type === 'message');
+        if (messageOutput && Array.isArray(messageOutput.content)) {
+          const textContent = messageOutput.content.find((item: any) => item.type === 'output_text');
+          fullText = textContent?.text || '';
+        }
+      } else if (data.output?.content) {
+        // Old format: output.content directly
+        fullText = data.output.content;
+      }
+      
       console.log(`✅ Non-streaming response: ${fullText.length} characters`);
       if (!fullText) {
         console.error(`❌ Empty content! Response structure:`, JSON.stringify(data, null, 2));
@@ -693,7 +708,27 @@ Analyze this answer and determine which interactive components would enhance it.
     }
 
     const data = await response.json();
-    const result = JSON.parse(data.output.content);
+    
+    // Handle different response formats
+    let contentText = '';
+    if (Array.isArray(data.output)) {
+      // New format with reasoning: output is an array of objects
+      const messageOutput = data.output.find((item: any) => item.type === 'message');
+      if (messageOutput && Array.isArray(messageOutput.content)) {
+        const textContent = messageOutput.content.find((item: any) => item.type === 'output_text');
+        contentText = textContent?.text || '';
+      }
+    } else if (data.output?.content) {
+      // Old format: output.content directly
+      contentText = data.output.content;
+    }
+    
+    if (!contentText) {
+      console.error('❌ Empty content from interactive elements analysis');
+      return { interactive_components: [] };
+    }
+    
+    const result = JSON.parse(contentText);
     
     console.log(`✅ Generated ${result.interactive_components?.length || 0} interactive components`);
     return result;

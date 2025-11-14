@@ -67,6 +67,8 @@ import {
   Eye,
   Download,
   FileDown,
+  Paperclip,
+  ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -128,6 +130,12 @@ interface ChatMessage {
     preview: string;
     solution: string;
   }>;
+  images?: string[];
+  image_analysis?: {
+    description: string;
+    detected_issues: string[];
+    suggested_actions: string[];
+  };
 }
 
 interface UsageInfo {
@@ -195,6 +203,9 @@ export function ChatBot({
   const [componentInteractions, setComponentInteractions] = useState<Map<string, any>>(new Map());
   const [formValues, setFormValues] = useState<Map<string, Record<string, any>>>(new Map());
   const [availableGames, setAvailableGames] = useState<Array<{manual_id: string, canonical_title: string}>>([]);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const GUEST_MESSAGE_LIMIT = 10;
   const [isInitialized, setIsInitialized] = useState(false);
@@ -1090,8 +1101,94 @@ export function ChatBot({
     });
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const fileArray = Array.from(files);
+    const validFiles: File[] = [];
+    
+    // Validate files
+    for (const file of fileArray) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not an image file`,
+          variant: "destructive",
+        });
+        continue;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} exceeds 5MB limit`,
+          variant: "destructive",
+        });
+        continue;
+      }
+      
+      validFiles.push(file);
+    }
+
+    if (selectedImages.length + validFiles.length > 4) {
+      toast({
+        title: "Too many images",
+        description: "You can upload maximum 4 images per message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedImages(prev => [...prev, ...validFiles]);
+    
+    // Create preview URLs
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviewUrls(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImagesToStorage = async (files: File[]): Promise<string[]> => {
+    if (!user) {
+      throw new Error("Must be logged in to upload images");
+    }
+
+    const uploadedUrls: string[] = [];
+
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('chat-images')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(fileName);
+
+      uploadedUrls.push(urlData.publicUrl);
+    }
+
+    return uploadedUrls;
+  };
+
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+    if ((!inputValue.trim() && selectedImages.length === 0) || isLoading) return;
 
     // Clear typing indicator
     setIsTyping(false);
@@ -1116,17 +1213,37 @@ export function ChatBot({
       return;
     }
 
+    // Upload images if any
+    let uploadedImageUrls: string[] = [];
+    try {
+      if (selectedImages.length > 0 && user) {
+        uploadedImageUrls = await uploadImagesToStorage(selectedImages);
+      }
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast({
+        title: "Image upload failed",
+        description: "Could not upload images. Try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: "user",
-      content: inputValue.trim(),
+      content: inputValue.trim() || "Uploaded image(s)",
       timestamp: new Date(),
       status: "sending",
+      images: uploadedImageUrls,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     const query = inputValue.trim();
     setInputValue("");
+    setSelectedImages([]);
+    setImagePreviewUrls([]);
     setIsLoading(true);
 
     // Auto-save conversation when user sends first message
@@ -1211,6 +1328,7 @@ export function ChatBot({
           manual_id: selectedManualId ?? null,
           stream: false, // ✨ NON-STREAMING MODE for two-stage pipeline
           messages: conversationHistory,
+          images: uploadedImageUrls,
         }),
       });
 
@@ -2267,7 +2385,22 @@ export function ChatBot({
                   )}
 
                   {message.type === "user" ? (
-                    <div className="text-xs whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
+                    <>
+                      <div className="text-xs whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
+                      {message.images && message.images.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {message.images.map((imageUrl, idx) => (
+                            <img 
+                              key={idx}
+                              src={imageUrl} 
+                              alt={`Uploaded ${idx + 1}`}
+                              className="h-32 w-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => setSelectedImage({ url: imageUrl, title: `Image ${idx + 1}` })}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <>
                       <div className="flex items-center justify-between mb-3">
@@ -2399,7 +2532,46 @@ export function ChatBot({
           {/* Input Area */}
           <div className="border-t border-border py-5 px-6 flex-shrink-0 w-full">
             <>
+              {/* Image Previews */}
+              {imagePreviewUrls.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {imagePreviewUrls.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={url} 
+                        alt={`Upload ${index + 1}`}
+                        className="h-20 w-20 object-cover rounded-lg border border-border"
+                      />
+                      <button
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="flex space-x-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="ghost"
+                  size="lg"
+                  className="h-12 px-4"
+                  title="Upload images"
+                  disabled={isLoading || !selectedManualId || selectedImages.length >= 4}
+                >
+                  <Paperclip className="h-5 w-5" />
+                </Button>
                 <Input
                   value={inputValue}
                   onChange={(e) => {
@@ -2440,7 +2612,7 @@ export function ChatBot({
                 )}
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isLoading || !selectedManualId}
+                  disabled={((!inputValue.trim() && selectedImages.length === 0) || isLoading || !selectedManualId)}
                   size="lg"
                   variant="orange"
                   className="h-12 px-6"
@@ -2449,7 +2621,7 @@ export function ChatBot({
                 </Button>
               </div>
               <div className="text-sm text-muted-foreground mt-3 flex items-center justify-between">
-                <span>Press Enter to send • Shift+Enter for new line</span>
+                <span>Press Enter to send • Shift+Enter for new line • 📎 Upload images</span>
                 {!user && (
                   <span className="text-orange-500 font-medium">
                     {guestMessageCount}/{GUEST_MESSAGE_LIMIT} free questions used

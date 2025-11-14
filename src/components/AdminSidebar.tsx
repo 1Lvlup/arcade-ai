@@ -36,14 +36,14 @@ const adminSections = [
     title: 'AI & Training',
     icon: Brain,
     description: 'Config, Training, QA',
-    disabled: true,
+    disabled: false,
   },
   {
     id: 'analytics',
     title: 'Analytics',
     icon: BarChart3,
     description: 'Users, Usage, Insights',
-    disabled: true,
+    disabled: false,
   },
 ];
 

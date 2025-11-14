@@ -269,6 +269,8 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          image_analysis: Json | null
+          images: string[] | null
           query_log_id: string | null
           role: string
         }
@@ -277,6 +279,8 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          image_analysis?: Json | null
+          images?: string[] | null
           query_log_id?: string | null
           role: string
         }
@@ -285,6 +289,8 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          image_analysis?: Json | null
+          images?: string[] | null
           query_log_id?: string | null
           role?: string
         }

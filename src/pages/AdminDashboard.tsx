@@ -4,6 +4,7 @@ import { AdminSidebar } from '@/components/AdminSidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Settings, Database, Users, Activity } from 'lucide-react';
 import { CleanupStaleJobs } from '@/components/CleanupStaleJobs';
 import { Badge } from '@/components/ui/badge';
@@ -35,17 +36,18 @@ const AdminDashboard = () => {
         <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
         <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
             <SidebarTrigger className="-ml-1" />
             <div className="flex items-center gap-3">
               <Settings className="h-6 w-6 text-primary" />
               <div>
-                <h1 className="text-xl font-bold">Admin Control Center</h1>
+                <h1 className="text-2xl font-bold">Admin Control Center</h1>
+                <p className="text-xs text-muted-foreground">Centralized management hub</p>
               </div>
             </div>
           </header>
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-8">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               {/* Hide tab list since we have sidebar navigation */}
               <TabsList className="sr-only">
@@ -182,7 +184,7 @@ const AdminDashboard = () => {
                       Manage manual metadata, indexing, and backfill operations
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <ManualAdmin />
                   </CardContent>
                 </Card>
@@ -209,31 +211,32 @@ const AdminDashboard = () => {
                   </CardContent>
                 </Card>
 
-                {/* Game Requests */}
-                <Card className="border-l-4 border-l-yellow-500">
-                  <CardHeader>
-                    <CardTitle>Game Requests</CardTitle>
-                    <CardDescription>
-                      View and manage game requests from users
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <GameRequestsList />
-                  </CardContent>
-                </Card>
+                {/* Game Requests & Management */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <Card className="border-l-4 border-l-yellow-500">
+                    <CardHeader>
+                      <CardTitle>Game Requests</CardTitle>
+                      <CardDescription>
+                        View and manage game requests from users
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <GameRequestsList />
+                    </CardContent>
+                  </Card>
 
-                {/* Game Management */}
-                <Card className="border-l-4 border-l-purple-500">
-                  <CardHeader>
-                    <CardTitle>Game Management</CardTitle>
-                    <CardDescription>
-                      Manage game submissions and metadata
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <GameManagement />
-                  </CardContent>
-                </Card>
+                  <Card className="border-l-4 border-l-purple-500">
+                    <CardHeader>
+                      <CardTitle>Game Management</CardTitle>
+                      <CardDescription>
+                        Manage game submissions and metadata
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <GameManagement />
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               {/* AI & TRAINING TAB */}
@@ -249,47 +252,74 @@ const AdminDashboard = () => {
                       Manage AI models, system prompts, and search settings
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <AIConfiguration />
                   </CardContent>
                 </Card>
 
-                {/* Training Hub */}
+                {/* Training Hub Overview */}
                 <Card className="border-l-4 border-l-purple-500">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5" />
-                      Training Hub
-                    </CardTitle>
-                    <CardDescription>
-                      Review queries, manage training examples, and export data
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Activity className="h-5 w-5" />
+                          Training Hub
+                        </CardTitle>
+                        <CardDescription>
+                          Review queries, manage examples, and generate QA data
+                        </CardDescription>
+                      </div>
+                      <Button variant="outline" onClick={() => window.location.href = '/training-hub'}>
+                        Open Training Hub
+                      </Button>
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <Tabs defaultValue="inbox" className="w-full">
-                      <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="inbox">Inbox</TabsTrigger>
-                        <TabsTrigger value="examples">Examples</TabsTrigger>
-                        <TabsTrigger value="qa-gen">QA Generation</TabsTrigger>
-                        <TabsTrigger value="export">Export</TabsTrigger>
-                      </TabsList>
+                  <CardContent className="space-y-4">
+                    <Alert>
+                      <AlertTitle>Quick Access</AlertTitle>
+                      <AlertDescription>
+                        Access detailed training workflows, review individual queries, and manage training examples in the dedicated Training Hub interface.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => window.location.href = '/training-hub/inbox'}>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm font-medium">Training Inbox</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-xs text-muted-foreground">Review flagged queries and improve responses</p>
+                        </CardContent>
+                      </Card>
                       
-                      <TabsContent value="inbox" className="mt-6">
-                        <TrainingInbox />
-                      </TabsContent>
+                      <Card className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => window.location.href = '/training-hub/examples'}>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm font-medium">Training Examples</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-xs text-muted-foreground">Manage verified training examples</p>
+                        </CardContent>
+                      </Card>
                       
-                      <TabsContent value="examples" className="mt-6">
-                        <TrainingExamples />
-                      </TabsContent>
+                      <Card className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => window.location.href = '/training-hub/qa-generate'}>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm font-medium">QA Generation</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-xs text-muted-foreground">Generate Q&A pairs for training</p>
+                        </CardContent>
+                      </Card>
                       
-                      <TabsContent value="qa-gen" className="mt-6">
-                        <TrainingQAGeneration />
-                      </TabsContent>
-                      
-                      <TabsContent value="export" className="mt-6">
-                        <TrainingExport />
-                      </TabsContent>
-                    </Tabs>
+                      <Card className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => window.location.href = '/training-hub/export'}>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm font-medium">Export Training Data</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-xs text-muted-foreground">Export verified examples for fine-tuning</p>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -304,7 +334,7 @@ const AdminDashboard = () => {
                       Comprehensive analysis of AI responses with quality grades
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <QAAnalytics />
                   </CardContent>
                 </Card>
@@ -323,42 +353,43 @@ const AdminDashboard = () => {
                       View and analyze all user conversations across tenants
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <UserConversationHistory />
                   </CardContent>
                 </Card>
 
-                {/* Usage Tracking */}
-                <Card className="border-l-4 border-l-green-500">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      Usage Tracking
-                    </CardTitle>
-                    <CardDescription>
-                      Monitor query usage and limits across all tenants
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <UsageTrackingDashboard />
-                  </CardContent>
-                </Card>
+                {/* Usage & Performance */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <Card className="border-l-4 border-l-green-500">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Usage Tracking
+                      </CardTitle>
+                      <CardDescription>
+                        Monitor query usage and limits
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <UsageTrackingDashboard />
+                    </CardContent>
+                  </Card>
 
-                {/* Strategic Analytics */}
-                <Card className="border-l-4 border-l-purple-500">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5" />
-                      Strategic Analytics
-                    </CardTitle>
-                    <CardDescription>
-                      Performance metrics, trends, and insights
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <StrategicAnalytics />
-                  </CardContent>
-                </Card>
+                  <Card className="border-l-4 border-l-purple-500">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Strategic Analytics
+                      </CardTitle>
+                      <CardDescription>
+                        Performance metrics and trends
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <StrategicAnalytics />
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           </main>

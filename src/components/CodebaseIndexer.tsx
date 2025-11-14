@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface CodebaseIndexerProps {
   onIndexComplete?: () => void;
@@ -40,12 +42,44 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [showFileList, setShowFileList] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [dirHandle, setDirHandle] = useState<any>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     loadIndexedFilesList();
   }, []);
+
+  // Auto-sync effect
+  useEffect(() => {
+    if (autoSyncEnabled && dirHandle) {
+      console.log('Starting auto-sync with 60s interval');
+      
+      // Initial sync
+      performBackgroundSync();
+      
+      // Set up periodic sync every 60 seconds
+      syncIntervalRef.current = setInterval(() => {
+        performBackgroundSync();
+      }, 60000);
+
+      return () => {
+        if (syncIntervalRef.current) {
+          clearInterval(syncIntervalRef.current);
+          syncIntervalRef.current = null;
+        }
+      };
+    } else {
+      // Clean up interval when auto-sync is disabled
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+    }
+  }, [autoSyncEnabled, dirHandle]);
 
   const shouldIndexFile = (path: string): boolean => {
     const skipPatterns = [
@@ -341,21 +375,143 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
     setSelectedFiles(new Set());
   };
 
+  const performBackgroundSync = async () => {
+    if (!dirHandle || isSyncing) return;
+
+    console.log('🔄 Performing background sync...');
+    setIsSyncing(true);
+
+    try {
+      // Read all files from stored directory handle
+      const newFiles: any[] = [];
+      await readDirectoryRecursive(dirHandle, '', newFiles);
+
+      // Get current indexed files
+      const { data: currentFiles, error: fetchError } = await supabase
+        .from('indexed_codebase')
+        .select('*');
+
+      if (fetchError) throw fetchError;
+
+      const currentFilesMap = new Map(
+        (currentFiles || []).map(f => [f.file_path, f])
+      );
+
+      // Get current user's tenant
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('fec_tenant_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile) throw new Error('Profile not found');
+
+      let added = 0;
+      let updated = 0;
+      const updatedFilePaths: string[] = [];
+
+      // Process files
+      for (const newFile of newFiles) {
+        const existing = currentFilesMap.get(newFile.path);
+        const newHash = generateFileHash(newFile.content);
+        
+        if (!existing) {
+          // New file - insert
+          await supabase.from('indexed_codebase').insert({
+            fec_tenant_id: profile.fec_tenant_id,
+            file_path: newFile.path,
+            file_content: newFile.content,
+            language: detectLanguage(newFile.path),
+          });
+          added++;
+          updatedFilePaths.push(newFile.path);
+        } else {
+          const existingHash = generateFileHash(existing.file_content);
+          if (existingHash !== newHash) {
+            // File changed - update indexed_codebase
+            await supabase
+              .from('indexed_codebase')
+              .update({
+                file_content: newFile.content,
+                last_modified: new Date().toISOString(),
+              })
+              .eq('id', existing.id);
+            
+            // Also update code_assistant_files entries
+            await supabase
+              .from('code_assistant_files')
+              .update({
+                file_content: newFile.content,
+              })
+              .eq('file_path', newFile.path);
+            
+            updated++;
+            updatedFilePaths.push(newFile.path);
+          }
+        }
+      }
+
+      // Find removed files
+      const newFilePaths = new Set(newFiles.map(f => f.path));
+      const removedFiles = (currentFiles || []).filter(
+        f => !newFilePaths.has(f.file_path)
+      );
+
+      if (removedFiles.length > 0) {
+        await supabase
+          .from('indexed_codebase')
+          .delete()
+          .in('id', removedFiles.map(f => f.id));
+        
+        // Also remove from code_assistant_files
+        await supabase
+          .from('code_assistant_files')
+          .delete()
+          .in('file_path', removedFiles.map(f => f.file_path));
+      }
+
+      setLastSyncTime(new Date());
+      await loadIndexedFilesList();
+
+      // Only show toast if changes were detected
+      if (added > 0 || updated > 0 || removedFiles.length > 0) {
+        console.log(`✅ Sync complete: ${added} added, ${updated} updated, ${removedFiles.length} removed`);
+        toast({ 
+          title: 'Auto-sync complete', 
+          description: `${added} added, ${updated} updated, ${removedFiles.length} removed`,
+        });
+      } else {
+        console.log('✅ Sync complete: No changes detected');
+      }
+
+    } catch (error: any) {
+      console.error('Error in background sync:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const syncFiles = async () => {
     setIsSyncing(true);
     setSyncResult(null);
     
     try {
       // Request directory access
-      const dirHandle = await (window as any).showDirectoryPicker({
+      const newDirHandle = await (window as any).showDirectoryPicker({
         mode: 'read',
       });
+      
+      // Store directory handle for auto-sync
+      setDirHandle(newDirHandle);
 
       toast({ title: 'Scanning for changes...', description: 'Comparing with indexed files' });
 
       // Read all files from directory
       const newFiles: any[] = [];
-      await readDirectoryRecursive(dirHandle, '', newFiles);
+      await readDirectoryRecursive(newDirHandle, '', newFiles);
 
       // Get current indexed files
       const { data: currentFiles, error: fetchError } = await supabase
@@ -405,7 +561,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
           } else {
             const existingHash = generateFileHash(existing.file_content);
             if (existingHash !== newHash) {
-              // File changed - update
+              // File changed - update indexed_codebase
               await supabase
                 .from('indexed_codebase')
                 .update({
@@ -413,6 +569,15 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
                   last_modified: new Date().toISOString(),
                 })
                 .eq('id', existing.id);
+              
+              // Also update code_assistant_files entries
+              await supabase
+                .from('code_assistant_files')
+                .update({
+                  file_content: newFile.content,
+                })
+                .eq('file_path', newFile.path);
+              
               updated++;
             } else {
               unchanged++;
@@ -435,6 +600,12 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
           .from('indexed_codebase')
           .delete()
           .in('id', removedFiles.map(f => f.id));
+        
+        // Also remove from code_assistant_files
+        await supabase
+          .from('code_assistant_files')
+          .delete()
+          .in('file_path', removedFiles.map(f => f.file_path));
       }
 
       const result = {
@@ -445,6 +616,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
       };
 
       setSyncResult(result);
+      setLastSyncTime(new Date());
       await loadIndexedFilesList();
 
       toast({ 
@@ -541,6 +713,42 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
             </p>
           </AlertDescription>
         </Alert>
+
+        {dirHandle && (
+          <Alert className="border-primary/20 bg-primary/5">
+            <AlertDescription className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <p className="font-medium">Auto-Sync</p>
+                  <Badge variant={autoSyncEnabled ? "default" : "secondary"}>
+                    {autoSyncEnabled ? "Active" : "Off"}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="auto-sync-toggle" className="text-sm cursor-pointer">
+                    Monitor changes (60s)
+                  </Label>
+                  <Switch
+                    id="auto-sync-toggle"
+                    checked={autoSyncEnabled}
+                    onCheckedChange={setAutoSyncEnabled}
+                  />
+                </div>
+              </div>
+              {lastSyncTime && (
+                <p className="text-xs text-muted-foreground">
+                  Last sync: {lastSyncTime.toLocaleTimeString()}
+                </p>
+              )}
+              {autoSyncEnabled && (
+                <p className="text-xs text-muted-foreground">
+                  🔄 Auto-sync is monitoring your codebase for changes and will automatically update files in your conversations
+                </p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {syncResult && (
           <Alert>

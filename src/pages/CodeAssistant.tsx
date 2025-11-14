@@ -18,11 +18,19 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Label } from '@/components/ui/label';
 import { CodebaseIndexer } from '@/components/CodebaseIndexer';
+import { CodeSuggestion } from '@/components/CodeSuggestion';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+}
+
+interface ParsedCodeBlock {
+  filePath: string;
+  code: string;
+  language: string;
+  action: 'CREATE' | 'EDIT';
 }
 
 interface CodeFile {
@@ -380,6 +388,31 @@ export function CodeAssistant() {
     toast({ title: 'Copied!', description: 'Code copied to clipboard' });
   };
 
+  const parseCodeBlocks = (content: string): ParsedCodeBlock[] => {
+    const blocks: ParsedCodeBlock[] = [];
+    
+    // Regex to match the format: 📄 **File: `path/to/file.tsx`** [CREATE] or [EDIT]
+    // followed by a code block
+    const pattern = /📄\s*\*\*File:\s*`([^`]+)`\*\*\s*\[(CREATE|EDIT)\]\s*\n```(\w+)\n([\s\S]*?)```/g;
+    
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      blocks.push({
+        filePath: match[1],
+        action: match[2] as 'CREATE' | 'EDIT',
+        language: match[3],
+        code: match[4].trim()
+      });
+    }
+    
+    return blocks;
+  };
+
+  const getExistingFileContent = (filePath: string): string | undefined => {
+    const file = codeFiles.find(f => f.file_path === filePath);
+    return file?.file_content;
+  };
+
   if (!currentConversation) {
     return (
       <div className="min-h-screen mesh-gradient">
@@ -650,6 +683,24 @@ export function CodeAssistant() {
                             )}
                           </div>
                         </div>
+                        
+                        {message.role === 'assistant' && (() => {
+                          const codeBlocks = parseCodeBlocks(message.content);
+                          return codeBlocks.length > 0 && (
+                            <div className="mt-4 space-y-3">
+                              {codeBlocks.map((block, blockIndex) => (
+                                <CodeSuggestion
+                                  key={blockIndex}
+                                  filePath={block.filePath}
+                                  code={block.code}
+                                  language={block.language}
+                                  action={block.action}
+                                  existingContent={getExistingFileContent(block.filePath)}
+                                />
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                       
                       {message.role === 'user' && (

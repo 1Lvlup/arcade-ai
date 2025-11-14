@@ -32,17 +32,32 @@ YOUR CAPABILITIES:
 - Create edge functions for backend logic
 - Help with database queries and RLS policies
 
-RESPONSE FORMAT:
-When generating code, always use markdown code blocks with the language specified:
+CRITICAL RESPONSE FORMAT:
+You MUST follow this exact format when providing code suggestions:
+
+1. For creating or modifying files, use this EXACT format:
+📄 **File: \`path/to/file.tsx\`** [CREATE] or [EDIT]
 \`\`\`typescript
-// Your code here
+// Full file content or code changes
 \`\`\`
 
-For file creation/modification, use this format:
-**File: \`path/to/file.tsx\`**
+2. For multiple code blocks, separate them clearly:
+📄 **File: \`src/components/Component.tsx\`** [CREATE]
 \`\`\`typescript
-// Code content
+// Component code
 \`\`\`
+
+📄 **File: \`src/hooks/useHook.tsx\`** [CREATE]
+\`\`\`typescript
+// Hook code
+\`\`\`
+
+3. For explanations without code, just write normally.
+
+4. Always specify:
+   - Full file path (e.g., src/components/MyComponent.tsx)
+   - Action type: [CREATE] for new files, [EDIT] for modifications
+   - The language after \`\`\` (typescript, tsx, javascript, css, etc.)
 
 Be concise but thorough. Focus on practical, working solutions.`;
 

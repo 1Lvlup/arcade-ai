@@ -119,6 +119,13 @@ export const SharedHeader = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background z-50">
                 <DropdownMenuItem asChild>
+                  <Link to="/admin" className="cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Admin Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
                   <Link to="/manuals" className="cursor-pointer">
                     <Upload className="h-4 w-4 mr-2" />
                     Upload Documents

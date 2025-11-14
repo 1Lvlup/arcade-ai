@@ -361,6 +361,13 @@ const AdminDashboard = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <Alert>
+                      <AlertTitle>How to use</AlertTitle>
+                      <AlertDescription>
+                        1. Select a user from the dropdown to view their conversations<br />
+                        2. Click on a conversation to view its message history
+                      </AlertDescription>
+                    </Alert>
                     <UserConversationHistory />
                   </CardContent>
                 </Card>

@@ -491,9 +491,9 @@ Reference specific observations from the images in your response and provide det
     store: true // Enable caching for 40-80% cost reduction
   };
 
-  // Add reasoning for GPT-5 models to enhance problem-solving
+  // Add reasoning for GPT-5 models to enhance problem-solving (using 'low' for speed)
   if (isGpt5(model)) {
-    body.reasoning = { effort: 'medium' };
+    body.reasoning = { effort: 'low' };
   }
 
   console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);

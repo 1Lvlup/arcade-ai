@@ -85,7 +85,12 @@ export default function Auth() {
 
     setLoading(true);
     
-    const { error } = await signUp(email, password);
+    const { error } = await signUp(email, password, {
+      facilityName,
+      totalGames,
+      position,
+      experience
+    });
     
     if (error) {
       toast({
@@ -94,27 +99,9 @@ export default function Auth() {
         variant: "destructive",
       });
     } else {
-      // Update profile with additional fields
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase
-            .from('profiles')
-            .update({
-              facility_name: facilityName,
-              total_games: parseInt(totalGames),
-              position: position,
-              bio: experience,
-            })
-            .eq('user_id', user.id);
-        }
-      } catch (err) {
-        console.error('Error updating profile:', err);
-      }
-      
       toast({
         title: "Success!",
-        description: "Please check your email to confirm your account, then choose a plan to get started.",
+        description: "Account created successfully! Redirecting to select a plan.",
       });
       // Redirect to pricing page after successful signup
       setTimeout(() => {

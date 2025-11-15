@@ -18,6 +18,7 @@ import {
   MessageCircle,
   Plus,
   Gamepad2,
+  BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -107,7 +108,19 @@ export const SharedHeader = ({
           )}
         </div>
         <div className="flex items-center space-x-4">
-          {children}
+          {/* Public Navigation Links */}
+          <Link to="/forum">
+            <Button variant="minimal" size="sm">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Forum
+            </Button>
+          </Link>
+          <Link to="/blog">
+            <Button variant="minimal" size="sm">
+              <BookOpen className="h-4 w-4 mr-2" />
+              Blog
+            </Button>
+          </Link>
 
           {isAdmin && (
             <DropdownMenu>
@@ -141,6 +154,12 @@ export const SharedHeader = ({
                   <Link to="/game-management" className="cursor-pointer">
                     <Gamepad2 className="h-4 w-4 mr-2" />
                     Game Management
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/blog" className="cursor-pointer">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Blog Management
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

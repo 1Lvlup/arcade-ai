@@ -43,6 +43,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Profile from "./pages/Profile";
 import Forum from "./pages/Forum";
 import ForumPost from "./pages/ForumPost";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import BlogAdmin from "./pages/BlogAdmin";
+import BlogEditor from "./pages/BlogEditor";
 
 const queryClient = new QueryClient();
 
@@ -241,6 +245,29 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <GameManagement />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/admin/blog" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <BlogAdmin />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/blog/new" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <BlogEditor />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/blog/edit/:id" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <BlogEditor />
                 </AdminRoute>
               </ProtectedRoute>
             } />

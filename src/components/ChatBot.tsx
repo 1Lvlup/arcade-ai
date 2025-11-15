@@ -1326,7 +1326,7 @@ export function ChatBot({
         body: JSON.stringify({
           query,
           manual_id: selectedManualId ?? null,
-          stream: false, // ✨ NON-STREAMING MODE for two-stage pipeline
+          stream: true, // ✨ STREAMING MODE enabled
           messages: conversationHistory,
           images: uploadedImageUrls,
         }),
@@ -1336,62 +1336,103 @@ export function ChatBot({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Non-streaming response handling
-      const result = await response.json();
-      console.log("📦 Received non-streaming response:", result);
-
-      const accumulatedContent = result.answer || "";
-      const interactiveComponents = result.interactive_components || [];
-
-      // Handle usage info
-      if (result.usage) {
-        onUsageUpdate?.(result.usage);
+      // Streaming response handling
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Response body is not readable");
       }
 
-      // Auto-set manual when detected
-      if (result.auto_detected && result.manual_id && result.detected_manual_title) {
-        const detectedId = result.manual_id;
-        const detectedTitle = result.detected_manual_title;
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let accumulatedContent = '';
+      let metadata: any = {};
 
-        if (detectedId !== selectedManualId) {
-          setSelectedManualId(detectedId);
-          setManualTitle(detectedTitle);
-          toast({
-            title: "🔄 Manual Auto-Detected",
-            description: `Switched to: ${detectedTitle}`,
-            duration: 4000,
-          });
-          console.log(`✅ Auto-set manual: ${detectedTitle} (${detectedId})`);
-        } else {
-          toast({
-            title: "Manual Confirmed",
-            description: `Searching in: ${detectedTitle}`,
-            duration: 3000,
-          });
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6).trim();
+            if (jsonStr === '[DONE]') {
+              console.log("✅ Stream complete");
+              continue;
+            }
+
+            try {
+              const parsed = JSON.parse(jsonStr);
+              
+              // Handle delta content (streaming answer)
+              if (parsed.delta) {
+                accumulatedContent += parsed.delta;
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === botMessageId
+                      ? { ...msg, content: accumulatedContent }
+                      : msg
+                  )
+                );
+              }
+
+              // Handle metadata (usage, manual detection, sources)
+              if (parsed.metadata) {
+                metadata = { ...metadata, ...parsed.metadata };
+                
+                // Handle usage info
+                if (parsed.metadata.usage) {
+                  onUsageUpdate?.(parsed.metadata.usage);
+                }
+
+                // Auto-set manual when detected
+                if (parsed.metadata.auto_detected && parsed.metadata.manual_id && parsed.metadata.detected_manual_title) {
+                  const detectedId = parsed.metadata.manual_id;
+                  const detectedTitle = parsed.metadata.detected_manual_title;
+
+                  if (detectedId !== selectedManualId) {
+                    setSelectedManualId(detectedId);
+                    setManualTitle(detectedTitle);
+                    toast({
+                      title: "🔄 Manual Auto-Detected",
+                      description: `Switched to: ${detectedTitle}`,
+                      duration: 4000,
+                    });
+                    console.log(`✅ Auto-set manual: ${detectedTitle} (${detectedId})`);
+                  } else {
+                    toast({
+                      title: "Manual Confirmed",
+                      description: `Searching in: ${detectedTitle}`,
+                      duration: 3000,
+                    });
+                  }
+                }
+              }
+            } catch (e) {
+              console.error("Failed to parse SSE line:", e);
+            }
+          }
         }
       }
 
-      // Update bot message with answer and interactive components
+      // Final update with metadata (thumbnails, manual info)
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === botMessageId
             ? {
                 ...msg,
-                content: interactiveComponents.length > 0 
-                  ? {
-                      summary: accumulatedContent,
-                      interactive_components: interactiveComponents,
-                    }
-                  : accumulatedContent,
-                thumbnails: result.sources?.map((s: any) => s.thumbnail).filter(Boolean),
-                manual_id: result.manual_id,
-                manual_title: result.manual_title,
+                content: accumulatedContent,
+                thumbnails: metadata.sources?.map((s: any) => s.thumbnail).filter(Boolean),
+                manual_id: metadata.manual_id,
+                manual_title: metadata.manual_title,
               }
-            : msg,
-        ),
+            : msg
+        )
       );
 
-      console.log("✅ Response received (non-streaming)");
+      console.log("✅ Stream processing complete");
 
       // Mark user message as sent
       setMessages((prev) => prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: "sent" as const } : msg)));

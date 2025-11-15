@@ -56,6 +56,8 @@ export default function Auth() {
     return null;
   }
 
+  console.log('Auth component rendering - mobile check:', window.innerWidth < 768);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -256,7 +258,7 @@ export default function Auth() {
           <p className="text-primary font-body">Arcade Intelligence Portal</p>
         </div>
 
-        <Card className="border-orange/30 bg-background/95 backdrop-blur-sm">
+        <Card className="border-orange/30 bg-background/95 backdrop-blur-sm max-h-[90vh] overflow-y-auto">
           <CardHeader>
             <CardTitle className="text-center text-2xl font-tech">Welcome</CardTitle>
             <CardDescription className="text-center text-primary font-body">

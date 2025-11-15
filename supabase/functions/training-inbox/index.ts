@@ -67,9 +67,6 @@ serve(async (req) => {
       query = query.eq('manual_id', manualId);
     }
 
-    // Filter for items needing review (has numbers or low quality)
-    query = query.or('numeric_flags.neq.null,quality_tier.eq.low,quality_tier.eq.medium');
-
     query = query.range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;

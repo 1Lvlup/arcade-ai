@@ -137,12 +137,12 @@ export default function Auth() {
       } else {
         toast({
           title: "Success!",
-          description: "Account created successfully! Redirecting to select a plan.",
+          description: "Account created successfully! Welcome to Level Up.",
         });
-        // Redirect to pricing page after successful signup
+        // Redirect to main chat after successful signup
         setTimeout(() => {
-          navigate('/pricing');
-        }, 2000);
+          navigate('/');
+        }, 1500);
       }
     } catch (err: any) {
       console.error('Signup exception:', err);

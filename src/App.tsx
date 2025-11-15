@@ -139,7 +139,9 @@ const App = () => (
             } />
             <Route path="/code-assistant" element={
               <ProtectedRoute>
-                <CodeAssistant />
+                <AdminRoute>
+                  <CodeAssistant />
+                </AdminRoute>
               </ProtectedRoute>
             } />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

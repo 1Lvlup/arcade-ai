@@ -368,7 +368,7 @@ const AdminDashboard = () => {
                         2. Click on a conversation to view its message history
                       </AlertDescription>
                     </Alert>
-                    <UserConversationHistory />
+                    <UserConversationHistoryView />
                   </CardContent>
                 </Card>
 

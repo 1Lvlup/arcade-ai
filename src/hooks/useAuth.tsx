@@ -90,10 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          facility_name: metadata?.facilityName,
-          total_games: metadata?.totalGames,
-          position: metadata?.position,
-          experience: metadata?.experience,
+          facility_name: metadata?.facilityName || '',
+          total_games: metadata?.totalGames || '',
+          position: metadata?.position || '',
+          experience: metadata?.experience || '',
         }
       }
     });

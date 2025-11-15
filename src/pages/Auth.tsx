@@ -74,6 +74,7 @@ export default function Auth() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate all required fields
     if (!email || !password || !facilityName || !totalGames || !position || !experience) {
       toast({
         title: "Error",
@@ -83,33 +84,75 @@ export default function Auth() {
       return;
     }
 
-    setLoading(true);
-    
-    const { error } = await signUp(email, password, {
-      facilityName,
-      totalGames,
-      position,
-      experience
-    });
-    
-    if (error) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success!",
-        description: "Account created successfully! Redirecting to select a plan.",
-      });
-      // Redirect to pricing page after successful signup
-      setTimeout(() => {
-        navigate('/pricing');
-      }, 2000);
+      return;
     }
+
+    // Validate password length (Supabase minimum is 6 characters)
+    if (password.length < 6) {
+      toast({
+        title: "Weak Password",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate total games is a positive number
+    const gamesNumber = parseInt(totalGames);
+    if (isNaN(gamesNumber) || gamesNumber < 1) {
+      toast({
+        title: "Invalid Input",
+        description: "Total games must be a positive number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
     
-    setLoading(false);
+    try {
+      const { error } = await signUp(email, password, {
+        facilityName,
+        totalGames,
+        position,
+        experience
+      });
+      
+      if (error) {
+        console.error('Signup error:', error);
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+      } else {
+        toast({
+          title: "Success!",
+          description: "Account created successfully! Redirecting to select a plan.",
+        });
+        // Redirect to pricing page after successful signup
+        setTimeout(() => {
+          navigate('/pricing');
+        }, 2000);
+      }
+    } catch (err: any) {
+      console.error('Signup exception:', err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {

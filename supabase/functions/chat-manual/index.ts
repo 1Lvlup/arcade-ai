@@ -492,47 +492,45 @@ Reference specific observations from the images in your response and provide det
     text: {
       format: {
         type: "json_schema",
-        json_schema: {
-          name: "arcade_troubleshoot_response",
-          schema: {
-            type: "object",
-            properties: {
-              message: { type: "string" },
-              interactive_components: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    type: { type: "string" },
-                    id: { type: "string" },
-                    data: { type: "object" }
-                  },
-                  required: ["type", "id", "data"],
-                  additionalProperties: true
-                }
-              },
-              what: {
-                type: "array",
-                items: { type: "string" }
-              },
-              how: {
-                type: "array",
-                items: { type: "string" }
-              },
-              sources: {
-                type: "array",
-                items: { type: "string" }
-              },
-              questions: {
-                type: "array",
-                items: { type: "string" }
+        name: "arcade_troubleshoot_response",
+        schema: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            interactive_components: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  type: { type: "string" },
+                  id: { type: "string" },
+                  data: { type: "object" }
+                },
+                required: ["type", "id", "data"],
+                additionalProperties: true
               }
             },
-            required: ["message", "interactive_components", "what", "how", "sources"],
-            additionalProperties: true
+            what: {
+              type: "array",
+              items: { type: "string" }
+            },
+            how: {
+              type: "array",
+              items: { type: "string" }
+            },
+            sources: {
+              type: "array",
+              items: { type: "string" }
+            },
+            questions: {
+              type: "array",
+              items: { type: "string" }
+            }
           },
-          strict: true
-        }
+          required: ["message", "interactive_components", "what", "how", "sources"],
+          additionalProperties: true
+        },
+        strict: true
       }
     }
   };

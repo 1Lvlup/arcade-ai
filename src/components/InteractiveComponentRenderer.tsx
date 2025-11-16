@@ -11,7 +11,8 @@ type InteractiveComponentType =
   | "form"
   | "code"
   | "progress"
-  | "status";
+  | "status"
+  | "input";
 
 type InteractiveComponent = {
   id: string;
@@ -149,6 +150,20 @@ export function InteractiveComponentRenderer({ component, onAutoSend }: Interact
             </li>
           ))}
         </ul>
+      </Card>
+    );
+  }
+
+  if (component.type === "input") {
+    return (
+      <Card className="p-4 bg-muted/30 border-border/50 mt-3 space-y-2">
+        <div className="text-sm font-medium text-foreground">
+          {component.data.label}
+        </div>
+        <Input
+          className="w-full text-sm"
+          placeholder={component.data.placeholder || ""}
+        />
       </Card>
     );
   }

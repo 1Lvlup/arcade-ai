@@ -1403,8 +1403,8 @@ export function ChatBot({
                         : JSON.stringify(parsed.data);
                   }
 
-                  // Extract interactive components
-                  if (
+                  // Extract interactive components - DISABLED
+                  /* if (
                     jsonResponse.interactive_components &&
                     Array.isArray(jsonResponse.interactive_components)
                   ) {
@@ -1415,7 +1415,7 @@ export function ChatBot({
                         data: comp.data ?? {}
                       })
                     );
-                  }
+                  } */
 
                   // Optional metadata (store later — for now, just log)
                   console.log("Metadata:", {
@@ -1452,12 +1452,13 @@ export function ChatBot({
               
               // Handle delta content (legacy format)
               if (parsed.delta) {
-                // Strip out interactive_components YAML section if present
-                let cleanDelta = parsed.delta;
+                // Strip out interactive_components YAML section if present - DISABLED
+                /* let cleanDelta = parsed.delta;
                 const interactiveMatch = cleanDelta.match(/\n\ninteractive_components:/);
                 if (interactiveMatch) {
                   cleanDelta = cleanDelta.substring(0, interactiveMatch.index);
-                }
+                } */
+                let cleanDelta = parsed.delta;
                 
                 accumulatedContent += cleanDelta;
                 setMessages((prev) =>
@@ -1874,14 +1875,14 @@ export function ChatBot({
       {/* Summary */}
       <div className="text-xs leading-relaxed">{answer.summary}</div>
 
-      {/* Interactive Components */}
-      {answer.interactive_components && answer.interactive_components.length > 0 && (
+      {/* Interactive Components - DISABLED */}
+      {/* {answer.interactive_components && answer.interactive_components.length > 0 && (
         <div className="space-y-3">
           {answer.interactive_components.map((component, index) => 
             renderInteractiveComponent(component, index)
           )}
         </div>
-      )}
+      )} */}
 
       {/* Steps as Checklist */}
       {answer.steps && answer.steps.length > 0 && (
@@ -2368,8 +2369,8 @@ export function ChatBot({
                     </div>
                   )}
 
-                      {/* Render interactive components */}
-                      {message.interactiveComponents && message.interactiveComponents.length > 0 && (
+                      {/* Render interactive components - DISABLED */}
+                      {/* {message.interactiveComponents && message.interactiveComponents.length > 0 && (
                         <div className="space-y-2">
                           {message.interactiveComponents.map((component) => (
                             <InteractiveComponentRenderer
@@ -2382,7 +2383,7 @@ export function ChatBot({
                             />
                           ))}
                         </div>
-                      )}
+                      )} */}
                     </>
                   )}
 

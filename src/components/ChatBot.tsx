@@ -1366,7 +1366,19 @@ export function ChatBot({
             try {
               const parsed = JSON.parse(jsonStr);
               
-              // Handle delta content (streaming answer)
+              // Handle content chunks (streaming answer)
+              if (parsed.type === 'content' && parsed.data) {
+                accumulatedContent += parsed.data;
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === botMessageId
+                      ? { ...msg, content: accumulatedContent }
+                      : msg
+                  )
+                );
+              }
+              
+              // Handle delta content (legacy format)
               if (parsed.delta) {
                 accumulatedContent += parsed.delta;
                 setMessages((prev) =>
@@ -1379,6 +1391,39 @@ export function ChatBot({
               }
 
               // Handle metadata (usage, manual detection, sources)
+              if (parsed.type === 'metadata' && parsed.data) {
+                metadata = { ...metadata, ...parsed.data };
+                
+                // Handle usage info
+                if (parsed.data.usage) {
+                  onUsageUpdate?.(parsed.data.usage);
+                }
+
+                // Auto-set manual when detected
+                if (parsed.data.auto_detected && parsed.data.manual_id && parsed.data.detected_manual_title) {
+                  const detectedId = parsed.data.manual_id;
+                  const detectedTitle = parsed.data.detected_manual_title;
+
+                  if (detectedId !== selectedManualId) {
+                    setSelectedManualId(detectedId);
+                    setManualTitle(detectedTitle);
+                    toast({
+                      title: "🔄 Manual Auto-Detected",
+                      description: `Switched to: ${detectedTitle}`,
+                      duration: 4000,
+                    });
+                    console.log(`✅ Auto-set manual: ${detectedTitle} (${detectedId})`);
+                  } else {
+                    toast({
+                      title: "Manual Confirmed",
+                      description: `Searching in: ${detectedTitle}`,
+                      duration: 3000,
+                    });
+                  }
+                }
+              }
+              
+              // Handle metadata (legacy format)
               if (parsed.metadata) {
                 metadata = { ...metadata, ...parsed.metadata };
                 

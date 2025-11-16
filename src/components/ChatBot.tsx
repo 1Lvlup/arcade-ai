@@ -172,7 +172,27 @@ export function ChatBot({
 }: ChatBotProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "test-interactive",
+      type: "bot",
+      content: "Here's a test interactive block:",
+      timestamp: new Date(),
+      interactiveComponents: [
+        {
+          id: "test-buttons",
+          type: "button_group",
+          data: {
+            title: "Pick a test action",
+            buttons: [
+              { label: "Run test 1", autoSendMessage: "Run test 1" },
+              { label: "Run test 2", autoSendMessage: "Run test 2" }
+            ]
+          }
+        }
+      ]
+    } as any
+  ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedManualId, setSelectedManualId] = useState<string | null>(initialManualId || null);

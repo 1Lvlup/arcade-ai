@@ -482,18 +482,62 @@ Reference specific observations from the images in your response and provide det
 
   const messages = baseMessages;
 
-  // Responses API uses 'input' and 'max_output_tokens' for all models
+  // Responses API with structured output (json_schema at top level)
   const body: any = {
     model,
     input: messages,
     max_output_tokens: isGpt5(model) ? 8000 : 2000,
     stream: shouldStream,
     store: true, // Enable caching for 40-80% cost reduction
-    response: {
-      text: {
-        format: {
-          type: "json"
-        }
+    text: {
+      format: {
+        type: "json_schema",
+        name: "arcade_troubleshoot_response",
+        schema: {
+          type: "object",
+          properties: {
+            messages: {
+              type: "array",
+              items: { type: "string" }
+            },
+            interactive_components: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  type: { type: "string" },
+                  data: { type: "object" }
+                },
+                required: ["type", "data"],
+                additionalProperties: true
+              }
+            },
+            diagnostics: {
+              type: "object",
+              properties: {
+                what: { type: "array", items: { type: "string" } },
+                how: { type: "array", items: { type: "string" } }
+              },
+              additionalProperties: true
+            },
+            sources: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  cite: { type: "string" },
+                  title: { type: "string" },
+                  excerpt: { type: "string" }
+                },
+                additionalProperties: true
+              }
+            }
+          },
+          required: ["messages"],
+          additionalProperties: true
+        },
+        strict: true
       }
     }
   };

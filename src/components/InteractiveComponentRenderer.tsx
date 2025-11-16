@@ -5,9 +5,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 
+type InteractiveComponentType =
+  | "button_group"
+  | "checklist"
+  | "form"
+  | "code"
+  | "progress"
+  | "status";
+
 type InteractiveComponent = {
-  type: "button_group" | "checklist" | "code" | "form" | "input" | "select" | "progress" | "status" | "button" | "image" | "slider" | "wizard";
   id: string;
+  type: InteractiveComponentType;
   data: any;
 };
 
@@ -46,22 +54,14 @@ export function InteractiveComponentRenderer({ component, onAutoSend }: Interact
     return (
       <Card className="p-4 bg-muted/30 border-border/50 mt-3">
         <div className="font-semibold mb-3 text-foreground">{component.data.title}</div>
-        <div className="space-y-2">
-          {component.data.items?.map((item: any, idx: number) => (
-            <div key={idx} className="flex items-center gap-2">
-              <Checkbox
-                id={`${component.id}-${idx}`}
-                defaultChecked={item.checked}
-              />
-              <Label
-                htmlFor={`${component.id}-${idx}`}
-                className="text-sm cursor-pointer"
-              >
-                {item.label}
-              </Label>
-            </div>
+        <ul className="text-sm space-y-1">
+          {component.data.items?.map((item: string, idx: number) => (
+            <li key={idx} className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span>{item}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       </Card>
     );
   }
@@ -73,19 +73,19 @@ export function InteractiveComponentRenderer({ component, onAutoSend }: Interact
         <div className="space-y-3">
           {component.data.fields?.map((field: any, idx: number) => (
             <div key={idx} className="space-y-1">
-              <Label htmlFor={`${component.id}-${field.id}`} className="text-sm">
+              <Label htmlFor={`${component.id}-${field.id || idx}`} className="text-sm font-medium">
                 {field.label}
               </Label>
               {field.type === "input" && (
                 <Input
-                  id={`${component.id}-${field.id}`}
-                  placeholder={field.placeholder}
-                  className="bg-background"
+                  id={`${component.id}-${field.id || idx}`}
+                  placeholder={field.placeholder || ""}
+                  className="bg-background text-sm"
                 />
               )}
               {field.type === "select" && (
                 <Select>
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className="bg-background text-sm">
                     <SelectValue placeholder={field.placeholder || "Select..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -107,9 +107,48 @@ export function InteractiveComponentRenderer({ component, onAutoSend }: Interact
   if (component.type === "code") {
     return (
       <Card className="p-4 bg-muted/30 border-border/50 mt-3 font-mono">
-        <pre className="text-xs overflow-x-auto">
+        <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
           <code>{component.data.code || component.data.content}</code>
         </pre>
+      </Card>
+    );
+  }
+
+  if (component.type === "progress") {
+    return (
+      <Card className="p-4 bg-muted/30 border-border/50 mt-3">
+        <div className="font-semibold mb-2 text-foreground text-sm">
+          {component.data.title}
+        </div>
+        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${component.data.percent ?? 0}%` }}
+          />
+        </div>
+        {component.data.percent !== undefined && (
+          <div className="text-xs text-muted-foreground mt-1 text-right">
+            {component.data.percent}%
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  if (component.type === "status") {
+    return (
+      <Card className="p-4 bg-muted/30 border-border/50 mt-3">
+        <div className="font-semibold mb-3 text-foreground text-sm">
+          {component.data.title}
+        </div>
+        <ul className="text-sm space-y-2">
+          {component.data.items?.map((item: any, idx: number) => (
+            <li key={idx} className="flex flex-col gap-1">
+              <span className="font-semibold text-primary">{item.label}:</span>
+              <span className="text-muted-foreground">{item.description}</span>
+            </li>
+          ))}
+        </ul>
       </Card>
     );
   }

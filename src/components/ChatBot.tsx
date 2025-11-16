@@ -10,6 +10,7 @@ import { GameSidebar } from "@/components/GameSidebar";
 import { DetailedFeedbackDialog } from "@/components/DetailedFeedbackDialog";
 import { GameRequestDialog } from "@/components/GameRequestDialog";
 import { InteractiveComponentLibrary } from "@/components/InteractiveComponentLibrary";
+import { InteractiveComponentRenderer } from "@/components/InteractiveComponentRenderer";
 import { DiagnosticWizard } from "@/components/DiagnosticWizard";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
@@ -88,7 +89,7 @@ interface AnswerSource {
 interface InteractiveComponent {
   type: "progress" | "status" | "checklist" | "code" | "image" | "button" | "button_group" | "form" | "input" | "select" | "slider" | "wizard";
   data: any;
-  id?: string;
+  id: string;
 }
 
 interface ComponentInteraction {
@@ -136,6 +137,7 @@ interface ChatMessage {
     detected_issues: string[];
     suggested_actions: string[];
   };
+  interactiveComponents?: InteractiveComponent[];
 }
 
 interface UsageInfo {
@@ -1372,6 +1374,7 @@ export function ChatBot({
                 console.log('✅ Content chunk:', parsed.data);
                 
                 let cleanContent = parsed.data;
+                let parsedComponents: InteractiveComponent[] | undefined;
                 
                 // Parse JSON response
                 try {
@@ -1382,10 +1385,10 @@ export function ChatBot({
                     cleanContent = jsonResponse.message;
                   }
                   
-                  // Store interactive components separately if present
+                  // Store interactive components
                   if (jsonResponse.interactive_components && Array.isArray(jsonResponse.interactive_components)) {
-                    // TODO: Handle interactive components rendering
-                    console.log('📦 Interactive components received:', jsonResponse.interactive_components);
+                    parsedComponents = jsonResponse.interactive_components;
+                    console.log('📦 Interactive components received:', parsedComponents);
                   }
                   
                   // Store metadata
@@ -1406,7 +1409,11 @@ export function ChatBot({
                 setMessages((prev) =>
                   prev.map((msg) =>
                     msg.id === botMessageId
-                      ? { ...msg, content: accumulatedContent }
+                      ? { 
+                          ...msg, 
+                          content: accumulatedContent,
+                          interactiveComponents: parsedComponents || msg.interactiveComponents
+                        }
                       : msg
                   )
                 );
@@ -2539,6 +2546,22 @@ export function ChatBot({
                       {typeof message.content === "string" ? message.content : JSON.stringify(message.content)}
                     </div>
                   )}
+
+                      {/* Render interactive components */}
+                      {message.interactiveComponents && message.interactiveComponents.length > 0 && (
+                        <div className="space-y-2">
+                          {message.interactiveComponents.map((component) => (
+                            <InteractiveComponentRenderer
+                              key={component.id}
+                              component={component}
+                              onAutoSend={(text) => {
+                                setInputValue(text);
+                                setTimeout(() => handleSendMessage(), 100);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </>
                   )}
 

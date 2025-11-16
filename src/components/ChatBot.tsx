@@ -1365,9 +1365,11 @@ export function ChatBot({
 
             try {
               const parsed = JSON.parse(jsonStr);
+              console.log('📦 Received chunk:', parsed);
               
               // Handle content chunks (streaming answer)
               if (parsed.type === 'content' && parsed.data) {
+                console.log('✅ Content chunk:', parsed.data);
                 accumulatedContent += parsed.data;
                 setMessages((prev) =>
                   prev.map((msg) =>

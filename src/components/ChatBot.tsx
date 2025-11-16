@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,10 +87,18 @@ interface AnswerSource {
   note: string;
 }
 
+type InteractiveComponentType =
+  | "button_group"
+  | "checklist"
+  | "form"
+  | "code"
+  | "progress"
+  | "status";
+
 interface InteractiveComponent {
-  type: "progress" | "status" | "checklist" | "code" | "image" | "button" | "button_group" | "form" | "input" | "select" | "slider" | "wizard";
-  data: any;
   id: string;
+  type: InteractiveComponentType;
+  data: any;
 }
 
 interface ComponentInteraction {
@@ -1735,25 +1744,6 @@ export function ChatBot({
           </div>
         );
       
-      case "button":
-        return (
-          <Button
-            key={index}
-            variant={component.data.variant || "default"}
-            size={component.data.size || "sm"}
-            onClick={() => handleComponentInteraction(
-              componentId,
-              'button_click',
-              { label: component.data.label, action: component.data.action, autoSendMessage: component.data.autoSendMessage }
-            )}
-            className={component.data.className}
-            disabled={component.data.disabled}
-          >
-            {component.data.icon && <span className="mr-2">{component.data.icon}</span>}
-            {component.data.label}
-          </Button>
-        );
-      
       case "button_group":
         return (
           <div key={index} className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border border-border">
@@ -1779,208 +1769,91 @@ export function ChatBot({
           </div>
         );
       
-      case "input":
-        return (
-          <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
-            {component.data.label && (
-              <Label htmlFor={componentId} className="text-xs font-medium">
-                {component.data.label}
-              </Label>
-            )}
-            <Input
-              id={componentId}
-              type={component.data.inputType || "text"}
-              placeholder={component.data.placeholder}
-              value={componentInteractions.get(componentId) || ''}
-              onChange={(e) => handleComponentInteraction(componentId, 'input_change', e.target.value)}
-              className="text-xs"
-              maxLength={component.data.maxLength}
-            />
-            {component.data.description && (
-              <p className="text-xs text-muted-foreground">{component.data.description}</p>
-            )}
-          </div>
-        );
-      
-      case "select":
-        return (
-          <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
-            {component.data.label && (
-              <Label htmlFor={componentId} className="text-xs font-medium">
-                {component.data.label}
-              </Label>
-            )}
-            <Select
-              value={componentInteractions.get(componentId) || component.data.defaultValue}
-              onValueChange={(value) => handleComponentInteraction(componentId, 'select_change', value)}
-            >
-              <SelectTrigger id={componentId} className="text-xs">
-                <SelectValue placeholder={component.data.placeholder || "Select an option"} />
-              </SelectTrigger>
-              <SelectContent>
-                {component.data.options?.map((option: any, i: number) => (
-                  <SelectItem key={i} value={option.value} className="text-xs">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {component.data.description && (
-              <p className="text-xs text-muted-foreground">{component.data.description}</p>
-            )}
-          </div>
-        );
-      
-      case "slider":
+      case "checklist":
         return (
           <div key={index} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
-            <div className="flex items-center justify-between">
-              {component.data.label && (
-                <Label htmlFor={componentId} className="text-xs font-medium">
-                  {component.data.label}
-                </Label>
-              )}
-              <span className="text-xs text-muted-foreground">
-                {componentInteractions.get(componentId) ?? component.data.defaultValue ?? component.data.min ?? 0}
-                {component.data.unit || ''}
-              </span>
-            </div>
-            <Slider
-              id={componentId}
-              min={component.data.min || 0}
-              max={component.data.max || 100}
-              step={component.data.step || 1}
-              value={[componentInteractions.get(componentId) ?? component.data.defaultValue ?? component.data.min ?? 0]}
-              onValueChange={(values) => handleComponentInteraction(componentId, 'slider_change', values[0])}
-              className="w-full"
-            />
-            {component.data.description && (
-              <p className="text-xs text-muted-foreground">{component.data.description}</p>
+            {component.data.title && (
+              <div className="text-xs font-medium">{component.data.title}</div>
             )}
+            <div className="space-y-2">
+              {component.data.items?.map((item: any, i: number) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`${componentId}-${i}`}
+                    checked={componentInteractions.get(`${componentId}-${i}`) || item.checked || false}
+                    onCheckedChange={(checked) => 
+                      handleComponentInteraction(`${componentId}-${i}`, 'checkbox_change', checked)
+                    }
+                  />
+                  <Label
+                    htmlFor={`${componentId}-${i}`}
+                    className="text-xs cursor-pointer"
+                  >
+                    {typeof item === 'string' ? item : item.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
         );
       
       case "form":
-        const currentFormValues = formValues.get(componentId) || {};
         return (
-          <div key={index} className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border">
+          <div key={index} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
             {component.data.title && (
-              <h4 className="text-sm font-semibold">{component.data.title}</h4>
+              <div className="text-xs font-medium mb-2">{component.data.title}</div>
             )}
-            {component.data.description && (
-              <p className="text-xs text-muted-foreground">{component.data.description}</p>
-            )}
-            <div className="space-y-3">
-              {component.data.fields?.map((field: any, i: number) => {
-                const fieldId = `${componentId}-${field.name}`;
-                return (
-                  <div key={i} className="space-y-1">
-                    <Label htmlFor={fieldId} className="text-xs font-medium">
-                      {field.label}
-                      {field.required && <span className="text-destructive ml-1">*</span>}
-                    </Label>
-                    {field.type === 'select' ? (
-                      <Select
-                        value={currentFormValues[field.name] || ''}
-                        onValueChange={(value) => {
-                          setFormValues(prev => {
-                            const newMap = new Map(prev);
-                            const formData = newMap.get(componentId) || {};
-                            newMap.set(componentId, { ...formData, [field.name]: value });
-                            return newMap;
-                          });
-                        }}
-                      >
-                        <SelectTrigger id={fieldId} className="text-xs">
-                          <SelectValue placeholder={field.placeholder} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map((opt: any, j: number) => (
-                            <SelectItem key={j} value={opt.value} className="text-xs">
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : field.type === 'textarea' ? (
-                      <textarea
-                        id={fieldId}
-                        placeholder={field.placeholder}
-                        value={currentFormValues[field.name] || ''}
-                        onChange={(e) => {
-                          setFormValues(prev => {
-                            const newMap = new Map(prev);
-                            const formData = newMap.get(componentId) || {};
-                            newMap.set(componentId, { ...formData, [field.name]: e.target.value });
-                            return newMap;
-                          });
-                        }}
-                        className="w-full min-h-[80px] px-3 py-2 text-xs rounded-md border border-input bg-background"
-                        maxLength={field.maxLength}
-                      />
-                    ) : (
-                      <Input
-                        id={fieldId}
-                        type={field.type || 'text'}
-                        placeholder={field.placeholder}
-                        value={currentFormValues[field.name] || ''}
-                        onChange={(e) => {
-                          setFormValues(prev => {
-                            const newMap = new Map(prev);
-                            const formData = newMap.get(componentId) || {};
-                            newMap.set(componentId, { ...formData, [field.name]: e.target.value });
-                            return newMap;
-                          });
-                        }}
-                        className="text-xs"
-                        maxLength={field.maxLength}
-                      />
-                    )}
-                    {field.description && (
-                      <p className="text-xs text-muted-foreground">{field.description}</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <Button
-              size="sm"
-              onClick={() => handleFormSubmit(componentId, currentFormValues)}
-              disabled={component.data.fields?.some((f: any) => f.required && !currentFormValues[f.name])}
-              className="w-full"
-            >
-              {component.data.submitLabel || "Submit"}
-            </Button>
-          </div>
-        );
-      
-      case "checklist":
-        return (
-          <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
-            {component.data.title && (
-              <div className="text-xs font-semibold mb-2">{component.data.title}</div>
-            )}
-            {component.data.items?.map((item: any, i: number) => {
-              const itemId = `${componentId}-item-${i}`;
-              const isChecked = componentInteractions.get(itemId) ?? item.checked ?? false;
-              return (
-                <div key={i} className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    id={itemId}
-                    checked={isChecked}
-                    onChange={(e) => handleComponentInteraction(itemId, 'checkbox_change', e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-border cursor-pointer"
+            {component.data.fields?.map((field: any, i: number) => (
+              <div key={i} className="space-y-1">
+                {field.label && (
+                  <Label htmlFor={`${componentId}-field-${i}`} className="text-xs">
+                    {field.label}
+                  </Label>
+                )}
+                {field.type === "input" && (
+                  <Input
+                    id={`${componentId}-field-${i}`}
+                    type={field.inputType || "text"}
+                    placeholder={field.placeholder}
+                    value={componentInteractions.get(`${componentId}-field-${i}`) || ''}
+                    onChange={(e) => handleComponentInteraction(`${componentId}-field-${i}`, 'input_change', e.target.value)}
+                    className="text-xs"
                   />
-                  <label htmlFor={itemId} className="flex-1 cursor-pointer">
-                    <div className="text-xs">{item.label}</div>
-                    {item.description && (
-                      <div className="text-xs text-muted-foreground">{item.description}</div>
-                    )}
-                  </label>
-                </div>
-              );
-            })}
+                )}
+                {field.type === "select" && (
+                  <Select
+                    value={componentInteractions.get(`${componentId}-field-${i}`) || field.defaultValue}
+                    onValueChange={(value) => handleComponentInteraction(`${componentId}-field-${i}`, 'select_change', value)}
+                  >
+                    <SelectTrigger className="text-xs">
+                      <SelectValue placeholder={field.placeholder || "Select..."} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {field.options?.map((opt: any, optIdx: number) => (
+                        <SelectItem key={optIdx} value={typeof opt === 'string' ? opt : opt.value} className="text-xs">
+                          {typeof opt === 'string' ? opt : opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            ))}
+            {component.data.submitButton && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  const formData: Record<string, any> = {};
+                  component.data.fields?.forEach((_field: any, i: number) => {
+                    formData[`field-${i}`] = componentInteractions.get(`${componentId}-field-${i}`);
+                  });
+                  handleFormSubmit(componentId, formData);
+                }}
+                className="mt-2"
+              >
+                {component.data.submitButton.label || "Submit"}
+              </Button>
+            )}
           </div>
         );
       
@@ -1988,80 +1861,6 @@ export function ChatBot({
         return (
           <div key={index} className="p-4 bg-black/50 rounded-lg border border-border font-mono text-xs overflow-x-auto">
             <pre className="text-primary">{component.data.code}</pre>
-          </div>
-        );
-      
-      case "image":
-        return (
-          <div key={index} className="space-y-2">
-            <img
-              src={component.data.url}
-              alt={component.data.alt || "Image"}
-              className="rounded-lg border border-border max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => component.data.clickable && setSelectedImage({ url: component.data.url, title: component.data.caption || '' })}
-            />
-            {component.data.caption && (
-              <p className="text-xs text-muted-foreground text-center">{component.data.caption}</p>
-            )}
-          </div>
-        );
-      
-      case "wizard":
-        return (
-          <div key={index} className="my-4">
-            <DiagnosticWizard
-              scenario={component.data.scenario}
-              manualId={selectedManualId || undefined}
-              deviceType={component.data.deviceType}
-              onComplete={(results, analysis) => {
-                console.log("Wizard complete:", results, analysis);
-                handleComponentInteraction(componentId, "complete", results);
-                
-                // Display AI recommendations if available
-                if (analysis) {
-                  const recommendationsMessage: ChatMessage = {
-                    id: Date.now().toString(),
-                    type: "bot",
-                    content: {
-                      summary: `## Diagnostic Analysis Complete\n\n${analysis.diagnosis_summary}\n\n**Most Likely Cause:** ${analysis.likely_cause}\n**Confidence:** ${analysis.confidence}${analysis.safety_warnings && analysis.safety_warnings.length > 0 ? `\n\n⚠️ **Safety Warnings:**\n${analysis.safety_warnings.map((w: string) => `- ${w}`).join('\n')}` : ''}`,
-                      steps: analysis.recommendations?.flatMap((rec: any) => 
-                        rec.steps.map((step: string) => ({
-                          step: `[${rec.priority.toUpperCase()}] ${rec.title}: ${step}`,
-                          expected: rec.estimated_time
-                        }))
-                      ),
-                      expert_advice: analysis.follow_up_questions || [],
-                      safety: analysis.safety_warnings || [],
-                      interactive_components: analysis.recommendations?.map((rec: any, idx: number) => ({
-                        type: "status",
-                        data: {
-                          title: rec.title,
-                          message: rec.description,
-                          status: rec.priority === "critical" ? "error" : rec.priority === "high" ? "warning" : "info",
-                          icon: rec.priority === "critical" ? "🔴" : rec.priority === "high" ? "🟡" : "🟢"
-                        }
-                      })) || []
-                    },
-                    timestamp: new Date(),
-                  };
-                  setMessages((prev) => [...prev, recommendationsMessage]);
-                  
-                  if (analysis.escalation_needed) {
-                    toast({
-                      title: "Professional Support Recommended",
-                      description: "Based on the diagnosis, we recommend contacting professional support.",
-                      variant: "destructive",
-                    });
-                  }
-                } else {
-                  toast({
-                    title: "Analysis Failed",
-                    description: "Could not analyze diagnostic results. Please try again.",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            />
           </div>
         );
       

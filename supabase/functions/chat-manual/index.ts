@@ -482,20 +482,13 @@ Reference specific observations from the images in your response and provide det
 
   const messages = baseMessages;
 
-  // Responses API uses 'input' and 'max_output_tokens' for all models
+  // Use Chat Completions API with JSON mode
   const body: any = {
     model,
-    input: messages,
-    max_output_tokens: isGpt5(model) ? 8000 : 2000,
+    messages: messages,
+    max_completion_tokens: isGpt5(model) ? 8000 : 2000,
     stream: shouldStream,
-    store: true, // Enable caching for 40-80% cost reduction
-    response: {
-      text: {
-        format: {
-          type: "json"
-        }
-      }
-    }
+    response_format: { type: "json_object" }
   };
 
   // Add reasoning for GPT-5 models to enhance problem-solving (using 'low' for speed)
@@ -503,7 +496,7 @@ Reference specific observations from the images in your response and provide det
     body.reasoning = { effort: 'low' };
   }
 
-  console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
+  console.log(`📤 [Chat Completions API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
 
   console.log(`🔍 REQUEST BODY:`, JSON.stringify(body, null, 2));
 

@@ -488,7 +488,51 @@ Reference specific observations from the images in your response and provide det
     input: messages,
     max_output_tokens: isGpt5(model) ? 8000 : 2000,
     stream: shouldStream,
-    store: true // Enable caching for 40-80% cost reduction
+    store: true, // Enable caching for 40-80% cost reduction
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "arcade_troubleshoot_response",
+        schema: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            interactive_components: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  type: { type: "string" },
+                  id: { type: "string" },
+                  data: { type: "object" }
+                },
+                required: ["type", "id", "data"],
+                additionalProperties: true
+              }
+            },
+            what: {
+              type: "array",
+              items: { type: "string" }
+            },
+            how: {
+              type: "array",
+              items: { type: "string" }
+            },
+            sources: {
+              type: "array",
+              items: { type: "string" }
+            },
+            questions: {
+              type: "array",
+              items: { type: "string" }
+            }
+          },
+          required: ["message", "interactive_components", "what", "how", "sources"],
+          additionalProperties: true
+        },
+        strict: true
+      }
+    }
   };
 
   // Add reasoning for GPT-5 models to enhance problem-solving (using 'low' for speed)

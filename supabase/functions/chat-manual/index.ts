@@ -491,7 +491,7 @@ Reference specific observations from the images in your response and provide det
     store: true, // Enable caching for 40-80% cost reduction
     text: {
       format: {
-        type: "json"
+        type: "json_object"
       }
     }
   };

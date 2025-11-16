@@ -496,10 +496,7 @@ Reference specific observations from the images in your response and provide det
         schema: {
           type: "object",
           properties: {
-            messages: {
-              type: "array",
-              items: { type: "string" }
-            },
+            message: { type: "string" },
             interactive_components: {
               type: "array",
               items: {
@@ -510,32 +507,12 @@ Reference specific observations from the images in your response and provide det
                   data: { type: "object" }
                 },
                 required: ["type", "data"],
-                additionalProperties: true
-              }
-            },
-            diagnostics: {
-              type: "object",
-              properties: {
-                what: { type: "array", items: { type: "string" } },
-                how: { type: "array", items: { type: "string" } }
-              },
-              additionalProperties: true
-            },
-            sources: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  cite: { type: "string" },
-                  title: { type: "string" },
-                  excerpt: { type: "string" }
-                },
-                additionalProperties: true
+                additionalProperties: false
               }
             }
           },
-          required: ["messages"],
-          additionalProperties: true
+          required: ["message"],
+          additionalProperties: false
         },
         strict: true
       }

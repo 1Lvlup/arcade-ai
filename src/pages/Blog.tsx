@@ -81,6 +81,14 @@ export default function Blog() {
       <SharedHeader />
       
       <main className="container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Link to="/">
+          <Button variant="ghost" className="mb-6">
+            <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
+            Back to Home
+          </Button>
+        </Link>
+
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-tech font-bold text-foreground mb-4">

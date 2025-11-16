@@ -1381,26 +1381,34 @@ export function ChatBot({
               
               // Handle content chunks (streaming answer)
               if (parsed.type === "content" && parsed.data) {
-                let cleanContent = "";
-                let jsonResponse: any = null;
+                let structuredContent: any = null;
                 let parsedComponents: any[] | undefined;
 
                 try {
                   // parsed.data may be a string or an object
+                  let jsonResponse: any = null;
                   if (typeof parsed.data === "string") {
                     jsonResponse = JSON.parse(parsed.data);
                   } else {
                     jsonResponse = parsed.data;
                   }
 
-                  // Extract main message
+                  // Store the full structured response (convert to our format)
                   if (jsonResponse.message) {
-                    cleanContent = jsonResponse.message;
+                    structuredContent = {
+                      summary: jsonResponse.message,
+                      steps: jsonResponse.steps,
+                      why: jsonResponse.why,
+                      expert_advice: jsonResponse.expert_advice,
+                      safety: jsonResponse.safety,
+                      sources: jsonResponse.sources,
+                      interactive_components: jsonResponse.interactive_components || []
+                    };
                   } else {
-                    cleanContent =
-                      typeof parsed.data === "string"
-                        ? parsed.data
-                        : JSON.stringify(parsed.data);
+                    // Fallback: treat as plain text
+                    structuredContent = typeof parsed.data === "string"
+                      ? parsed.data
+                      : JSON.stringify(parsed.data);
                   }
 
                   // Extract interactive components - DISABLED
@@ -1427,21 +1435,19 @@ export function ChatBot({
                 } catch (e) {
                   console.log("⚠️ JSON parse failed, using raw content", e);
 
-                  cleanContent =
+                  structuredContent =
                     typeof parsed.data === "string"
                       ? parsed.data
                       : JSON.stringify(parsed.data);
                 }
 
-                // Update the message with new content + interactive components
-                accumulatedContent += cleanContent;
-
+                // Update the message with structured content
                 setMessages((prev) =>
                   prev.map((msg) =>
                     msg.id === botMessageId
                       ? {
                           ...msg,
-                          content: accumulatedContent,
+                          content: structuredContent,
                           interactiveComponents:
                             parsedComponents || msg.interactiveComponents
                         }
@@ -1542,13 +1548,12 @@ export function ChatBot({
         }
       }
 
-      // Final update with metadata (thumbnails, manual info)
+      // Final update with metadata (thumbnails, manual info) - Don't overwrite structured content
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === botMessageId
             ? {
                 ...msg,
-                content: accumulatedContent,
                 thumbnails: metadata.sources?.map((s: any) => s.thumbnail).filter(Boolean),
                 manual_id: metadata.manual_id,
                 manual_title: metadata.manual_title,
@@ -1565,6 +1570,11 @@ export function ChatBot({
       // Auto-save message after completion for logged-in users
       if (user && conversationIdToUse) {
         try {
+          const botMsg = messages.find(m => m.id === botMessageId);
+          const contentToSave = typeof botMsg?.content === "object" && botMsg.content !== null && "summary" in botMsg.content
+            ? botMsg.content.summary
+            : (typeof botMsg?.content === "string" ? botMsg.content : JSON.stringify(botMsg?.content));
+          
           await supabase.from("conversation_messages").insert([
             {
               conversation_id: conversationIdToUse,
@@ -1574,7 +1584,7 @@ export function ChatBot({
             {
               conversation_id: conversationIdToUse,
               role: "assistant",
-              content: accumulatedContent,
+              content: contentToSave,
             },
           ]);
 

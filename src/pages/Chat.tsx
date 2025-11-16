@@ -30,6 +30,8 @@ const Chat = () => {
   const handleManualChange = (manualId: string | null, title: string | null) => {
     setSelectedManualId(manualId);
     setManualTitle(title);
+    // Reset the chat when switching to a different game
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleToggleCollapse = () => {

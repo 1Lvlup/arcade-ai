@@ -570,6 +570,8 @@ Reference specific observations from the images in your response and provide det
     throw new Error(`Fetch failed: ${fetchError.message}`);
   }
 
+  console.log(`✅ OpenAI Response Status: ${response.status} ${response.statusText}`);
+  
   if (!response.ok) {
     const errorText = await response.text();
     console.error("❌ OpenAI API ERROR DETAILS:", {
@@ -583,7 +585,7 @@ Reference specific observations from the images in your response and provide det
     let errorJson;
     try {
       errorJson = JSON.parse(errorText);
-      console.error("❌ PARSED ERROR:", JSON.stringify(errorJson, null, 2));
+      console.error("❌ PARSED ERROR JSON:", JSON.stringify(errorJson, null, 2));
     } catch {
       console.error("❌ RAW ERROR TEXT:", errorText);
     }
@@ -596,13 +598,14 @@ Reference specific observations from the images in your response and provide det
     console.log(`📦 Processing non-streaming response from Responses API`);
     try {
       const data = await response.json();
-      console.log(`📦 Received JSON response:`, JSON.stringify(data).slice(0, 200));
+      console.log(`📦 Full Response Structure:`, JSON.stringify(data, null, 2));
       
       let fullText = '';
       
       // Handle different response formats
       if (Array.isArray(data.output)) {
         // New format with reasoning_effort: output is an array of objects
+        console.log(`📋 Output is array format`);
         const messageOutput = data.output.find((item: any) => item.type === 'message');
         if (messageOutput && Array.isArray(messageOutput.content)) {
           const textContent = messageOutput.content.find((item: any) => item.type === 'output_text');
@@ -610,12 +613,23 @@ Reference specific observations from the images in your response and provide det
         }
       } else if (data.output?.content) {
         // Old format: output.content directly
+        console.log(`📋 Output is direct content format`);
         fullText = data.output.content;
       }
       
-      console.log(`✅ Non-streaming response: ${fullText.length} characters`);
+      console.log(`✅ Extracted text (${fullText.length} chars):`, fullText.slice(0, 300));
+      
+      // Verify it's valid JSON with expected structure
+      try {
+        const parsed = JSON.parse(fullText);
+        console.log(`✅ JSON is valid! Has messages: ${!!parsed.messages}, Has interactive_components: ${!!parsed.interactive_components}`);
+        console.log(`📊 Parsed structure keys:`, Object.keys(parsed));
+      } catch (jsonErr) {
+        console.error(`❌ Text is NOT valid JSON:`, jsonErr);
+      }
+      
       if (!fullText) {
-        console.error(`❌ Empty content! Response structure:`, JSON.stringify(data, null, 2));
+        console.error(`❌ Empty content! Full response:`, JSON.stringify(data, null, 2));
       }
       return fullText;
     } catch (error) {

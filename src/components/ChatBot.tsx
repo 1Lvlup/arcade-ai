@@ -1370,7 +1370,15 @@ export function ChatBot({
               // Handle content chunks (streaming answer)
               if (parsed.type === 'content' && parsed.data) {
                 console.log('✅ Content chunk:', parsed.data);
-                accumulatedContent += parsed.data;
+                
+                // Strip out interactive_components YAML section if present
+                let cleanContent = parsed.data;
+                const interactiveMatch = cleanContent.match(/\n\ninteractive_components:/);
+                if (interactiveMatch) {
+                  cleanContent = cleanContent.substring(0, interactiveMatch.index);
+                }
+                
+                accumulatedContent += cleanContent;
                 setMessages((prev) =>
                   prev.map((msg) =>
                     msg.id === botMessageId
@@ -1382,7 +1390,14 @@ export function ChatBot({
               
               // Handle delta content (legacy format)
               if (parsed.delta) {
-                accumulatedContent += parsed.delta;
+                // Strip out interactive_components YAML section if present
+                let cleanDelta = parsed.delta;
+                const interactiveMatch = cleanDelta.match(/\n\ninteractive_components:/);
+                if (interactiveMatch) {
+                  cleanDelta = cleanDelta.substring(0, interactiveMatch.index);
+                }
+                
+                accumulatedContent += cleanDelta;
                 setMessages((prev) =>
                   prev.map((msg) =>
                     msg.id === botMessageId

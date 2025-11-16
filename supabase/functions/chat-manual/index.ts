@@ -482,18 +482,13 @@ Reference specific observations from the images in your response and provide det
 
   const messages = baseMessages;
 
-  // Responses API with plain JSON format (no schema validation)
+  // Responses API with plain markdown format
   const body: any = {
     model,
     input: messages,
     max_output_tokens: isGpt5(model) ? 8000 : 2000,
     stream: shouldStream,
     store: true, // Enable caching for 40-80% cost reduction
-    text: {
-      format: {
-        type: "json_object"
-      }
-    }
   };
 
   // Add reasoning for GPT-5 models to enhance problem-solving (using 'low' for speed)

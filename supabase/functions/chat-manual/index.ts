@@ -482,7 +482,7 @@ Reference specific observations from the images in your response and provide det
 
   const messages = baseMessages;
 
-  // Responses API with structured output (json_schema at top level)
+  // Responses API with plain JSON format (no schema validation)
   const body: any = {
     model,
     input: messages,
@@ -491,30 +491,7 @@ Reference specific observations from the images in your response and provide det
     store: true, // Enable caching for 40-80% cost reduction
     text: {
       format: {
-        type: "json_schema",
-        name: "arcade_troubleshoot_response",
-        schema: {
-          type: "object",
-          properties: {
-            message: { type: "string" },
-            interactive_components: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  type: { type: "string" },
-                  data: { type: "object" }
-                },
-                required: ["type", "data"],
-                additionalProperties: false
-              }
-            }
-          },
-          required: ["message"],
-          additionalProperties: false
-        },
-        strict: true
+        type: "json"
       }
     }
   };

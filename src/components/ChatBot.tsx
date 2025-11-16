@@ -1381,7 +1381,7 @@ export function ChatBot({
               
               // Handle content chunks (streaming answer)
               if (parsed.type === "content" && parsed.data) {
-                // Accumulate raw content as string (streaming comes in chunks)
+                // Accumulate plain text/markdown
                 const chunk = typeof parsed.data === "string" ? parsed.data : JSON.stringify(parsed.data);
                 accumulatedContent += chunk;
 
@@ -1395,41 +1395,6 @@ export function ChatBot({
                         }
                       : msg,
                   ),
-                );
-                        type: comp.type,
-                        data: comp.data ?? {}
-                      })
-                    );
-                  } */
-
-                  // Optional metadata (store later — for now, just log)
-                  console.log("Metadata:", {
-                    what: jsonResponse.what,
-                    how: jsonResponse.how,
-                    sources: jsonResponse.sources,
-                    questions: jsonResponse.questions
-                  });
-                } catch (e) {
-                  console.log("⚠️ JSON parse failed, using raw content", e);
-
-                  structuredContent =
-                    typeof parsed.data === "string"
-                      ? parsed.data
-                      : JSON.stringify(parsed.data);
-                }
-
-                // Update the message with structured content
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === botMessageId
-                      ? {
-                          ...msg,
-                          content: structuredContent,
-                          interactiveComponents:
-                            parsedComponents || msg.interactiveComponents
-                        }
-                      : msg
-                  )
                 );
               }
               
@@ -1547,13 +1512,8 @@ export function ChatBot({
       // Auto-save message after completion for logged-in users
       if (user && conversationIdToUse) {
         try {
-          let contentToSave = finalContent;
-          try {
-            const jsonResponse = JSON.parse(accumulatedContent);
-            contentToSave = jsonResponse.message || accumulatedContent;
-          } catch (e) {
-            contentToSave = accumulatedContent;
-          }
+          // Use accumulated content for saving
+          const contentToSave = accumulatedContent;
           
           await supabase.from("conversation_messages").insert([
             {

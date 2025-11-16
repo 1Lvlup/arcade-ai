@@ -1373,66 +1373,33 @@ export function ChatBot({
                 
                 let cleanContent = parsed.data;
                 
-                // Try to detect and parse JSON responses
+                // Parse JSON response
                 try {
-                  // Check if this looks like JSON
-                  if (cleanContent.trim().startsWith('{') && cleanContent.trim().endsWith('}')) {
-                    const jsonResponse = JSON.parse(cleanContent);
-                    
-                    // Convert JSON structure to markdown
-                    let markdown = '';
-                    
-                    if (jsonResponse.summary) {
-                      markdown += jsonResponse.summary + '\n\n';
-                    }
-                    
-                    if (jsonResponse.steps && Array.isArray(jsonResponse.steps)) {
-                      markdown += '**Steps:**\n';
-                      jsonResponse.steps.forEach((step: string, i: number) => {
-                        markdown += `${i + 1}. ${step}\n`;
-                      });
-                      markdown += '\n';
-                    }
-                    
-                    if (jsonResponse.what && Array.isArray(jsonResponse.what)) {
-                      markdown += '**What:**\n';
-                      jsonResponse.what.forEach((item: string) => {
-                        markdown += `- ${item}\n`;
-                      });
-                      markdown += '\n';
-                    }
-                    
-                    if (jsonResponse.how && Array.isArray(jsonResponse.how)) {
-                      markdown += '**How:**\n';
-                      jsonResponse.how.forEach((item: string) => {
-                        markdown += `- ${item}\n`;
-                      });
-                      markdown += '\n';
-                    }
-                    
-                    if (jsonResponse.sources && Array.isArray(jsonResponse.sources)) {
-                      markdown += '**Sources:**\n';
-                      jsonResponse.sources.forEach((source: string) => {
-                        markdown += `- ${source}\n`;
-                      });
-                    }
-                    
-                    cleanContent = markdown;
-                    
-                    // Store interactive components separately if present
-                    if (jsonResponse.interactive_components) {
-                      // TODO: Handle interactive components rendering
-                      console.log('Interactive components:', jsonResponse.interactive_components);
-                    }
+                  const jsonResponse = JSON.parse(cleanContent);
+                  
+                  // Use the message field as the content
+                  if (jsonResponse.message) {
+                    cleanContent = jsonResponse.message;
+                  }
+                  
+                  // Store interactive components separately if present
+                  if (jsonResponse.interactive_components && Array.isArray(jsonResponse.interactive_components)) {
+                    // TODO: Handle interactive components rendering
+                    console.log('📦 Interactive components received:', jsonResponse.interactive_components);
+                  }
+                  
+                  // Store metadata
+                  if (jsonResponse.what || jsonResponse.how || jsonResponse.sources || jsonResponse.questions) {
+                    console.log('📊 Metadata:', { 
+                      what: jsonResponse.what, 
+                      how: jsonResponse.how, 
+                      sources: jsonResponse.sources,
+                      questions: jsonResponse.questions 
+                    });
                   }
                 } catch (e) {
-                  // Not JSON, use as-is
-                }
-                
-                // Strip out any remaining interactive_components YAML section
-                const interactiveMatch = cleanContent.match(/\n\ninteractive_components:/);
-                if (interactiveMatch) {
-                  cleanContent = cleanContent.substring(0, interactiveMatch.index);
+                  // If JSON parsing fails, log and use content as-is
+                  console.log('⚠️ Not JSON format, using raw content');
                 }
                 
                 accumulatedContent += cleanContent;

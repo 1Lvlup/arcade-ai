@@ -1391,55 +1391,70 @@ export function ChatBot({
               console.log('📦 Received chunk:', parsed);
               
               // Handle content chunks (streaming answer)
-              if (parsed.type === 'content' && parsed.data) {
-                console.log('✅ Content chunk:', parsed.data);
-                
-                let cleanContent = parsed.data;
-                let parsedComponents: InteractiveComponent[] | undefined;
-                
-                // Parse JSON response
+              if (parsed.type === "content" && parsed.data) {
+                let cleanContent = "";
+                let jsonResponse: any = null;
+                let parsedComponents: any[] | undefined;
+
                 try {
-                  const jsonResponse = JSON.parse(cleanContent);
-                  
-                  // Use the message field as the content
+                  // parsed.data may be a string or an object
+                  if (typeof parsed.data === "string") {
+                    jsonResponse = JSON.parse(parsed.data);
+                  } else {
+                    jsonResponse = parsed.data;
+                  }
+
+                  // Extract main message
                   if (jsonResponse.message) {
                     cleanContent = jsonResponse.message;
+                  } else {
+                    cleanContent =
+                      typeof parsed.data === "string"
+                        ? parsed.data
+                        : JSON.stringify(parsed.data);
                   }
-                  
-                  // Store interactive components with proper IDs
-                  if (jsonResponse.interactive_components && Array.isArray(jsonResponse.interactive_components)) {
+
+                  // Extract interactive components
+                  if (
+                    jsonResponse.interactive_components &&
+                    Array.isArray(jsonResponse.interactive_components)
+                  ) {
                     parsedComponents = jsonResponse.interactive_components.map(
                       (comp: any, idx: number) => ({
                         id: comp.id ?? `${botMessageId}-ic-${idx}`,
                         type: comp.type,
-                        data: comp.data ?? {},
+                        data: comp.data ?? {}
                       })
                     );
-                    console.log('📦 Interactive components received:', parsedComponents);
                   }
-                  
-                  // Store metadata
-                  if (jsonResponse.what || jsonResponse.how || jsonResponse.sources || jsonResponse.questions) {
-                    console.log('📊 Metadata:', { 
-                      what: jsonResponse.what, 
-                      how: jsonResponse.how, 
-                      sources: jsonResponse.sources,
-                      questions: jsonResponse.questions 
-                    });
-                  }
+
+                  // Optional metadata (store later — for now, just log)
+                  console.log("Metadata:", {
+                    what: jsonResponse.what,
+                    how: jsonResponse.how,
+                    sources: jsonResponse.sources,
+                    questions: jsonResponse.questions
+                  });
                 } catch (e) {
-                  // If JSON parsing fails, log and use content as-is
-                  console.log('⚠️ Not JSON format, using raw content', e);
+                  console.log("⚠️ JSON parse failed, using raw content", e);
+
+                  cleanContent =
+                    typeof parsed.data === "string"
+                      ? parsed.data
+                      : JSON.stringify(parsed.data);
                 }
-                
+
+                // Update the message with new content + interactive components
                 accumulatedContent += cleanContent;
+
                 setMessages((prev) =>
                   prev.map((msg) =>
                     msg.id === botMessageId
-                      ? { 
-                          ...msg, 
+                      ? {
+                          ...msg,
                           content: accumulatedContent,
-                          interactiveComponents: parsedComponents || msg.interactiveComponents
+                          interactiveComponents:
+                            parsedComponents || msg.interactiveComponents
                         }
                       : msg
                   )

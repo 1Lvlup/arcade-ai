@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, Calendar, User, ArrowRight } from 'lucide-react';
+import { Clock, Calendar, User, ArrowRight, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { SharedHeader } from '@/components/SharedHeader';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BlogPost {
   id: string;
@@ -27,10 +28,29 @@ interface BlogPost {
 }
 
 export default function Blog() {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkAdminStatus();
+    }
+  }, [user]);
+
+  const checkAdminStatus = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+    
+    setIsAdmin(data || false);
+  };
 
   useEffect(() => {
     loadCategories();
@@ -91,9 +111,22 @@ export default function Blog() {
 
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-tech font-bold text-foreground mb-4">
-            Arcade Intelligence Blog
-          </h1>
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1" />
+            <h1 className="text-5xl font-tech font-bold text-foreground flex-1">
+              Arcade Intelligence Blog
+            </h1>
+            <div className="flex-1 flex justify-end">
+              {isAdmin && (
+                <Link to="/admin/blog/new">
+                  <Button variant="orange">
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Post
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Expert guides, troubleshooting tips, and industry insights for arcade operators
           </p>

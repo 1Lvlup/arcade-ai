@@ -1385,9 +1385,15 @@ export function ChatBot({
                     cleanContent = jsonResponse.message;
                   }
                   
-                  // Store interactive components
+                  // Store interactive components with proper IDs
                   if (jsonResponse.interactive_components && Array.isArray(jsonResponse.interactive_components)) {
-                    parsedComponents = jsonResponse.interactive_components;
+                    parsedComponents = jsonResponse.interactive_components.map(
+                      (comp: any, idx: number) => ({
+                        id: comp.id ?? `${botMessageId}-ic-${idx}`,
+                        type: comp.type,
+                        data: comp.data ?? {},
+                      })
+                    );
                     console.log('📦 Interactive components received:', parsedComponents);
                   }
                   
@@ -1402,7 +1408,7 @@ export function ChatBot({
                   }
                 } catch (e) {
                   // If JSON parsing fails, log and use content as-is
-                  console.log('⚠️ Not JSON format, using raw content');
+                  console.log('⚠️ Not JSON format, using raw content', e);
                 }
                 
                 accumulatedContent += cleanContent;

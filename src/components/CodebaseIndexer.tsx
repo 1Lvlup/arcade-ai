@@ -499,6 +499,17 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
     setSyncResult(null);
     
     try {
+      // Check if File System Access API is supported
+      if (!('showDirectoryPicker' in window)) {
+        toast({ 
+          title: 'Browser Not Supported', 
+          description: 'This feature requires Chrome or Edge browser. Please use a supported browser or manually upload files.',
+          variant: 'destructive'
+        });
+        setIsSyncing(false);
+        return;
+      }
+
       // Request directory access
       const newDirHandle = await (window as any).showDirectoryPicker({
         mode: 'read',

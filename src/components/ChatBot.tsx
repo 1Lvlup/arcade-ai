@@ -1381,44 +1381,21 @@ export function ChatBot({
               
               // Handle content chunks (streaming answer)
               if (parsed.type === "content" && parsed.data) {
-                let structuredContent: any = null;
-                let parsedComponents: any[] | undefined;
+                // Accumulate raw content as string (streaming comes in chunks)
+                const chunk = typeof parsed.data === "string" ? parsed.data : JSON.stringify(parsed.data);
+                accumulatedContent += chunk;
 
-                try {
-                  // parsed.data may be a string or an object
-                  let jsonResponse: any = null;
-                  if (typeof parsed.data === "string") {
-                    jsonResponse = JSON.parse(parsed.data);
-                  } else {
-                    jsonResponse = parsed.data;
-                  }
-
-                  // Store the full structured response (convert to our format)
-                  if (jsonResponse.message) {
-                    structuredContent = {
-                      summary: jsonResponse.message,
-                      steps: jsonResponse.steps,
-                      why: jsonResponse.why,
-                      expert_advice: jsonResponse.expert_advice,
-                      safety: jsonResponse.safety,
-                      sources: jsonResponse.sources,
-                      interactive_components: jsonResponse.interactive_components || []
-                    };
-                  } else {
-                    // Fallback: treat as plain text
-                    structuredContent = typeof parsed.data === "string"
-                      ? parsed.data
-                      : JSON.stringify(parsed.data);
-                  }
-
-                  // Extract interactive components - DISABLED
-                  /* if (
-                    jsonResponse.interactive_components &&
-                    Array.isArray(jsonResponse.interactive_components)
-                  ) {
-                    parsedComponents = jsonResponse.interactive_components.map(
-                      (comp: any, idx: number) => ({
-                        id: comp.id ?? `${botMessageId}-ic-${idx}`,
+                // Update message with accumulated content
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === botMessageId
+                      ? {
+                          ...msg,
+                          content: accumulatedContent
+                        }
+                      : msg,
+                  ),
+                );
                         type: comp.type,
                         data: comp.data ?? {}
                       })
@@ -1570,10 +1547,13 @@ export function ChatBot({
       // Auto-save message after completion for logged-in users
       if (user && conversationIdToUse) {
         try {
-          const botMsg = messages.find(m => m.id === botMessageId);
-          const contentToSave = typeof botMsg?.content === "object" && botMsg.content !== null && "summary" in botMsg.content
-            ? botMsg.content.summary
-            : (typeof botMsg?.content === "string" ? botMsg.content : JSON.stringify(botMsg?.content));
+          let contentToSave = finalContent;
+          try {
+            const jsonResponse = JSON.parse(accumulatedContent);
+            contentToSave = jsonResponse.message || accumulatedContent;
+          } catch (e) {
+            contentToSave = accumulatedContent;
+          }
           
           await supabase.from("conversation_messages").insert([
             {

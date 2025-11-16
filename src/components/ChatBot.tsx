@@ -1490,12 +1490,25 @@ export function ChatBot({
         }
       }
 
-      // Final update with metadata (thumbnails, manual info) - Don't overwrite structured content
+      // Parse the accumulated JSON response and extract the message
+      let finalContent = accumulatedContent;
+      try {
+        const jsonResponse = JSON.parse(accumulatedContent);
+        if (jsonResponse.message) {
+          finalContent = jsonResponse.message;
+          console.log("✅ Extracted clean markdown from JSON response");
+        }
+      } catch (e) {
+        console.log("⚠️ Could not parse as JSON, using raw content");
+      }
+
+      // Final update with parsed content and metadata
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === botMessageId
             ? {
                 ...msg,
+                content: finalContent,
                 thumbnails: metadata.sources?.map((s: any) => s.thumbnail).filter(Boolean),
                 manual_id: metadata.manual_id,
                 manual_title: metadata.manual_title,
@@ -1512,8 +1525,8 @@ export function ChatBot({
       // Auto-save message after completion for logged-in users
       if (user && conversationIdToUse) {
         try {
-          // Use accumulated content for saving
-          const contentToSave = accumulatedContent;
+          // Use the parsed markdown content for saving
+          const contentToSave = finalContent;
           
           await supabase.from("conversation_messages").insert([
             {

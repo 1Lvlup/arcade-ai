@@ -489,48 +489,50 @@ Reference specific observations from the images in your response and provide det
     max_output_tokens: isGpt5(model) ? 8000 : 2000,
     stream: shouldStream,
     store: true, // Enable caching for 40-80% cost reduction
-    text: {
-      format: {
-        type: "json_schema",
-        name: "arcade_troubleshoot_response",
-        schema: {
-          type: "object",
-          properties: {
-            message: { type: "string" },
-            interactive_components: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  type: { type: "string" },
-                  id: { type: "string" },
-                  data: { type: "object" }
-                },
-                required: ["type", "id", "data"],
-                additionalProperties: true
+    response: {
+      text: {
+        format: {
+          type: "json",
+          name: "arcade_troubleshoot_response",
+          json_schema: {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              interactive_components: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string" },
+                    id: { type: "string" },
+                    data: { type: "object" }
+                  },
+                  required: ["type", "id", "data"],
+                  additionalProperties: true
+                }
+              },
+              what: {
+                type: "array",
+                items: { type: "string" }
+              },
+              how: {
+                type: "array",
+                items: { type: "string" }
+              },
+              sources: {
+                type: "array",
+                items: { type: "string" }
+              },
+              questions: {
+                type: "array",
+                items: { type: "string" }
               }
             },
-            what: {
-              type: "array",
-              items: { type: "string" }
-            },
-            how: {
-              type: "array",
-              items: { type: "string" }
-            },
-            sources: {
-              type: "array",
-              items: { type: "string" }
-            },
-            questions: {
-              type: "array",
-              items: { type: "string" }
-            }
+            required: ["message", "interactive_components", "what", "how", "sources"],
+            additionalProperties: false
           },
-          required: ["message", "interactive_components", "what", "how", "sources"],
-          additionalProperties: true
-        },
-        strict: true
+          strict: true
+        }
       }
     }
   };
@@ -542,20 +544,46 @@ Reference specific observations from the images in your response and provide det
 
   console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${openaiApiKey}`,
-      "Content-Type": "application/json",
-      ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
-    },
-    body: JSON.stringify(body),
-  });
+  console.log(`🔍 REQUEST BODY:`, JSON.stringify(body, null, 2));
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json",
+        ...(openaiProjectId && { "OpenAI-Project": openaiProjectId }),
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (fetchError: any) {
+    console.error("❌ FETCH ERROR:", {
+      message: fetchError.message,
+      stack: fetchError.stack
+    });
+    throw new Error(`Fetch failed: ${fetchError.message}`);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("❌ OpenAI API error:", errorText);
-    throw new Error(`OpenAI API error: ${response.statusText}`);
+    console.error("❌ OpenAI API ERROR DETAILS:", {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: errorText
+    });
+    
+    // Try to parse error as JSON
+    let errorJson;
+    try {
+      errorJson = JSON.parse(errorText);
+      console.error("❌ PARSED ERROR:", JSON.stringify(errorJson, null, 2));
+    } catch {
+      console.error("❌ RAW ERROR TEXT:", errorText);
+    }
+    
+    throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
   }
 
   // Non-streaming: Responses API returns JSON with 'output' field

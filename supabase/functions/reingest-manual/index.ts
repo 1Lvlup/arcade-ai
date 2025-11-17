@@ -1,12 +1,10 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createChunks, type Chunk } from '../_shared/chunking.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const CHUNK_SIZE = 400;
-const CHUNK_OVERLAP = 125;
 
 interface ChunkData {
   manual_id: string;
@@ -86,26 +84,27 @@ Deno.serve(async (req) => {
         const pageStart = chunk.page_start;
         const pageEnd = chunk.page_end;
 
+        // Validate page ranges
         if (!pageStart || !pageEnd || pageStart > pageCount || pageEnd > pageCount) {
           console.warn(`⚠️ Skipping invalid pages: ${pageStart}-${pageEnd}`);
           continue;
         }
 
-        let offset = 0;
-        while (offset < text.length) {
-          const chunkText = text.slice(offset, offset + CHUNK_SIZE);
-          if (chunkText.trim().length < 50) break;
+        // Use shared chunking module with smart boundary detection
+        const chunkedResults = createChunks(text, {
+          manual_id,
+          page_start: pageStart,
+          page_end: pageEnd,
+          section_heading: chunk.section_heading,
+        });
 
+        // Convert to ChunkData format with tenant ID
+        for (const chunkResult of chunkedResults) {
           newChunks.push({
-            manual_id,
-            content: chunkText,
-            page_start: pageStart,
-            page_end: pageEnd,
-            section_heading: chunk.section_heading || undefined,
+            ...chunkResult.metadata,
+            content: chunkResult.content,
             fec_tenant_id: fecTenantId,
           });
-
-          offset += CHUNK_SIZE - CHUNK_OVERLAP;
         }
       }
 

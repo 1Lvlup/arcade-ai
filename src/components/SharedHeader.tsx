@@ -169,12 +169,6 @@ export const SharedHeader = ({
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/code-assistant" className="cursor-pointer">
-                      <Code className="mr-2 h-4 w-4" />
-                      Code Assistant
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link to="/vision-board" className="cursor-pointer">
                       <Brain className="mr-2 h-4 w-4" />
                       Vision Board
@@ -221,6 +215,12 @@ export const SharedHeader = ({
                     <Link to="/ai-configuration" className="cursor-pointer">
                       <Brain className="mr-2 h-4 w-4" />
                       AI Config
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/code-assistant" className="cursor-pointer">
+                      <Code className="mr-2 h-4 w-4" />
+                      Code Assistant
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>

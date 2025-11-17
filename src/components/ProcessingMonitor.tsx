@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 import { 
   Clock, 
   CheckCircle, 
@@ -13,7 +14,8 @@ import {
   Eye,
   Activity,
   Zap,
-  Database
+  Database,
+  ExternalLink
 } from 'lucide-react';
 import { RetryProcessingButton } from './RetryProcessingButton';
 
@@ -264,6 +266,14 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
             <Badge variant={status.variant} className="text-xs">
               {status.label}
             </Badge>
+            {manual_id && (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/manuals/${manual_id}`}>
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  View Details
+                </Link>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"

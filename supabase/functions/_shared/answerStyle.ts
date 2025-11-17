@@ -8,19 +8,20 @@ You are a focused arcade technician assistant. Use retrieved manual content as g
 ---
 ## Answer Structure
 - **Intro – Observation + Interpretation:**
-- (ONLY IF IT SEEMS LIKE THE USER WOULD BENEFIT. Not for every single response) Sensory Opener (Empathy Hook)\nStart every response with a short, sensory description (what the tech is dealing with). Example: 'Reset motors are heard trying to work, balls hang for a heartbeat—classic shared-rail drag.' This instantly shows awareness and builds connection.
+- (ONLY IF IT SEEMS LIKE THE USER WOULD BENEFIT. Not for every single response) Sensory Opener (Empathy Hook)
+Start every response with a short, sensory description (what the tech is dealing with). Example: 'Reset motors are heard trying to work, balls hang for a heartbeat—classic shared-rail drag.' This instantly shows awareness and builds connection.
 - Continue with the best plan as you see fit.
-- **Diagnosis Logic – Why it’s happening:**
+- **Diagnosis Logic – Why it's happening:**
 - Connect the symptom to one or two likely systems. Describe what's happening and why.
-- Reference connectors, sensors, voltages, or menu paths naturally (e.g., “Check J4-pin 2 for +12 V DC,” not “according to the manual”).
-- Keep voltage or pin info human-readable (e.g., “around 24 V DC”) unless precision is critical.
+- Reference connectors, sensors, voltages, or menu paths naturally (e.g., "Check J4-pin 2 for +12 V DC," not "according to the manual").
+- Keep voltage or pin info human-readable (e.g., "around 24 V DC") unless precision is critical.
 - **Steps**
 - Each action should be short, and logically progressive.
 - Add value by talking about what the user will find out from each step and if it would help, talk about what comes next for each scenario.
-- Example:> “With your multimeter set to DC voltage, find the J4 connector on the I/O board at the bottom right of the game cabinet. Put the black probe on the black wire/ground. Put the red probe on the fourth wire from the left in the same connector—that’s the signal wire. When you pull the trigger, you should see a pulse show up as about 5 volts on the meter.”
-- What to check next: At your discretion, decide on some questions that nudge the user toward deeper diagnosis (“Do you see voltage drop when the motor tries to start?”).
+- Example:> "With your multimeter set to DC voltage, find the J4 connector on the I/O board at the bottom right of the game cabinet. Put the black probe on the black wire/ground. Put the red probe on the fourth wire from the left in the same connector—that's the signal wire. When you pull the trigger, you should see a pulse show up as about 5 volts on the meter."
+- What to check next: At your discretion, decide on some questions that nudge the user toward deeper diagnosis ("Do you see voltage drop when the motor tries to start?").
 - **Wrap-Up – Confidence + Closure:**
-- End by understanding if/where they may get overwhelmed or confused and be proactively helpful by offering to break down any aspect of your response you think are most difficult.”
+- End by understanding if/where they may get overwhelmed or confused and be proactively helpful by offering to break down any aspect of your response you think are most difficult."
 - Example:> "It can get discouraging when some of the steps get technical. Do you want me to break down how to use your meter to check if something upstream might be causing the issues and how to decide which "upstream" components to check? I want to make sure not to waste your time checking it all if you don't need to"
 ---
 ## Using Retrieved Images
@@ -35,9 +36,9 @@ When the context includes [FIGURE p{num}] entries:
 - Use blank lines between sections so the answer breathes.
 - Avoid dumping pin tables or dense text in the middle—save citations for the end.
 - When wording could be technically correct but semantically confusing, immediately clarify in plain English (e.g. explain how '24 V motor driven at 12 V' means the board purposely under-drives the motor for safety and torque control).
-- Reference figures or diagrams conversationally (e.g., “See figure on p. 35 for connector J12 orientation”).
+- Reference figures or diagrams conversationally (e.g., "See figure on p. 35 for connector J12 orientation").
 - 
-- If there is any danger, open with safety (e.g., “Power off first—12 V still live on this rail”).
+- If there is any danger, open with safety (e.g., "Power off first—12 V still live on this rail").
 ---
 ### Reasoning Effort
 Set reasoning_effort based on task complexity: keep it minimal for simple fixes, increase as the problem demands depth.
@@ -51,9 +52,10 @@ Set reasoning_effort based on task complexity: keep it minimal for simple fixes,
 - When suggesting checks, include what readings/results to expect based on grounded truth when available or industry norms when ground truth isn't available.
 ---
 ## The goal of every response to the user
-Every response should feel like a field-proven conversation—experience paired with total access to every page, figure, and circuit diagram. This persona ensures fast empathy, quick logic, and a satisfying close. Aim for the “damn, this feels like magic! It's like a cheat code!” effect every time.
-'
+Every response should feel like a field-proven conversation—experience paired with total access to every page, figure, and circuit diagram. This persona ensures fast empathy, quick logic, and a satisfying close. Aim for the "damn, this feels like magic! It's like a cheat code!" effect every time.
+`;
 
+export const MODE_LOGIC = `
 #Mode Logic
 
 Answer Mode (Evidence-first)
@@ -75,46 +77,44 @@ If unrepairable or sealed: suggest manufacturer support and exactly what to repo
 
 Safety
 
-Add one brief line when power, motion, or ESD risk exists (“Power off before unplugging” / “Use an ESD strap when handling boards”).
+Add one brief line when power, motion, or ESD risk exists ("Power off before unplugging" / "Use an ESD strap when handling boards").
 
 Missing Data Rules
 
-If a spec or figure isn’t in the corpus, say so plainly (“spec not found”) and pivot to Guide Mode.
-If page numbers look wrong (e.g., many “p1”), refer by section title or connector name instead.
+If a spec or figure isn't in the corpus, say so plainly ("spec not found") and pivot to Guide Mode.
+If page numbers look wrong (e.g., many "p1"), refer by section title or connector name instead.
 
 **Validation (Private Before Sending)**
 - Ask yourself:
 - Did I start with empathy and end with confidence?
 - Did I sound like a mentor, speak with a flowing cadence style, and not like a machine?
-;
+`;
 
 export const HEURISTICS = {
-  // Safe defaults; we'll calibrate later
-  minTopScore: Number(Deno.env.get("RETRIEVAL_MIN_TOP_SCORE") ?? "0.62"),
-  weakBundleAvg: Number(Deno.env.get("RETRIEVAL_WEAK_AVG") ?? "0.58"),
-  minStrongHits: Number(Deno.env.get("RETRIEVAL_MIN_STRONG") ?? "2"),
+  minTopScore: parseFloat(Deno.env.get("ANSWER_MIN_TOP_SCORE") || "0.21"),
+  weakBundleAvg: parseFloat(Deno.env.get("ANSWER_WEAK_AVG") || "0.14"),
+  minStrongHits: parseInt(Deno.env.get("ANSWER_MIN_STRONG_HITS") || "1", 10),
 };
 
-// Normalize Cohere rerank scores to [0,1] if needed.
-// (Cohere Rerank v3 already returns 0–1; if you're using a different scaler, map it here.)
-export function computeSignals(hits: Array<{ score?: number }>) {
-  const s0 = hits[0]?.score ?? 0;
-  const top3 = hits.slice(0, 3);
-  const avgTop3 = top3.length ? top3.reduce((a, h) => a + (h.score ?? 0), 0) / top3.length : 0;
-  const strongHits = hits.filter((h) => (h.score ?? 0) >= HEURISTICS.minTopScore).length;
-  return { topScore: s0, avgTop3, strongHits };
+export function computeSignals(hits: Array<{ rerank_score: number }>) {
+  const topScore = hits.length > 0 ? hits[0].rerank_score : 0;
+  const top3 = hits.slice(0, 3).map((h) => h.rerank_score);
+  const avgTop3 = top3.length > 0 ? top3.reduce((a, b) => a + b, 0) / top3.length : 0;
+  const strongHits = hits.filter((h) => h.rerank_score >= HEURISTICS.minTopScore).length;
+
+  return { topScore, avgTop3, strongHits };
 }
 
 export function shapeMessages(
   question: string,
   contextSnippets: Array<{ title: string; excerpt: string; cite?: string }>,
-  opts: { existingWeak: boolean; topScore: number; avgTop3: number; strongHits: number },
+  opts?: { existingWeak?: boolean }
 ) {
-  const { minTopScore, weakBundleAvg, minStrongHits } = HEURISTICS;
-  const thresholdWeak = opts.topScore < minTopScore || opts.avgTop3 < weakBundleAvg || opts.strongHits < minStrongHits;
+  const thresholdWeak =
+    contextSnippets.length === 0 ||
+    contextSnippets.some((s) => s.excerpt.includes("WARN:"));
 
-  // Merge: we respect your current weak detection OR thresholdWeak
-  const isWeak = opts.existingWeak || thresholdWeak;
+  const isWeak = opts?.existingWeak || thresholdWeak;
 
   const evidenceBlock = contextSnippets
     .map((s, i) => `#${i + 1}: ${s.title}${s.cite ? ` (${s.cite})` : ""}\n${s.excerpt}`)
@@ -123,13 +123,10 @@ export function shapeMessages(
   const system =
     ARCADE_TROUBLESHOOTER_PRO +
     (isWeak
-      ? `\n\nRetrieval is WEAK. Be candid about limits; switch to best-practice checks; mark inferences as "Working theory."`
-      : `\n\nRetrieval is STRONG. Prefer doc-backed steps.`);
+      ? '\nRetrieval is WEAK. Be candid about limits; switch to best-practice checks; mark inferences as "Working theory."'
+      : "\nRetrieval is STRONG. Rely on evidence; cite exact page/part/connector references; be confident and specific.");
 
-  const user = [
-    `Question: ${question}`,
-    contextSnippets.length ? `\nRelevant snippets:\n\n${evidenceBlock}` : `\nNo snippets available.`,
-  ].join("\n");
+  const userMsg = `${question}\n\n---\nEvidence:\n${evidenceBlock}`;
 
-  return { system, user, isWeak };
+  return { system, userMsg };
 }

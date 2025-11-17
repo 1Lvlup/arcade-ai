@@ -455,8 +455,8 @@ Reference specific observations from the images in your response and provide det
 
   const shouldStream = opts?.stream !== false; // Default to streaming
 
-  // Always use Responses API - supports both streaming and non-streaming
-  const url = "https://api.openai.com/v1/responses";
+  // Use Chat Completions API for reliable plain markdown output
+  const url = "https://api.openai.com/v1/chat/completions";
 
   // Build messages array with vision support
   const baseMessages: any[] = [
@@ -482,21 +482,20 @@ Reference specific observations from the images in your response and provide det
 
   const messages = baseMessages;
 
-  // Responses API with plain markdown format
+  // Chat Completions API with plain markdown format
   const body: any = {
     model,
-    input: messages,
-    max_output_tokens: isGpt5(model) ? 8000 : 2000,
+    messages,
+    [isGpt5(model) ? 'max_completion_tokens' : 'max_tokens']: isGpt5(model) ? 8000 : 2000,
     stream: shouldStream,
-    store: true, // Enable caching for 40-80% cost reduction
   };
 
-  // Add reasoning for GPT-5 models to enhance problem-solving (using 'low' for speed)
-  if (isGpt5(model)) {
-    body.reasoning = { effort: 'low' };
+  // Add temperature for non-GPT-5 models
+  if (!isGpt5(model)) {
+    body.temperature = 0.7;
   }
 
-  console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
+  console.log(`📤 [Chat Completions API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
 
   console.log(`🔍 REQUEST BODY:`, JSON.stringify(body, null, 2));
 
@@ -542,29 +541,14 @@ Reference specific observations from the images in your response and provide det
     throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
   }
 
-  // Non-streaming: Responses API returns JSON with 'output' field
+  // Non-streaming: Chat Completions API returns standard format
   if (!shouldStream) {
-    console.log(`📦 Processing non-streaming response from Responses API`);
+    console.log(`📦 Processing non-streaming response from Chat Completions API`);
     try {
       const data = await response.json();
       console.log(`📦 Full Response Structure:`, JSON.stringify(data, null, 2));
       
-      let fullText = '';
-      
-      // Handle different response formats
-      if (Array.isArray(data.output)) {
-        // New format with reasoning_effort: output is an array of objects
-        console.log(`📋 Output is array format`);
-        const messageOutput = data.output.find((item: any) => item.type === 'message');
-        if (messageOutput && Array.isArray(messageOutput.content)) {
-          const textContent = messageOutput.content.find((item: any) => item.type === 'output_text');
-          fullText = textContent?.text || '';
-        }
-      } else if (data.output?.content) {
-        // Old format: output.content directly
-        console.log(`📋 Output is direct content format`);
-        fullText = data.output.content;
-      }
+      const fullText = data.choices?.[0]?.message?.content || '';
       
       console.log(`✅ Extracted plain text (${fullText.length} chars):`, fullText.slice(0, 300));
       
@@ -578,67 +562,8 @@ Reference specific observations from the images in your response and provide det
     }
   }
 
-  // Streaming: Transform Responses API stream to Chat Completions API format
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
-  
-  const transformedStream = new ReadableStream({
-    async start(controller) {
-      let buffer = "";
-      
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || "";
-          
-          for (const line of lines) {
-            if (!line.trim() || line.startsWith(':')) continue;
-            
-            if (line.startsWith('event:')) {
-              continue;
-            }
-            
-            if (line.startsWith('data: ')) {
-              const dataContent = line.slice(6);
-              
-              if (dataContent === '[DONE]') {
-                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-                continue;
-              }
-              
-              try {
-                const parsed = JSON.parse(dataContent);
-                
-                if (parsed.delta) {
-                  const transformed = {
-                    choices: [{
-                      delta: {
-                        content: parsed.delta
-                      }
-                    }]
-                  };
-                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
-                }
-              } catch (e) {
-                console.error('Error parsing Responses API data:', e);
-              }
-            }
-          }
-        }
-        
-        controller.close();
-      } catch (error) {
-        console.error('Stream transformation error:', error);
-        controller.error(error);
-      }
-    }
-  });
-
-  return transformedStream;
+  // Streaming: Chat Completions API already returns correct format, just pass through
+  return response.body;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -1327,7 +1327,7 @@ export function ChatBot({
                   visibleChunk = "";
                 }
 
-                accumulatedContent += chunk;
+                accumulatedContent += visibleChunk;
 
                 // Update message with accumulated content
                 setMessages((prev) =>

@@ -48,6 +48,7 @@ import BlogPost from "./pages/BlogPost";
 import BlogAdmin from "./pages/BlogAdmin";
 import BlogEditor from "./pages/BlogEditor";
 import LeadIntelligence from "./pages/LeadIntelligence";
+import OutboundLeads from "./pages/OutboundLeads";
 
 const queryClient = new QueryClient();
 
@@ -276,6 +277,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <LeadIntelligence />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/outbound-leads" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <OutboundLeads />
                 </AdminRoute>
               </ProtectedRoute>
             } />

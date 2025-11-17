@@ -96,11 +96,11 @@ export const HEURISTICS = {
   minStrongHits: parseInt(Deno.env.get("ANSWER_MIN_STRONG_HITS") || "1", 10),
 };
 
-export function computeSignals(hits: Array<{ rerank_score: number }>) {
-  const topScore = hits.length > 0 ? hits[0].rerank_score : 0;
-  const top3 = hits.slice(0, 3).map((h) => h.rerank_score);
+export function computeSignals(hits: Array<{ score?: number; rerank_score?: number }>) {
+  const topScore = hits.length > 0 ? (hits[0].rerank_score ?? hits[0].score ?? 0) : 0;
+  const top3 = hits.slice(0, 3).map((h) => h.rerank_score ?? h.score ?? 0);
   const avgTop3 = top3.length > 0 ? top3.reduce((a, b) => a + b, 0) / top3.length : 0;
-  const strongHits = hits.filter((h) => h.rerank_score >= HEURISTICS.minTopScore).length;
+  const strongHits = hits.filter((h) => (h.rerank_score ?? h.score ?? 0) >= HEURISTICS.minTopScore).length;
 
   return { topScore, avgTop3, strongHits };
 }
@@ -108,7 +108,12 @@ export function computeSignals(hits: Array<{ rerank_score: number }>) {
 export function shapeMessages(
   question: string,
   contextSnippets: Array<{ title: string; excerpt: string; cite?: string }>,
-  opts?: { existingWeak?: boolean }
+  opts?: { 
+    existingWeak?: boolean;
+    topScore?: number;
+    avgTop3?: number;
+    strongHits?: number;
+  }
 ) {
   const thresholdWeak =
     contextSnippets.length === 0 ||
@@ -126,7 +131,7 @@ export function shapeMessages(
       ? '\nRetrieval is WEAK. Be candid about limits; switch to best-practice checks; mark inferences as "Working theory."'
       : "\nRetrieval is STRONG. Rely on evidence; cite exact page/part/connector references; be confident and specific.");
 
-  const userMsg = `${question}\n\n---\nEvidence:\n${evidenceBlock}`;
+  const user = `${question}\n\n---\nEvidence:\n${evidenceBlock}`;
 
-  return { system, userMsg };
+  return { system, user, isWeak };
 }

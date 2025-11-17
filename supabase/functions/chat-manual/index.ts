@@ -455,8 +455,8 @@ Reference specific observations from the images in your response and provide det
 
   const shouldStream = opts?.stream !== false; // Default to streaming
 
-  // Use Chat Completions API for reliable plain markdown output
-  const url = "https://api.openai.com/v1/chat/completions";
+  // Use Responses API as requested
+  const url = "https://api.openai.com/v1/responses";
 
   // Build messages array with vision support
   const baseMessages: any[] = [
@@ -482,20 +482,21 @@ Reference specific observations from the images in your response and provide det
 
   const messages = baseMessages;
 
-  // Chat Completions API with plain markdown format
+  // Responses API configuration
   const body: any = {
     model,
-    messages,
-    [isGpt5(model) ? 'max_completion_tokens' : 'max_tokens']: isGpt5(model) ? 8000 : 2000,
+    input: messages,
+    max_output_tokens: isGpt5(model) ? 8000 : 2000,
     stream: shouldStream,
+    store: true,
   };
 
-  // Add temperature for non-GPT-5 models
-  if (!isGpt5(model)) {
-    body.temperature = 0.7;
+  // Add reasoning for GPT-5 models
+  if (isGpt5(model)) {
+    body.reasoning = { effort: 'low' };
   }
 
-  console.log(`📤 [Chat Completions API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
+  console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
 
   console.log(`🔍 REQUEST BODY:`, JSON.stringify(body, null, 2));
 
@@ -541,16 +542,27 @@ Reference specific observations from the images in your response and provide det
     throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
   }
 
-  // Non-streaming: Chat Completions API returns standard format
+  // Non-streaming: Responses API returns 'output' field
   if (!shouldStream) {
-    console.log(`📦 Processing non-streaming response from Chat Completions API`);
+    console.log(`📦 Processing non-streaming response from Responses API`);
     try {
       const data = await response.json();
       console.log(`📦 Full Response Structure:`, JSON.stringify(data, null, 2));
       
-      const fullText = data.choices?.[0]?.message?.content || '';
+      let fullText = '';
       
-      console.log(`✅ Extracted plain text (${fullText.length} chars):`, fullText.slice(0, 300));
+      // Handle Responses API output format
+      if (Array.isArray(data.output)) {
+        const messageOutput = data.output.find((item: any) => item.type === 'message');
+        if (messageOutput && Array.isArray(messageOutput.content)) {
+          const textContent = messageOutput.content.find((item: any) => item.type === 'output_text');
+          fullText = textContent?.text || '';
+        }
+      } else if (data.output?.content) {
+        fullText = data.output.content;
+      }
+      
+      console.log(`✅ Extracted text (${fullText.length} chars):`, fullText.slice(0, 300));
       
       if (!fullText) {
         console.error(`❌ Empty content! Full response:`, JSON.stringify(data, null, 2));
@@ -562,8 +574,63 @@ Reference specific observations from the images in your response and provide det
     }
   }
 
-  // Streaming: Chat Completions API already returns correct format, just pass through
-  return response.body;
+  // Streaming: Transform Responses API stream to Chat Completions format
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  
+  const transformedStream = new ReadableStream({
+    async start(controller) {
+      let buffer = "";
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || "";
+          
+          for (const line of lines) {
+            if (!line.trim() || line.startsWith(':')) continue;
+            
+            if (line.startsWith('event:')) continue;
+            
+            if (line.startsWith('data: ')) {
+              const dataContent = line.slice(6);
+              
+              if (dataContent === '[DONE]') {
+                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+                continue;
+              }
+              
+              try {
+                const parsed = JSON.parse(dataContent);
+                
+                if (parsed.delta) {
+                  const transformed = {
+                    choices: [{
+                      delta: { content: parsed.delta }
+                    }]
+                  };
+                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
+                }
+              } catch (e) {
+                console.error('Error parsing stream data:', e);
+              }
+            }
+          }
+        }
+        
+        controller.close();
+      } catch (error) {
+        console.error('Stream error:', error);
+        controller.error(error);
+      }
+    }
+  });
+
+  return transformedStream;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

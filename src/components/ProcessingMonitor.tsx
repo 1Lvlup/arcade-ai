@@ -15,7 +15,11 @@ import {
   Activity,
   Zap,
   Database,
-  ExternalLink
+  ExternalLink,
+  XCircle,
+  FileUp,
+  ImageIcon,
+  Sparkles
 } from 'lucide-react';
 import { RetryProcessingButton } from './RetryProcessingButton';
 
@@ -55,9 +59,44 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const { toast } = useToast();
+
+  const cancelProcessing = async () => {
+    if (!job_id || !manual_id) return;
+    
+    setCancelling(true);
+    try {
+      // Delete the processing job and related data
+      const { error: deleteError } = await supabase
+        .from('processing_status')
+        .delete()
+        .eq('job_id', job_id);
+
+      if (deleteError) throw deleteError;
+
+      toast({
+        title: 'Processing cancelled',
+        description: 'The upload has been cancelled successfully',
+      });
+
+      // Stop auto-refresh
+      setAutoRefresh(false);
+      
+      if (onComplete) onComplete();
+    } catch (error: any) {
+      console.error('Error cancelling processing:', error);
+      toast({
+        title: 'Failed to cancel',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const retryProcessing = async () => {
     if (!job_id) return;
@@ -225,34 +264,65 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
   const status = getStatusDisplay();
   const StatusIcon = status.icon;
 
-  const getEstimatedTime = () => {
-    if (processingStatus) {
-      if (processingStatus.status === 'completed') {
-        return `Completed! ${processingStatus.chunks_processed} chunks and ${processingStatus.figures_processed} figures processed.`;
-      }
-      if (processingStatus.status === 'failed') {
-        return processingStatus.error_message || 'Processing failed - please try again';
-      }
-      if (processingStatus.current_task) {
-        return processingStatus.current_task;
-      }
+  const getProcessingPhase = () => {
+    const stage = processingStatus?.stage || '';
+    
+    if (processingStatus?.status === 'completed') {
+      return { phase: 2, total: 2, progress: 100, label: 'Complete', icon: CheckCircle };
     }
     
-    if (!jobStatus) return 'Checking status...';
-    
-    switch (jobStatus.status) {
-      case 'PENDING':
-        return 'Usually starts within 1-2 minutes';
-      case 'PROCESSING':
-        return 'Large PDFs typically take 5-15 minutes';
-      case 'SUCCESS':
-        return jobStatus.chunks_created ? 'Processing complete!' : 'Saving to database...';
-      case 'ERROR':
-        return 'Processing failed - check logs';
-      default:
-        return 'Status unknown';
+    if (stage.includes('waiting') || stage.includes('llama') || jobStatus?.status === 'PENDING' || jobStatus?.status === 'PROCESSING') {
+      // Phase 1: LlamaCloud processing
+      const progress = Math.min(jobStatus?.progress || 10, 50);
+      return { 
+        phase: 1, 
+        total: 2, 
+        progress, 
+        label: 'Extracting Text & Images',
+        icon: FileUp,
+        description: 'LlamaCloud is parsing your PDF and extracting content...'
+      };
     }
+    
+    if (stage.includes('figure') || processingStatus?.total_figures > 0) {
+      // Phase 2: Figure processing
+      const figProgress = processingStatus.total_figures > 0 
+        ? (processingStatus.figures_processed / processingStatus.total_figures) * 100 
+        : 0;
+      return { 
+        phase: 2, 
+        total: 2, 
+        progress: figProgress, 
+        label: 'Processing Figures',
+        icon: ImageIcon,
+        description: `Analyzing ${processingStatus.total_figures} images and diagrams...`
+      };
+    }
+    
+    if (stage.includes('chunk') || jobStatus?.chunks_created) {
+      // Phase 2: Chunk processing
+      return { 
+        phase: 2, 
+        total: 2, 
+        progress: 80, 
+        label: 'Creating Searchable Chunks',
+        icon: Sparkles,
+        description: 'Breaking down content for optimal search performance...'
+      };
+    }
+    
+    return { 
+      phase: 1, 
+      total: 2, 
+      progress: 5, 
+      label: 'Initializing',
+      icon: Clock,
+      description: 'Preparing to process your manual...'
+    };
   };
+
+  const phaseInfo = getProcessingPhase();
+  const PhaseIcon = phaseInfo.icon;
 
   return (
     <Card className="border-primary/20">
@@ -302,33 +372,69 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
           {manual_id && `Manual ID: ${manual_id}`}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {jobStatus && (
           <>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>{processingStatus?.progress_percent || jobStatus.progress}%</span>
+            {/* Phase indicator */}
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+              <div className="flex items-center space-x-3">
+                <PhaseIcon className={`h-5 w-5 text-primary ${phaseInfo.phase < phaseInfo.total ? 'animate-pulse' : ''}`} />
+                <div>
+                  <div className="font-medium">{phaseInfo.label}</div>
+                  <div className="text-xs text-muted-foreground">{phaseInfo.description}</div>
+                </div>
               </div>
-              <Progress value={processingStatus?.progress_percent || jobStatus.progress} className="h-2" />
+              <Badge variant="outline" className="text-xs">
+                Phase {phaseInfo.phase}/{phaseInfo.total}
+              </Badge>
             </div>
 
-            {/* Real-time processing details - removed chunks display as it shows stale processing_status data */}
-            {processingStatus && (
-              <div className="space-y-2 text-sm">
-                {processingStatus.stage && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Stage:</span>
-                    <span className="capitalize">{processingStatus.stage.replace('_', ' ')}</span>
-                  </div>
-                )}
+            {/* Current phase progress */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">{phaseInfo.label} Progress</span>
+                <span className="text-muted-foreground">{Math.round(phaseInfo.progress)}%</span>
+              </div>
+              <Progress value={phaseInfo.progress} className="h-3" />
+            </div>
+            
+            {/* Overall progress */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Overall Progress</span>
+                <span className="text-muted-foreground">
+                  {Math.round(((phaseInfo.phase - 1) / phaseInfo.total * 100) + (phaseInfo.progress / phaseInfo.total))}%
+                </span>
+              </div>
+              <Progress 
+                value={((phaseInfo.phase - 1) / phaseInfo.total * 100) + (phaseInfo.progress / phaseInfo.total)} 
+                className="h-2" 
+              />
+            </div>
 
-                {processingStatus.total_figures > 0 && (
+            {/* Detailed metrics */}
+            {processingStatus && processingStatus.total_figures > 0 && (
+              <div className="p-3 bg-muted/20 rounded-md border border-border/50">
+                <div className="text-sm font-medium mb-2 flex items-center">
+                  <ImageIcon className="h-4 w-4 mr-2 text-primary" />
+                  Figure Processing Details
+                </div>
+                <div className="space-y-1 text-sm text-muted-foreground">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Figures Processed:</span>
-                    <span>{processingStatus.figures_processed}/{processingStatus.total_figures}</span>
+                    <span>Figures Analyzed:</span>
+                    <span className="font-medium text-foreground">
+                      {processingStatus.figures_processed}/{processingStatus.total_figures}
+                    </span>
                   </div>
-                )}
+                  {processingStatus.figures_processed > 0 && (
+                    <div className="flex justify-between">
+                      <span>Success Rate:</span>
+                      <span className="font-medium text-green-600">
+                        {Math.round((processingStatus.figures_processed / processingStatus.total_figures) * 100)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -346,19 +452,26 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
               </div>
             </div>
 
-            <div className="p-3 bg-muted/50 rounded-md">
+            {/* Timeline info */}
+            <div className="p-3 bg-muted/50 rounded-md border border-border/50">
               <div className="flex items-center space-x-2 mb-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Clock className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">Timeline</span>
               </div>
-              <div className="text-sm text-muted-foreground">
-                {getEstimatedTime()}
-              </div>
-              {lastChecked && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  Last checked: {lastChecked.toLocaleTimeString()}
+              <div className="space-y-1 text-sm">
+                <div className="text-muted-foreground">
+                  {phaseInfo.phase === 1 && 'Phase 1 typically takes 2-5 minutes for large PDFs'}
+                  {phaseInfo.phase === 2 && processingStatus?.total_figures > 0 && 
+                    `Phase 2 processing ${processingStatus.total_figures} figures...`}
+                  {phaseInfo.phase === 2 && !processingStatus?.total_figures && 
+                    'Phase 2 creating searchable chunks...'}
                 </div>
-              )}
+                {lastChecked && (
+                  <div className="text-xs text-muted-foreground">
+                    Last updated: {lastChecked.toLocaleTimeString()}
+                  </div>
+                )}
+              </div>
             </div>
 
             {jobStatus.status === 'SUCCESS' && jobStatus.chunks_created && (

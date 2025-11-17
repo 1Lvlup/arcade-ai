@@ -53,9 +53,10 @@ interface ProcessingMonitorProps {
   job_id?: string;
   manual_id?: string;
   onComplete?: () => void;
+  hideDetailsButton?: boolean;
 }
 
-export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingMonitorProps) {
+export function ProcessingMonitor({ job_id, manual_id, onComplete, hideDetailsButton = false }: ProcessingMonitorProps) {
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [loading, setLoading] = useState(false);
@@ -188,7 +189,7 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
     }
   };
 
-  // Auto-refresh every 5 seconds while processing for real-time feel
+  // Auto-refresh every 2 seconds while processing for more frequent updates
   useEffect(() => {
     if (!job_id || !autoRefresh) return;
 
@@ -200,7 +201,7 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
                  (processingStatus?.status === 'completed')) {
         setAutoRefresh(false);
       }
-    }, 5000);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [job_id, autoRefresh, jobStatus?.status, processingStatus?.status]);
@@ -266,48 +267,77 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
 
   const getProcessingPhase = () => {
     const stage = processingStatus?.stage || '';
+    const currentTask = processingStatus?.current_task || '';
     
     if (processingStatus?.status === 'completed') {
-      return { phase: 2, total: 2, progress: 100, label: 'Complete', icon: CheckCircle };
+      return { phase: 2, total: 2, progress: 100, label: 'Complete', icon: CheckCircle, description: 'All processing complete!' };
     }
     
+    // Phase 1: LlamaCloud processing - more granular updates
     if (stage.includes('waiting') || stage.includes('llama') || jobStatus?.status === 'PENDING' || jobStatus?.status === 'PROCESSING') {
-      // Phase 1: LlamaCloud processing
       const progress = Math.min(jobStatus?.progress || 10, 50);
+      
+      // Detailed descriptions based on progress
+      let description = 'Preparing to process your manual...';
+      if (currentTask) {
+        description = currentTask;
+      } else if (progress < 10) {
+        description = 'Uploading PDF to LlamaCloud for processing...';
+      } else if (progress < 20) {
+        description = 'Analyzing document structure and layout...';
+      } else if (progress < 30) {
+        description = 'Extracting text from pages...';
+      } else if (progress < 40) {
+        description = 'Identifying and extracting images and diagrams...';
+      } else if (progress < 50) {
+        description = 'Finalizing text extraction and preparing metadata...';
+      }
+      
       return { 
         phase: 1, 
         total: 2, 
         progress, 
         label: 'Extracting Text & Images',
         icon: FileUp,
-        description: 'LlamaCloud is parsing your PDF and extracting content...'
+        description
       };
     }
     
+    // Phase 2: Figure processing
     if (stage.includes('figure') || processingStatus?.total_figures > 0) {
-      // Phase 2: Figure processing
       const figProgress = processingStatus.total_figures > 0 
         ? (processingStatus.figures_processed / processingStatus.total_figures) * 100 
         : 0;
+      
+      let description = currentTask || `Analyzing ${processingStatus.total_figures} images and diagrams...`;
+      if (processingStatus.figures_processed > 0) {
+        description = `Processing figure ${processingStatus.figures_processed + 1} of ${processingStatus.total_figures}...`;
+      }
+      
       return { 
         phase: 2, 
         total: 2, 
         progress: figProgress, 
         label: 'Processing Figures',
         icon: ImageIcon,
-        description: `Analyzing ${processingStatus.total_figures} images and diagrams...`
+        description
       };
     }
     
+    // Phase 2: Chunk processing
     if (stage.includes('chunk') || jobStatus?.chunks_created) {
-      // Phase 2: Chunk processing
+      let description = currentTask || 'Breaking down content for optimal search performance...';
+      if (processingStatus?.chunks_processed > 0) {
+        description = `Creating searchable chunks (${processingStatus.chunks_processed}/${processingStatus.total_chunks || '?'})...`;
+      }
+      
       return { 
         phase: 2, 
         total: 2, 
         progress: 80, 
         label: 'Creating Searchable Chunks',
         icon: Sparkles,
-        description: 'Breaking down content for optimal search performance...'
+        description
       };
     }
     
@@ -317,7 +347,7 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
       progress: 5, 
       label: 'Initializing',
       icon: Clock,
-      description: 'Preparing to process your manual...'
+      description: currentTask || 'Preparing to process your manual...'
     };
   };
 
@@ -336,7 +366,7 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete }: ProcessingM
             <Badge variant={status.variant} className="text-xs">
               {status.label}
             </Badge>
-            {manual_id && (
+            {manual_id && !hideDetailsButton && (
               <Button variant="outline" size="sm" asChild>
                 <Link to={`/manuals/${manual_id}`}>
                   <ExternalLink className="h-4 w-4 mr-1" />

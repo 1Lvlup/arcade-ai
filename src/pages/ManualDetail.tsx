@@ -445,6 +445,7 @@ export function ManualDetail() {
                 <ProcessingMonitor 
                   job_id={manual.job_id} 
                   manual_id={manual.manual_id}
+                  hideDetailsButton={true}
                   onComplete={() => {
                     fetchStats();
                     fetchProcessingStatus();

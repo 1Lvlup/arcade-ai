@@ -207,7 +207,7 @@ serve(async (req) => {
       {
         query_embedding: embedding,
         top_k: top_k,
-        min_score: 0.18,
+        min_score: 0.30,
         manual: manual_id || null,
         tenant_id: tenant_id || null,
       }

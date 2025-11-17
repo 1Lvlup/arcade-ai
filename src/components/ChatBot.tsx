@@ -27,12 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,13 +82,7 @@ interface AnswerSource {
   note: string;
 }
 
-type InteractiveComponentType =
-  | "button_group"
-  | "checklist"
-  | "form"
-  | "code"
-  | "progress"
-  | "status";
+type InteractiveComponentType = "button_group" | "checklist" | "form" | "code" | "progress" | "status";
 
 interface InteractiveComponent {
   id: string;
@@ -210,10 +199,10 @@ export function ChatBot({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [isUserScrolling, setIsUserScrolling] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<{url: string, title: string} | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; title: string } | null>(null);
   const [componentInteractions, setComponentInteractions] = useState<Map<string, any>>(new Map());
   const [formValues, setFormValues] = useState<Map<string, Record<string, any>>>(new Map());
-  const [availableGames, setAvailableGames] = useState<Array<{manual_id: string, canonical_title: string}>>([]);
+  const [availableGames, setAvailableGames] = useState<Array<{ manual_id: string; canonical_title: string }>>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -390,7 +379,7 @@ export function ChatBot({
           .from("manual_metadata")
           .select("manual_id, canonical_title")
           .order("canonical_title");
-        
+
         if (!error && data) {
           setAvailableGames(data);
         }
@@ -641,15 +630,14 @@ export function ChatBot({
     setTimeout(() => updateWelcomeMessage(), 0);
   };
 
-
   const exportConversation = () => {
     const conversationTitle = manualTitle || "General Conversation";
-    const exportDate = new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    const exportDate = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
     // Build HTML content matching exact UI styles
@@ -977,48 +965,62 @@ export function ChatBot({
 <body>
   <div class="sidebar">
     <h2>Available Games (${availableGames.length})</h2>
-    ${availableGames.map(game => `
-      <div class="game-item ${game.manual_id === selectedManualId ? 'active' : ''}">
+    ${availableGames
+      .map(
+        (game) => `
+      <div class="game-item ${game.manual_id === selectedManualId ? "active" : ""}">
         ${game.canonical_title}
       </div>
-    `).join('')}
+    `,
+      )
+      .join("")}
   </div>
   
   <div class="chat-container">
     <div class="chat-header">
       <h1>
         LEVEL UP
-        ${manualTitle ? `<span class="badge">${manualTitle}</span>` : ''}
+        ${manualTitle ? `<span class="badge">${manualTitle}</span>` : ""}
       </h1>
       <div class="subtitle">Exported on ${exportDate}</div>
     </div>
     
     <div class="messages">
-      ${messages.map(msg => {
-        const time = msg.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        // Render plain markdown content with proper line breaks
-        const contentHtml = (msg.content as string).replace(/\n/g, '<br>');
-        
-        return `
+      ${messages
+        .map((msg) => {
+          const time = msg.timestamp.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+          // Render plain markdown content with proper line breaks
+          const contentHtml = (msg.content as string).replace(/\n/g, "<br>");
+
+          return `
           <div class="message ${msg.type}">
             <div class="message-icon ${msg.type}-icon">
-              ${msg.type === 'user' ? '👤' : '🤖'}
+              ${msg.type === "user" ? "👤" : "🤖"}
             </div>
             <div class="message-content">
               <div class="message-text">${contentHtml}</div>
               <div class="timestamp">${time}</div>
-              ${msg.thumbnails && msg.thumbnails.length > 0 ? `
+              ${
+                msg.thumbnails && msg.thumbnails.length > 0
+                  ? `
                 <div class="image-reference">
                   <div class="image-reference-title">Referenced Images:</div>
-                  ${msg.thumbnails.map(thumb => `
+                  ${msg.thumbnails
+                    .map(
+                      (thumb) => `
                     <span class="image-thumbnail">📄 ${thumb.title}</span>
-                  `).join('')}
+                  `,
+                    )
+                    .join("")}
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
             </div>
           </div>
         `;
-      }).join('')}
+        })
+        .join("")}
     </div>
     
     <div class="export-footer">
@@ -1030,11 +1032,11 @@ export function ChatBot({
     `;
 
     // Create and download the file
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const blob = new Blob([htmlContent], { type: "text/html" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `${conversationTitle.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+    link.download = `${conversationTitle.replace(/[^a-z0-9]/gi, "_")}_${new Date().toISOString().split("T")[0]}.html`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1052,10 +1054,10 @@ export function ChatBot({
 
     const fileArray = Array.from(files);
     const validFiles: File[] = [];
-    
+
     // Validate files
     for (const file of fileArray) {
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         toast({
           title: "Invalid file type",
           description: `${file.name} is not an image file`,
@@ -1063,7 +1065,7 @@ export function ChatBot({
         });
         continue;
       }
-      
+
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
@@ -1072,7 +1074,7 @@ export function ChatBot({
         });
         continue;
       }
-      
+
       validFiles.push(file);
     }
 
@@ -1085,21 +1087,21 @@ export function ChatBot({
       return;
     }
 
-    setSelectedImages(prev => [...prev, ...validFiles]);
-    
+    setSelectedImages((prev) => [...prev, ...validFiles]);
+
     // Create preview URLs
-    validFiles.forEach(file => {
+    validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreviewUrls(prev => [...prev, reader.result as string]);
+        setImagePreviewUrls((prev) => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     });
   };
 
   const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const uploadImagesToStorage = async (files: File[]): Promise<string[]> => {
@@ -1110,21 +1112,17 @@ export function ChatBot({
     const uploadedUrls: string[] = [];
 
     for (const file of files) {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
-      
-      const { data, error } = await supabase.storage
-        .from('chat-images')
-        .upload(fileName, file);
+
+      const { data, error } = await supabase.storage.from("chat-images").upload(fileName, file);
 
       if (error) {
-        console.error('Upload error:', error);
+        console.error("Upload error:", error);
         throw error;
       }
 
-      const { data: urlData } = supabase.storage
-        .from('chat-images')
-        .getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from("chat-images").getPublicUrl(fileName);
 
       uploadedUrls.push(urlData.publicUrl);
     }
@@ -1288,8 +1286,8 @@ export function ChatBot({
       }
 
       const decoder = new TextDecoder();
-      let buffer = '';
-      let accumulatedContent = '';
+      let buffer = "";
+      let accumulatedContent = "";
       let metadata: any = {};
 
       while (true) {
@@ -1297,25 +1295,38 @@ export function ChatBot({
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             const jsonStr = line.slice(6).trim();
-            if (jsonStr === '[DONE]') {
+            if (jsonStr === "[DONE]") {
               console.log("✅ Stream complete");
               continue;
             }
 
             try {
               const parsed = JSON.parse(jsonStr);
-              console.log('📦 Received chunk:', parsed);
-              
+              console.log("📦 Received chunk:", parsed);
+
               // Handle content chunks (streaming answer)
               if (parsed.type === "content" && parsed.data) {
-                // Accumulate plain text/markdown
-                const chunk = typeof parsed.data === "string" ? parsed.data : JSON.stringify(parsed.data);
+                let visibleChunk = "";
+
+                if (typeof parsed.data === "string") {
+                  // Old behaviour: plain markdown string
+                  visibleChunk = parsed.data;
+                } else if (typeof parsed.data === "object" && parsed.data.message) {
+                  // New behaviour: structured JSON with a `message` field
+                  visibleChunk = parsed.data.message;
+                  // TODO: if you want, you can stash parsed.data.what/how/sources/questions
+                  // into message.interactiveComponents or a StructuredAnswer later
+                } else {
+                  // Fallback for unexpected formats
+                  visibleChunk = JSON.stringify(parsed.data);
+                }
+
                 accumulatedContent += chunk;
 
                 // Update message with accumulated content
@@ -1324,13 +1335,13 @@ export function ChatBot({
                     msg.id === botMessageId
                       ? {
                           ...msg,
-                          content: accumulatedContent
+                          content: accumulatedContent,
                         }
                       : msg,
                   ),
                 );
               }
-              
+
               // Handle delta content (legacy format)
               if (parsed.delta) {
                 // Strip out interactive_components YAML section if present - DISABLED
@@ -1340,21 +1351,17 @@ export function ChatBot({
                   cleanDelta = cleanDelta.substring(0, interactiveMatch.index);
                 } */
                 let cleanDelta = parsed.delta;
-                
+
                 accumulatedContent += cleanDelta;
                 setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === botMessageId
-                      ? { ...msg, content: accumulatedContent }
-                      : msg
-                  )
+                  prev.map((msg) => (msg.id === botMessageId ? { ...msg, content: accumulatedContent } : msg)),
                 );
               }
 
               // Handle metadata (usage, manual detection, sources)
-              if (parsed.type === 'metadata' && parsed.data) {
+              if (parsed.type === "metadata" && parsed.data) {
                 metadata = { ...metadata, ...parsed.data };
-                
+
                 // Handle usage info
                 if (parsed.data.usage) {
                   onUsageUpdate?.(parsed.data.usage);
@@ -1383,18 +1390,22 @@ export function ChatBot({
                   }
                 }
               }
-              
+
               // Handle metadata (legacy format)
               if (parsed.metadata) {
                 metadata = { ...metadata, ...parsed.metadata };
-                
+
                 // Handle usage info
                 if (parsed.metadata.usage) {
                   onUsageUpdate?.(parsed.metadata.usage);
                 }
 
                 // Auto-set manual when detected
-                if (parsed.metadata.auto_detected && parsed.metadata.manual_id && parsed.metadata.detected_manual_title) {
+                if (
+                  parsed.metadata.auto_detected &&
+                  parsed.metadata.manual_id &&
+                  parsed.metadata.detected_manual_title
+                ) {
                   const detectedId = parsed.metadata.manual_id;
                   const detectedTitle = parsed.metadata.detected_manual_title;
 
@@ -1434,8 +1445,8 @@ export function ChatBot({
                 manual_id: metadata.manual_id,
                 manual_title: metadata.manual_title,
               }
-            : msg
-        )
+            : msg,
+        ),
       );
 
       console.log("✅ Stream processing complete");
@@ -1448,7 +1459,7 @@ export function ChatBot({
         try {
           // Use accumulated content for saving
           const contentToSave = accumulatedContent;
-          
+
           await supabase.from("conversation_messages").insert([
             {
               conversation_id: conversationIdToUse,
@@ -1553,20 +1564,20 @@ export function ChatBot({
       value,
       timestamp: new Date(),
     };
-    
-    setComponentInteractions(prev => {
+
+    setComponentInteractions((prev) => {
       const newMap = new Map(prev);
       newMap.set(componentId, value);
       return newMap;
     });
 
     // If it's a button click, you could trigger an automated response
-    if (type === 'button_click') {
+    if (type === "button_click") {
       toast({
         title: "Action triggered",
         description: `${value.label} clicked`,
       });
-      
+
       // Auto-send a message if configured
       if (value.autoSendMessage) {
         setInputValue(value.autoSendMessage);
@@ -1578,8 +1589,8 @@ export function ChatBot({
   const handleFormSubmit = (componentId: string, formData: Record<string, any>) => {
     const formattedMessage = Object.entries(formData)
       .map(([key, value]) => `${key}: ${value}`)
-      .join('\n');
-    
+      .join("\n");
+
     toast({
       title: "Form submitted",
       description: "Processing your input...",
@@ -1591,7 +1602,7 @@ export function ChatBot({
 
   const renderInteractiveComponent = (component: InteractiveComponent, index: number) => {
     const componentId = component.id || `component-${index}`;
-    
+
     switch (component.type) {
       case "progress":
         return (
@@ -1606,45 +1617,48 @@ export function ChatBot({
             )}
           </div>
         );
-      
+
       case "status":
         return (
           <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border">
             {component.data.icon && (
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                component.data.status === "success" ? "bg-green-500/20 text-green-500" :
-                component.data.status === "error" ? "bg-red-500/20 text-red-500" :
-                component.data.status === "warning" ? "bg-yellow-500/20 text-yellow-500" :
-                "bg-blue-500/20 text-blue-500"
-              }`}>
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                  component.data.status === "success"
+                    ? "bg-green-500/20 text-green-500"
+                    : component.data.status === "error"
+                      ? "bg-red-500/20 text-red-500"
+                      : component.data.status === "warning"
+                        ? "bg-yellow-500/20 text-yellow-500"
+                        : "bg-blue-500/20 text-blue-500"
+                }`}
+              >
                 {component.data.icon}
               </div>
             )}
             <div className="flex-1">
               <div className="text-xs font-medium">{component.data.title}</div>
-              {component.data.message && (
-                <div className="text-xs text-muted-foreground">{component.data.message}</div>
-              )}
+              {component.data.message && <div className="text-xs text-muted-foreground">{component.data.message}</div>}
             </div>
           </div>
         );
-      
+
       case "button_group":
         return (
           <div key={index} className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border border-border">
-            {component.data.title && (
-              <div className="w-full text-xs font-medium mb-1">{component.data.title}</div>
-            )}
+            {component.data.title && <div className="w-full text-xs font-medium mb-1">{component.data.title}</div>}
             {component.data.buttons?.map((btn: any, i: number) => (
               <Button
                 key={i}
                 variant={btn.variant || "outline"}
                 size="sm"
-                onClick={() => handleComponentInteraction(
-                  `${componentId}-btn-${i}`,
-                  'button_click',
-                  { label: btn.label, action: btn.action, autoSendMessage: btn.autoSendMessage }
-                )}
+                onClick={() =>
+                  handleComponentInteraction(`${componentId}-btn-${i}`, "button_click", {
+                    label: btn.label,
+                    action: btn.action,
+                    autoSendMessage: btn.autoSendMessage,
+                  })
+                }
                 disabled={btn.disabled}
               >
                 {btn.icon && <span className="mr-2">{btn.icon}</span>}
@@ -1653,41 +1667,34 @@ export function ChatBot({
             ))}
           </div>
         );
-      
+
       case "checklist":
         return (
           <div key={index} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
-            {component.data.title && (
-              <div className="text-xs font-medium">{component.data.title}</div>
-            )}
+            {component.data.title && <div className="text-xs font-medium">{component.data.title}</div>}
             <div className="space-y-2">
               {component.data.items?.map((item: any, i: number) => (
                 <div key={i} className="flex items-center gap-2">
                   <Checkbox
                     id={`${componentId}-${i}`}
                     checked={componentInteractions.get(`${componentId}-${i}`) || item.checked || false}
-                    onCheckedChange={(checked) => 
-                      handleComponentInteraction(`${componentId}-${i}`, 'checkbox_change', checked)
+                    onCheckedChange={(checked) =>
+                      handleComponentInteraction(`${componentId}-${i}`, "checkbox_change", checked)
                     }
                   />
-                  <Label
-                    htmlFor={`${componentId}-${i}`}
-                    className="text-xs cursor-pointer"
-                  >
-                    {typeof item === 'string' ? item : item.label}
+                  <Label htmlFor={`${componentId}-${i}`} className="text-xs cursor-pointer">
+                    {typeof item === "string" ? item : item.label}
                   </Label>
                 </div>
               ))}
             </div>
           </div>
         );
-      
+
       case "form":
         return (
           <div key={index} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
-            {component.data.title && (
-              <div className="text-xs font-medium mb-2">{component.data.title}</div>
-            )}
+            {component.data.title && <div className="text-xs font-medium mb-2">{component.data.title}</div>}
             {component.data.fields?.map((field: any, i: number) => (
               <div key={i} className="space-y-1">
                 {field.label && (
@@ -1700,23 +1707,27 @@ export function ChatBot({
                     id={`${componentId}-field-${i}`}
                     type={field.inputType || "text"}
                     placeholder={field.placeholder}
-                    value={componentInteractions.get(`${componentId}-field-${i}`) || ''}
-                    onChange={(e) => handleComponentInteraction(`${componentId}-field-${i}`, 'input_change', e.target.value)}
+                    value={componentInteractions.get(`${componentId}-field-${i}`) || ""}
+                    onChange={(e) =>
+                      handleComponentInteraction(`${componentId}-field-${i}`, "input_change", e.target.value)
+                    }
                     className="text-xs"
                   />
                 )}
                 {field.type === "select" && (
                   <Select
                     value={componentInteractions.get(`${componentId}-field-${i}`) || field.defaultValue}
-                    onValueChange={(value) => handleComponentInteraction(`${componentId}-field-${i}`, 'select_change', value)}
+                    onValueChange={(value) =>
+                      handleComponentInteraction(`${componentId}-field-${i}`, "select_change", value)
+                    }
                   >
                     <SelectTrigger className="text-xs">
                       <SelectValue placeholder={field.placeholder || "Select..."} />
                     </SelectTrigger>
                     <SelectContent>
                       {field.options?.map((opt: any, optIdx: number) => (
-                        <SelectItem key={optIdx} value={typeof opt === 'string' ? opt : opt.value} className="text-xs">
-                          {typeof opt === 'string' ? opt : opt.label}
+                        <SelectItem key={optIdx} value={typeof opt === "string" ? opt : opt.value} className="text-xs">
+                          {typeof opt === "string" ? opt : opt.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1741,14 +1752,17 @@ export function ChatBot({
             )}
           </div>
         );
-      
+
       case "code":
         return (
-          <div key={index} className="p-4 bg-black/50 rounded-lg border border-border font-mono text-xs overflow-x-auto">
+          <div
+            key={index}
+            className="p-4 bg-black/50 rounded-lg border border-border font-mono text-xs overflow-x-auto"
+          >
             <pre className="text-primary">{component.data.code}</pre>
           </div>
         );
-      
+
       default:
         return null;
     }
@@ -1872,7 +1886,6 @@ export function ChatBot({
       )}
     </div>
   );
-
 
   const generateSummary = async () => {
     if (messages.length <= 1) {
@@ -2220,9 +2233,9 @@ export function ChatBot({
                       {message.images && message.images.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
                           {message.images.map((imageUrl, idx) => (
-                            <img 
+                            <img
                               key={idx}
-                              src={imageUrl} 
+                              src={imageUrl}
                               alt={`Uploaded ${idx + 1}`}
                               className="h-32 w-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() => setSelectedImage({ url: imageUrl, title: `Image ${idx + 1}` })}
@@ -2247,11 +2260,11 @@ export function ChatBot({
                       </div>
                       {isStructuredAnswer(message.content) ? (
                         renderStructuredAnswer(message.content, message.id)
-                  ) : (
-                    <div className="text-xs whitespace-pre-wrap leading-relaxed">
-                      {typeof message.content === "string" ? message.content : JSON.stringify(message.content)}
-                    </div>
-                  )}
+                      ) : (
+                        <div className="text-xs whitespace-pre-wrap leading-relaxed">
+                          {typeof message.content === "string" ? message.content : JSON.stringify(message.content)}
+                        </div>
+                      )}
 
                       {/* Render interactive components - DISABLED */}
                       {/* {message.interactiveComponents && message.interactiveComponents.length > 0 && (
@@ -2287,10 +2300,10 @@ export function ChatBot({
                       <div className="text-xs font-semibold text-primary mb-3">Reference Images</div>
                       <div className="grid grid-cols-2 gap-4">
                         {message.thumbnails.map((thumb, idx) => (
-                          <div 
-                            key={idx} 
+                          <div
+                            key={idx}
                             className="tech-card bg-background/50 overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
-                            onClick={() => setSelectedImage({url: thumb.url, title: thumb.title})}
+                            onClick={() => setSelectedImage({ url: thumb.url, title: thumb.title })}
                           >
                             <img
                               src={thumb.url}
@@ -2383,8 +2396,8 @@ export function ChatBot({
                 <div className="mb-3 flex flex-wrap gap-2">
                   {imagePreviewUrls.map((url, index) => (
                     <div key={index} className="relative group">
-                      <img 
-                        src={url} 
+                      <img
+                        src={url}
                         alt={`Upload ${index + 1}`}
                         className="h-20 w-20 object-cover rounded-lg border border-border"
                       />
@@ -2398,7 +2411,7 @@ export function ChatBot({
                   ))}
                 </div>
               )}
-              
+
               <div className="flex space-x-3">
                 <input
                   ref={fileInputRef}
@@ -2458,7 +2471,7 @@ export function ChatBot({
                 )}
                 <Button
                   onClick={handleSendMessage}
-                  disabled={((!inputValue.trim() && selectedImages.length === 0) || isLoading || !selectedManualId)}
+                  disabled={(!inputValue.trim() && selectedImages.length === 0) || isLoading || !selectedManualId}
                   size="lg"
                   variant="orange"
                   className="h-12 px-6"
@@ -2552,9 +2565,9 @@ export function ChatBot({
                     size="sm"
                     onClick={() => {
                       if (selectedImage?.url) {
-                        const link = document.createElement('a');
+                        const link = document.createElement("a");
                         link.href = selectedImage.url;
-                        link.download = `${selectedImage.title || 'image'}.png`;
+                        link.download = `${selectedImage.title || "image"}.png`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -2569,12 +2582,7 @@ export function ChatBot({
                     <Download className="h-4 w-4" />
                     Download
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedImage(null)}
-                    className="gap-2"
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedImage(null)} className="gap-2">
                     <XCircle className="h-4 w-4" />
                     Close
                   </Button>
@@ -2583,8 +2591,8 @@ export function ChatBot({
               <p className="text-sm text-muted-foreground">Click outside or press ESC to close</p>
             </DialogHeader>
             <div className="rounded-lg border border-border/50 bg-muted/20 p-6 flex items-center justify-center min-h-[400px]">
-              <img 
-                src={selectedImage?.url} 
+              <img
+                src={selectedImage?.url}
                 alt={selectedImage?.title}
                 className="max-w-full max-h-[70vh] object-contain rounded-md shadow-lg"
               />

@@ -313,16 +313,15 @@ export function ChatBot({
   }, [messages, isUserScrolling]);
 
   const updateWelcomeMessage = () => {
-    // Commented out for testing - keeping test interactive components
-    // const welcomeMessage: ChatMessage = {
-    //   id: "welcome",
-    //   type: "bot",
-    //   content: selectedManualId
-    //     ? `I'm your tech assistant for ${manualTitle}. Tell me exactly what the game is doing, and I'll walk you to a fix step-by-step.`
-    //     : `Hello! I'm your arcade troubleshooting assistant. Please select a game from the sidebar to get started.`,
-    //   timestamp: new Date(),
-    // };
-    // setMessages([welcomeMessage]);
+    const welcomeMessage: ChatMessage = {
+      id: "welcome",
+      type: "bot",
+      content: selectedManualId
+        ? `I'm your tech assistant for ${manualTitle}. Tell me exactly what the game is doing, and I'll walk you to a fix step-by-step.`
+        : `Hello! I'm your arcade troubleshooting assistant. Please select a game from the sidebar to get started.`,
+      timestamp: new Date(),
+    };
+    setMessages([welcomeMessage]);
   };
 
   // Initial load - always start fresh with game selection

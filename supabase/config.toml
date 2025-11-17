@@ -170,3 +170,9 @@ verify_jwt = false
 
 [functions.index-codebase]
 verify_jwt = false
+
+[functions.lead-intelligence]
+verify_jwt = true
+
+[functions.prospecting-assistant]
+verify_jwt = true

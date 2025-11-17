@@ -1324,7 +1324,7 @@ export function ChatBot({
                   // into message.interactiveComponents or a StructuredAnswer later
                 } else {
                   // Fallback for unexpected formats
-                  visibleChunk = JSON.stringify(parsed.data);
+                  visibleChunk = "";
                 }
 
                 accumulatedContent += chunk;

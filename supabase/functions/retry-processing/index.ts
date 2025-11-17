@@ -150,7 +150,7 @@ serve(async (req) => {
             body: {
               figure_id: figure.id,
               manual_id: manual_id,
-              image_url: figure.storage_url
+              storage_path: figure.storage_url
             }
           });
 

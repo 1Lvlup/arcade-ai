@@ -19,6 +19,10 @@ import {
   Plus,
   Gamepad2,
   BookOpen,
+  Menu,
+  DollarSign,
+  HelpCircle,
+  FileText,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -109,18 +113,78 @@ export const SharedHeader = ({
         </div>
         <div className="flex items-center space-x-4">
           {/* Public Navigation Links */}
-          <Link to="/forum">
-            <Button variant="minimal" size="sm">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Forum
-            </Button>
-          </Link>
-          <Link to="/blog">
-            <Button variant="minimal" size="sm">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Blog
-            </Button>
-          </Link>
+          <div className="flex items-center gap-1">
+            {/* Pages Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="minimal" size="sm">
+                  <Menu className="h-4 w-4 mr-2" />
+                  Pages
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-background border-border z-50">
+                <DropdownMenuItem asChild>
+                  <Link to="/" className="cursor-pointer">
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                  </Link>
+                </DropdownMenuItem>
+                {user && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/chat" className="cursor-pointer">
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Chat
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link to="/forum" className="cursor-pointer">
+                    <Users className="mr-2 h-4 w-4" />
+                    Forum
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/blog" className="cursor-pointer">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Blog
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/pricing" className="cursor-pointer">
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Pricing
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/privacy" className="cursor-pointer">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Privacy Policy
+                  </Link>
+                </DropdownMenuItem>
+                {user && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/support" className="cursor-pointer">
+                      <HelpCircle className="mr-2 h-4 w-4" />
+                      Support
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Link to="/forum">
+              <Button variant="minimal" size="sm">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Forum
+              </Button>
+            </Link>
+            <Link to="/blog">
+              <Button variant="minimal" size="sm">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Blog
+              </Button>
+            </Link>
+          </div>
 
           {isAdmin && (
             <DropdownMenu>
@@ -243,14 +307,14 @@ export const SharedHeader = ({
             <Link to="/auth">
               <Button
                 variant="orange"
-                size="lg"
-                className="gap-2 font-bold text-base hover-lift"
+                className="gap-2 font-bold hover-lift h-9 px-3 text-sm md:h-12 md:px-6 md:text-base bg-opacity-70 md:bg-opacity-100 backdrop-blur-sm"
                 style={{
                   boxShadow: "0 0 20px hsl(24 100% 60% / 0.4)",
                 }}
               >
-                <User className="h-5 w-5" />
-                <span>SIGN IN / SIGN UP</span>
+                <User className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="md:hidden">SIGN IN</span>
+                <span className="hidden md:inline">SIGN IN / SIGN UP</span>
               </Button>
             </Link>
           )}

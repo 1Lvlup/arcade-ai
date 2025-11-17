@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          activity_type: string | null
+          company_id: string | null
+          content: string | null
+          id: string
+          lead_id: string | null
+          timestamp: string | null
+        }
+        Insert: {
+          activity_type?: string | null
+          company_id?: string | null
+          content?: string | null
+          id?: string
+          lead_id?: string | null
+          timestamp?: string | null
+        }
+        Update: {
+          activity_type?: string | null
+          company_id?: string | null
+          content?: string | null
+          id?: string
+          lead_id?: string | null
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_config: {
         Row: {
           config_key: string
@@ -138,6 +180,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cadences: {
+        Row: {
+          cadence_name: string
+          created_at: string | null
+          id: string
+          steps: Json
+          target_persona: string | null
+        }
+        Insert: {
+          cadence_name: string
+          created_at?: string | null
+          id?: string
+          steps: Json
+          target_persona?: string | null
+        }
+        Update: {
+          cadence_name?: string
+          created_at?: string | null
+          id?: string
+          steps?: Json
+          target_persona?: string | null
+        }
+        Relationships: []
       }
       chunk_repage_log: {
         Row: {
@@ -357,6 +423,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      companies: {
+        Row: {
+          created_at: string | null
+          downtime_pain_level: number | null
+          estimated_game_count: number | null
+          has_bowling: boolean | null
+          has_redemption: boolean | null
+          has_vr: boolean | null
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          downtime_pain_level?: number | null
+          estimated_game_count?: number | null
+          has_bowling?: boolean | null
+          has_redemption?: boolean | null
+          has_vr?: boolean | null
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          downtime_pain_level?: number | null
+          estimated_game_count?: number | null
+          has_bowling?: boolean | null
+          has_redemption?: boolean | null
+          has_vr?: boolean | null
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
       }
       conversation_messages: {
         Row: {
@@ -1053,6 +1164,65 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          last_contacted: string | null
+          lead_score: number | null
+          name: string
+          notes: string | null
+          phone: string | null
+          priority_tier: string | null
+          role: string | null
+          source: string | null
+          stage: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_contacted?: string | null
+          lead_score?: number | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          priority_tier?: string | null
+          role?: string | null
+          source?: string | null
+          stage?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_contacted?: string | null
+          lead_score?: number | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          priority_tier?: string | null
+          role?: string | null
+          source?: string | null
+          stage?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_metadata: {
         Row: {
           aliases: string[] | null
@@ -1702,6 +1872,33 @@ export type Database = {
           result?: Json | null
           rpc_name?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      scripts: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          persona: string | null
+          phase: string | null
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          persona?: string | null
+          phase?: string | null
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          persona?: string | null
+          phase?: string | null
+          title?: string
         }
         Relationships: []
       }

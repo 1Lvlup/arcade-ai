@@ -118,13 +118,15 @@ serve(async (req) => {
 
     const figures = pendingWithUrl;
 
-    // Update processing status to show we're resuming
+    // Update processing status to show we're resuming with proper total_figures
     const { error: updateError } = await supabase
       .from('processing_status')
       .update({
         status: 'processing',
         stage: 'image_enhancement',
-        current_task: `Resuming: Processing ${figures.length} pending figures`,
+        total_figures: figures.length,
+        figures_processed: 0,
+        current_task: `Processing figures: 0/${figures.length} complete`,
         updated_at: new Date().toISOString()
       })
       .eq('manual_id', manual_id);
@@ -161,12 +163,12 @@ serve(async (req) => {
 
           processed++;
           
-          // Update progress
+          // Update progress with accurate counts
           await supabase
             .from('processing_status')
             .update({
-              figures_processed: (statusData?.figures_processed || 0) + processed,
-              current_task: `Processing figures: ${(statusData?.figures_processed || 0) + processed}/${statusData?.total_figures || totalFigures}`,
+              figures_processed: processed,
+              current_task: `Processing figures: ${processed}/${figures.length} complete`,
               updated_at: new Date().toISOString()
             })
             .eq('manual_id', manual_id);
@@ -193,7 +195,8 @@ serve(async (req) => {
         status: 'completed',
         stage: 'completed',
         current_task: `Completed processing ${processed} figures`,
-        figures_processed: (statusData?.figures_processed || 0) + processed,
+        figures_processed: processed,
+        total_figures: figures.length,
         updated_at: new Date().toISOString()
       })
       .eq('manual_id', manual_id);

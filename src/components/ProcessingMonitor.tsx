@@ -270,84 +270,113 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete, hideDetailsBu
     const currentTask = processingStatus?.current_task || '';
     
     if (processingStatus?.status === 'completed') {
-      return { phase: 2, total: 2, progress: 100, label: 'Complete', icon: CheckCircle, description: 'All processing complete!' };
+      return { 
+        phase: 3, 
+        total: 3, 
+        progress: 100, 
+        label: 'Complete', 
+        icon: CheckCircle, 
+        description: 'All processing complete!',
+        overallProgress: 100
+      };
     }
     
-    // Phase 1: LlamaCloud processing - more granular updates
-    if (stage.includes('waiting') || stage.includes('llama') || jobStatus?.status === 'PENDING' || jobStatus?.status === 'PROCESSING') {
-      const progress = Math.min(jobStatus?.progress || 10, 50);
+    // Parse current_task for figure processing progress
+    const figureMatch = currentTask.match(/Processing figures: (\d+)\/(\d+)/);
+    const hasFigureProgress = figureMatch && figureMatch[1] && figureMatch[2];
+    
+    // Phase 1: LlamaCloud processing (50% of total)
+    const llamaComplete = jobStatus?.status === 'SUCCESS' || stage.includes('figure') || stage.includes('chunk');
+    if (!llamaComplete && (stage.includes('waiting') || stage.includes('llama') || jobStatus?.status === 'PENDING' || jobStatus?.status === 'PROCESSING')) {
+      const progress = Math.min(jobStatus?.progress || 10, 100);
       
-      // Detailed descriptions based on progress
       let description = 'Preparing to process your manual...';
-      if (currentTask) {
+      if (currentTask && !hasFigureProgress) {
         description = currentTask;
-      } else if (progress < 10) {
-        description = 'Uploading PDF to LlamaCloud for processing...';
       } else if (progress < 20) {
-        description = 'Analyzing document structure and layout...';
-      } else if (progress < 30) {
-        description = 'Extracting text from pages...';
+        description = 'Uploading PDF to LlamaCloud for processing...';
       } else if (progress < 40) {
+        description = 'Analyzing document structure and layout...';
+      } else if (progress < 60) {
+        description = 'Extracting text from pages...';
+      } else if (progress < 80) {
         description = 'Identifying and extracting images and diagrams...';
-      } else if (progress < 50) {
+      } else {
         description = 'Finalizing text extraction and preparing metadata...';
       }
       
       return { 
         phase: 1, 
-        total: 2, 
+        total: 3, 
         progress, 
         label: 'Extracting Text & Images',
         icon: FileUp,
-        description
+        description,
+        overallProgress: progress * 0.5 // LlamaCloud is 50% of total
       };
     }
     
-    // Phase 2: Figure processing
-    if (stage.includes('figure') || processingStatus?.total_figures > 0) {
-      const figProgress = processingStatus.total_figures > 0 
-        ? (processingStatus.figures_processed / processingStatus.total_figures) * 100 
-        : 0;
+    // Phase 2: Figure processing (40% of total)
+    const figuresExist = processingStatus?.total_figures > 0 || hasFigureProgress;
+    const figuresComplete = processingStatus?.total_figures > 0 && 
+                           processingStatus?.figures_processed >= processingStatus?.total_figures;
+    
+    if (figuresExist && !figuresComplete && (stage.includes('figure') || stage.includes('image_enhancement') || hasFigureProgress)) {
+      let figProgress = 0;
+      let processed = 0;
+      let total = 0;
       
-      let description = currentTask || `Analyzing ${processingStatus.total_figures} images and diagrams...`;
-      if (processingStatus.figures_processed > 0) {
-        description = `Processing figure ${processingStatus.figures_processed + 1} of ${processingStatus.total_figures}...`;
+      if (hasFigureProgress) {
+        processed = parseInt(figureMatch[1]);
+        total = parseInt(figureMatch[2]);
+        figProgress = (processed / total) * 100;
+      } else if (processingStatus?.total_figures > 0) {
+        processed = processingStatus.figures_processed;
+        total = processingStatus.total_figures;
+        figProgress = (processed / total) * 100;
       }
+      
+      const description = total > 0 
+        ? `Processing figure ${processed}/${total}...`
+        : currentTask || 'Analyzing images and diagrams...';
       
       return { 
         phase: 2, 
-        total: 2, 
+        total: 3, 
         progress: figProgress, 
         label: 'Processing Figures',
         icon: ImageIcon,
-        description
+        description,
+        overallProgress: 50 + (figProgress * 0.4) // 50% done + up to 40% more
       };
     }
     
-    // Phase 2: Chunk processing
-    if (stage.includes('chunk') || jobStatus?.chunks_created) {
+    // Phase 3: Final processing/chunks (10% of total)
+    if (stage.includes('chunk') || jobStatus?.chunks_created || figuresComplete) {
       let description = currentTask || 'Breaking down content for optimal search performance...';
       if (processingStatus?.chunks_processed > 0) {
         description = `Creating searchable chunks (${processingStatus.chunks_processed}/${processingStatus.total_chunks || '?'})...`;
       }
       
       return { 
-        phase: 2, 
-        total: 2, 
-        progress: 80, 
+        phase: 3, 
+        total: 3, 
+        progress: 90, 
         label: 'Creating Searchable Chunks',
         icon: Sparkles,
-        description
+        description,
+        overallProgress: 90 // 50% + 40% done, doing final 10%
       };
     }
     
     return { 
       phase: 1, 
-      total: 2, 
+      total: 3, 
       progress: 5, 
       label: 'Initializing',
       icon: Clock,
-      description: currentTask || 'Preparing to process your manual...'
+      description: currentTask || 'Preparing to process your manual...',
+      overallProgress: 2.5
     };
   };
 

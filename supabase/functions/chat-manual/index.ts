@@ -566,16 +566,7 @@ Reference specific observations from the images in your response and provide det
         fullText = data.output.content;
       }
       
-      console.log(`✅ Extracted text (${fullText.length} chars):`, fullText.slice(0, 300));
-      
-      // Verify it's valid JSON with expected structure
-      try {
-        const parsed = JSON.parse(fullText);
-        console.log(`✅ JSON is valid! Has messages: ${!!parsed.messages}, Has interactive_components: ${!!parsed.interactive_components}`);
-        console.log(`📊 Parsed structure keys:`, Object.keys(parsed));
-      } catch (jsonErr) {
-        console.error(`❌ Text is NOT valid JSON:`, jsonErr);
-      }
+      console.log(`✅ Extracted plain text (${fullText.length} chars):`, fullText.slice(0, 300));
       
       if (!fullText) {
         console.error(`❌ Empty content! Full response:`, JSON.stringify(data, null, 2));

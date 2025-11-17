@@ -584,7 +584,7 @@ export function ChatBot({
         .map((m) => ({
           conversation_id: conversationId,
           role: m.type === "user" ? "user" : "assistant",
-          content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+          content: m.content as string,
           query_log_id: m.query_log_id || null,
         }));
 
@@ -997,74 +997,8 @@ export function ChatBot({
     <div class="messages">
       ${messages.map(msg => {
         const time = msg.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        const isStructured = typeof msg.content === 'object' && msg.content !== null && 'summary' in msg.content;
-        
-        let contentHtml = '';
-        if (isStructured) {
-          const answer = msg.content as StructuredAnswer;
-          contentHtml = `
-            <div class="structured-answer">
-              <div class="summary">${answer.summary}</div>
-              
-              ${answer.steps && answer.steps.length > 0 ? `
-                <div>
-                  <div class="section-title">Procedure</div>
-                  ${answer.steps.map(step => `
-                    <div class="step-item">
-                      <div class="step-icon">✓</div>
-                      <div class="step-content">
-                        <span>${step.step}</span>
-                        ${step.source ? `<span class="step-badge badge-${step.source}">${step.source}</span>` : ''}
-                        ${step.expected ? `<div class="expected">Expected: ${step.expected}</div>` : ''}
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
-              ` : ''}
-              
-              ${answer.why && answer.why.length > 0 ? `
-                <div>
-                  <div class="section-title">Why This Works</div>
-                  ${answer.why.map(reason => `
-                    <div class="why-item">${reason}</div>
-                  `).join('')}
-                </div>
-              ` : ''}
-              
-              ${answer.expert_advice && answer.expert_advice.length > 0 ? `
-                <div class="tip-box">
-                  <div class="tip-header">💡 Pro Tips</div>
-                  ${answer.expert_advice.map(tip => `
-                    <div class="tip-item">• ${tip}</div>
-                  `).join('')}
-                </div>
-              ` : ''}
-              
-              ${answer.safety && answer.safety.length > 0 ? `
-                <div class="safety-box">
-                  <div class="safety-header">⚠️ Safety</div>
-                  ${answer.safety.map(warning => `
-                    <div class="safety-item">⚠️ ${warning}</div>
-                  `).join('')}
-                </div>
-              ` : ''}
-              
-              ${answer.sources && answer.sources.length > 0 ? `
-                <div class="sources-section">
-                  <div class="sources-toggle">📄 View Sources (${answer.sources.length})</div>
-                  ${answer.sources.map(source => `
-                    <div class="source-item">
-                      <span class="source-page">Page ${source.page}</span>
-                      <span>${source.note}</span>
-                    </div>
-                  `).join('')}
-                </div>
-              ` : ''}
-            </div>
-          `;
-        } else {
-          contentHtml = (msg.content as string).replace(/\n/g, '<br>');
-        }
+        // Render plain markdown content with proper line breaks
+        const contentHtml = (msg.content as string).replace(/\n/g, '<br>');
         
         return `
           <div class="message ${msg.type}">
@@ -1585,7 +1519,7 @@ export function ChatBot({
         query_log_id: message.query_log_id,
         rating: rating === "thumbs_up" ? "excellent" : "poor",
         model_type: "manual_troubleshooting",
-        actual_answer: typeof message.content === "string" ? message.content : JSON.stringify(message.content),
+        actual_answer: message.content as string,
       });
 
       if (error) throw error;

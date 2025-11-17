@@ -19,6 +19,7 @@ export type Database = {
           activity_type: string | null
           company_id: string | null
           content: string | null
+          fec_tenant_id: string
           id: string
           lead_id: string | null
           timestamp: string | null
@@ -27,6 +28,7 @@ export type Database = {
           activity_type?: string | null
           company_id?: string | null
           content?: string | null
+          fec_tenant_id?: string
           id?: string
           lead_id?: string | null
           timestamp?: string | null
@@ -35,6 +37,7 @@ export type Database = {
           activity_type?: string | null
           company_id?: string | null
           content?: string | null
+          fec_tenant_id?: string
           id?: string
           lead_id?: string | null
           timestamp?: string | null
@@ -185,6 +188,7 @@ export type Database = {
         Row: {
           cadence_name: string
           created_at: string | null
+          fec_tenant_id: string
           id: string
           steps: Json
           target_persona: string | null
@@ -192,6 +196,7 @@ export type Database = {
         Insert: {
           cadence_name: string
           created_at?: string | null
+          fec_tenant_id?: string
           id?: string
           steps: Json
           target_persona?: string | null
@@ -199,6 +204,7 @@ export type Database = {
         Update: {
           cadence_name?: string
           created_at?: string | null
+          fec_tenant_id?: string
           id?: string
           steps?: Json
           target_persona?: string | null
@@ -429,6 +435,7 @@ export type Database = {
           created_at: string | null
           downtime_pain_level: number | null
           estimated_game_count: number | null
+          fec_tenant_id: string
           has_bowling: boolean | null
           has_redemption: boolean | null
           has_vr: boolean | null
@@ -443,6 +450,7 @@ export type Database = {
           created_at?: string | null
           downtime_pain_level?: number | null
           estimated_game_count?: number | null
+          fec_tenant_id?: string
           has_bowling?: boolean | null
           has_redemption?: boolean | null
           has_vr?: boolean | null
@@ -457,6 +465,7 @@ export type Database = {
           created_at?: string | null
           downtime_pain_level?: number | null
           estimated_game_count?: number | null
+          fec_tenant_id?: string
           has_bowling?: boolean | null
           has_redemption?: boolean | null
           has_vr?: boolean | null
@@ -1169,6 +1178,7 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           email: string | null
+          fec_tenant_id: string
           id: string
           last_contacted: string | null
           lead_score: number | null
@@ -1185,6 +1195,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           email?: string | null
+          fec_tenant_id?: string
           id?: string
           last_contacted?: string | null
           lead_score?: number | null
@@ -1201,6 +1212,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           email?: string | null
+          fec_tenant_id?: string
           id?: string
           last_contacted?: string | null
           lead_score?: number | null
@@ -1879,6 +1891,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          fec_tenant_id: string
           id: string
           persona: string | null
           phase: string | null
@@ -1887,6 +1900,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
+          fec_tenant_id?: string
           id?: string
           persona?: string | null
           phase?: string | null
@@ -1895,6 +1909,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          fec_tenant_id?: string
           id?: string
           persona?: string | null
           phase?: string | null

@@ -1421,6 +1421,48 @@ export type Database = {
         }
         Relationships: []
       }
+      objections: {
+        Row: {
+          alternative_frames: Json | null
+          created_at: string | null
+          follow_up_questions: Json | null
+          id: string
+          objection_text: string
+          persona: string | null
+          primary_response: string | null
+          root_cause_hypotheses: Json | null
+          stage: string | null
+          suggested_next_steps: Json | null
+          title: string
+        }
+        Insert: {
+          alternative_frames?: Json | null
+          created_at?: string | null
+          follow_up_questions?: Json | null
+          id?: string
+          objection_text: string
+          persona?: string | null
+          primary_response?: string | null
+          root_cause_hypotheses?: Json | null
+          stage?: string | null
+          suggested_next_steps?: Json | null
+          title: string
+        }
+        Update: {
+          alternative_frames?: Json | null
+          created_at?: string | null
+          follow_up_questions?: Json | null
+          id?: string
+          objection_text?: string
+          persona?: string | null
+          primary_response?: string | null
+          root_cause_hypotheses?: Json | null
+          stage?: string | null
+          suggested_next_steps?: Json | null
+          title?: string
+        }
+        Relationships: []
+      }
       page_label_map: {
         Row: {
           actual_page_label: string

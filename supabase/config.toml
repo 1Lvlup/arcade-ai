@@ -182,3 +182,6 @@ verify_jwt = true
 
 [functions.cadence-builder]
 verify_jwt = true
+
+[functions.discovery-engine]
+verify_jwt = true

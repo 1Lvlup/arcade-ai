@@ -11,8 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { Loader2, Calendar, Filter } from "lucide-react";
+import { Loader2, Calendar, Filter, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 
 interface Lead {
   id: string;
@@ -60,6 +62,11 @@ export default function OutboundTasks() {
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [newStage, setNewStage] = useState<string>("");
+  
+  // Discovery section state
+  const [discoveryNotes, setDiscoveryNotes] = useState("");
+  const [isGeneratingDiscovery, setIsGeneratingDiscovery] = useState(false);
+  const [discoverySummary, setDiscoverySummary] = useState<any>(null);
 
   // Fetch leads with filters
   const { data: leads = [], isLoading } = useQuery({
@@ -289,12 +296,79 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
     }
   });
 
+  // Generate discovery summary
+  const handleGenerateDiscovery = async () => {
+    if (!selectedLead || !discoveryNotes.trim()) {
+      toast.error("Please enter discovery notes");
+      return;
+    }
+
+    setIsGeneratingDiscovery(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("discovery-engine", {
+        body: {
+          lead: selectedLead,
+          notes: discoveryNotes,
+        },
+      });
+
+      if (error) throw error;
+
+      let parsedData: any;
+      if (typeof data === "string") {
+        parsedData = JSON.parse(data);
+      } else {
+        parsedData = data;
+      }
+
+      setDiscoverySummary(parsedData);
+      toast.success("Discovery summary generated successfully");
+    } catch (error: any) {
+      console.error("Error generating discovery summary:", error);
+      toast.error(error.message || "Failed to generate discovery summary");
+    } finally {
+      setIsGeneratingDiscovery(false);
+    }
+  };
+
+  // Save discovery summary
+  const saveDiscoveryMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedLead || !discoverySummary) {
+        throw new Error("Missing lead or summary");
+      }
+
+      const { error } = await supabase
+        .from('activities')
+        .insert({
+          lead_id: selectedLead.id,
+          company_id: selectedLead.company_id,
+          activity_type: 'discovery_summary',
+          content: JSON.stringify(discoverySummary),
+          timestamp: new Date().toISOString()
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Discovery summary saved");
+      setDiscoveryNotes("");
+      setDiscoverySummary(null);
+      queryClient.invalidateQueries({ queryKey: ['lead-activities', selectedLead?.id] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to save summary");
+    }
+  });
+
   const handleOpenAction = (lead: Lead) => {
     setSelectedLead(lead);
     setNewStage(lead.stage || "New");
     setDrawerOpen(true);
     setGeneratedScript(null);
     setActivityContent("");
+    setDiscoveryNotes("");
+    setDiscoverySummary(null);
   };
 
   const getPriorityColor = (tier: string | null) => {
@@ -460,7 +534,13 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
             </SheetHeader>
 
             {selectedLead && (
-              <div className="space-y-6 mt-6">
+              <Tabs defaultValue="action" className="mt-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="action">Action</TabsTrigger>
+                  <TabsTrigger value="discovery">Discovery</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="action" className="space-y-6 mt-6">
                 {/* Lead Info */}
                 <div className="space-y-2">
                   <h3 className="font-semibold">Lead Information</h3>
@@ -627,7 +707,173 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
                     </Button>
                   </div>
                 </div>
-              </div>
+              </TabsContent>
+
+              <TabsContent value="discovery" className="space-y-6 mt-6">
+                {/* Discovery Notes Input */}
+                <div className="space-y-2">
+                  <Label>Paste Discovery Call Notes</Label>
+                  <Textarea
+                    value={discoveryNotes}
+                    onChange={(e) => setDiscoveryNotes(e.target.value)}
+                    placeholder="Paste raw notes from your discovery call here..."
+                    className="min-h-[150px]"
+                  />
+                  <Button
+                    onClick={handleGenerateDiscovery}
+                    disabled={isGeneratingDiscovery || !discoveryNotes.trim()}
+                    className="w-full"
+                  >
+                    {isGeneratingDiscovery && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Generate Discovery Summary
+                  </Button>
+                </div>
+
+                {/* Discovery Summary Display */}
+                {discoverySummary && (
+                  <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Discovery Summary
+                      </h3>
+                      <Button
+                        size="sm"
+                        onClick={() => saveDiscoveryMutation.mutate()}
+                        disabled={saveDiscoveryMutation.isPending}
+                      >
+                        {saveDiscoveryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Summary
+                      </Button>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Company</h4>
+                        <p className="text-sm text-muted-foreground">{discoverySummary.company || 'N/A'}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Contact</h4>
+                        <p className="text-sm text-muted-foreground">{discoverySummary.contact || 'N/A'}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Pain Points</h4>
+                        {discoverySummary.pain_points?.length > 0 ? (
+                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                            {discoverySummary.pain_points.map((point: string, idx: number) => (
+                              <li key={idx}>{point}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">None identified</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Game Issues</h4>
+                        {discoverySummary.game_issues?.length > 0 ? (
+                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                            {discoverySummary.game_issues.map((issue: string, idx: number) => (
+                              <li key={idx}>{issue}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">None identified</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Decision Process</h4>
+                        <p className="text-sm text-muted-foreground">{discoverySummary.decision_process || 'N/A'}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Budget Signals</h4>
+                        <p className="text-sm text-muted-foreground">{discoverySummary.budget_signals || 'N/A'}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Risk Factors</h4>
+                        {discoverySummary.risk_factors?.length > 0 ? (
+                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                            {discoverySummary.risk_factors.map((risk: string, idx: number) => (
+                              <li key={idx}>{risk}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">None identified</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Next Steps</h4>
+                        {discoverySummary.next_steps?.length > 0 ? (
+                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                            {discoverySummary.next_steps.map((step: string, idx: number) => (
+                              <li key={idx}>{step}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">None identified</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Historical Discovery Summaries */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Historical Discovery Summaries</h3>
+                  {activities?.filter(a => a.activity_type === 'discovery_summary').length > 0 ? (
+                    <div className="space-y-3">
+                      {activities
+                        .filter(a => a.activity_type === 'discovery_summary')
+                        .map((activity) => {
+                          let summary;
+                          try {
+                            summary = JSON.parse(activity.content || '{}');
+                          } catch {
+                            summary = {};
+                          }
+                          return (
+                            <div key={activity.id} className="border rounded-lg p-3 bg-muted/30">
+                              <p className="text-xs text-muted-foreground mb-2">
+                                {activity.timestamp ? format(new Date(activity.timestamp), 'PPp') : 'N/A'}
+                              </p>
+                              <div className="space-y-2 text-sm">
+                                <p><strong>Company:</strong> {summary.company || 'N/A'}</p>
+                                <p><strong>Contact:</strong> {summary.contact || 'N/A'}</p>
+                                {summary.pain_points?.length > 0 && (
+                                  <div>
+                                    <strong>Pain Points:</strong>
+                                    <ul className="list-disc list-inside ml-2">
+                                      {summary.pain_points.map((p: string, i: number) => <li key={i}>{p}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                                {summary.next_steps?.length > 0 && (
+                                  <div>
+                                    <strong>Next Steps:</strong>
+                                    <ul className="list-disc list-inside ml-2">
+                                      {summary.next_steps.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No discovery summaries yet</p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
             )}
           </SheetContent>
         </Sheet>

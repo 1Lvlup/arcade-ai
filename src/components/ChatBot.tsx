@@ -12,6 +12,7 @@ import { GameRequestDialog } from "@/components/GameRequestDialog";
 import { InteractiveComponentLibrary } from "@/components/InteractiveComponentLibrary";
 import { InteractiveComponentRenderer } from "@/components/InteractiveComponentRenderer";
 import { DiagnosticWizard } from "@/components/DiagnosticWizard";
+import { RAGDebugPanel } from "@/components/RAGDebugPanel";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -66,6 +67,8 @@ import {
   FileDown,
   Paperclip,
   ImageIcon,
+  Zap,
+  ZapOff,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -136,6 +139,34 @@ interface ChatMessage {
     suggested_actions: string[];
   };
   interactiveComponents?: InteractiveComponent[];
+  rag_debug?: {
+    chunks: Array<{
+      content_preview: string;
+      page_start: number;
+      page_end: number;
+      score: number;
+      rerank_score: number;
+      menu_path: string;
+    }>;
+    signals: {
+      topScore: number;
+      avgTop3: number;
+      strongHits: number;
+    };
+    quality_score: number;
+    max_rerank_score: number;
+    max_base_score: number;
+    performance: {
+      search_ms: string;
+      generation_ms: string;
+      total_ms: string;
+    };
+    answer_style: {
+      is_weak: boolean;
+      adaptive_mode: string;
+    };
+    strategy?: string;
+  };
 }
 
 interface UsageInfo {
@@ -207,6 +238,16 @@ export function ChatBot({
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Streaming and debug mode settings
+  const [useStreaming, setUseStreaming] = useState(() => {
+    const saved = localStorage.getItem('chatStreamingMode');
+    return saved ? JSON.parse(saved) : true;
+  });
+  const [debugMode, setDebugMode] = useState(() => {
+    const saved = localStorage.getItem('chatDebugMode');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const GUEST_MESSAGE_LIMIT = 10;
   const [isInitialized, setIsInitialized] = useState(false);
@@ -1307,7 +1348,7 @@ export function ChatBot({
         body: JSON.stringify({
           query,
           manual_id: selectedManualId ?? null,
-          stream: true, // ✨ STREAMING MODE enabled
+          stream: useStreaming, // ✨ STREAMING MODE toggle
           messages: conversationHistory,
           images: uploadedImageUrls,
         }),
@@ -1315,6 +1356,51 @@ export function ChatBot({
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Handle non-streaming mode
+      if (!useStreaming) {
+        const data = await response.json();
+        
+        // Turn off loading
+        setIsLoading(false);
+        setCurrentStatus(null);
+        
+        // Update bot message with complete response
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessageId
+              ? {
+                  ...msg,
+                  content: data.answer || data.response_text || "No response",
+                  query_log_id: data.query_log_id,
+                  thumbnails: data.thumbnails,
+                  manual_id: data.manual_id,
+                  manual_title: data.manual_title,
+                  rag_debug: data.rag_debug,
+                }
+              : msg,
+          ),
+        );
+        
+        // Mark user message as sent
+        setMessages((prev) => prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: "sent" as const } : msg)));
+        
+        // Auto-save if logged in
+        if (user && conversationIdToUse) {
+          try {
+            await supabase.from("conversation_messages").insert([
+              { conversation_id: conversationIdToUse, role: "user", content: query },
+              { conversation_id: conversationIdToUse, role: "assistant", content: data.answer || data.response_text }
+            ]);
+            await supabase.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversationIdToUse);
+            localStorage.setItem("last_conversation_id", conversationIdToUse);
+          } catch (err) {
+            console.error("Failed to auto-save messages:", err);
+          }
+        }
+        
+        return;
       }
 
       // Streaming response handling
@@ -2041,6 +2127,49 @@ export function ChatBot({
                   >
                     <FileDown className="h-4 w-4" />
                   </Button>
+                  
+                  {/* Streaming toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setUseStreaming(prev => {
+                        const newValue = !prev;
+                        localStorage.setItem('chatStreamingMode', JSON.stringify(newValue));
+                        toast({
+                          title: newValue ? "Streaming enabled" : "Streaming disabled",
+                          description: newValue ? "Real-time token-by-token responses" : "Full response at once",
+                        });
+                        return newValue;
+                      });
+                    }}
+                    className={`h-8 px-2 ${useStreaming ? 'text-green-500' : 'text-muted-foreground'} hover:text-foreground hover:bg-white/5`}
+                    title={useStreaming ? "Streaming: Real-time token-by-token" : "Streaming disabled: Full response at once"}
+                  >
+                    {useStreaming ? <Zap className="h-4 w-4" /> : <ZapOff className="h-4 w-4" />}
+                  </Button>
+                  
+                  {/* Debug mode toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDebugMode(prev => {
+                        const newValue = !prev;
+                        localStorage.setItem('chatDebugMode', JSON.stringify(newValue));
+                        toast({
+                          title: newValue ? "Debug mode enabled" : "Debug mode disabled",
+                          description: newValue ? "Showing RAG debug panels" : "Debug panels hidden",
+                        });
+                        return newValue;
+                      });
+                    }}
+                    className={`h-8 px-2 ${debugMode ? 'text-primary' : 'text-muted-foreground'} hover:text-foreground hover:bg-white/5`}
+                    title={debugMode ? "Debug mode: ON" : "Debug mode: OFF"}
+                  >
+                    <span className="text-sm">🔧</span>
+                  </Button>
+                  
                   <Sheet open={showHistory} onOpenChange={setShowHistory}>
                     <SheetTrigger asChild>
                       <Button
@@ -2356,6 +2485,11 @@ export function ChatBot({
                         ))}
                       </div>
                     </div>
+                  )}
+
+                  {/* RAG Debug Panel */}
+                  {message.type === "bot" && message.rag_debug && debugMode && (
+                    <RAGDebugPanel ragData={message.rag_debug} className="mt-6" />
                   )}
 
                   {/* Thumbs Up/Down + Report Issue for Bot Messages */}

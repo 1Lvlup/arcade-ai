@@ -1252,11 +1252,30 @@ serve(async (req) => {
                   
                   try {
                     const parsed = JSON.parse(data);
-                    const content = parsed.choices?.[0]?.delta?.content;
+                    const rawContent = parsed.choices?.[0]?.delta?.content;
+
+                    let content = "";
+                    // Normalize Responses API delta.content into a plain string
+                    if (typeof rawContent === "string") {
+                      content = rawContent;
+                    } else if (Array.isArray(rawContent)) {
+                      for (const part of rawContent) {
+                        if (part && typeof part === "object") {
+                          if (part.type === "output_text" && typeof part.text === "string") {
+                            content += part.text;
+                          } else if (typeof part.text === "string") {
+                            content += part.text;
+                          }
+                        }
+                      }
+                    } else if (rawContent && typeof rawContent === "object" && typeof rawContent.text === "string") {
+                      content = rawContent.text;
+                    }
+
                     if (content) {
                       const chunk = {
-                        type: 'content',
-                        data: content
+                        type: "content",
+                        data: content,
                       };
                       controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
                     }

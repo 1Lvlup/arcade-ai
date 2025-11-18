@@ -606,19 +606,26 @@ Reference specific observations from the images in your response and provide det
                 const parsed = JSON.parse(dataContent);
                 console.log('📦 Raw chunk:', JSON.stringify(parsed).slice(0, 200));
                 
-                // Responses API streaming format check
-                // The API streams response.output_text_delta.delta events
+                // Responses API streaming format - correct event type and structure
                 let textContent = "";
                 
-                // Check for output_text_delta events (Responses API streaming)
-                if (parsed.type === 'response.output_text_delta' && parsed.delta) {
-                  textContent = parsed.delta;
-                  console.log('✅ Found output_text_delta:', textContent);
+                // Correct Responses API streaming event: "response.output_text.delta" (with dots)
+                // Structure: delta.output_text[].content[].text
+                if (parsed.type === "response.output_text.delta" && parsed.delta) {
+                  const deltas = parsed.delta.output_text ?? [];
+                  for (const d of deltas) {
+                    for (const c of d.content ?? []) {
+                      if (c.type === "output_text" && typeof c.text === "string") {
+                        textContent += c.text;
+                      }
+                    }
+                  }
+                  console.log('✅ Extracted from output_text.delta:', textContent);
                 }
-                // Check for output array (alternative format)
-                else if (Array.isArray(parsed.output)) {
-                  for (const item of parsed.output) {
-                    if (item.type === 'message' && Array.isArray(item.content)) {
+                // Handle response.done event with full output
+                else if (parsed.type === 'response.done' && parsed.response?.output) {
+                  for (const item of parsed.response.output) {
+                    if (item.type === 'message' && item.content) {
                       for (const content of item.content) {
                         if (content.type === 'output_text' && content.text) {
                           textContent += content.text;
@@ -626,21 +633,23 @@ Reference specific observations from the images in your response and provide det
                       }
                     }
                   }
-                  console.log('✅ Extracted from output array');
+                  console.log('✅ Extracted from response.done:', textContent.slice(0, 50));
                 }
-                // Fallback: check for direct delta field
-                else if (parsed.delta) {
-                  if (typeof parsed.delta === 'string') {
-                    textContent = parsed.delta;
-                  } else if (parsed.delta.text) {
-                    textContent = parsed.delta.text;
-                  } else if (parsed.delta.content) {
-                    textContent = parsed.delta.content;
+                // Optional: handle non-stream final event with output array
+                else if (!textContent && Array.isArray(parsed.output)) {
+                  for (const item of parsed.output) {
+                    if (item.type === "message" && Array.isArray(item.content)) {
+                      for (const part of item.content) {
+                        if (part.type === "output_text" && typeof part.text === "string") {
+                          textContent += part.text;
+                        }
+                      }
+                    }
                   }
-                  console.log('✅ Found delta field');
+                  console.log('✅ Extracted from output array:', textContent.slice(0, 50));
                 }
                 
-                // If we found content, transform it to Chat Completions format
+                // If we found content, transform it to Chat Completions format for frontend compatibility
                 if (textContent) {
                   const transformed = {
                     choices: [{
@@ -649,7 +658,7 @@ Reference specific observations from the images in your response and provide det
                   };
                   controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
                 } else {
-                  console.warn('⚠️ No text extracted from:', Object.keys(parsed));
+                  console.warn('⚠️ No text extracted from chunk type:', parsed.type);
                 }
               } catch (e) {
                 console.error('❌ Parse error:', e);

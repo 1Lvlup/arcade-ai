@@ -369,6 +369,7 @@ export default function OutboundLeads() {
   return (
     <div className="min-h-screen bg-background">
       <SharedHeader title="Lead Intelligence" showBackButton={true} backTo="/" />
+      <OutboundNav />
       <div className="container mx-auto py-8 space-y-6">
         <div>
           <h1 className="text-3xl font-bold mb-2">Outbound – Leads</h1>

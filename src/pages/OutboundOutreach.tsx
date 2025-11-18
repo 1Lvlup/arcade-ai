@@ -228,6 +228,7 @@ export default function OutboundOutreach() {
   return (
     <div className="min-h-screen bg-background">
       <SharedHeader title="Outbound - Outreach" showBackButton={true} backTo="/" />
+      <OutboundNav />
       <div className="container mx-auto px-4 py-8 space-y-8">
         <div>
           <h1 className="text-4xl font-bold mb-2">Outbound – Outreach</h1>

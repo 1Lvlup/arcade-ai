@@ -177,5 +177,8 @@ verify_jwt = true
 [functions.prospecting-assistant]
 verify_jwt = true
 
+[functions.script-library-engine]
+verify_jwt = true
+
 [functions.cadence-builder]
 verify_jwt = true

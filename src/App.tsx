@@ -52,6 +52,7 @@ import OutboundLeads from "./pages/OutboundLeads";
 import OutboundOutreach from "./pages/OutboundOutreach";
 import OutboundTasks from "./pages/OutboundTasks";
 import OutboundDemo from "./pages/OutboundDemo";
+import OutboundObjections from "./pages/OutboundObjections";
 import QualityMetrics from "./pages/QualityMetrics";
 
 const queryClient = new QueryClient();
@@ -316,6 +317,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <OutboundDemo />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/outbound-objections" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <OutboundObjections />
                 </AdminRoute>
               </ProtectedRoute>
             } />

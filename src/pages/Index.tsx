@@ -153,14 +153,16 @@ const Index = () => {
                 >
                   Launch Arcade Intelligence
                 </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="text-base font-semibold px-12 w-full sm:w-auto"
-                >
-                  <Link to="/lead-intelligence">Outbound Sales Hub</Link>
-                </Button>
+                {isAdmin && (
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="text-base font-semibold px-12 w-full sm:w-auto"
+                  >
+                    <Link to="/lead-intelligence">Outbound Sales Hub</Link>
+                  </Button>
+                )}
               </div>
 
               <p className="text-xs text-muted-foreground font-sans">

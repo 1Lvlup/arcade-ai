@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { SharedHeader } from '@/components/SharedHeader';
 
 const ServerCapacity = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
+    <div className="min-h-screen bg-background">
+      <SharedHeader title="Server Capacity" showBackButton={true} backTo="/" />
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
       <Card className="max-w-md w-full">
         <CardContent className="pt-6 text-center">
           <div className="flex justify-center mb-4">
@@ -27,6 +30,7 @@ const ServerCapacity = () => {
           </Button>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

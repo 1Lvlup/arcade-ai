@@ -1191,6 +1191,9 @@ serve(async (req) => {
     const { answer, sources, strategy, chunks, interactive_components } = result;
 
     // ============ AUTOMATED QUALITY CHECKS FOR TRAINING ============
+    console.log("📊 [GRADING] Starting quality evaluation...");
+    const gradingStartTime = performance.now();
+    
     const response_text = typeof answer === 'string' ? answer : JSON.stringify(answer);
     
     // 1. Extract claims (simple sentence split)
@@ -1257,6 +1260,9 @@ serve(async (req) => {
       quality_tier = 'medium';
     }
     
+    const gradingEndTime = performance.now();
+    const gradingDuration = gradingEndTime - gradingStartTime;
+    
     console.log('📊 Quality Assessment:', {
       tier: quality_tier,
       score: quality_score.toFixed(3),
@@ -1265,8 +1271,10 @@ serve(async (req) => {
       claims_supported: supportedClaims,
       numeric_flags: numeric_flags.length,
       vector_mean: vectorMean.toFixed(3),
-      rerank_mean: rerankMean.toFixed(3)
+      rerank_mean: rerankMean.toFixed(3),
+      grading_time_ms: gradingDuration.toFixed(0)
     });
+    console.log(`⏱️ [GRADING] Completed in ${gradingDuration.toFixed(0)}ms`);
     // ============ END QUALITY CHECKS ============
 
     // Log the query with quality metrics

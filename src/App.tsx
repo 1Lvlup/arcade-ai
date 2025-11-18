@@ -52,6 +52,7 @@ import OutboundLeads from "./pages/OutboundLeads";
 import OutboundOutreach from "./pages/OutboundOutreach";
 import OutboundTasks from "./pages/OutboundTasks";
 import OutboundDemo from "./pages/OutboundDemo";
+import QualityMetrics from "./pages/QualityMetrics";
 
 const queryClient = new QueryClient();
 
@@ -224,6 +225,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <QAAnalytics />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/quality-metrics" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <QualityMetrics />
                 </AdminRoute>
               </ProtectedRoute>
             } />

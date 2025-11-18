@@ -68,6 +68,13 @@ export default function OutboundTasks() {
   const [isGeneratingDiscovery, setIsGeneratingDiscovery] = useState(false);
   const [discoverySummary, setDiscoverySummary] = useState<any>(null);
 
+  // Demo & Objection Tools state
+  const [isGeneratingQuickDemo, setIsGeneratingQuickDemo] = useState(false);
+  const [quickDemoPlan, setQuickDemoPlan] = useState<any>(null);
+  const [liveObjection, setLiveObjection] = useState("");
+  const [isHandlingObjection, setIsHandlingObjection] = useState(false);
+  const [liveObjectionResponse, setLiveObjectionResponse] = useState<any>(null);
+
   // Fetch leads with filters
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ['outbound-tasks', priorityFilter, stageFilter],
@@ -296,6 +303,78 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
     }
   });
 
+  // Quick Demo Plan handler
+  const handleQuickDemo = async () => {
+    if (!selectedLead) return;
+
+    setIsGeneratingQuickDemo(true);
+    setQuickDemoPlan(null);
+
+    try {
+      // Fetch discovery summary if exists
+      const { data: discoveryActivities } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('lead_id', selectedLead.id)
+        .eq('activity_type', 'discovery_summary')
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+      const discovery = discoveryActivities && discoveryActivities.length > 0
+        ? JSON.parse(discoveryActivities[0].content)
+        : null;
+
+      const payload = {
+        lead: selectedLead,
+        discovery,
+        notes: "Generate a compact demo plan for a live call, keep it brief."
+      };
+
+      const { data, error } = await supabase.functions.invoke("demo-engine", { body: payload });
+
+      if (error) throw error;
+      setQuickDemoPlan(data);
+    } catch (error: any) {
+      console.error("Error generating quick demo:", error);
+      toast.error(error.message || "Failed to generate demo plan");
+    } finally {
+      setIsGeneratingQuickDemo(false);
+    }
+  };
+
+  // Live Objection handler
+  const handleLiveObjection = async () => {
+    if (!selectedLead || !liveObjection.trim()) return;
+
+    setIsHandlingObjection(true);
+    setLiveObjectionResponse(null);
+
+    try {
+      const persona = inferPersona(selectedLead.role);
+      const stage = selectedLead.stage || "discovery";
+      const suggestedAction = getSuggestedAction(selectedLead);
+      
+      const contextSummary = `Lead: ${selectedLead.name} at ${selectedLead.companies?.name}. Stage: ${stage}. Suggested action: ${suggestedAction}`;
+
+      const payload = {
+        objection: liveObjection,
+        persona,
+        stage,
+        context: contextSummary
+      };
+
+      const { data, error } = await supabase.functions.invoke("objection-engine", { body: payload });
+
+      if (error) throw error;
+      setLiveObjectionResponse(data);
+    } catch (error: any) {
+      console.error("Error handling objection:", error);
+      toast.error(error.message || "Failed to generate objection response");
+    } finally {
+      setIsHandlingObjection(false);
+    }
+  };
+
   // Generate discovery summary
   const handleGenerateDiscovery = async () => {
     if (!selectedLead || !discoveryNotes.trim()) {
@@ -369,6 +448,9 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
     setActivityContent("");
     setDiscoveryNotes("");
     setDiscoverySummary(null);
+    setQuickDemoPlan(null);
+    setLiveObjection("");
+    setLiveObjectionResponse(null);
   };
 
   const getPriorityColor = (tier: string | null) => {
@@ -707,6 +789,90 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
                     </Button>
                   </div>
                 </div>
+
+                {/* Demo & Objection Tools */}
+                <details className="space-y-4 border rounded-lg p-4">
+                  <summary className="cursor-pointer font-semibold">Demo & Objection Tools</summary>
+                  
+                  <div className="mt-4 space-y-4">
+                    {/* Quick Demo Plan */}
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={handleQuickDemo}
+                        disabled={isGeneratingQuickDemo || (selectedLead.stage !== 'Demo' && selectedLead.stage !== 'Eval')}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        {isGeneratingQuickDemo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Quick Demo Plan
+                      </Button>
+                      {(selectedLead.stage !== 'Demo' && selectedLead.stage !== 'Eval') && (
+                        <p className="text-xs text-muted-foreground">Only available for Demo or Eval stage</p>
+                      )}
+                      
+                      {quickDemoPlan && (
+                        <div className="mt-2 p-3 border rounded bg-accent/50 max-h-[300px] overflow-y-auto space-y-2">
+                          <h4 className="font-semibold text-sm">{quickDemoPlan.demo_title}</h4>
+                          <div>
+                            <p className="text-xs font-medium">Agenda:</p>
+                            <ul className="text-xs list-disc list-inside">
+                              {quickDemoPlan.agenda?.map((item: string, i: number) => (
+                                <li key={i}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium">Flow:</p>
+                            <ol className="text-xs list-decimal list-inside">
+                              {quickDemoPlan.narrative_flow?.map((step: any, i: number) => (
+                                <li key={i}><strong>{step.label}:</strong> {step.talk_track}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Live Objection Helper */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Live Objection Helper</Label>
+                      <input
+                        type="text"
+                        value={liveObjection}
+                        onChange={(e) => setLiveObjection(e.target.value)}
+                        placeholder="What did they just say?"
+                        className="w-full px-3 py-2 border rounded text-sm"
+                      />
+                      <Button 
+                        onClick={handleLiveObjection}
+                        disabled={isHandlingObjection || !liveObjection.trim()}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        {isHandlingObjection && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Handle Objection
+                      </Button>
+
+                      {liveObjectionResponse && (
+                        <div className="mt-2 p-3 border rounded bg-primary/10 space-y-2">
+                          <div className="font-semibold text-sm">{liveObjectionResponse.primary_response}</div>
+                          {liveObjectionResponse.follow_up_questions?.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium">Follow-up Questions:</p>
+                              <ul className="text-xs list-disc list-inside">
+                                {liveObjectionResponse.follow_up_questions.map((q: string, i: number) => (
+                                  <li key={i}>{q}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </details>
               </TabsContent>
 
               <TabsContent value="discovery" className="space-y-6 mt-6">

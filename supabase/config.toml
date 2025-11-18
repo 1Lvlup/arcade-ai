@@ -188,3 +188,6 @@ verify_jwt = true
 
 [functions.demo-engine]
 verify_jwt = true
+
+[functions.objection-engine]
+verify_jwt = true

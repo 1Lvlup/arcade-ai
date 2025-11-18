@@ -50,6 +50,7 @@ import BlogEditor from "./pages/BlogEditor";
 import LeadIntelligence from "./pages/LeadIntelligence";
 import OutboundLeads from "./pages/OutboundLeads";
 import OutboundOutreach from "./pages/OutboundOutreach";
+import OutboundTasks from "./pages/OutboundTasks";
 
 const queryClient = new QueryClient();
 
@@ -292,6 +293,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <OutboundOutreach />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/outbound-tasks" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <OutboundTasks />
                 </AdminRoute>
               </ProtectedRoute>
             } />

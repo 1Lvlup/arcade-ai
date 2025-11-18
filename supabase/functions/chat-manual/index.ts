@@ -610,15 +610,11 @@ Reference specific observations from the images in your response and provide det
                 let textContent = "";
                 
                 // Correct Responses API streaming event: "response.output_text.delta" (with dots)
-                // Structure: delta.output_text[].content[].text
+                // Structure: delta is a string (not an object)
                 if (parsed.type === "response.output_text.delta" && parsed.delta) {
-                  const deltas = parsed.delta.output_text ?? [];
-                  for (const d of deltas) {
-                    for (const c of d.content ?? []) {
-                      if (c.type === "output_text" && typeof c.text === "string") {
-                        textContent += c.text;
-                      }
-                    }
+                  // delta is a string in the actual Responses API format
+                  if (typeof parsed.delta === "string") {
+                    textContent = parsed.delta;
                   }
                   console.log('✅ Extracted from output_text.delta:', textContent);
                 }

@@ -211,6 +211,33 @@ export function ChatBot({
   const GUEST_MESSAGE_LIMIT = 10;
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Persist messages to localStorage
+  useEffect(() => {
+    if (messages.length > 0 && currentConversationId) {
+      localStorage.setItem(`chat_messages_${currentConversationId}`, JSON.stringify(messages));
+    }
+  }, [messages, currentConversationId]);
+
+  // Restore messages when conversation changes
+  useEffect(() => {
+    if (currentConversationId) {
+      const stored = localStorage.getItem(`chat_messages_${currentConversationId}`);
+      if (stored) {
+        try {
+          const parsedMessages = JSON.parse(stored);
+          // Convert timestamp strings back to Date objects
+          const restoredMessages = parsedMessages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+          setMessages(restoredMessages);
+        } catch (e) {
+          console.error('Failed to restore messages:', e);
+        }
+      }
+    }
+  }, [currentConversationId]);
+
   // Load guest message count from localStorage on mount
   useEffect(() => {
     if (!user) {
@@ -603,11 +630,16 @@ export function ChatBot({
   };
 
   const startNewConversation = () => {
+    const newConvId = null;
     setMessages([]);
-    setCurrentConversationId(null);
+    setCurrentConversationId(newConvId);
     setSelectedManualId(null);
     setManualTitle(null);
     localStorage.removeItem("last_conversation_id");
+    // Clear persisted messages for old conversation
+    if (currentConversationId) {
+      localStorage.removeItem(`chat_messages_${currentConversationId}`);
+    }
     updateWelcomeMessage();
   };
 
@@ -618,6 +650,11 @@ export function ChatBot({
         title: "🔄 Switched to new game",
         description: `Starting fresh conversation for: ${newManualTitle || "All Manuals"}`,
       });
+    }
+
+    // Clear persisted messages for old conversation
+    if (currentConversationId) {
+      localStorage.removeItem(`chat_messages_${currentConversationId}`);
     }
 
     // Clear current conversation and start fresh

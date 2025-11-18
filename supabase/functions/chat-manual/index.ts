@@ -2,7 +2,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 import { computeSignals, shapeMessages } from "../_shared/answerStyle.ts";
 import { buildCitationsAndImages } from "../_shared/rag.ts";
 

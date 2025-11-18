@@ -49,6 +49,7 @@ import BlogAdmin from "./pages/BlogAdmin";
 import BlogEditor from "./pages/BlogEditor";
 import LeadIntelligence from "./pages/LeadIntelligence";
 import OutboundLeads from "./pages/OutboundLeads";
+import OutboundOutreach from "./pages/OutboundOutreach";
 
 const queryClient = new QueryClient();
 
@@ -284,6 +285,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <OutboundLeads />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/outbound-outreach" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <OutboundOutreach />
                 </AdminRoute>
               </ProtectedRoute>
             } />

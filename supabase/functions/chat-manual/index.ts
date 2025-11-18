@@ -607,42 +607,50 @@ Reference specific observations from the images in your response and provide det
                 console.log('📦 Raw chunk:', JSON.stringify(parsed).slice(0, 200));
                 
                 // Responses API streaming format - correct event type and structure
+                console.log("🔎 Event type:", parsed.type);
                 let textContent = "";
                 
-                // Correct Responses API streaming event: "response.output_text.delta" (with dots)
-                // Structure: delta is a string (not an object)
-                if (parsed.type === "response.output_text.delta" && parsed.delta) {
-                  // delta is a string in the actual Responses API format
-                  if (typeof parsed.delta === "string") {
-                    textContent = parsed.delta;
-                  }
-                  console.log('✅ Extracted from output_text.delta:', textContent);
+                // 1) Streaming chunks: response.output_text.delta
+                if (parsed.type === "response.output_text.delta" && typeof parsed.delta === "string") {
+                  textContent = parsed.delta;
+                  console.log("✅ Extracted from response.output_text.delta:", textContent);
                 }
-                // Handle response.done event with full output
-                else if (parsed.type === 'response.done' && parsed.response?.output) {
-                  for (const item of parsed.response.output) {
-                    if (item.type === 'message' && item.content) {
-                      for (const content of item.content) {
-                        if (content.type === 'output_text' && content.text) {
-                          textContent += content.text;
+                
+                // 2) Final text event: response.output_text.done
+                else if (parsed.type === "response.output_text.done" && typeof parsed.text === "string") {
+                  textContent = parsed.text;
+                  console.log("✅ Extracted from response.output_text.done:", textContent.slice(0, 80));
+                }
+                
+                // 3) Completed response: response.completed
+                // This carries the full response object under parsed.response
+                else if (parsed.type === "response.completed" && parsed.response?.output) {
+                  const outputs = parsed.response.output;
+                  for (const out of outputs) {
+                    // Handle output_text tool style
+                    if (Array.isArray(out.output_text)) {
+                      for (const seg of out.output_text) {
+                        if (typeof seg.text === "string") {
+                          textContent += seg.text;
                         }
                       }
                     }
-                  }
-                  console.log('✅ Extracted from response.done:', textContent.slice(0, 50));
-                }
-                // Optional: handle non-stream final event with output array
-                else if (!textContent && Array.isArray(parsed.output)) {
-                  for (const item of parsed.output) {
-                    if (item.type === "message" && Array.isArray(item.content)) {
-                      for (const part of item.content) {
+                    
+                    // Fallback: if using "message" style output
+                    if (out.type === "message" && Array.isArray(out.content)) {
+                      for (const part of out.content) {
                         if (part.type === "output_text" && typeof part.text === "string") {
                           textContent += part.text;
                         }
                       }
                     }
                   }
-                  console.log('✅ Extracted from output array:', textContent.slice(0, 50));
+                  console.log("✅ Extracted from response.completed:", textContent.slice(0, 80));
+                }
+                
+                // Optional safety net: log unknown events for debugging
+                else {
+                  console.log("ℹ️ Unhandled Responses event type:", parsed.type);
                 }
                 
                 // If we found content, transform it to Chat Completions format for frontend compatibility

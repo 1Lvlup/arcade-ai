@@ -9,7 +9,8 @@ import {
   Presentation,
   LayoutDashboard,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  Download
 } from "lucide-react";
 
 const navItems = [
@@ -54,6 +55,12 @@ const navItems = [
     href: "/outbound-pipeline",
     icon: TrendingUp,
     description: "Momentum insights"
+  },
+  {
+    title: "Import Prospects",
+    href: "/outbound-import",
+    icon: Download,
+    description: "Google Places import"
   }
 ];
 

@@ -1424,40 +1424,55 @@ export type Database = {
       objections: {
         Row: {
           alternative_frames: Json | null
+          cluster: string | null
           created_at: string | null
           follow_up_questions: Json | null
           id: string
           objection_text: string
           persona: string | null
+          persona_pattern: string | null
           primary_response: string | null
+          probability_score: number | null
           root_cause_hypotheses: Json | null
+          severity_score: number | null
           stage: string | null
+          stage_pattern: string | null
           suggested_next_steps: Json | null
           title: string
         }
         Insert: {
           alternative_frames?: Json | null
+          cluster?: string | null
           created_at?: string | null
           follow_up_questions?: Json | null
           id?: string
           objection_text: string
           persona?: string | null
+          persona_pattern?: string | null
           primary_response?: string | null
+          probability_score?: number | null
           root_cause_hypotheses?: Json | null
+          severity_score?: number | null
           stage?: string | null
+          stage_pattern?: string | null
           suggested_next_steps?: Json | null
           title: string
         }
         Update: {
           alternative_frames?: Json | null
+          cluster?: string | null
           created_at?: string | null
           follow_up_questions?: Json | null
           id?: string
           objection_text?: string
           persona?: string | null
+          persona_pattern?: string | null
           primary_response?: string | null
+          probability_score?: number | null
           root_cause_hypotheses?: Json | null
+          severity_score?: number | null
           stage?: string | null
+          stage_pattern?: string | null
           suggested_next_steps?: Json | null
           title?: string
         }

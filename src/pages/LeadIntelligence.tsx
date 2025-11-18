@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Sparkles, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SharedHeader } from "@/components/SharedHeader";
 import { OutboundNav } from "@/components/OutboundNav";
 
 interface LeadData {
@@ -125,6 +126,7 @@ export default function LeadIntelligence() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SharedHeader />
       <OutboundNav />
       <div className="container mx-auto py-8 space-y-6">
         <div>

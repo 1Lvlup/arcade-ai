@@ -1356,24 +1356,11 @@ export function ChatBot({
               // Handle content chunks (streaming answer)
               if (parsed.type === "content" && parsed.data) {
                 // Turn off loading and clear status as soon as first content arrives
-                if (isLoading) setIsLoading(false);
-                if (currentStatus) setCurrentStatus(null);
+                setIsLoading(false);
+                setCurrentStatus(null);
 
-                let visibleChunk = "";
-
-                if (typeof parsed.data === "string") {
-                  // Old behaviour: plain markdown string
-                  visibleChunk = parsed.data;
-                } else if (typeof parsed.data === "object" && parsed.data.message) {
-                  // New behaviour: structured JSON with a `message` field
-                  visibleChunk = parsed.data.message;
-                  // TODO: if you want, you can stash parsed.data.what/how/sources/questions
-                  // into message.interactiveComponents or a StructuredAnswer later
-                } else {
-                  // Fallback for unexpected formats
-                  visibleChunk = "";
-                }
-
+                // The data is always a string from the backend
+                const visibleChunk = typeof parsed.data === "string" ? parsed.data : "";
                 accumulatedContent += visibleChunk;
 
                 // Update message with accumulated content

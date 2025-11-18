@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Sparkles, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { OutboundNav } from "@/components/OutboundNav";
 
 interface LeadData {
   company_name: string;
@@ -123,9 +124,11 @@ export default function LeadIntelligence() {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Lead Intelligence Engine</h1>
+    <div className="min-h-screen bg-background">
+      <OutboundNav />
+      <div className="container mx-auto py-8 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Lead Intelligence Engine</h1>
         <p className="text-muted-foreground">
           Analyze arcade and FEC leads to extract structured data and generate prospecting strategies
         </p>
@@ -288,6 +291,7 @@ export default function LeadIntelligence() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }

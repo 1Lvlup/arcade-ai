@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Separator } from "@/components/ui/separator";
 import { SharedHeader } from "@/components/SharedHeader";
+import { OutboundNav } from "@/components/OutboundNav";
 
 interface Contact {
   name: string;

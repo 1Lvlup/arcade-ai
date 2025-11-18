@@ -7,7 +7,8 @@ import {
   CheckSquare, 
   MessageSquare, 
   Presentation,
-  LayoutDashboard
+  LayoutDashboard,
+  AlertTriangle
 } from "lucide-react";
 
 const navItems = [
@@ -40,6 +41,12 @@ const navItems = [
     href: "/outbound-demo",
     icon: Presentation,
     description: "Demo planning"
+  },
+  {
+    title: "Objection Analytics",
+    href: "/outbound-objections",
+    icon: AlertTriangle,
+    description: "Analyze patterns"
   }
 ];
 

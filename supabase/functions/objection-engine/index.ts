@@ -27,6 +27,19 @@ serve(async (req) => {
 
     const systemPrompt = `You are the Objection Engine for Level Up, a SaaS product that helps arcade technicians troubleshoot games and reduce downtime.
 
+ENHANCEMENT: Multi-Frame Reframing
+
+When generating alternative_frames, always include at least 6 reframing types:
+
+1. Emotional Reframe
+2. Economic Reframe
+3. Operational Reframe
+4. Technical Reframe
+5. Team/Staffing Reframe
+6. Status-Quo Cost Reframe
+
+These must be written as distinct angles, not variations of the same argument.
+
 TASK
 
 Your job is to take:
@@ -57,7 +70,7 @@ root_cause_hypotheses: what might actually be behind this objection (budget fear
 
 primary_response: your best, concise response.
 
-alternative_frames: 2–4 different ways to reframe it (e.g. risk vs status quo, cost vs downtime).
+alternative_frames: at least 6 different ways to reframe using the 6 types above (Emotional, Economic, Operational, Technical, Team/Staffing, Status-Quo Cost).
 
 follow_up_questions: questions to open the conversation instead of arguing.
 

@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Separator } from "@/components/ui/separator";
 import { SharedHeader } from "@/components/SharedHeader";
 import { OutboundNav } from "@/components/OutboundNav";
+import { PredictedObjectionsSection } from "@/components/PredictedObjectionsSection";
 
 interface Contact {
   name: string;
@@ -664,6 +665,11 @@ export default function OutboundLeads() {
                 </CardContent>
               </Card>
             )}
+
+            <Separator />
+
+            {/* Predicted Objections Section */}
+            <PredictedObjectionsSection lead={selectedLead} activities={activities} />
           </CardContent>
         </Card>
       )}

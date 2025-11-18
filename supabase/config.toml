@@ -185,3 +185,6 @@ verify_jwt = true
 
 [functions.discovery-engine]
 verify_jwt = true
+
+[functions.demo-engine]
+verify_jwt = true

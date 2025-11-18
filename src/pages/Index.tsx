@@ -144,7 +144,7 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="flex justify-center mb-3">
+              <div className="flex flex-col sm:flex-row justify-center gap-3 mb-3">
                 <Button
                   onClick={handleStartGeneralChat}
                   size="lg"
@@ -152,6 +152,14 @@ const Index = () => {
                   className="text-base font-semibold px-12 w-full sm:w-auto"
                 >
                   Launch Arcade Intelligence
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="text-base font-semibold px-12 w-full sm:w-auto"
+                >
+                  <Link to="/lead-intelligence">Outbound Sales Hub</Link>
                 </Button>
               </div>
 

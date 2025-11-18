@@ -559,6 +559,54 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_metrics: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          entered_at: string
+          exited_at: string | null
+          id: string
+          lead_id: string | null
+          stage: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          entered_at?: string
+          exited_at?: string | null
+          id?: string
+          lead_id?: string | null
+          stage: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          entered_at?: string
+          exited_at?: string | null
+          id?: string
+          lead_id?: string | null
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_metrics_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       docs: {
         Row: {
           content: string

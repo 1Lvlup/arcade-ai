@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Separator } from "@/components/ui/separator";
+import { SharedHeader } from "@/components/SharedHeader";
 
 interface Contact {
   name: string;
@@ -313,13 +314,15 @@ export default function OutboundLeads() {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Outbound – Leads</h1>
-        <p className="text-muted-foreground">
-          Generate and manage leads for arcade and FEC prospects
-        </p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <SharedHeader title="Lead Intelligence" showBackButton={true} backTo="/" />
+      <div className="container mx-auto py-8 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Outbound – Leads</h1>
+          <p className="text-muted-foreground">
+            Generate and manage leads for arcade and FEC prospects
+          </p>
+        </div>
 
       {/* Lead Intake Panel */}
       <Card>
@@ -663,6 +666,7 @@ export default function OutboundLeads() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { SharedHeader } from "@/components/SharedHeader";
 
 const NotFound = () => {
   const location = useLocation();
@@ -9,13 +10,16 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black">
+    <div className="min-h-screen bg-background">
+      <SharedHeader title="404 - Page Not Found" showBackButton={true} backTo="/" />
+      <div className="flex min-h-screen items-center justify-center bg-black">
       <div className="text-center">
         <h1 className="mb-4 text-6xl font-bold font-tech text-orange">404</h1>
         <p className="mb-6 text-xl text-cyan/60">Oops! Page not found</p>
         <a href="/" className="text-cyan hover:text-orange underline transition-colors font-medium">
           Return to Home
         </a>
+      </div>
       </div>
     </div>
   );

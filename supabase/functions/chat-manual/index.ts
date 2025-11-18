@@ -680,8 +680,13 @@ async function runRagPipelineV3(
   images?: string[]
 ) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
+  const pipelineStartTime = performance.now();
 
+  const searchStart = performance.now();
+  console.log("🔍 [STAGE 1/4] Searching manuals...");
   const { textResults, figureResults, strategy } = await searchChunks(query, manual_id, tenant_id);
+  const searchEnd = performance.now();
+  console.log(`✅ Search complete (${(searchEnd - searchStart).toFixed(0)}ms)`);
   
   // 🖼️ Include figure results in the context so AI knows about diagrams/images
   const figureChunks = (figureResults || []).map(f => ({
@@ -716,6 +721,8 @@ async function runRagPipelineV3(
     max_base: maxBaseScore.toFixed(3),
     is_weak: weak,
   });
+
+  console.log("🤖 [STAGE 2/4] Analyzing results...");
 
   if (weak) {
     console.log("⚠️ Weak evidence detected — proceeding with model anyway using available manual chunks.");
@@ -996,6 +1003,9 @@ serve(async (req) => {
       const streamSignals = computeSignals((chunks || []).map(c => ({ score: c.rerank_score ?? c.score ?? 0 })));
       console.log(`📊 [Streaming] Computed signals - Top: ${streamSignals.topScore.toFixed(3)}, Avg3: ${streamSignals.avgTop3.toFixed(3)}, Strong: ${streamSignals.strongHits}`);
       
+      console.log("✍️ [STAGE 3/4] Generating answer...");
+      const generateStart = performance.now();
+      
       // Get the answer stream with conversation history
       const answerStream = await generateAnswer(query, chunks || [], model, {
         retrievalWeak: false,
@@ -1046,11 +1056,16 @@ serve(async (req) => {
           
           if (chunkIds.length > 0 && effectiveManualId) {
             try {
+              console.log("🖼️ [STAGE 4/4] Loading images...");
+              const imageStart = performance.now();
+              
               // Pass figure results from search to buildCitationsAndImages
               const figures = figureResults || [];
               const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, figures, effectiveManualId);
               thumbnails = imgs || [];
-              console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${effectiveManualId}`);
+              
+              const imageEnd = performance.now();
+              console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${effectiveManualId} (${(imageEnd - imageStart).toFixed(0)}ms)`);
             } catch (e) {
               console.error('❌ Error fetching images:', e);
               // Don't fail the entire request, just log and continue without images
@@ -1074,6 +1089,21 @@ serve(async (req) => {
             }
           }
           
+          // Send status updates to frontend
+          controller.enqueue(new TextEncoder().encode(
+            `data: ${JSON.stringify({ type: 'status', data: { message: 'Searching manuals...' } })}\n\n`
+          ));
+          
+          // After search completes
+          controller.enqueue(new TextEncoder().encode(
+            `data: ${JSON.stringify({ type: 'status', data: { message: 'Analyzing results...' } })}\n\n`
+          ));
+          
+          // Before generating answer
+          controller.enqueue(new TextEncoder().encode(
+            `data: ${JSON.stringify({ type: 'status', data: { message: 'Generating answer...' } })}\n\n`
+          ));
+          
           // Send metadata first (including query_log_id for feedback and thumbnails)
           const metadata = {
             type: 'metadata',
@@ -1092,6 +1122,16 @@ serve(async (req) => {
             }
           };
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));
+          
+          const generateEnd = performance.now();
+          const pipelineEndTime = performance.now();
+          const totalTime = pipelineEndTime - pipelineStartTime;
+          
+          console.log(`📊 Performance Breakdown:
+  - Search (embed + vector + rerank): ${(searchEnd - searchStart).toFixed(0)}ms
+  - Generation (setup + first token): ${(generateEnd - generateStart).toFixed(0)}ms
+  - Total: ${(totalTime / 1000).toFixed(2)}s
+`);
           
           // Stream the answer
           const reader = answerStream.getReader();

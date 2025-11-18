@@ -173,6 +173,7 @@ export function ChatBot({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<string | null>(null);
   const [selectedManualId, setSelectedManualId] = useState<string | null>(initialManualId || null);
   const [manualTitle, setManualTitle] = useState<string | null>(initialManualTitle || null);
   const [expandedSources, setExpandedSources] = useState<string | null>(null);
@@ -1310,8 +1311,17 @@ export function ChatBot({
               const parsed = JSON.parse(jsonStr);
               console.log("📦 Received chunk:", parsed);
 
+              // Handle status updates
+              if (parsed.type === "status" && parsed.data?.message) {
+                setCurrentStatus(parsed.data.message);
+              }
+
               // Handle content chunks (streaming answer)
               if (parsed.type === "content" && parsed.data) {
+                // Turn off loading and clear status as soon as first content arrives
+                if (isLoading) setIsLoading(false);
+                if (currentStatus) setCurrentStatus(null);
+
                 let visibleChunk = "";
 
                 if (typeof parsed.data === "string") {
@@ -1344,6 +1354,9 @@ export function ChatBot({
 
               // Handle delta content (legacy format)
               if (parsed.delta) {
+                // Turn off loading and clear status for delta too
+                if (isLoading) setIsLoading(false);
+                if (currentStatus) setCurrentStatus(null);
                 // Strip out interactive_components YAML section if present - DISABLED
                 /* let cleanDelta = parsed.delta;
                 const interactiveMatch = cleanDelta.match(/\n\ninteractive_components:/);
@@ -2254,7 +2267,7 @@ export function ChatBot({
                         {!message.content && (
                           <div className="flex items-center space-x-1">
                             <Loader2 className="h-4 w-4 animate-spin opacity-70" />
-                            <span className="text-xs opacity-70">Typing...</span>
+                            <span className="text-xs opacity-70">{currentStatus || "Typing..."}</span>
                           </div>
                         )}
                       </div>
@@ -2372,18 +2385,6 @@ export function ChatBot({
                 </div>
               </div>
             ))}
-
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="rounded-lg p-5 border border-primary/30" style={{ background: "hsl(210 33% 9%)" }}>
-                  <div className="flex items-center space-x-3">
-                    <Bot className="h-5 w-5 text-primary" />
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                    <span className="text-base text-white">Thinking...</span>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div ref={messagesEndRef} />
           </div>

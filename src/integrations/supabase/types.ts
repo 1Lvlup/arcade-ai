@@ -1230,6 +1230,9 @@ export type Database = {
           id: string
           last_contacted: string | null
           lead_score: number | null
+          momentum_last_calculated: string | null
+          momentum_score: number | null
+          momentum_trend: string | null
           name: string
           notes: string | null
           phone: string | null
@@ -1247,6 +1250,9 @@ export type Database = {
           id?: string
           last_contacted?: string | null
           lead_score?: number | null
+          momentum_last_calculated?: string | null
+          momentum_score?: number | null
+          momentum_trend?: string | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -1264,6 +1270,9 @@ export type Database = {
           id?: string
           last_contacted?: string | null
           lead_score?: number | null
+          momentum_last_calculated?: string | null
+          momentum_score?: number | null
+          momentum_trend?: string | null
           name?: string
           notes?: string | null
           phone?: string | null

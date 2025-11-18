@@ -1263,7 +1263,33 @@ serve(async (req) => {
               manual_id: effectiveManualId || null,
               manual_title: manualTitle,
               auto_detected: detectedManualTitle ? true : false,
-              detected_manual_title: detectedManualTitle
+              detected_manual_title: detectedManualTitle,
+              
+              // RAG Debug Data
+              rag_debug: {
+                chunks: chunks?.slice(0, 10).map(c => ({
+                  content_preview: c.content.substring(0, 150) + '...',
+                  page_start: c.page_start || 0,
+                  page_end: c.page_end || c.page_start || 0,
+                  score: c.score || 0,
+                  rerank_score: c.rerank_score || c.score || 0,
+                  menu_path: c.menu_path || ''
+                })) || [],
+                signals: streamSignals,
+                quality_score: quality_score || 0,
+                max_rerank_score: maxRerankScore || 0,
+                max_base_score: maxBaseScore || 0,
+                performance: {
+                  search_ms: (searchEnd - searchStart).toFixed(0),
+                  generation_ms: (generateEnd - generateStart).toFixed(0),
+                  total_ms: totalTime.toFixed(0)
+                },
+                answer_style: {
+                  is_weak: shaped.isWeak || false,
+                  adaptive_mode: shaped.isWeak ? 'cautious' : 'confident'
+                },
+                strategy: strategy
+              }
             }
           };
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));

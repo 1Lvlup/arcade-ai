@@ -975,28 +975,128 @@ serve(async (req) => {
     if (stream) {
       console.log("📡 Starting streaming response");
       const ragResult = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images);
-      const { sources, strategy, chunks, figureResults } = ragResult;
+      const { sources, strategy, chunks, figureResults, answer } = ragResult;
       
-      // Log the query to get query_log_id for feedback
+      // ============ QUALITY GRADING FOR STREAMING ============
+      console.log("📊 [GRADING] Starting quality evaluation for streaming response...");
+      const gradingStartTime = performance.now();
+      
+      const response_text = typeof answer === 'string' ? answer : JSON.stringify(answer);
+      
+      // 1. Extract claims
+      const claims = response_text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+      
+      // 2. Detect numbers
+      const numericMatches = [...response_text.matchAll(/(\d+\.?\d*)\s*([a-zA-Z]+)?/g)];
+      const numeric_flags = numericMatches.map(m => ({
+        value: m[1],
+        unit: m[2] || '',
+        context: response_text.substring(
+          Math.max(0, m.index! - 20),
+          Math.min(response_text.length, m.index! + m[0].length + 40)
+        )
+      }));
+      
+      // 3. Calculate claim coverage
+      const topChunksForCoverage = chunks?.slice(0, 3) || [];
+      let supportedClaims = 0;
+      
+      for (const claim of claims) {
+        const claimWords = claim.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+        
+        for (const chunk of topChunksForCoverage) {
+          const chunkText = (chunk.content || '').toLowerCase();
+          const matchedWords = claimWords.filter((w: string) => chunkText.includes(w));
+          
+          if (claimWords.length > 0 && matchedWords.length / claimWords.length > 0.3) {
+            supportedClaims++;
+            break;
+          }
+        }
+      }
+      
+      const claim_coverage = claims.length > 0 ? supportedClaims / claims.length : 1.0;
+      
+      // 4. Calculate quality score
+      const vectorMean = chunks && chunks.length > 0 
+        ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.score || 0), 0) / Math.min(3, chunks.length)
+        : 0;
+      const rerankMean = chunks && chunks.length > 0
+        ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.rerank_score || 0), 0) / Math.min(3, chunks.length)
+        : 0;
+      
+      const coverageWeight = 0.5;
+      const retrievalWeight = 0.3;
+      const penaltyWeight = 0.2;
+      
+      const retrievalScore = (vectorMean * 0.4 + rerankMean * 0.6);
+      const numericPenalty = numeric_flags.length > 0 ? 0.3 : 0.0;
+      
+      const quality_score = (
+        claim_coverage * coverageWeight +
+        retrievalScore * retrievalWeight -
+        numericPenalty * penaltyWeight
+      );
+      
+      // 5. Determine quality tier
+      let quality_tier = 'low';
+      if (claim_coverage >= 0.8 && numeric_flags.length === 0) {
+        quality_tier = 'high';
+      } else if (claim_coverage >= 0.5) {
+        quality_tier = 'medium';
+      }
+      
+      const gradingEndTime = performance.now();
+      const gradingDuration = gradingEndTime - gradingStartTime;
+      
+      console.log('📊 Quality Assessment (Streaming):', {
+        tier: quality_tier,
+        score: quality_score.toFixed(3),
+        coverage: claim_coverage.toFixed(2),
+        claims_total: claims.length,
+        claims_supported: supportedClaims,
+        numeric_flags: numeric_flags.length,
+        vector_mean: vectorMean.toFixed(3),
+        rerank_mean: rerankMean.toFixed(3),
+        grading_time_ms: gradingDuration.toFixed(0)
+      });
+      console.log(`⏱️ [GRADING] Completed in ${gradingDuration.toFixed(0)}ms`);
+      // ============ END QUALITY GRADING ============
+      
+      // Log the query with quality metrics
       let queryLogId = null;
       try {
         const { data: logData, error: logError } = await supabase
           .from('query_logs')
           .insert({
             query_text: query,
-            manual_id: effectiveManualId || null,
-            fec_tenant_id: tenant_id || null,
-            retrieval_method: strategy,
+            normalized_query: normalizeQuery(query),
             model_name: model,
+            retrieval_method: strategy,
+            response_text,
+            manual_id: effectiveManualId || null,
+            top_doc_ids: chunks?.slice(0, 10).map(c => c.id) || [],
+            top_doc_pages: chunks?.slice(0, 10).map(c => c.page_start || 0) || [],
+            top_doc_scores: chunks?.slice(0, 10).map(c => c.rerank_score || 0) || [],
+            // Quality metrics
+            numeric_flags: JSON.stringify(numeric_flags),
+            claim_coverage,
+            quality_score,
+            quality_tier,
+            vector_mean: vectorMean,
+            rerank_mean: rerankMean,
           })
           .select('id')
           .single();
 
         if (!logError && logData) {
           queryLogId = logData.id;
+          console.log('✅ Query logged with quality metrics, ID:', queryLogId);
+        } else {
+          console.error('❌ Failed to log query with quality metrics:', logError);
         }
       } catch (e) {
-        console.error('Error logging query:', e);
+        console.error('❌ Error logging query:', e);
       }
       
       // Compute signals for streaming response (required for Answer Style V2)

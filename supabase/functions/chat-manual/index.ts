@@ -607,13 +607,33 @@ Reference specific observations from the images in your response and provide det
               try {
                 const parsed = JSON.parse(dataContent);
                 
+                // Handle Responses API streaming format
                 if (parsed.delta) {
-                  const transformed = {
-                    choices: [{
-                      delta: { content: parsed.delta }
-                    }]
-                  };
-                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
+                  let textContent = "";
+                  
+                  // delta can be an array of content items or a string
+                  if (Array.isArray(parsed.delta)) {
+                    for (const item of parsed.delta) {
+                      if (item.type === "output_text" && item.text) {
+                        textContent += item.text;
+                      } else if (item.text) {
+                        textContent += item.text;
+                      }
+                    }
+                  } else if (typeof parsed.delta === "string") {
+                    textContent = parsed.delta;
+                  } else if (parsed.delta.text) {
+                    textContent = parsed.delta.text;
+                  }
+                  
+                  if (textContent) {
+                    const transformed = {
+                      choices: [{
+                        delta: { content: textContent }
+                      }]
+                    };
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
+                  }
                 }
               } catch (e) {
                 console.error('Error parsing stream data:', e);

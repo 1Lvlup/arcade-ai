@@ -607,13 +607,21 @@ Reference specific observations from the images in your response and provide det
               try {
                 const parsed = JSON.parse(dataContent);
                 
+                // DEBUG: Log the raw chunk structure
+                console.log('📦 Received stream chunk:', JSON.stringify(parsed, null, 2));
+                console.log('📦 Chunk keys:', Object.keys(parsed));
+                console.log('📦 Chunk type:', typeof parsed);
+                
                 // Handle Responses API streaming format
                 if (parsed.delta) {
+                  console.log('✅ Found delta field:', typeof parsed.delta);
                   let textContent = "";
                   
                   // delta can be an array of content items or a string
                   if (Array.isArray(parsed.delta)) {
+                    console.log('📋 Delta is array with length:', parsed.delta.length);
                     for (const item of parsed.delta) {
+                      console.log('  - Array item:', JSON.stringify(item));
                       if (item.type === "output_text" && item.text) {
                         textContent += item.text;
                       } else if (item.text) {
@@ -621,22 +629,55 @@ Reference specific observations from the images in your response and provide det
                       }
                     }
                   } else if (typeof parsed.delta === "string") {
+                    console.log('📝 Delta is string:', parsed.delta);
                     textContent = parsed.delta;
                   } else if (parsed.delta.text) {
+                    console.log('📝 Delta has text property:', parsed.delta.text);
                     textContent = parsed.delta.text;
+                  } else {
+                    console.log('⚠️ Delta object keys:', Object.keys(parsed.delta));
                   }
                   
                   if (textContent) {
+                    console.log('✉️ Sending text content:', textContent);
                     const transformed = {
                       choices: [{
                         delta: { content: textContent }
                       }]
                     };
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
+                  } else {
+                    console.warn('⚠️ No text content extracted from delta');
+                  }
+                } else {
+                  console.warn('⚠️ No delta field found in chunk');
+                  console.warn('⚠️ Available fields:', Object.keys(parsed));
+                  
+                  // Try alternate formats
+                  if (parsed.choices && parsed.choices[0]) {
+                    console.log('🔄 Found choices format - might be Chat Completions format');
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
+                  } else if (parsed.content) {
+                    console.log('🔄 Found direct content field');
+                    const transformed = {
+                      choices: [{
+                        delta: { content: parsed.content }
+                      }]
+                    };
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
+                  } else if (parsed.text) {
+                    console.log('🔄 Found direct text field');
+                    const transformed = {
+                      choices: [{
+                        delta: { content: parsed.text }
+                      }]
+                    };
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
                   }
                 }
               } catch (e) {
-                console.error('Error parsing stream data:', e);
+                console.error('❌ Error parsing stream data:', e);
+                console.error('❌ Problematic line:', dataContent.slice(0, 200));
               }
             }
           }

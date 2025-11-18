@@ -1678,6 +1678,66 @@ export type Database = {
           },
         ]
       }
+      prospects_google: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string | null
+          formatted_address: string | null
+          google_rating: number | null
+          id: string
+          imported_to_companies: boolean | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          phone_number: string | null
+          place_id: string
+          raw_payload: Json | null
+          state: string | null
+          types: string[] | null
+          user_ratings_total: number | null
+          website: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          formatted_address?: string | null
+          google_rating?: number | null
+          id?: string
+          imported_to_companies?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          phone_number?: string | null
+          place_id: string
+          raw_payload?: Json | null
+          state?: string | null
+          types?: string[] | null
+          user_ratings_total?: number | null
+          website?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          formatted_address?: string | null
+          google_rating?: number | null
+          id?: string
+          imported_to_companies?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          phone_number?: string | null
+          place_id?: string
+          raw_payload?: Json | null
+          state?: string | null
+          types?: string[] | null
+          user_ratings_total?: number | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       query_feedback: {
         Row: {
           actual_behavior: string | null

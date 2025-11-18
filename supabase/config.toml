@@ -194,3 +194,6 @@ verify_jwt = true
 
 [functions.predictive-objection-engine]
 verify_jwt = true
+
+[functions.recalculate-lead-momentum]
+verify_jwt = true

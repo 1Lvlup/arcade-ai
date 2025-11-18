@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Loader2, Copy } from "lucide-react";
 import { SharedHeader } from "@/components/SharedHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { OutboundNav } from "@/components/OutboundNav";
 
 interface CadenceStep {
   step_number: number;

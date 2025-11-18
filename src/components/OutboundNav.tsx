@@ -10,10 +10,17 @@ import {
   LayoutDashboard,
   AlertTriangle,
   TrendingUp,
-  Download
+  Download,
+  Command
 } from "lucide-react";
 
 const navItems = [
+  {
+    title: "Command Center",
+    href: "/outbound-command",
+    icon: Command,
+    description: "Executive dashboard"
+  },
   {
     title: "Lead Intelligence",
     href: "/lead-intelligence",

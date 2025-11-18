@@ -55,6 +55,7 @@ import OutboundDemo from "./pages/OutboundDemo";
 import OutboundObjections from "./pages/OutboundObjections";
 import OutboundPipeline from "./pages/OutboundPipeline";
 import OutboundImport from "./pages/OutboundImport";
+import OutboundCommand from "./pages/OutboundCommand";
 import QualityMetrics from "./pages/QualityMetrics";
 
 const queryClient = new QueryClient();
@@ -340,6 +341,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <OutboundImport />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/outbound-command" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <OutboundCommand />
                 </AdminRoute>
               </ProtectedRoute>
             } />

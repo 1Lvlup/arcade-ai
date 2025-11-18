@@ -55,6 +55,9 @@ interface Lead {
   stage: string | null;
   last_contacted: string | null;
   company_id: string | null;
+  momentum_score: number | null;
+  momentum_trend: string | null;
+  momentum_last_calculated: string | null;
   companies: {
     name: string;
     location: string | null;
@@ -82,6 +85,7 @@ export default function OutboundLeads() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [strategyData, setStrategyData] = useState<StrategyData | null>(null);
   const [strategyLoading, setStrategyLoading] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -315,6 +319,53 @@ export default function OutboundLeads() {
     }
   };
 
+  const getMomentumTrendColor = (trend: string | null) => {
+    switch (trend) {
+      case "rising": return "bg-green-500/20 text-green-700 border-green-500/30";
+      case "falling": return "bg-red-500/20 text-red-700 border-red-500/30";
+      case "flat": return "bg-muted text-muted-foreground border-border";
+      default: return "bg-muted text-muted-foreground border-border";
+    }
+  };
+
+  const recalculateMomentum = async () => {
+    if (!selectedLead?.id) return;
+    
+    setRecalculating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('recalculate-lead-momentum', {
+        body: { lead_id: selectedLead.id }
+      });
+
+      if (error) throw error;
+
+      // Update local state
+      setSelectedLead(prev => prev ? {
+        ...prev,
+        momentum_score: data.momentum_score,
+        momentum_trend: data.momentum_trend,
+        momentum_last_calculated: new Date().toISOString()
+      } : null);
+
+      // Invalidate queries to refresh
+      queryClient.invalidateQueries({ queryKey: ['outbound-leads'] });
+
+      toast({
+        title: "Momentum recalculated",
+        description: `Score: ${data.momentum_score}, Trend: ${data.momentum_trend}`
+      });
+    } catch (error) {
+      console.error('Momentum recalculation error:', error);
+      toast({
+        title: "Failed to recalculate momentum",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive"
+      });
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <SharedHeader title="Lead Intelligence" showBackButton={true} backTo="/" />
@@ -442,6 +493,7 @@ export default function OutboundLeads() {
                   <TableHead>Lead Score</TableHead>
                   <TableHead>Tier</TableHead>
                   <TableHead>Stage</TableHead>
+                  <TableHead>Momentum</TableHead>
                   <TableHead>Last Contacted</TableHead>
                 </TableRow>
               </TableHeader>
@@ -463,6 +515,16 @@ export default function OutboundLeads() {
                       )}
                     </TableCell>
                     <TableCell>{lead.stage || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{lead.momentum_score ?? "—"}</span>
+                        {lead.momentum_trend && (
+                          <Badge variant="outline" className={getMomentumTrendColor(lead.momentum_trend)}>
+                            {lead.momentum_trend}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {lead.last_contacted 
                         ? new Date(lead.last_contacted).toLocaleDateString() 
@@ -578,6 +640,49 @@ export default function OutboundLeads() {
                 </div>
               </div>
             </div>
+
+            <Separator />
+
+            {/* Momentum Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Momentum</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-3xl font-bold">
+                      {selectedLead.momentum_score !== null ? selectedLead.momentum_score : "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Score (0-100)</p>
+                  </div>
+                  {selectedLead.momentum_trend && (
+                    <Badge variant="outline" className={getMomentumTrendColor(selectedLead.momentum_trend)}>
+                      {selectedLead.momentum_trend}
+                    </Badge>
+                  )}
+                </div>
+                {selectedLead.momentum_last_calculated && (
+                  <p className="text-xs text-muted-foreground">
+                    Last calculated: {new Date(selectedLead.momentum_last_calculated).toLocaleString()}
+                  </p>
+                )}
+                <Button 
+                  onClick={recalculateMomentum} 
+                  disabled={recalculating}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  {recalculating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                  )}
+                  Recalculate Momentum
+                </Button>
+              </CardContent>
+            </Card>
 
             <Separator />
 

@@ -28,6 +28,9 @@ interface Lead {
   stage: string | null;
   last_contacted: string | null;
   company_id: string | null;
+  momentum_score: number | null;
+  momentum_trend: string | null;
+  momentum_last_calculated: string | null;
   companies: {
     name: string;
     location: string | null;
@@ -52,6 +55,7 @@ export default function OutboundTasks() {
   // Filters
   const [priorityFilter, setPriorityFilter] = useState<string>("All");
   const [stageFilter, setStageFilter] = useState<string>("All");
+  const [minMomentum, setMinMomentum] = useState<string>("");
   const [selectedDate] = useState(new Date());
 
   // Action drawer
@@ -68,6 +72,7 @@ export default function OutboundTasks() {
   const [discoveryNotes, setDiscoveryNotes] = useState("");
   const [isGeneratingDiscovery, setIsGeneratingDiscovery] = useState(false);
   const [discoverySummary, setDiscoverySummary] = useState<any>(null);
+  const [recalculating, setRecalculating] = useState(false);
 
   // Demo & Objection Tools state
   const [isGeneratingQuickDemo, setIsGeneratingQuickDemo] = useState(false);
@@ -78,7 +83,7 @@ export default function OutboundTasks() {
 
   // Fetch leads with filters
   const { data: leads = [], isLoading } = useQuery({
-    queryKey: ['outbound-tasks', priorityFilter, stageFilter],
+    queryKey: ['outbound-tasks', priorityFilter, stageFilter, minMomentum],
     queryFn: async () => {
       let query = supabase
         .from('leads')
@@ -107,18 +112,27 @@ export default function OutboundTasks() {
 
       if (error) throw error;
 
-      // Sort by priority, then score, then last_contacted
-      const sorted = (data as Lead[]).sort((a, b) => {
+      // Filter by momentum if specified
+      let filtered = data as Lead[];
+      if (minMomentum && minMomentum !== "") {
+        const minMomentumNum = parseInt(minMomentum);
+        filtered = filtered.filter(lead => 
+          lead.momentum_score !== null && lead.momentum_score >= minMomentumNum
+        );
+      }
+
+      // Sort by priority, then momentum_score, then last_contacted
+      const sorted = filtered.sort((a, b) => {
         // Priority tier order: A < B < C
         const tierOrder: Record<string, number> = { 'A': 1, 'B': 2, 'C': 3 };
         const aTier = tierOrder[a.priority_tier || 'C'] || 999;
         const bTier = tierOrder[b.priority_tier || 'C'] || 999;
         if (aTier !== bTier) return aTier - bTier;
 
-        // Then by lead_score descending
-        const aScore = a.lead_score || 0;
-        const bScore = b.lead_score || 0;
-        if (aScore !== bScore) return bScore - aScore;
+        // Then by momentum_score descending (nulls last)
+        const aMomentum = a.momentum_score ?? -1;
+        const bMomentum = b.momentum_score ?? -1;
+        if (aMomentum !== bMomentum) return bMomentum - aMomentum;
 
         // Then by last_contacted ascending (oldest first)
         const aDate = a.last_contacted ? new Date(a.last_contacted).getTime() : 0;
@@ -463,6 +477,53 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
     }
   };
 
+  const getMomentumTrendColor = (trend: string | null) => {
+    switch (trend) {
+      case "rising": return "bg-green-500/20 text-green-700 border-green-500/30";
+      case "falling": return "bg-red-500/20 text-red-700 border-red-500/30";
+      case "flat": return "bg-muted text-muted-foreground border-border";
+      default: return "bg-muted text-muted-foreground border-border";
+    }
+  };
+
+  const getAvgMomentum = () => {
+    const leadsWithMomentum = leads.filter(l => l.momentum_score !== null);
+    if (leadsWithMomentum.length === 0) return 0;
+    const sum = leadsWithMomentum.reduce((acc, l) => acc + (l.momentum_score || 0), 0);
+    return Math.round(sum / leadsWithMomentum.length);
+  };
+
+  const recalculateMomentum = async () => {
+    if (!selectedLead?.id) return;
+    
+    setRecalculating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('recalculate-lead-momentum', {
+        body: { lead_id: selectedLead.id }
+      });
+
+      if (error) throw error;
+
+      // Update local state
+      setSelectedLead(prev => prev ? {
+        ...prev,
+        momentum_score: data.momentum_score,
+        momentum_trend: data.momentum_trend,
+        momentum_last_calculated: new Date().toISOString()
+      } : null);
+
+      // Invalidate queries to refresh
+      queryClient.invalidateQueries({ queryKey: ['outbound-tasks'] });
+
+      toast.success(`Momentum recalculated: ${data.momentum_score}, ${data.momentum_trend}`);
+    } catch (error) {
+      console.error('Momentum recalculation error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to recalculate momentum");
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <SharedHeader title="Outbound - Tasks" showBackButton={true} backTo="/" />
@@ -526,6 +587,19 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
                   {format(selectedDate, 'MMMM d, yyyy')}
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label>Min Momentum</Label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={minMomentum}
+                  onChange={(e) => setMinMomentum(e.target.value)}
+                  placeholder="e.g., 60"
+                  className="w-full px-3 py-2 border rounded text-sm"
+                />
+              </div>
             </div>
 
             {/* Summary */}
@@ -534,6 +608,10 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
                 <div>
                   <span className="text-sm text-muted-foreground">Total Leads: </span>
                   <span className="font-bold">{leads.length}</span>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">Avg Momentum (filtered): </span>
+                  <span className="font-bold">{getAvgMomentum()}</span>
                 </div>
                 {getStageSummary().map(({ stage, count }) => (
                   count > 0 && (
@@ -569,6 +647,7 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
                     <TableHead>Company</TableHead>
                     <TableHead>Priority</TableHead>
                     <TableHead>Stage</TableHead>
+                    <TableHead>Momentum</TableHead>
                     <TableHead>Suggested Action</TableHead>
                     <TableHead>Last Contacted</TableHead>
                     <TableHead></TableHead>
@@ -585,6 +664,9 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell>{lead.stage || 'N/A'}</TableCell>
+                      <TableCell>
+                        <span className="font-medium">{lead.momentum_score ?? "—"}</span>
+                      </TableCell>
                       <TableCell className="font-semibold text-primary">
                         {getSuggestedAction(lead)}
                       </TableCell>
@@ -650,6 +732,43 @@ Company: ${selectedLead.companies?.name || 'Unknown'}
                     </div>
                   </div>
                 )}
+
+                {/* Momentum Snapshot */}
+                <div className="space-y-2 p-3 border rounded bg-accent/30">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Momentum</h3>
+                    <Button
+                      onClick={recalculateMomentum}
+                      disabled={recalculating}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      {recalculating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Recalc"
+                      )}
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="text-2xl font-bold">
+                        {selectedLead.momentum_score !== null ? selectedLead.momentum_score : "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Score (0-100)</p>
+                    </div>
+                    {selectedLead.momentum_trend && (
+                      <Badge variant="outline" className={getMomentumTrendColor(selectedLead.momentum_trend)}>
+                        {selectedLead.momentum_trend}
+                      </Badge>
+                    )}
+                  </div>
+                  {selectedLead.momentum_last_calculated && (
+                    <p className="text-xs text-muted-foreground">
+                      Last calc: {format(new Date(selectedLead.momentum_last_calculated), 'MMM d, h:mm a')}
+                    </p>
+                  )}
+                </div>
 
                 {/* Recent Activities */}
                 <div className="space-y-2">

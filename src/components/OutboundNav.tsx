@@ -8,7 +8,8 @@ import {
   MessageSquare, 
   Presentation,
   LayoutDashboard,
-  AlertTriangle
+  AlertTriangle,
+  TrendingUp
 } from "lucide-react";
 
 const navItems = [
@@ -47,6 +48,12 @@ const navItems = [
     href: "/outbound-objections",
     icon: AlertTriangle,
     description: "Analyze patterns"
+  },
+  {
+    title: "Pipeline Analytics",
+    href: "/outbound-pipeline",
+    icon: TrendingUp,
+    description: "Momentum insights"
   }
 ];
 

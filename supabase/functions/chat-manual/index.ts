@@ -653,14 +653,13 @@ Reference specific observations from the images in your response and provide det
                   console.log("ℹ️ Unhandled Responses event type:", parsed.type);
                 }
                 
-                // If we found content, transform it to Chat Completions format for frontend compatibility
+                // Pass through as content event for frontend
                 if (textContent) {
-                  const transformed = {
-                    choices: [{
-                      delta: { content: textContent }
-                    }]
+                  const chunk = {
+                    type: "content",
+                    data: textContent
                   };
-                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`));
+                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
                 } else {
                   console.warn('⚠️ No text extracted from chunk type:', parsed.type);
                 }
@@ -1327,30 +1326,39 @@ serve(async (req) => {
                   
                   try {
                     const parsed = JSON.parse(data);
-                    const rawContent = parsed.choices?.[0]?.delta?.content;
-
                     let content = "";
-                    // Normalize Responses API delta.content into a plain string
-                    if (typeof rawContent === "string") {
-                      content = rawContent;
-                    } else if (Array.isArray(rawContent)) {
-                      for (const part of rawContent) {
-                        if (part && typeof part === "object") {
-                          if (part.type === "output_text" && typeof part.text === "string") {
-                            content += part.text;
-                          } else if (typeof part.text === "string") {
-                            content += part.text;
+
+                    // Handle Responses API streaming events directly
+                    if (parsed.type === "response.output_text.delta" && typeof parsed.delta === "string") {
+                      content = parsed.delta;
+                    } 
+                    else if (parsed.type === "response.output_text.done" && typeof parsed.text === "string") {
+                      content = parsed.text;
+                    }
+                    else if (parsed.type === "response.completed" && parsed.response?.output) {
+                      const outputs = parsed.response.output;
+                      for (const out of outputs) {
+                        if (Array.isArray(out.output_text)) {
+                          for (const seg of out.output_text) {
+                            if (typeof seg.text === "string") {
+                              content += seg.text;
+                            }
+                          }
+                        }
+                        if (out.type === "message" && Array.isArray(out.content)) {
+                          for (const part of out.content) {
+                            if (part.type === "output_text" && typeof part.text === "string") {
+                              content += part.text;
+                            }
                           }
                         }
                       }
-                    } else if (rawContent && typeof rawContent === "object" && typeof rawContent.text === "string") {
-                      content = rawContent.text;
                     }
 
                     if (content) {
                       const chunk = {
                         type: "content",
-                        data: content,
+                        data: content
                       };
                       controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
                     }

@@ -90,15 +90,6 @@ function expandQuery(q: string) {
   return n;
 }
 
-// ── Optional style hint detector (lets users ask “explain like a 5th grader”) ──
-function styleHintFromQuery(q: string): string {
-  const s = q.toLowerCase();
-  if (/(5th|fifth)\s+grader|explain.*like.*(5|five)th/.test(s)) {
-    return "Write for a 5th grader: short sentences, everyday words, no jargon. Define any technical term in one simple line. Explain step by step";
-  }
-  return "";
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // Keyword helpers you already had
 // ─────────────────────────────────────────────────────────────────────────
@@ -733,7 +724,7 @@ Keep it short (2-3 sentences max) and friendly.`;
     retrievalWeak,
     signals,
     existingWeak: weak,
-    stream: false, // Must be false for two-stage approach
+    stream: true, // Must be false for two-stage approach
     conversationHistory,
     images
   });

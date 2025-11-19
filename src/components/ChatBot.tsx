@@ -1462,24 +1462,6 @@ export function ChatBot({
                 );
               }
 
-              // Handle delta content (legacy format)
-              if (parsed.delta) {
-                // Turn off loading and clear status for delta too
-                if (isLoading) setIsLoading(false);
-                if (currentStatus) setCurrentStatus(null);
-                // Strip out interactive_components YAML section if present - DISABLED
-                /* let cleanDelta = parsed.delta;
-                const interactiveMatch = cleanDelta.match(/\n\ninteractive_components:/);
-                if (interactiveMatch) {
-                  cleanDelta = cleanDelta.substring(0, interactiveMatch.index);
-                } */
-                let cleanDelta = parsed.delta;
-
-                accumulatedContent += cleanDelta;
-                setMessages((prev) =>
-                  prev.map((msg) => (msg.id === botMessageId ? { ...msg, content: accumulatedContent } : msg)),
-                );
-              }
 
               // Handle metadata (usage, manual detection, sources)
               if (parsed.type === "metadata" && parsed.data) {

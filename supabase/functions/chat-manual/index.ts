@@ -3,7 +3,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { computeSignals, shapeMessages } from "../_shared/answerStyle.ts";
+import { computeSignals, shapeMessages, HEURISTICS } from "../_shared/answerStyle.ts";
 import { buildCitationsAndImages } from "../_shared/rag.ts";
 
 const corsHeaders = {
@@ -729,11 +729,17 @@ Keep it short (2-3 sentences max) and friendly.`;
     images
   });
 
-  // STAGE 2: INTERACTIVE ELEMENTS TEMPORARILY DISABLED
-  // See INTERACTIVE_ELEMENTS_BACKUP.ts to re-enable
+  // Interactive elements disabled in current version
   const elementsResult = { interactive_components: [] };
 
-  console.log(`✅ [RAG V3] Pipeline complete - interactive elements disabled\n`);
+  console.log(`✅ [RAG V3] Pipeline complete`, {
+    answer_length: answer?.length || 0,
+    sources_count: topChunks.length,
+    figures_count: figureResults.length,
+    strategy,
+    isWeak,
+    pipeline_version: "v3"
+  });
 
   return {
     answer,
@@ -749,8 +755,17 @@ Keep it short (2-3 sentences max) and friendly.`;
     })),
     strategy,
     chunks: topChunks,
-    figureResults, // Pass figures separately
+    figureResults,
     pipeline_version: "v3",
+    retrieval_quality: {
+      isWeak,
+      signals,
+      meets_thresholds: {
+        topScore: meetsTopScoreThreshold,
+        avgTop3: meetsAvgThreshold,
+        strongHits: meetsStrongHitsThreshold
+      }
+    }
   };
 }
 

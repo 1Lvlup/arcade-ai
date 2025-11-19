@@ -156,7 +156,7 @@ If the user says:
 
 export const HEURISTICS = {
   minTopScore: parseFloat(Deno.env.get("RETRIEVAL_MIN_TOP_SCORE") || "0.62"),
-  weakBundleAvg: parseFloat(Deno.env.get("RETRIEVAL_WEAK_AVG") || "0.58"),
+  weakAvg: parseFloat(Deno.env.get("RETRIEVAL_WEAK_AVG") || "0.58"),
   minStrongHits: parseInt(Deno.env.get("RETRIEVAL_MIN_STRONG") || "2", 10),
 };
 
@@ -179,9 +179,33 @@ export function shapeMessages(
     strongHits?: number;
   },
 ) {
-  const thresholdWeak = contextSnippets.length === 0 || contextSnippets.some((s) => s.excerpt.includes("WARN:"));
+  const { existingWeak, topScore = 0, avgTop3 = 0, strongHits = 0 } = opts || {};
 
-  const isWeak = opts?.existingWeak || thresholdWeak;
+  const hasContext = contextSnippets && contextSnippets.length > 0;
+  
+  // Use HEURISTICS thresholds as source of truth for weak/strong determination
+  const meetsTopScoreThreshold = topScore >= HEURISTICS.minTopScore;
+  const meetsAvgThreshold = avgTop3 >= HEURISTICS.weakAvg;
+  const meetsStrongHitsThreshold = strongHits >= HEURISTICS.minStrongHits;
+  
+  // Determine if retrieval is weak based on HEURISTICS (allow existingWeak override)
+  const isWeak = existingWeak !== undefined 
+    ? existingWeak 
+    : !hasContext || (!meetsTopScoreThreshold && !meetsAvgThreshold && !meetsStrongHitsThreshold);
+
+  console.log(`📊 [Answer Style V2] Retrieval assessment:`, {
+    topScore: topScore.toFixed(3),
+    avgTop3: avgTop3.toFixed(3),
+    strongHits,
+    thresholds: HEURISTICS,
+    meets_thresholds: {
+      topScore: meetsTopScoreThreshold,
+      avgTop3: meetsAvgThreshold,
+      strongHits: meetsStrongHitsThreshold
+    },
+    isWeak,
+    hasContext
+  });
 
   const evidenceBlock = contextSnippets
     .map((s, i) => `#${i + 1}: ${s.title}${s.cite ? ` (${s.cite})` : ""}\n${s.excerpt}`)

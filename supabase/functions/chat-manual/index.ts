@@ -646,24 +646,38 @@ async function runRagPipelineV3(
     };
   }
 
-  const maxRerankScore = Math.max(...chunks.map((c) => c.rerank_score ?? 0));
-  const maxBaseScore = Math.max(...chunks.map((c) => c.score ?? 0));
-  const hasGoodRerank = maxRerankScore >= 0.45;
-  const hasGoodBase = maxBaseScore >= 0.35;
-  const weak = chunks.length < 3 || (!hasGoodRerank && !hasGoodBase);
+  // Compute signals for unified retrieval quality assessment
+  const signals = computeSignals(chunks.map(c => ({ 
+    score: c.score,
+    rerank_score: c.rerank_score 
+  })));
+
+  // Use HEURISTICS thresholds for consistency with Answer Style
+  const meetsTopScoreThreshold = signals.topScore >= HEURISTICS.minTopScore;
+  const meetsAvgThreshold = signals.avgTop3 >= HEURISTICS.weakAvg;
+  const meetsStrongHitsThreshold = signals.strongHits >= HEURISTICS.minStrongHits;
+  
+  const isWeak = chunks.length < 3 || 
+                 (!meetsTopScoreThreshold && !meetsAvgThreshold && !meetsStrongHitsThreshold);
 
   console.log(`📊 Answerability check:`, {
     chunk_count: chunks.length,
-    max_rerank: maxRerankScore.toFixed(3),
-    max_base: maxBaseScore.toFixed(3),
-    is_weak: weak,
+    topScore: signals.topScore.toFixed(3),
+    avgTop3: signals.avgTop3.toFixed(3),
+    strongHits: signals.strongHits,
+    thresholds: HEURISTICS,
+    meets_thresholds: {
+      topScore: meetsTopScoreThreshold,
+      avgTop3: meetsAvgThreshold,
+      strongHits: meetsStrongHitsThreshold
+    },
+    isWeak,
   });
 
   console.log("🤖 [STAGE 2/4] Analyzing results...");
 
-  if (weak) {
+  if (isWeak) {
     console.log("⚠️ Weak evidence detected — proceeding with model anyway using available manual chunks.");
-    // No early return. We still call the model with topChunks so it must use whatever citations we have.
   }
 
   const topChunks = chunks.slice(0, 10);
@@ -715,16 +729,12 @@ Keep it short (2-3 sentences max) and friendly.`;
   }
 
   console.log(`🎯 STAGE 1: Generating answer content with ${model || CHAT_MODEL}`);
-  const retrievalWeak = weak || topChunks.length < 2;
-  
-  // Compute signals for Answer Style V2
-  const signals = computeSignals(chunks.map(c => ({ score: c.rerank_score ?? c.score ?? 0 })));
   
   const answer = await generateAnswer(query, topChunks, model || CHAT_MODEL, { 
-    retrievalWeak,
+    retrievalWeak: isWeak,
     signals,
-    existingWeak: weak,
-    stream: true, // Must be false for two-stage approach
+    existingWeak: isWeak,
+    stream: true,
     conversationHistory,
     images
   });

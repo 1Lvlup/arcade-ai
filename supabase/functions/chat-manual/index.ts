@@ -574,111 +574,9 @@ Reference specific observations from the images in your response and provide det
     }
   }
 
-  // Streaming: Transform Responses API stream to Chat Completions format
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
-  
-  const transformedStream = new ReadableStream({
-    async start(controller) {
-      let buffer = "";
-      
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || "";
-          
-          for (const line of lines) {
-            if (!line.trim() || line.startsWith(':')) continue;
-            
-            if (line.startsWith('data: ')) {
-              const dataContent = line.slice(6);
-              
-              if (dataContent === '[DONE]') {
-                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-                continue;
-              }
-              
-              try {
-                const parsed = JSON.parse(dataContent);
-                console.log('📦 Raw chunk:', JSON.stringify(parsed).slice(0, 200));
-                
-                // Responses API streaming format - correct event type and structure
-                console.log("🔎 Event type:", parsed.type);
-                let textContent = "";
-                
-                // 1) Streaming chunks: response.output_text.delta
-                if (parsed.type === "response.output_text.delta" && typeof parsed.delta === "string") {
-                  textContent = parsed.delta;
-                  console.log("✅ Extracted from response.output_text.delta:", textContent);
-                }
-                
-                // 2) Final text event: response.output_text.done
-                else if (parsed.type === "response.output_text.done" && typeof parsed.text === "string") {
-                  textContent = parsed.text;
-                  console.log("✅ Extracted from response.output_text.done:", textContent.slice(0, 80));
-                }
-                
-                // 3) Completed response: response.completed
-                // This carries the full response object under parsed.response
-                else if (parsed.type === "response.completed" && parsed.response?.output) {
-                  const outputs = parsed.response.output;
-                  for (const out of outputs) {
-                    // Handle output_text tool style
-                    if (Array.isArray(out.output_text)) {
-                      for (const seg of out.output_text) {
-                        if (typeof seg.text === "string") {
-                          textContent += seg.text;
-                        }
-                      }
-                    }
-                    
-                    // Fallback: if using "message" style output
-                    if (out.type === "message" && Array.isArray(out.content)) {
-                      for (const part of out.content) {
-                        if (part.type === "output_text" && typeof part.text === "string") {
-                          textContent += part.text;
-                        }
-                      }
-                    }
-                  }
-                  console.log("✅ Extracted from response.completed:", textContent.slice(0, 80));
-                }
-                
-                // Optional safety net: log unknown events for debugging
-                else {
-                  console.log("ℹ️ Unhandled Responses event type:", parsed.type);
-                }
-                
-                // Pass through as content event for frontend
-                if (textContent) {
-                  const chunk = {
-                    type: "content",
-                    data: textContent
-                  };
-                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
-                } else {
-                  console.warn('⚠️ No text extracted from chunk type:', parsed.type);
-                }
-              } catch (e) {
-                console.error('❌ Parse error:', e);
-              }
-            }
-          }
-        }
-        
-        controller.close();
-      } catch (error) {
-        console.error('Stream error:', error);
-        controller.error(error);
-      }
-    }
-  });
-
-  return transformedStream;
+  // Streaming: Pass through raw Responses API stream
+  console.log("🌊 Streaming mode: passing through raw Responses API events");
+  return response.body!; // Raw ReadableStream<Uint8Array> from OpenAI
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1310,30 +1208,37 @@ serve(async (req) => {
           // Stream the answer
           const reader = answerStream.getReader();
           const decoder = new TextDecoder();
+          let buffer = "";
           
           try {
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
               
-              const text = decoder.decode(value, { stream: true });
-              const lines = text.split('\n');
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || "";
               
               for (const line of lines) {
+                if (!line.trim() || line.startsWith(':')) continue;
+                
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
                   if (data === '[DONE]') continue;
                   
                   try {
                     const parsed = JSON.parse(data);
+                    console.log('🔍 [Wrapper] Received event type:', parsed.type);
                     let content = "";
 
                     // Handle Responses API streaming events directly
                     if (parsed.type === "response.output_text.delta" && typeof parsed.delta === "string") {
                       content = parsed.delta;
+                      console.log('✅ [Wrapper] Extracted delta:', content.slice(0, 50));
                     } 
                     else if (parsed.type === "response.output_text.done" && typeof parsed.text === "string") {
                       content = parsed.text;
+                      console.log('✅ [Wrapper] Extracted done text:', content.slice(0, 50));
                     }
                     else if (parsed.type === "response.completed" && parsed.response?.output) {
                       const outputs = parsed.response.output;

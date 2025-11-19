@@ -615,7 +615,8 @@ async function runRagPipelineV3(
   tenant_id?: string, 
   model?: string,
   conversationHistory?: Array<{ role: string; content: string }>,
-  images?: string[]
+  images?: string[],
+  stream: boolean = false
 ) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
   const pipelineStartTime = performance.now();
@@ -742,7 +743,7 @@ Keep it short (2-3 sentences max) and friendly.`;
     retrievalWeak: isWeak,
     signals,
     existingWeak: isWeak,
-    stream: true,
+    stream,
     conversationHistory,
     images
   });
@@ -936,7 +937,7 @@ serve(async (req) => {
     // If streaming is requested, handle it differently
     if (stream) {
       console.log("📡 Starting streaming response");
-      const ragResult = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images);
+      const ragResult = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images, true);
       const { sources, strategy, chunks, figureResults, answer } = ragResult;
       
       // ============ QUALITY GRADING FOR STREAMING ============
@@ -1309,7 +1310,7 @@ serve(async (req) => {
       });
     }
     
-    const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images);
+    const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images, false);
 
     const { answer, sources, strategy, chunks, interactive_components } = result;
 

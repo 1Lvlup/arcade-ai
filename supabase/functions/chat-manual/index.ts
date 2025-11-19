@@ -1249,15 +1249,41 @@ serve(async (req) => {
                     let content = "";
 
                     // Handle Responses API streaming events directly
-                    if (parsed.type === "response.output_text.delta" && typeof parsed.delta === "string") {
+                    // Modern format: response.delta for incremental chunks
+                    if (parsed.type === "response.delta" && parsed.delta?.output) {
+                      console.log('🔍 [Wrapper] Processing response.delta with output array');
+                      for (const out of parsed.delta.output) {
+                        // Handle new-style content arrays
+                        if (Array.isArray(out.content)) {
+                          for (const part of out.content) {
+                            if (part.type === "output_text" && typeof part.text === "string") {
+                              content += part.text;
+                              console.log('✅ [Wrapper] Extracted delta:', part.text.slice(0, 50));
+                            }
+                          }
+                        }
+                        // Fallback: old-style output_text arrays
+                        if (Array.isArray(out.output_text)) {
+                          for (const seg of out.output_text) {
+                            if (typeof seg.text === "string") {
+                              content += seg.text;
+                            }
+                          }
+                        }
+                      }
+                    }
+                    // Legacy format: response.output_text.delta (keep for compatibility)
+                    else if (parsed.type === "response.output_text.delta" && typeof parsed.delta === "string") {
                       content = parsed.delta;
-                      console.log('✅ [Wrapper] Extracted delta:', content.slice(0, 50));
+                      console.log('✅ [Wrapper] Extracted legacy delta:', content.slice(0, 50));
                     } 
                     else if (parsed.type === "response.output_text.done" && typeof parsed.text === "string") {
                       content = parsed.text;
-                      console.log('✅ [Wrapper] Extracted done text:', content.slice(0, 50));
+                      console.log('✅ [Wrapper] Extracted legacy done text:', content.slice(0, 50));
                     }
+                    // Final completion event
                     else if (parsed.type === "response.completed" && parsed.response?.output) {
+                      console.log('✅ [Wrapper] Response completed, extracting final text...');
                       const outputs = parsed.response.output;
                       for (const out of outputs) {
                         if (Array.isArray(out.output_text)) {
@@ -1275,6 +1301,7 @@ serve(async (req) => {
                           }
                         }
                       }
+                      console.log('✅ [Wrapper] Final content length:', content.length);
                     }
 
                     if (content) {

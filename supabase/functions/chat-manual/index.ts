@@ -546,8 +546,8 @@ Reference specific observations from the images in your response and provide det
       if (Array.isArray(data.output)) {
         const messageOutput = data.output.find((item: any) => item.type === 'message');
         if (messageOutput && Array.isArray(messageOutput.content)) {
-          // OpenAI Responses API uses 'text' not 'output_text'
-          const textContent = messageOutput.content.find((item: any) => item.type === 'text');
+          // OpenAI Responses API uses 'output_text' type
+          const textContent = messageOutput.content.find((item: any) => item.type === 'output_text');
           fullText = textContent?.text || '';
         }
       } else if (data.output?.content) {

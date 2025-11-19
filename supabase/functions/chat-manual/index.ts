@@ -660,17 +660,24 @@ async function runRagPipelineV3(
   const isWeak = chunks.length < 3 || 
                  (!meetsTopScoreThreshold && !meetsAvgThreshold && !meetsStrongHitsThreshold);
 
+  // Store retrieval quality data for response
+  const retrievalQuality = {
+    isWeak,
+    signals,
+    meets_thresholds: {
+      topScore: meetsTopScoreThreshold,
+      avgTop3: meetsAvgThreshold,
+      strongHits: meetsStrongHitsThreshold
+    }
+  };
+
   console.log(`📊 Answerability check:`, {
     chunk_count: chunks.length,
     topScore: signals.topScore.toFixed(3),
     avgTop3: signals.avgTop3.toFixed(3),
     strongHits: signals.strongHits,
     thresholds: HEURISTICS,
-    meets_thresholds: {
-      topScore: meetsTopScoreThreshold,
-      avgTop3: meetsAvgThreshold,
-      strongHits: meetsStrongHitsThreshold
-    },
+    meets_thresholds: retrievalQuality.meets_thresholds,
     isWeak,
   });
 
@@ -767,15 +774,7 @@ Keep it short (2-3 sentences max) and friendly.`;
     chunks: topChunks,
     figureResults,
     pipeline_version: "v3",
-    retrieval_quality: {
-      isWeak,
-      signals,
-      meets_thresholds: {
-        topScore: meetsTopScoreThreshold,
-        avgTop3: meetsAvgThreshold,
-        strongHits: meetsStrongHitsThreshold
-      }
-    }
+    retrieval_quality: retrievalQuality
   };
 }
 

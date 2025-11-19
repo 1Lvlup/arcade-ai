@@ -155,9 +155,9 @@ If the user says:
 `;
 
 export const HEURISTICS = {
-  minTopScore: parseFloat(Deno.env.get("ANSWER_MIN_TOP_SCORE") || "0.21"),
-  weakBundleAvg: parseFloat(Deno.env.get("ANSWER_WEAK_AVG") || "0.14"),
-  minStrongHits: parseInt(Deno.env.get("ANSWER_MIN_STRONG_HITS") || "1", 10),
+  minTopScore: parseFloat(Deno.env.get("RETRIEVAL_MIN_TOP_SCORE") || "0.62"),
+  weakBundleAvg: parseFloat(Deno.env.get("RETRIEVAL_WEAK_AVG") || "0.58"),
+  minStrongHits: parseInt(Deno.env.get("RETRIEVAL_MIN_STRONG") || "2", 10),
 };
 
 export function computeSignals(hits: Array<{ score?: number; rerank_score?: number }>) {

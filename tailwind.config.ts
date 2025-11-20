@@ -14,11 +14,12 @@ export default {
     },
     extend: {
       fontFamily: {
-        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        'display': ['Space Grotesk', 'sans-serif'],
-        'tech': ['Space Grotesk', 'sans-serif'],
+        'sans': ['Exo 2', 'system-ui', '-apple-system', 'sans-serif'],
+        'body': ['Exo 2', 'system-ui', '-apple-system', 'sans-serif'],
+        'display': ['Orbitron', 'sans-serif'],
+        'tech': ['Orbitron', 'sans-serif'],
         'hero': ['Kallisto', 'serif'],
-        'mono': ['Inter', 'monospace'],
+        'mono': ['Exo 2', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

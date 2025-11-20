@@ -248,6 +248,12 @@ export function ChatBot({
     const saved = localStorage.getItem('chatDebugMode');
     return saved ? JSON.parse(saved) : false;
   });
+  
+  // NEW: A/B testing mode for legacy search
+  const [useLegacySearch, setUseLegacySearch] = useState(() => {
+    const saved = localStorage.getItem('chatLegacySearch');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const GUEST_MESSAGE_LIMIT = 10;
   const [isInitialized, setIsInitialized] = useState(false);
@@ -1349,6 +1355,7 @@ export function ChatBot({
           query,
           manual_id: selectedManualId ?? null,
           stream: useStreaming, // ✨ STREAMING MODE toggle
+          use_legacy_search: useLegacySearch, // NEW: A/B testing flag
           messages: conversationHistory,
           images: uploadedImageUrls,
         }),
@@ -2398,6 +2405,19 @@ export function ChatBot({
                         <div className="flex items-center space-x-2">
                           <Bot className="h-5 w-5" />
                           <span className="text-xs opacity-70">{message.timestamp.toLocaleTimeString()}</span>
+                          {/* NEW: Visual indicator for which pipeline was used */}
+                          {message.rag_debug?.strategy && (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ml-2 ${
+                                message.rag_debug.strategy.includes('legacy') 
+                                  ? 'border-orange-500/50 text-orange-500' 
+                                  : 'border-blue-500/50 text-blue-500'
+                              }`}
+                            >
+                              {message.rag_debug.strategy.includes('legacy') ? '🔄 Legacy' : '⚡ V3'}
+                            </Badge>
+                          )}
                         </div>
                         {!message.content && (
                           <div className="flex items-center space-x-1">
@@ -2471,7 +2491,21 @@ export function ChatBot({
 
                   {/* RAG Debug Panel */}
                   {message.type === "bot" && message.rag_debug && debugMode && (
-                    <RAGDebugPanel ragData={message.rag_debug} className="mt-6" />
+                    <RAGDebugPanel 
+                      ragData={message.rag_debug} 
+                      className="mt-6" 
+                      useLegacySearch={useLegacySearch}
+                      onToggleLegacy={(enabled) => {
+                        setUseLegacySearch(enabled);
+                        localStorage.setItem('chatLegacySearch', JSON.stringify(enabled));
+                        toast({
+                          title: enabled ? "Legacy Search Enabled" : "V3 Search Enabled",
+                          description: enabled 
+                            ? "Using search-manuals-robust (old pipeline)" 
+                            : "Using search-unified (current pipeline)",
+                        });
+                      }}
+                    />
                   )}
 
                   {/* Thumbs Up/Down + Report Issue for Bot Messages */}

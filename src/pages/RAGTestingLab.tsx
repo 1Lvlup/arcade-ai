@@ -7,8 +7,9 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ManualSelector } from '@/components/ManualSelector';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, FlaskConical, Zap, ArrowRight } from 'lucide-react';
+import { Loader2, FlaskConical, Zap, ArrowRight, Home } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 interface RAGResult {
   answer: string;
@@ -149,12 +150,20 @@ const RAGTestingLab = () => {
   return (
     <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <FlaskConical className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold">RAG Testing Lab</h1>
-          <p className="text-muted-foreground">Compare V3 and Legacy search pipelines side-by-side</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <FlaskConical className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold">RAG Testing Lab</h1>
+            <p className="text-muted-foreground">Compare V3 and Legacy search pipelines side-by-side</p>
+          </div>
         </div>
+        <Link to="/">
+          <Button variant="outline" size="sm">
+            <Home className="mr-2 h-4 w-4" />
+            Home
+          </Button>
+        </Link>
       </div>
 
       {/* Test Configuration */}

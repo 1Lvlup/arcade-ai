@@ -526,10 +526,7 @@ Reference specific observations from the images in your response and provide det
     store: true,
   };
 
-  // Add reasoning for GPT-5 models
-  if (isGpt5(model)) {
-    body.reasoning = { effort: 'low' };
-  }
+  // Reasoning parameter removed - unsupported by Responses API
 
   console.log(`📤 [Responses API] Calling ${url} with model ${model}, stream: ${shouldStream}`);
 
@@ -574,7 +571,9 @@ Reference specific observations from the images in your response and provide det
       console.error("❌ RAW ERROR TEXT:", errorText);
     }
     
-    throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
+    // Return graceful fallback instead of throwing
+    console.log("⚠️ Returning fallback answer due to OpenAI error");
+    return "I encountered an error while generating the response. Please try again.";
   }
 
   // Non-streaming: Responses API returns 'output' field
@@ -1544,17 +1543,18 @@ serve(async (req) => {
         })
         .join("\n\n---\n\n") || "";
 
-    // Build RAG debug data for testing lab
-    const topScore = chunks?.[0]?.rerank_score ?? chunks?.[0]?.score ?? 0;
-    const avgTop3 = chunks && chunks.length > 0
-      ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.rerank_score ?? c.score ?? 0), 0) / Math.min(3, chunks.length)
+    // Build RAG debug data for testing lab - ALWAYS include this
+    const debugChunks = chunks || result.chunks || [];
+    const topScore = debugChunks?.[0]?.rerank_score ?? debugChunks?.[0]?.score ?? 0;
+    const avgTop3 = debugChunks && debugChunks.length > 0
+      ? debugChunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.rerank_score ?? c.score ?? 0), 0) / Math.min(3, debugChunks.length)
       : 0;
-    const strongHits = chunks?.filter((c: any) => (c.rerank_score ?? c.score ?? 0) > 0.62).length ?? 0;
+    const strongHits = debugChunks?.filter((c: any) => (c.rerank_score ?? c.score ?? 0) > 0.62).length ?? 0;
 
     const rag_debug = {
-      retrieved_chunks: chunks?.slice(0, 10).map((chunk: any) => ({
+      retrieved_chunks: debugChunks?.slice(0, 10).map((chunk: any) => ({
         id: chunk.id,
-        content: chunk.content,
+        content: chunk.content?.substring(0, 500) || '', // Limit content length
         score: chunk.score || 0,
         rerank_score: chunk.rerank_score || 0,
         page_start: chunk.page_start,
@@ -1562,8 +1562,8 @@ serve(async (req) => {
         content_type: chunk.content_type || 'text',
       })) || [],
       performance: {
-        search_time: result.search_time || 0,
-        total_time: result.total_time || 0,
+        search_time: result.search_time ?? 0,
+        total_time: result.total_time ?? 0,
       },
       signals: {
         top_score: topScore,

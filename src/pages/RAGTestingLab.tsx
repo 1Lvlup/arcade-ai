@@ -87,20 +87,54 @@ const RAGTestingLab = () => {
       const v3Data = v3Response.data;
       const legacyData = legacyResponse.data;
 
+      console.log('V3 Response:', v3Data);
+      console.log('Legacy Response:', legacyData);
+
+      // Build fallback chunks from sources if rag_debug is missing
+      const buildFallbackChunks = (data: any) => {
+        if (data.rag_debug?.retrieved_chunks?.length > 0) {
+          return data.rag_debug.retrieved_chunks;
+        }
+        // Fallback to sources
+        return (data.sources || []).slice(0, 10).map((s: any) => ({
+          id: s.id || crypto.randomUUID(),
+          content: s.content || '',
+          score: s.score ?? 0,
+          rerank_score: s.rerank_score ?? 0,
+          page_start: s.page_start,
+          page_end: s.page_end,
+          content_type: s.content_type || 'text',
+        }));
+      };
+
+      // Compute fallback signals if missing
+      const computeFallbackSignals = (chunks: any[]) => {
+        if (chunks.length === 0) {
+          return { top_score: 0, avg_top_3: 0, strong_hits: 0 };
+        }
+        const topScore = chunks[0]?.rerank_score ?? chunks[0]?.score ?? 0;
+        const avgTop3 = chunks.slice(0, 3).reduce((sum, c) => sum + (c.rerank_score ?? c.score ?? 0), 0) / Math.min(3, chunks.length);
+        const strongHits = chunks.filter(c => (c.rerank_score ?? c.score ?? 0) > 0.62).length;
+        return { top_score: topScore, avg_top_3: avgTop3, strong_hits: strongHits };
+      };
+
+      const v3Chunks = buildFallbackChunks(v3Data);
+      const legacyChunks = buildFallbackChunks(legacyData);
+
       setV3Result({
         answer: v3Data.answer || 'No answer generated',
-        chunks: v3Data.rag_debug?.retrieved_chunks || [],
-        strategy: v3Data.rag_debug?.strategy,
-        performance: v3Data.rag_debug?.performance,
-        signals: v3Data.rag_debug?.signals,
+        chunks: v3Chunks,
+        strategy: v3Data.rag_debug?.strategy || v3Data.strategy,
+        performance: v3Data.rag_debug?.performance || { search_time: null, total_time: null },
+        signals: v3Data.rag_debug?.signals || computeFallbackSignals(v3Chunks),
       });
 
       setLegacyResult({
         answer: legacyData.answer || 'No answer generated',
-        chunks: legacyData.rag_debug?.retrieved_chunks || [],
-        strategy: legacyData.rag_debug?.strategy,
-        performance: legacyData.rag_debug?.performance,
-        signals: legacyData.rag_debug?.signals,
+        chunks: legacyChunks,
+        strategy: legacyData.rag_debug?.strategy || legacyData.strategy,
+        performance: legacyData.rag_debug?.performance || { search_time: null, total_time: null },
+        signals: legacyData.rag_debug?.signals || computeFallbackSignals(legacyChunks),
       });
 
       toast.success('Test completed successfully');
@@ -214,22 +248,28 @@ const RAGTestingLab = () => {
                 </div>
               )}
 
-              {/* Performance */}
-              {v3Result?.performance && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Performance</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-center p-2 bg-muted rounded">
-                      <div className="text-xs text-muted-foreground">Search</div>
-                      <div className="font-bold">{v3Result.performance.search_time}ms</div>
+              {/* Performance - Always show */}
+              <div>
+                <h3 className="font-semibold text-sm mb-2">Performance</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-center p-2 bg-muted rounded">
+                    <div className="text-xs text-muted-foreground">Search</div>
+                    <div className="font-bold">
+                      {v3Result?.performance?.search_time != null 
+                        ? `${v3Result.performance.search_time.toFixed(0)}ms` 
+                        : 'N/A'}
                     </div>
-                    <div className="text-center p-2 bg-muted rounded">
-                      <div className="text-xs text-muted-foreground">Total</div>
-                      <div className="font-bold">{v3Result.performance.total_time}ms</div>
+                  </div>
+                  <div className="text-center p-2 bg-muted rounded">
+                    <div className="text-xs text-muted-foreground">Total</div>
+                    <div className="font-bold">
+                      {v3Result?.performance?.total_time != null 
+                        ? `${v3Result.performance.total_time.toFixed(0)}ms` 
+                        : 'N/A'}
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               <Separator />
 
@@ -307,22 +347,28 @@ const RAGTestingLab = () => {
                 </div>
               )}
 
-              {/* Performance */}
-              {legacyResult?.performance && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Performance</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-center p-2 bg-muted rounded">
-                      <div className="text-xs text-muted-foreground">Search</div>
-                      <div className="font-bold">{legacyResult.performance.search_time}ms</div>
+              {/* Performance - Always show */}
+              <div>
+                <h3 className="font-semibold text-sm mb-2">Performance</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-center p-2 bg-muted rounded">
+                    <div className="text-xs text-muted-foreground">Search</div>
+                    <div className="font-bold">
+                      {legacyResult?.performance?.search_time != null 
+                        ? `${legacyResult.performance.search_time.toFixed(0)}ms` 
+                        : 'N/A'}
                     </div>
-                    <div className="text-center p-2 bg-muted rounded">
-                      <div className="text-xs text-muted-foreground">Total</div>
-                      <div className="font-bold">{legacyResult.performance.total_time}ms</div>
+                  </div>
+                  <div className="text-center p-2 bg-muted rounded">
+                    <div className="text-xs text-muted-foreground">Total</div>
+                    <div className="font-bold">
+                      {legacyResult?.performance?.total_time != null 
+                        ? `${legacyResult.performance.total_time.toFixed(0)}ms` 
+                        : 'N/A'}
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               <Separator />
 

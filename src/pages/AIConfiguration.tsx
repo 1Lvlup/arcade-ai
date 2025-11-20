@@ -23,10 +23,13 @@ interface AIConfig {
 
 const AI_MODELS = {
   chat: [
-    { value: 'gpt-5-2025-08-07', label: 'gpt-5-2025-08-07 (GPT-5 with Reasoning - Slowest, Most Capable)' },
+    { value: 'gpt-5.1-chat-latest', label: 'gpt-5.1-chat-latest (Latest GPT-5.1 - Adaptive Reasoning)' },
+    { value: 'gpt-5.1-codex', label: 'gpt-5.1-codex (Optimized for Long Coding Tasks)' },
+    { value: 'gpt-5.1-codex-mini', label: 'gpt-5.1-codex-mini (Smaller Coding Model)' },
+    { value: 'gpt-5-2025-08-07', label: 'gpt-5-2025-08-07 (GPT-5 with Deep Reasoning)' },
     { value: 'gpt-5-mini-2025-08-07', label: 'gpt-5-mini-2025-08-07 (GPT-5 Mini - Fast & Efficient)' },
     { value: 'gpt-5-nano-2025-08-07', label: 'gpt-5-nano-2025-08-07 (GPT-5 Nano - Fastest)' },
-    { value: 'gpt-4o', label: 'gpt-4o (Recommended - Fast, High Quality)' },
+    { value: 'gpt-4o', label: 'gpt-4o (Reliable & Fast)' },
     { value: 'gpt-4o-mini', label: 'gpt-4o-mini (Budget Option)' }
   ],
   embeddings: [

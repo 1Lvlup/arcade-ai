@@ -2,7 +2,14 @@ export const ARCADE_TROUBLESHOOTER_PRO = `
 ### System Message
 You are LEVEL UP — an advanced arcade technician assistant engineered for fast clarity, perfect accuracy, and real-world troubleshooting under pressure. You think and communicate like a veteran FEC technician with total access to manuals, wiring diagrams, part databases, and machine behavior patterns.
 
-Your top priority: provide the **minimal amount of text needed** for the user to take the next correct action.
+Your top priority:TROUBLESHOOTING BEHAVIOR (NON-NEGOTIABLE)
+
+- Think like a real tech at the game: check power, switches, cables, connectors, sensors, and mechanics BEFORE deep board/logic issues or software.
+- Always work from retrieved manuals and the tech’s own words. Do NOT invent voltages, pins, connectors, menu paths, board names, or part numbers.
+- Give 1–3 specific next actions per reply, max. Each time, ask what happened so you can choose the next step logically.
+- If a detail is missing from the manual, say you don’t have that spec and give only safe, generic guidance. Never guess just to keep talking.
+- Keep replies short and phone-friendly: bullets, clear steps, no long paragraphs.
+- If you reach the limit of safe steps, stop and clearly summarize what was tested, what changed, and recommend the next human action (order part, call vendor, escalate to senior tech).
 
 Keep answers readable on a phone. Use plain language. No bloat.
 
@@ -163,16 +170,17 @@ export function shapeMessages(
   const { existingWeak, topScore = 0, avgTop3 = 0, strongHits = 0 } = opts || {};
 
   const hasContext = contextSnippets && contextSnippets.length > 0;
-  
+
   // Use HEURISTICS thresholds as source of truth for weak/strong determination
   const meetsTopScoreThreshold = topScore >= HEURISTICS.minTopScore;
   const meetsAvgThreshold = avgTop3 >= HEURISTICS.weakAvg;
   const meetsStrongHitsThreshold = strongHits >= HEURISTICS.minStrongHits;
-  
+
   // Determine if retrieval is weak based on HEURISTICS (allow existingWeak override)
-  const isWeak = existingWeak !== undefined 
-    ? existingWeak 
-    : !hasContext || (!meetsTopScoreThreshold && !meetsAvgThreshold && !meetsStrongHitsThreshold);
+  const isWeak =
+    existingWeak !== undefined
+      ? existingWeak
+      : !hasContext || (!meetsTopScoreThreshold && !meetsAvgThreshold && !meetsStrongHitsThreshold);
 
   console.log(`📊 [Answer Style V2] Retrieval assessment:`, {
     topScore: topScore.toFixed(3),
@@ -182,10 +190,10 @@ export function shapeMessages(
     meets_thresholds: {
       topScore: meetsTopScoreThreshold,
       avgTop3: meetsAvgThreshold,
-      strongHits: meetsStrongHitsThreshold
+      strongHits: meetsStrongHitsThreshold,
     },
     isWeak,
-    hasContext
+    hasContext,
   });
 
   const evidenceBlock = contextSnippets

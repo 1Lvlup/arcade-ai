@@ -3,26 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Brain,
-  MessageCircle,
-  BookOpen,
-  Eye,
-  Zap,
-  Target,
-  Database,
-  Shield,
-  BarChart3,
-  Users,
-  Globe,
-  CheckCircle,
-  ArrowRight,
-  TrendingUp,
-  Clock,
-  Code,
-  Check,
-  Settings,
-} from "lucide-react";
+import { Brain, MessageCircle, BookOpen, Eye, Zap, Target, Database, Shield, BarChart3, Users, Globe, CheckCircle, ArrowRight, TrendingUp, Clock, Code, Check, Settings } from "lucide-react";
 import { ProcessingMonitor } from "@/components/ProcessingMonitor";
 import { ChatBot } from "@/components/ChatBot";
 import { SharedHeader } from "@/components/SharedHeader";
@@ -34,20 +15,25 @@ import { supabase } from "@/integrations/supabase/client";
 import productScreenshot from "@/assets/product-screenshot.png";
 import heroBackground from "@/assets/hero-background.png";
 import chatUIBackground from "@/assets/hero-background-optimized.png";
-
 const Index = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [selectedManualId, setSelectedManualId] = useState<string>();
   const [selectedManualTitle, setSelectedManualTitle] = useState<string>();
   const [isAdmin, setIsAdmin] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const heroImageRef = useRef<HTMLImageElement>(null);
-
   useEffect(() => {
     const checkAdmin = async () => {
       if (!user) return;
-      const { data } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      const {
+        data
+      } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin"
+      });
       setIsAdmin(data || false);
     };
     checkAdmin();
@@ -58,11 +44,11 @@ const Index = () => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
     };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, {
+      passive: true
+    });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const chatMode = urlParams.get("chat");
@@ -76,7 +62,6 @@ const Index = () => {
       }
     }
   }, []);
-
   const handleStartGeneralChat = () => {
     if (!user) {
       window.location.href = "/auth";
@@ -84,29 +69,23 @@ const Index = () => {
     }
     window.location.href = "/chat";
   };
-
   const handleBackToHome = () => {
     setShowChat(false);
     setSelectedManualId(undefined);
     setSelectedManualTitle(undefined);
-
     const newUrl = new URL(window.location.href);
     newUrl.search = "";
     window.history.pushState({}, "", newUrl.toString());
   };
-
   const handleManualChange = (manualId: string | null, manualTitle: string | null) => {
     if (!user) {
       window.location.href = "/auth";
       return;
     }
-
     const newUrl = `/chat${manualId ? `?manual_id=${manualId}${manualTitle ? `&title=${encodeURIComponent(manualTitle)}` : ""}` : ""}`;
     window.location.href = newUrl;
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <SharedHeader title="1LevelUp" titleClassName="text-sm font-semibold text-foreground" />
 
       <main>
@@ -145,24 +124,12 @@ const Index = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row justify-center gap-3 mb-3">
-              <Button
-                onClick={handleStartGeneralChat}
-                size="lg"
-                variant="orange"
-                className="text-base font-semibold px-12 w-full sm:w-auto animate-glow-pulse hover:shadow-[0_0_35px_rgba(255,107,0,0.6)] transition-shadow duration-300"
-              >
+              <Button onClick={handleStartGeneralChat} size="lg" variant="orange" className="text-base font-semibold px-12 w-full sm:w-auto animate-glow-pulse hover:shadow-[0_0_35px_rgba(255,107,0,0.6)] transition-shadow duration-300">
                 Launch Arcade Intelligence
               </Button>
-                {isAdmin && (
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="text-base font-semibold px-12 w-full sm:w-auto"
-                  >
+                {isAdmin && <Button asChild size="lg" variant="outline" className="text-base font-semibold px-12 w-full sm:w-auto">
                     <Link to="/lead-intelligence">Outbound Sales Hub</Link>
-                  </Button>
-                )}
+                  </Button>}
               </div>
 
               <p className="text-xs text-muted-foreground font-sans">
@@ -177,14 +144,7 @@ const Index = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-background/40 z-10 pointer-events-none" />
 
               <div className="relative rounded-lg overflow-hidden shadow-2xl ml-8 md:ml-12 lg:ml-20">
-                <img
-                  ref={heroImageRef}
-                  src={chatUIBackground}
-                  alt="LevelUp Chat Interface"
-                  className="w-full h-auto brightness-105"
-                  loading="lazy"
-                  decoding="async"
-                />
+                <img ref={heroImageRef} src={chatUIBackground} alt="LevelUp Chat Interface" className="w-full h-auto brightness-105" loading="lazy" decoding="async" />
               </div>
             </div>
           </div>
@@ -208,7 +168,7 @@ const Index = () => {
               <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Brain className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl text-primary font-tech uppercase">AI-powered diagnostics</CardTitle>
+                  <CardTitle className="text-xl font-tech uppercase text-slate-50">AI-powered diagnostics</CardTitle>
                   <CardDescription className="text-base">
                     AI that understands real arcade issues and patterns from the field.
                   </CardDescription>
@@ -216,9 +176,9 @@ const Index = () => {
               </Card>
 
               <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
-                <CardHeader>
+                <CardHeader className="shadow-lg text-[#ff8500] rounded-lg">
                   <Zap className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl text-primary font-tech uppercase">Lightning fast</CardTitle>
+                  <CardTitle className="text-xl font-tech uppercase text-slate-50">Lightning fast</CardTitle>
                   <CardDescription className="text-base">
                     Get answers in seconds instead of hours of manual digging and guesswork.
                   </CardDescription>
@@ -228,7 +188,7 @@ const Index = () => {
               <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Database className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl text-primary font-tech uppercase">Comprehensive coverage</CardTitle>
+                  <CardTitle className="text-xl font-tech uppercase text-slate-50">Comprehensive coverage</CardTitle>
                   <CardDescription className="text-base">
                     All your key games and recurring issues in one shared intelligence layer.
                   </CardDescription>
@@ -238,7 +198,7 @@ const Index = () => {
               <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <BookOpen className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl text-primary font-tech uppercase">Smart knowledge base</CardTitle>
+                  <CardTitle className="text-xl font-tech uppercase text-slate-50">Smart knowledge base</CardTitle>
                   <CardDescription className="text-base">
                     A living system that connects game behavior, error codes, and proven fixes into one place.
                   </CardDescription>
@@ -248,7 +208,7 @@ const Index = () => {
               <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Shield className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl text-primary font-tech uppercase">Enterprise security</CardTitle>
+                  <CardTitle className="text-xl font-tech uppercase text-slate-50">Enterprise security</CardTitle>
                   <CardDescription className="text-base">
                     Your operational data stays yours with strong security controls.
                   </CardDescription>
@@ -258,7 +218,7 @@ const Index = () => {
               <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Users className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl text-primary font-tech uppercase">Team collaboration</CardTitle>
+                  <CardTitle className="text-xl font-tech uppercase text-slate-50">Team collaboration</CardTitle>
                   <CardDescription className="text-base">
                     Share what works across your maintenance team instead of keeping it in one person's head.
                   </CardDescription>
@@ -274,7 +234,7 @@ const Index = () => {
                 INSIDE THE INTELLIGENCE
               </p>
               <h2 className="text-3xl sm:text-4xl font-bold font-tech uppercase mb-4">
-                How it <span className="text-primary">works</span>
+                How it <span className="text-primary text-4xl font-semibold">works</span>
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl">
                 Intelligent retrieval meets deep reasoning so your techs get reliable answers fast.
@@ -422,8 +382,7 @@ const Index = () => {
           </section>
 
           {/* Admin Panel */}
-          {isAdmin && (
-          <section className="py-12 border-t border-border">
+          {isAdmin && <section className="py-12 border-t border-border">
             <h2 className="text-2xl font-bold text-foreground mb-6">Admin Panel</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4 max-w-2xl">
               <Link to="/admin">
@@ -445,15 +404,12 @@ const Index = () => {
                 </Button>
               </Link>
             </div>
-          </section>
-          )}
+          </section>}
         </main>
 
         <Footer />
         <ProcessingMonitor />
         <LiveProcessingMonitor />
-      </div>
-  );
+      </div>;
 };
-
 export default Index;

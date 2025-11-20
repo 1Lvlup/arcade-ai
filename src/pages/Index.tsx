@@ -124,7 +124,7 @@ const Index = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row justify-center gap-3 mb-3">
-              <Button onClick={handleStartGeneralChat} size="lg" variant="orange" className="text-xl font-semibold px-12 w-full sm:w-auto animate-glow-pulse hover:shadow-[0_0_35px_rgba(255,107,0,0.6)] transition-shadow duration-300 [-webkit-text-stroke:1px_black] [text-stroke:1px_black]">
+              <Button onClick={handleStartGeneralChat} size="lg" variant="orange" className="text-xl font-semibold px-12 w-full sm:w-auto animate-glow-pulse hover:shadow-[0_0_35px_rgba(255,107,0,0.6)] transition-shadow duration-300">
                 Launch Arcade Intelligence
               </Button>
                 {isAdmin && <Button asChild size="lg" variant="outline" className="text-base font-semibold px-12 w-full sm:w-auto">

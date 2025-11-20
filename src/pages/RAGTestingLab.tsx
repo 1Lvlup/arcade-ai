@@ -168,15 +168,15 @@ const RAGTestingLab = () => {
       {(v3Result || legacyResult) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* V3 Pipeline Results */}
-          <Card className="border-2 border-primary">
+          <Card className="border-blue-500/50 bg-blue-950/20">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center gap-2 text-blue-400">
+                  <Zap className="h-5 w-5" />
                   V3 Pipeline
                 </CardTitle>
                 {v3Result?.strategy && (
-                  <Badge variant="outline" className="bg-primary/10">
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500">
                     {v3Result.strategy}
                   </Badge>
                 )}
@@ -261,15 +261,15 @@ const RAGTestingLab = () => {
           </Card>
 
           {/* Legacy Pipeline Results */}
-          <Card className="border-2 border-orange-500">
+          <Card className="border-orange-500/50 bg-orange-950/20">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <ArrowRight className="h-5 w-5 text-orange-500" />
+                <CardTitle className="flex items-center gap-2 text-orange-400">
+                  <ArrowRight className="h-5 w-5" />
                   Legacy Pipeline
                 </CardTitle>
                 {legacyResult?.strategy && (
-                  <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500">
+                  <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500">
                     {legacyResult.strategy}
                   </Badge>
                 )}

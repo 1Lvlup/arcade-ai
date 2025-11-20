@@ -85,11 +85,11 @@
 /* Clean Typography */
 @layer utilities {
   .font-tech {
-    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    font-family: 'Orbitron', system-ui, -apple-system, sans-serif;
   }
   
   .font-body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Exo 2', system-ui, -apple-system, sans-serif;
   }
   
   /* Clean cards - minimal shadows */

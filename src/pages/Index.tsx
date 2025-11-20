@@ -193,69 +193,74 @@ const Index = () => {
           {/* Features Section */}
           <section className="py-20">
             <div className="mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Built for arcade operators</h2>
+              <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
+                ADVANCED CAPABILITIES
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold font-tech uppercase mb-4">
+                Built for <span className="text-primary">arcade operators</span>
+              </h2>
               <p className="text-xl text-muted-foreground max-w-2xl">
                 Everything you need to keep your games running, in one intelligent platform.
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="border-border hover:border-primary/40 transition-colors">
+              <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Brain className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl">AI-powered diagnostics</CardTitle>
+                  <CardTitle className="text-xl text-primary font-tech uppercase">AI-powered diagnostics</CardTitle>
                   <CardDescription className="text-base">
                     AI that understands real arcade issues and patterns from the field.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card className="border-border hover:border-primary/40 transition-colors">
+              <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Zap className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl">Lightning fast</CardTitle>
+                  <CardTitle className="text-xl text-primary font-tech uppercase">Lightning fast</CardTitle>
                   <CardDescription className="text-base">
                     Get answers in seconds instead of hours of manual digging and guesswork.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card className="border-border hover:border-primary/40 transition-colors">
+              <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Database className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl">Comprehensive coverage</CardTitle>
+                  <CardTitle className="text-xl text-primary font-tech uppercase">Comprehensive coverage</CardTitle>
                   <CardDescription className="text-base">
                     All your key games and recurring issues in one shared intelligence layer.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card className="border-border hover:border-primary/40 transition-colors">
+              <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <BookOpen className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl">Smart knowledge base</CardTitle>
+                  <CardTitle className="text-xl text-primary font-tech uppercase">Smart knowledge base</CardTitle>
                   <CardDescription className="text-base">
                     A living system that connects game behavior, error codes, and proven fixes into one place.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card className="border-border hover:border-primary/40 transition-colors">
+              <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Shield className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl">Enterprise security</CardTitle>
+                  <CardTitle className="text-xl text-primary font-tech uppercase">Enterprise security</CardTitle>
                   <CardDescription className="text-base">
                     Your operational data stays yours with strong security controls.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card className="border-border hover:border-primary/40 transition-colors">
+              <Card className="border-2 border-border hover:border-primary/60 bg-black/40 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_40px_rgba(255,107,0,0.15)] transition-all duration-300">
                 <CardHeader>
                   <Users className="h-8 w-8 text-primary mb-3" />
-                  <CardTitle className="text-xl">Team collaboration</CardTitle>
+                  <CardTitle className="text-xl text-primary font-tech uppercase">Team collaboration</CardTitle>
                   <CardDescription className="text-base">
-                    Share what works across your maintenance team instead of keeping it in one person’s head.
+                    Share what works across your maintenance team instead of keeping it in one person's head.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -265,7 +270,12 @@ const Index = () => {
           {/* How it Works */}
           <section className="py-20 border-t border-border">
             <div className="mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">How it works</h2>
+              <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
+                INSIDE THE INTELLIGENCE
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold font-tech uppercase mb-4">
+                How it <span className="text-primary">works</span>
+              </h2>
               <p className="text-xl text-muted-foreground max-w-2xl">
                 Intelligent retrieval meets deep reasoning so your techs get reliable answers fast.
               </p>
@@ -273,34 +283,34 @@ const Index = () => {
 
             <div className="grid md:grid-cols-3 gap-8">
               <div className="space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
                   <span className="text-2xl font-bold text-primary">1</span>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">Describe the issue</h3>
+                <h3 className="text-xl font-semibold text-primary font-tech uppercase">Describe the issue</h3>
                 <p className="text-muted-foreground">
-                  Your tech explains what the game is doing in plain language—no special phrasing needed.
+                  Your tech explains what the game is doing in <span className="text-primary">plain language</span>—no special phrasing needed.
                 </p>
               </div>
 
               <div className="space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
                   <span className="text-2xl font-bold text-primary">2</span>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">LevelUp analyzes it</h3>
+                <h3 className="text-xl font-semibold text-primary font-tech uppercase">LevelUp analyzes it</h3>
                 <p className="text-muted-foreground">
                   The system uses everything it knows about that game—behavior, wiring, error patterns, and past
-                  fixes—to propose a focused troubleshooting path.
+                  fixes—to propose a <span className="text-primary">focused troubleshooting path</span>.
                 </p>
               </div>
 
               <div className="space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
                   <span className="text-2xl font-bold text-primary">3</span>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">You confirm the fix</h3>
+                <h3 className="text-xl font-semibold text-primary font-tech uppercase">You confirm the fix</h3>
                 <p className="text-muted-foreground">
-                  Your tech follows the guided steps, confirms what worked, and that resolution is saved so the next
-                  time it’s almost instant.
+                  Your tech follows the guided steps, confirms what worked, and that <span className="text-primary">resolution is saved</span> so the next
+                  time it's almost instant.
                 </p>
               </div>
             </div>
@@ -309,17 +319,22 @@ const Index = () => {
           {/* Pricing */}
           <section className="py-20">
             <div className="mb-16 text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Simple, transparent pricing</h2>
-              <p className="text-xl text-muted-foreground">Start free, scale as you grow</p>
+              <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
+                SIMPLE, TRANSPARENT PRICING
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold font-tech uppercase mb-4">
+                Choose Your <span className="text-primary">Level Up</span> Plan
+              </h2>
+              <p className="text-xl text-muted-foreground">Built for busy FEC technicians who want less paperwork and faster fixes</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Card className="border-border">
+              <Card className="border-2 border-border bg-black/60 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-all duration-300">
                 <CardHeader>
-                  <CardTitle className="text-2xl">Starter</CardTitle>
+                  <CardTitle className="text-2xl font-tech uppercase">Starter</CardTitle>
                   <CardDescription className="text-lg mt-2">Perfect for single locations</CardDescription>
                   <div className="mt-6">
-                    <span className="text-4xl font-bold">Free</span>
+                    <span className="text-4xl font-bold text-primary">Free</span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -343,15 +358,15 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-primary relative">
+              <Card className="border-2 border-primary bg-black/60 backdrop-blur-sm shadow-[0_0_40px_rgba(255,107,0,0.3)] hover:shadow-[0_0_50px_rgba(255,107,0,0.5)] transition-all duration-300 relative">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="bg-primary text-primary-foreground">Most popular</Badge>
                 </div>
                 <CardHeader>
-                  <CardTitle className="text-2xl">Professional</CardTitle>
+                  <CardTitle className="text-2xl font-tech uppercase">Professional</CardTitle>
                   <CardDescription className="text-lg mt-2">For serious operations</CardDescription>
                   <div className="mt-6">
-                    <span className="text-4xl font-bold">$99</span>
+                    <span className="text-4xl font-bold text-primary">$99</span>
                     <span className="text-muted-foreground">/month</span>
                   </div>
                 </CardHeader>
@@ -378,7 +393,9 @@ const Index = () => {
                       <span className="text-muted-foreground">Custom integrations</span>
                     </div>
                   </div>
-                  <Button className="w-full mt-6">Start free trial</Button>
+                  <Button className="w-full mt-6 bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)]">
+                    Start free trial
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -387,7 +404,9 @@ const Index = () => {
           {/* Final CTA */}
           <section className="py-20 border-t border-border">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">Ready to eliminate downtime?</h2>
+              <h2 className="text-4xl sm:text-5xl font-bold font-tech uppercase mb-6">
+                Ready to eliminate <span className="text-primary">downtime</span>?
+              </h2>
               <p className="text-xl text-muted-foreground mb-8">
                 Join arcade operators who trust 1LevelUp to keep their games running.
               </p>

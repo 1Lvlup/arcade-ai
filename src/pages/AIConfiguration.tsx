@@ -23,14 +23,14 @@ interface AIConfig {
 
 const AI_MODELS = {
   chat: [
-    { value: 'gpt-5-2025-08-07', label: 'GPT-5 (Most Capable)' },
-    { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini (Fast & Efficient)' },
-    { value: 'gpt-5-nano-2025-08-07', label: 'GPT-5 Nano (Fastest)' },
-    { value: 'gpt-4o', label: 'GPT-4o (Legacy)' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)' }
+    { value: 'gpt-5-2025-08-07', label: 'gpt-5-2025-08-07 (GPT-5 with Reasoning - Slowest, Most Capable)' },
+    { value: 'gpt-5-mini-2025-08-07', label: 'gpt-5-mini-2025-08-07 (GPT-5 Mini - Fast & Efficient)' },
+    { value: 'gpt-5-nano-2025-08-07', label: 'gpt-5-nano-2025-08-07 (GPT-5 Nano - Fastest)' },
+    { value: 'gpt-4o', label: 'gpt-4o (Recommended - Fast, High Quality)' },
+    { value: 'gpt-4o-mini', label: 'gpt-4o-mini (Budget Option)' }
   ],
   embeddings: [
-    { value: 'text-embedding-3-small', label: 'Text Embedding 3 Small (Recommended)' }
+    { value: 'text-embedding-3-small', label: 'text-embedding-3-small (Recommended)' }
   ]
 };
 

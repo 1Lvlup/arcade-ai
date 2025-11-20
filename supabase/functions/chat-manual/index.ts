@@ -803,12 +803,18 @@ Keep it short (2-3 sentences max) and friendly.`;
   // Interactive elements disabled in current version
   const elementsResult = { interactive_components: [] };
 
+  const pipelineEndTime = performance.now();
+  const searchTime = searchEnd - searchStart;
+  const totalTime = pipelineEndTime - pipelineStartTime;
+
   console.log(`✅ [RAG V3] Pipeline complete`, {
     answer_length: answer?.length || 0,
     sources_count: topChunks.length,
     figures_count: figureResults.length,
     strategy,
     isWeak,
+    search_time_ms: searchTime.toFixed(0),
+    total_time_ms: totalTime.toFixed(0),
     pipeline_version: "v3"
   });
 
@@ -828,7 +834,9 @@ Keep it short (2-3 sentences max) and friendly.`;
     chunks: topChunks,
     figureResults,
     pipeline_version: "v3",
-    retrieval_quality: retrievalQuality
+    retrieval_quality: retrievalQuality,
+    search_time: searchTime,
+    total_time: totalTime
   };
 }
 
@@ -1536,6 +1544,35 @@ serve(async (req) => {
         })
         .join("\n\n---\n\n") || "";
 
+    // Build RAG debug data for testing lab
+    const topScore = chunks?.[0]?.rerank_score ?? chunks?.[0]?.score ?? 0;
+    const avgTop3 = chunks && chunks.length > 0
+      ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.rerank_score ?? c.score ?? 0), 0) / Math.min(3, chunks.length)
+      : 0;
+    const strongHits = chunks?.filter((c: any) => (c.rerank_score ?? c.score ?? 0) > 0.62).length ?? 0;
+
+    const rag_debug = {
+      retrieved_chunks: chunks?.slice(0, 10).map((chunk: any) => ({
+        id: chunk.id,
+        content: chunk.content,
+        score: chunk.score || 0,
+        rerank_score: chunk.rerank_score || 0,
+        page_start: chunk.page_start,
+        page_end: chunk.page_end,
+        content_type: chunk.content_type || 'text',
+      })) || [],
+      performance: {
+        search_time: result.search_time || 0,
+        total_time: result.total_time || 0,
+      },
+      signals: {
+        top_score: topScore,
+        avg_top_3: avgTop3,
+        strong_hits: strongHits,
+      },
+      strategy: strategy,
+    };
+
     return new Response(
       JSON.stringify({
         answer,
@@ -1545,6 +1582,7 @@ serve(async (req) => {
         context_seen: contextSeen,
         query_log_id: queryLogId,
         interactive_components: interactive_components || [],
+        rag_debug: rag_debug,
         usage: usageInfo ? {
           queries_used: usageInfo.queries_used,
           queries_remaining: usageInfo.queries_remaining,

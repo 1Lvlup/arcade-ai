@@ -1,4 +1,4 @@
-import { Activity, Database, Brain, BarChart3 } from 'lucide-react';
+import { Activity, Database, Brain, BarChart3, FlaskConical } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -45,6 +45,13 @@ const adminSections = [
     description: 'Users, Usage, Insights',
     disabled: false,
   },
+  {
+    id: 'rag-testing',
+    title: 'RAG Testing Lab',
+    icon: FlaskConical,
+    description: 'A/B test pipelines',
+    disabled: false,
+  },
 ];
 
 export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
@@ -60,7 +67,13 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
               {adminSections.map((section) => (
                 <SidebarMenuItem key={section.id}>
                   <SidebarMenuButton
-                    onClick={() => !section.disabled && onTabChange(section.id)}
+                    onClick={() => {
+                      if (section.id === 'rag-testing') {
+                        window.location.href = '/admin/rag-testing-lab';
+                      } else {
+                        !section.disabled && onTabChange(section.id);
+                      }
+                    }}
                     isActive={activeTab === section.id}
                     disabled={section.disabled}
                     className="h-auto py-3"

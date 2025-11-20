@@ -192,7 +192,7 @@ const Index = () => {
 
           {/* Features Section */}
           <section className="py-20">
-            <div className="mb-12">
+            <div className="mb-12 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 ADVANCED CAPABILITIES
               </p>
@@ -269,7 +269,7 @@ const Index = () => {
 
           {/* How it Works */}
           <section className="py-20 border-t border-border">
-            <div className="mb-16">
+            <div className="mb-16 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 INSIDE THE INTELLIGENCE
               </p>
@@ -282,32 +282,32 @@ const Index = () => {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col items-center text-center">
                 <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
                   <span className="text-2xl font-bold text-primary">1</span>
                 </div>
-                <h3 className="text-xl font-semibold text-primary font-tech uppercase">Describe the issue</h3>
+                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">Describe the issue</h3>
                 <p className="text-muted-foreground">
                   Your tech explains what the game is doing in <span className="text-primary">plain language</span>—no special phrasing needed.
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col items-center text-center">
                 <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
                   <span className="text-2xl font-bold text-primary">2</span>
                 </div>
-                <h3 className="text-xl font-semibold text-primary font-tech uppercase">LevelUp analyzes it</h3>
+                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">LevelUp analyzes it</h3>
                 <p className="text-muted-foreground">
                   The system uses everything it knows about that game—behavior, wiring, error patterns, and past
                   fixes—to propose a <span className="text-primary">focused troubleshooting path</span>.
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col items-center text-center">
                 <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
                   <span className="text-2xl font-bold text-primary">3</span>
                 </div>
-                <h3 className="text-xl font-semibold text-primary font-tech uppercase">You confirm the fix</h3>
+                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">You confirm the fix</h3>
                 <p className="text-muted-foreground">
                   Your tech follows the guided steps, confirms what worked, and that <span className="text-primary">resolution is saved</span> so the next
                   time it's almost instant.
@@ -318,14 +318,14 @@ const Index = () => {
 
           {/* Pricing */}
           <section className="py-20">
-            <div className="mb-16 text-center">
+            <div className="mb-16 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 SIMPLE, TRANSPARENT PRICING
               </p>
               <h2 className="text-3xl sm:text-4xl font-bold font-tech uppercase mb-4">
                 Choose Your <span className="text-primary">Level Up</span> Plan
               </h2>
-              <p className="text-xl text-muted-foreground">Built for busy FEC technicians who want less paperwork and faster fixes</p>
+              <p className="text-xl text-muted-foreground max-w-2xl">Built for busy FEC technicians who want less paperwork and faster fixes</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -403,11 +403,11 @@ const Index = () => {
 
           {/* Final CTA */}
           <section className="py-20 border-t border-border">
-            <div className="max-w-3xl mx-auto text-center">
+            <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
               <h2 className="text-4xl sm:text-5xl font-bold font-tech uppercase mb-6">
                 Ready to eliminate <span className="text-primary">downtime</span>?
               </h2>
-              <p className="text-xl text-muted-foreground mb-8">
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
                 Join arcade operators who trust 1LevelUp to keep their games running.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

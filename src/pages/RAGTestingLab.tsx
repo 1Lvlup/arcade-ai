@@ -1,0 +1,361 @@
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ManualSelector } from '@/components/ManualSelector';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, FlaskConical, Zap, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface RAGResult {
+  answer: string;
+  chunks: Array<{
+    content: string;
+    score: number;
+    page_start?: number;
+    page_end?: number;
+    content_type?: string;
+  }>;
+  strategy?: string;
+  performance?: {
+    search_time?: number;
+    total_time?: number;
+  };
+  signals?: {
+    top_score?: number;
+    avg_top_3?: number;
+    strong_hits?: number;
+  };
+}
+
+const RAGTestingLab = () => {
+  const [query, setQuery] = useState('');
+  const [selectedManualId, setSelectedManualId] = useState<string | null>(null);
+  const [selectedManualTitle, setSelectedManualTitle] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [v3Result, setV3Result] = useState<RAGResult | null>(null);
+  const [legacyResult, setLegacyResult] = useState<RAGResult | null>(null);
+
+  const handleManualChange = (manualId: string | null, manualTitle: string | null) => {
+    setSelectedManualId(manualId);
+    setSelectedManualTitle(manualTitle);
+  };
+
+  const runTest = async () => {
+    if (!query.trim()) {
+      toast.error('Please enter a query');
+      return;
+    }
+
+    if (!selectedManualId) {
+      toast.error('Please select a game manual');
+      return;
+    }
+
+    setLoading(true);
+    setV3Result(null);
+    setLegacyResult(null);
+
+    try {
+      // Run both pipelines in parallel
+      const [v3Response, legacyResponse] = await Promise.all([
+        supabase.functions.invoke('chat-manual', {
+          body: {
+            query: query.trim(),
+            manual_id: selectedManualId,
+            manual_title: selectedManualTitle,
+            use_legacy_search: false,
+          },
+        }),
+        supabase.functions.invoke('chat-manual', {
+          body: {
+            query: query.trim(),
+            manual_id: selectedManualId,
+            manual_title: selectedManualTitle,
+            use_legacy_search: true,
+          },
+        }),
+      ]);
+
+      if (v3Response.error) throw new Error('V3 pipeline error: ' + v3Response.error.message);
+      if (legacyResponse.error) throw new Error('Legacy pipeline error: ' + legacyResponse.error.message);
+
+      // Extract results
+      const v3Data = v3Response.data;
+      const legacyData = legacyResponse.data;
+
+      setV3Result({
+        answer: v3Data.answer || 'No answer generated',
+        chunks: v3Data.rag_debug?.retrieved_chunks || [],
+        strategy: v3Data.rag_debug?.strategy,
+        performance: v3Data.rag_debug?.performance,
+        signals: v3Data.rag_debug?.signals,
+      });
+
+      setLegacyResult({
+        answer: legacyData.answer || 'No answer generated',
+        chunks: legacyData.rag_debug?.retrieved_chunks || [],
+        strategy: legacyData.rag_debug?.strategy,
+        performance: legacyData.rag_debug?.performance,
+        signals: legacyData.rag_debug?.signals,
+      });
+
+      toast.success('Test completed successfully');
+    } catch (error: any) {
+      console.error('Test error:', error);
+      toast.error(error.message || 'Failed to run test');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <FlaskConical className="h-8 w-8 text-primary" />
+        <div>
+          <h1 className="text-3xl font-bold">RAG Testing Lab</h1>
+          <p className="text-muted-foreground">Compare V3 and Legacy search pipelines side-by-side</p>
+        </div>
+      </div>
+
+      {/* Test Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Test Configuration</CardTitle>
+          <CardDescription>Set up your A/B test parameters</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <ManualSelector
+              selectedManualId={selectedManualId || undefined}
+              onManualChange={handleManualChange}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Query</label>
+            <Textarea
+              placeholder="Enter your test query here..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          <Button onClick={runTest} disabled={loading} className="w-full" size="lg">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Running Test...
+              </>
+            ) : (
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                Run A/B Test
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Results Grid */}
+      {(v3Result || legacyResult) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* V3 Pipeline Results */}
+          <Card className="border-2 border-primary">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-primary" />
+                  V3 Pipeline
+                </CardTitle>
+                {v3Result?.strategy && (
+                  <Badge variant="outline" className="bg-primary/10">
+                    {v3Result.strategy}
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Answer */}
+              <div>
+                <h3 className="font-semibold text-sm mb-2">Answer</h3>
+                <Alert>
+                  <AlertDescription className="text-sm whitespace-pre-wrap">
+                    {v3Result?.answer}
+                  </AlertDescription>
+                </Alert>
+              </div>
+
+              {/* Signals */}
+              {v3Result?.signals && (
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">Signals</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Top Score</div>
+                      <div className="font-bold">{v3Result.signals.top_score?.toFixed(3)}</div>
+                    </div>
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Avg Top 3</div>
+                      <div className="font-bold">{v3Result.signals.avg_top_3?.toFixed(3)}</div>
+                    </div>
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Strong Hits</div>
+                      <div className="font-bold">{v3Result.signals.strong_hits}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Performance */}
+              {v3Result?.performance && (
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">Performance</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Search</div>
+                      <div className="font-bold">{v3Result.performance.search_time}ms</div>
+                    </div>
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Total</div>
+                      <div className="font-bold">{v3Result.performance.total_time}ms</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Retrieved Chunks */}
+              <div>
+                <h3 className="font-semibold text-sm mb-2">
+                  Retrieved Chunks ({v3Result?.chunks?.length || 0})
+                </h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {v3Result?.chunks?.map((chunk, idx) => (
+                    <div key={idx} className="p-3 bg-muted rounded text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary" className="text-xs">
+                          Score: {chunk.score?.toFixed(3)}
+                        </Badge>
+                        {chunk.page_start && (
+                          <span className="text-muted-foreground">
+                            Page {chunk.page_start}
+                            {chunk.page_end && chunk.page_end !== chunk.page_start && `-${chunk.page_end}`}
+                          </span>
+                        )}
+                      </div>
+                      <p className="line-clamp-3">{chunk.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Legacy Pipeline Results */}
+          <Card className="border-2 border-orange-500">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <ArrowRight className="h-5 w-5 text-orange-500" />
+                  Legacy Pipeline
+                </CardTitle>
+                {legacyResult?.strategy && (
+                  <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500">
+                    {legacyResult.strategy}
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Answer */}
+              <div>
+                <h3 className="font-semibold text-sm mb-2">Answer</h3>
+                <Alert>
+                  <AlertDescription className="text-sm whitespace-pre-wrap">
+                    {legacyResult?.answer}
+                  </AlertDescription>
+                </Alert>
+              </div>
+
+              {/* Signals */}
+              {legacyResult?.signals && (
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">Signals</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Top Score</div>
+                      <div className="font-bold">{legacyResult.signals.top_score?.toFixed(3)}</div>
+                    </div>
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Avg Top 3</div>
+                      <div className="font-bold">{legacyResult.signals.avg_top_3?.toFixed(3)}</div>
+                    </div>
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Strong Hits</div>
+                      <div className="font-bold">{legacyResult.signals.strong_hits}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Performance */}
+              {legacyResult?.performance && (
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">Performance</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Search</div>
+                      <div className="font-bold">{legacyResult.performance.search_time}ms</div>
+                    </div>
+                    <div className="text-center p-2 bg-muted rounded">
+                      <div className="text-xs text-muted-foreground">Total</div>
+                      <div className="font-bold">{legacyResult.performance.total_time}ms</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Retrieved Chunks */}
+              <div>
+                <h3 className="font-semibold text-sm mb-2">
+                  Retrieved Chunks ({legacyResult?.chunks?.length || 0})
+                </h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {legacyResult?.chunks?.map((chunk, idx) => (
+                    <div key={idx} className="p-3 bg-muted rounded text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary" className="text-xs">
+                          Score: {chunk.score?.toFixed(3)}
+                        </Badge>
+                        {chunk.page_start && (
+                          <span className="text-muted-foreground">
+                            Page {chunk.page_start}
+                            {chunk.page_end && chunk.page_end !== chunk.page_start && `-${chunk.page_end}`}
+                          </span>
+                        )}
+                      </div>
+                      <p className="line-clamp-3">{chunk.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default RAGTestingLab;

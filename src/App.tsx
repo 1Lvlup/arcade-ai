@@ -30,6 +30,7 @@ import AccountSettings from "./pages/AccountSettings";
 import Support from "./pages/Support";
 import SupportTickets from "./pages/SupportTickets";
 import QAAnalytics from "./pages/QAAnalytics";
+import RAGTestingLab from "./pages/RAGTestingLab";
 import Pricing from "./pages/Pricing";
 import ServerCapacity from "./pages/ServerCapacity";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -113,6 +114,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminRoute>
                   <AdminDashboard />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/rag-testing-lab" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <RAGTestingLab />
                 </AdminRoute>
               </ProtectedRoute>
             } />

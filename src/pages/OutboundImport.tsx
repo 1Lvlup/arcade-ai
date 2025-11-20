@@ -140,7 +140,7 @@ export default function OutboundImport() {
       // 2. Create lead
       const { error: leadError } = await supabase.from("leads").insert({
         company_id: companyId,
-        name: null,
+        name: "Primary Contact",
         role: null,
         email: null,
         phone: prospect.phone_number,

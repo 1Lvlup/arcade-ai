@@ -23,6 +23,15 @@ interface GooglePlacesResult {
   website?: string;
 }
 
+interface GooglePlaceDetailsResult {
+  result: {
+    website?: string;
+    formatted_phone_number?: string;
+    international_phone_number?: string;
+  };
+  status: string;
+}
+
 interface GooglePlacesResponse {
   results: GooglePlacesResult[];
   status: string;
@@ -122,6 +131,31 @@ serve(async (req) => {
     for (const place of results) {
       const { city, state, country } = parseAddress(place.formatted_address);
 
+      // Fetch additional details (website, phone) from Place Details API
+      let website = place.website || null;
+      let phone = place.formatted_phone_number || null;
+
+      try {
+        const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
+        detailsUrl.searchParams.set('place_id', place.place_id);
+        detailsUrl.searchParams.set('fields', 'website,formatted_phone_number,international_phone_number');
+        detailsUrl.searchParams.set('key', googleApiKey);
+
+        const detailsResponse = await fetch(detailsUrl.toString());
+        const detailsData: GooglePlaceDetailsResult = await detailsResponse.json();
+
+        if (detailsData.status === 'OK' && detailsData.result) {
+          website = detailsData.result.website || website;
+          phone = detailsData.result.formatted_phone_number || detailsData.result.international_phone_number || phone;
+        }
+
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (detailsError) {
+        console.error(`Failed to fetch details for ${place.name}:`, detailsError);
+        // Continue processing even if details fetch fails
+      }
+
       const prospectData = {
         place_id: place.place_id,
         name: place.name,
@@ -131,8 +165,8 @@ serve(async (req) => {
         country,
         latitude: place.geometry.location.lat,
         longitude: place.geometry.location.lng,
-        phone_number: place.formatted_phone_number || null,
-        website: place.website || null,
+        phone_number: phone,
+        website: website,
         google_rating: place.rating || null,
         user_ratings_total: place.user_ratings_total || null,
         types: place.types || [],

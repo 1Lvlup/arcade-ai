@@ -204,7 +204,12 @@ async function createEmbedding(text: string) {
 // ─────────────────────────────────────────────────────────────────────────
 // Search using unified search endpoint with Cohere reranking
 // ─────────────────────────────────────────────────────────────────────────
-async function searchChunks(query: string, manual_id?: string, tenant_id?: string) {
+async function searchChunks(query: string, manual_id?: string, tenant_id?: string, useLegacy?: boolean) {
+  // If legacy flag is set, route to old pipeline
+  if (useLegacy) {
+    return await legacyRobustSearch(query, manual_id, tenant_id);
+  }
+  
   const startTime = Date.now();
 
   const expanded = expandQuery(query);
@@ -274,6 +279,45 @@ async function searchChunks(query: string, manual_id?: string, tenant_id?: strin
     const fallbackResults = await fallbackVectorSearch(hybridQuery, manual_id, tenant_id);
     console.log(`⏱️ Error fallback completed in ${Date.now() - startTime}ms`);
     return { textResults: fallbackResults, figureResults: [], strategy: "error_fallback" };
+  }
+}
+
+// Legacy search using search-manuals-robust for A/B testing
+async function legacyRobustSearch(query: string, manual_id?: string, tenant_id?: string) {
+  console.log("🔄 [LEGACY] Using search-manuals-robust pipeline");
+  const startTime = Date.now();
+  
+  try {
+    const searchResponse = await supabase.functions.invoke('search-manuals-robust', {
+      body: {
+        query: query,
+        manual_id: manual_id,
+        max_results: 10,
+      },
+    });
+
+    if (searchResponse.error) {
+      console.error("❌ [LEGACY] Robust search error:", searchResponse.error);
+      return { textResults: [], figureResults: [], strategy: "legacy_error" };
+    }
+
+    const { results = [] } = searchResponse.data || {};
+    console.log(`✅ [LEGACY] Returned ${results.length} results in ${Date.now() - startTime}ms`);
+    
+    // Normalize to match V3 format
+    function normalizeRow(r: any) {
+      const t = typeof r.content === "string" ? r.content : JSON.stringify(r.content ?? "");
+      return { ...r, content: t };
+    }
+
+    return { 
+      textResults: results.map(normalizeRow),
+      figureResults: [],
+      strategy: "legacy_robust_mmr" 
+    };
+  } catch (error) {
+    console.error("❌ [LEGACY] Search error:", error);
+    return { textResults: [], figureResults: [], strategy: "legacy_error" };
   }
 }
 
@@ -616,14 +660,22 @@ async function runRagPipelineV3(
   model?: string,
   conversationHistory?: Array<{ role: string; content: string }>,
   images?: string[],
-  stream: boolean = false
+  stream: boolean = false,
+  useLegacy: boolean = false // NEW: A/B testing flag
 ) {
   console.log("\n🚀 [RAG V3] Starting simplified pipeline...\n");
   const pipelineStartTime = performance.now();
 
+  // Log legacy mode if active
+  if (useLegacy) {
+    console.log("📊 [LEGACY MODE ACTIVE]");
+    console.log("   - Pipeline: search-manuals-robust (MMR-based)");
+    console.log("   - V3 features disabled: Cohere rerank, hybrid search");
+  }
+
   const searchStart = performance.now();
   console.log("🔍 [STAGE 1/4] Searching manuals...");
-  const { textResults, figureResults, strategy } = await searchChunks(query, manual_id, tenant_id);
+  const { textResults, figureResults, strategy } = await searchChunks(query, manual_id, tenant_id, useLegacy);
   const searchEnd = performance.now();
   console.log(`✅ Search complete (${(searchEnd - searchStart).toFixed(0)}ms)`);
   
@@ -811,6 +863,7 @@ serve(async (req) => {
       query: z.string().min(1, "Query cannot be empty").max(5000, "Query too long (max 5000 chars)"),
       manual_id: z.string().nullish(), // Accepts string | null | undefined
       stream: z.boolean().optional(),
+      use_legacy_search: z.boolean().optional(), // NEW: A/B testing flag
       messages: z.array(z.object({
         role: z.enum(['user', 'assistant', 'system']),
         content: z.string().max(10000, "Message content too long")
@@ -821,13 +874,14 @@ serve(async (req) => {
     // Parse and validate request body
     const rawBody = await req.json();
     const validatedBody = chatRequestSchema.parse(rawBody);
-    const { query, manual_id, stream, messages, images } = validatedBody;
+    const { query, manual_id, stream, use_legacy_search, messages, images } = validatedBody;
 
     console.log("\n=================================");
     console.log("🔍 NEW CHAT REQUEST");
     console.log("Query:", query);
     console.log("Manual ID:", manual_id || "All manuals");
     console.log("Stream:", stream || false);
+    console.log("🔄 Legacy Search:", use_legacy_search || false); // NEW: log the flag
     console.log("=================================\n");
 
     // Check for Rundown Mode (DISABLED - always use default mode)
@@ -1337,7 +1391,7 @@ serve(async (req) => {
       });
     }
     
-    const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images, false);
+    const result = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images, false, use_legacy_search || false);
 
     const { answer, sources, strategy, chunks, interactive_components } = result;
 

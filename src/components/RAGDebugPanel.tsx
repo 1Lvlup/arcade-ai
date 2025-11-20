@@ -3,6 +3,8 @@ import { ChevronDown, ChevronUp, Copy, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Collapsible,
   CollapsibleContent,
@@ -42,9 +44,11 @@ interface RAGDebugData {
 interface RAGDebugPanelProps {
   ragData: RAGDebugData;
   className?: string;
+  useLegacySearch?: boolean; // NEW
+  onToggleLegacy?: (enabled: boolean) => void; // NEW
 }
 
-export function RAGDebugPanel({ ragData, className = "" }: RAGDebugPanelProps) {
+export function RAGDebugPanel({ ragData, className = "", useLegacySearch = false, onToggleLegacy }: RAGDebugPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -74,6 +78,27 @@ export function RAGDebugPanel({ ragData, className = "" }: RAGDebugPanelProps) {
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
       <div className="border border-border/50 rounded-lg bg-muted/30 overflow-hidden">
+        {/* A/B Testing Toggle (if handler provided) */}
+        {onToggleLegacy && (
+          <div className="p-4 border-b border-border/50 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="legacy-toggle" className="text-xs font-semibold">
+                  🔄 A/B Test Mode
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Use legacy search-manuals-robust pipeline for comparison
+                </p>
+              </div>
+              <Switch
+                id="legacy-toggle"
+                checked={useLegacySearch}
+                onCheckedChange={onToggleLegacy}
+              />
+            </div>
+          </div>
+        )}
+        
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"

@@ -233,7 +233,7 @@ const Index = () => {
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 INSIDE THE INTELLIGENCE
               </p>
-              <h2 className="text-3xl sm:text-4xl font-bold font-tech uppercase mb-4">
+              <h2 className="text-3xl sm:text-4xl font-bold font-hero uppercase mb-4">
                 How it <span className="text-primary text-4xl font-semibold">works</span>
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl">

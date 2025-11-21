@@ -158,20 +158,20 @@ export function RAGDebugPanel({ ragData, className = "", useLegacySearch = false
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-muted-foreground">Top Score</span>
-                    <span className="font-medium">{ragData.signals.topScore.toFixed(3)}</span>
+                    <span className="font-medium">{signals.topScore.toFixed(3)}</span>
                   </div>
-                  <Progress value={ragData.signals.topScore * 100} className="h-2" />
+                  <Progress value={signals.topScore * 100} className="h-2" />
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-muted-foreground">Avg Top 3</span>
-                    <span className="font-medium">{ragData.signals.avgTop3.toFixed(3)}</span>
+                    <span className="font-medium">{signals.avgTop3.toFixed(3)}</span>
                   </div>
-                  <Progress value={ragData.signals.avgTop3 * 100} className="h-2" />
+                  <Progress value={signals.avgTop3 * 100} className="h-2" />
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Strong Hits</span>
-                  <Badge variant="secondary">{ragData.signals.strongHits}</Badge>
+                  <Badge variant="secondary">{signals.strongHits}</Badge>
                 </div>
               </div>
             </div>

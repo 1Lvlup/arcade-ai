@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SharedHeader } from '@/components/SharedHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -295,7 +296,9 @@ const VisionBoard = () => {
   };
 
   return (
-    <div className="min-h-screen mesh-gradient">
+    <>
+      <SharedHeader />
+      <div className="min-h-screen mesh-gradient">
       {/* Header */}
       <header className="border-b border-primary/20 bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -569,6 +572,7 @@ const VisionBoard = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 

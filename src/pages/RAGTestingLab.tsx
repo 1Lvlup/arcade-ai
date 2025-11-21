@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SharedHeader } from '@/components/SharedHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -148,7 +149,9 @@ const RAGTestingLab = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <>
+      <SharedHeader />
+      <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -410,6 +413,7 @@ const RAGTestingLab = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

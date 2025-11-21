@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SharedHeader } from '@/components/SharedHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,7 +71,9 @@ const DebugJob = () => {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <>
+      <SharedHeader />
+      <div className="container mx-auto p-6">
       <Card>
         <CardHeader>
           <CardTitle>Debug Stalled Job</CardTitle>
@@ -124,6 +127,7 @@ const DebugJob = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

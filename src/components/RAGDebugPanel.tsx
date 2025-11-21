@@ -57,6 +57,12 @@ export function RAGDebugPanel({ ragData, className = "", useLegacySearch = false
   const chunks = ragData?.chunks || [];
   const chunkCount = chunks.length;
 
+    const signals = ragData?.signals ?? {
+    topScore: 0,
+    avgTop3: 0,
+    strongHits: 0,
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(JSON.stringify(ragData, null, 2));
     setCopied(true);

@@ -10,6 +10,12 @@ export function Footer() {
           </p>
           <nav className="flex gap-6">
             <Link 
+              to="/what-is-level-up" 
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              What Is Level Up?
+            </Link>
+            <Link 
               to="/privacy-policy" 
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >

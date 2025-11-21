@@ -117,7 +117,6 @@ Be concise but thorough. Focus on practical, working solutions.`;
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    }
 
     const data = await response.json();
     const assistantMessage = data.choices[0].message.content;

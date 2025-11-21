@@ -437,14 +437,14 @@ export const SharedHeader = ({
             <Link to="/auth">
               <Button
                 variant="orange"
-                className="gap-2 font-bold hover-lift h-9 px-3 text-sm md:h-12 md:px-6 md:text-base bg-opacity-70 md:bg-opacity-100 backdrop-blur-sm"
+                size="sm"
+                className="gap-2 font-bold hover-lift backdrop-blur-sm"
                 style={{
                   boxShadow: "0 0 20px hsl(24 100% 60% / 0.4)",
                 }}
               >
-                <User className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="md:hidden">SIGN IN</span>
-                <span className="hidden md:inline">SIGN IN / SIGN UP</span>
+                <User className="h-4 w-4" />
+                <span>SIGN IN</span>
               </Button>
             </Link>
           )}

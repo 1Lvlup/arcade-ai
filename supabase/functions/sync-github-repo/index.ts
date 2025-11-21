@@ -90,7 +90,16 @@ Deno.serve(async (req) => {
     const githubToken = Deno.env.get('GITHUB_TOKEN');
 
     if (!githubToken) {
-      throw new Error('GITHUB_TOKEN not configured. Please add it in Supabase secrets.');
+      return new Response(
+        JSON.stringify({ 
+          error: 'GitHub token not configured',
+          details: 'Please add a GitHub Personal Access Token as GITHUB_TOKEN in Supabase secrets. Generate one at: https://github.com/settings/tokens with "repo" scope.'
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -135,7 +144,28 @@ Deno.serve(async (req) => {
     if (!repoResponse.ok) {
       const errorText = await repoResponse.text();
       console.error('GitHub API error:', errorText);
-      throw new Error(`Failed to fetch repository: ${repoResponse.status} ${repoResponse.statusText}`);
+      
+      let errorMessage = 'Failed to fetch repository';
+      let errorDetails = 'Check edge function logs for more information';
+      
+      if (repoResponse.status === 404) {
+        errorMessage = 'Repository not found';
+        errorDetails = `The repository "${repository}" either doesn't exist, is private, or your GitHub token doesn't have access. Please check:\n\n1. Repository name is correct (case-sensitive)\n2. Repository exists on GitHub\n3. If private, your GITHUB_TOKEN has "repo" scope\n4. Token belongs to an account with access`;
+      } else if (repoResponse.status === 401) {
+        errorMessage = 'GitHub authentication failed';
+        errorDetails = 'Your GITHUB_TOKEN is invalid or expired. Generate a new Personal Access Token at: https://github.com/settings/tokens';
+      } else if (repoResponse.status === 403) {
+        errorMessage = 'GitHub API rate limit exceeded';
+        errorDetails = 'Too many requests. Wait a few minutes or use a different GitHub token.';
+      }
+      
+      return new Response(
+        JSON.stringify({ error: errorMessage, details: errorDetails }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     const repoData = await repoResponse.json();

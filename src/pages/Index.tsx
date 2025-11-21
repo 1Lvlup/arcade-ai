@@ -94,7 +94,7 @@ const Index = () => {
           <div className="w-full relative z-20">
             {/* Text Content - Centered at top */}
             <div className="w-full text-center mb-6 px-4 pt-2 md:pt-10 lg:pt-16">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-tech font-bold tracking-tight text-foreground mb-4 leading-tight">
+              <h1 className="text-4xl sm:text-5xl tracking-tight text-foreground mb-4 leading-tight font-medium lg:text-5xl text-center font-sans">
                 STOP LOSING MONEY TO DEAD GAMES
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 max-w-4xl mx-auto font-sans">

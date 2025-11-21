@@ -90,7 +90,7 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative bg-background overflow-hidden pt-8 md:pt-12 pb-12 md:pb-20 px-0 my-0 mx-0">
+        <section className="relative overflow-hidden pt-8 md:pt-12 pb-12 md:pb-20 px-0 my-0 mx-0">
           <div className="container mx-auto px-4 my-0">
             {/* Centered Text Content */}
             {/* Title - No Box */}

@@ -26,18 +26,26 @@ interface ChatMessage {
 
 interface MessageRendererProps {
   message: ChatMessage;
+  currentStatus?: string | null;
   onFeedback?: (messageId: string, feedbackType: "thumbs_up" | "thumbs_down") => void;
   onThumbnailClick?: (thumbnail: any) => void;
   onAutoSend?: (text: string) => void;
+  onReportIssue?: (message: ChatMessage) => void;
   debugMode?: boolean;
+  useLegacySearch?: boolean;
+  onToggleLegacy?: (enabled: boolean) => void;
 }
 
 export function MessageRenderer({
   message,
+  currentStatus,
   onFeedback,
   onThumbnailClick,
   onAutoSend,
+  onReportIssue,
   debugMode = false,
+  useLegacySearch = false,
+  onToggleLegacy,
 }: MessageRendererProps) {
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
@@ -54,6 +62,14 @@ export function MessageRenderer({
       )}
 
       <div className={`flex-1 max-w-[85%] ${message.type === "user" ? "flex flex-col items-end" : ""}`}>
+        {/* Loading status for bot messages */}
+        {message.type === "bot" && !message.content && currentStatus && (
+          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>{currentStatus}</span>
+          </div>
+        )}
+
         <div
           className={`rounded-lg p-4 ${
             message.type === "user"
@@ -194,7 +210,25 @@ export function MessageRenderer({
         {/* RAG Debug Panel */}
         {debugMode && message.rag_debug && (
           <div className="mt-3">
-            <RAGDebugPanel ragData={message.rag_debug} />
+            <RAGDebugPanel 
+              ragData={message.rag_debug}
+              useLegacySearch={useLegacySearch}
+              onToggleLegacy={onToggleLegacy}
+            />
+          </div>
+        )}
+
+        {/* Report Issue Button */}
+        {message.type === "bot" && onReportIssue && (
+          <div className="mt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onReportIssue(message)}
+              className="h-7 px-2 text-xs"
+            >
+              Report Issue
+            </Button>
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/AdminSidebar';
+import { SharedHeader } from '@/components/SharedHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -32,11 +33,13 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('system');
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        
-        <SidebarInset className="flex-1">
+    <>
+      <SharedHeader />
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-background">
+          <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+          
+          <SidebarInset className="flex-1">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
             <SidebarTrigger className="-ml-1" />
             <Link to="/">
@@ -410,6 +413,7 @@ const AdminDashboard = () => {
         </SidebarInset>
       </div>
     </SidebarProvider>
+    </>
   );
 };
 

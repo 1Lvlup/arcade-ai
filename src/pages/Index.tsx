@@ -105,7 +105,7 @@ const Index = () => {
             </div>
 
             {/* Bullet Points - Outside Box */}
-            <div className="flex flex-col gap-3 mb-8 text-sm max-w-[700px] mx-auto">
+            <div className="flex flex-row gap-6 mb-8 text-sm max-w-[1000px] mx-auto justify-center">
               <div className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
                 <span className="text-muted-foreground font-sans">

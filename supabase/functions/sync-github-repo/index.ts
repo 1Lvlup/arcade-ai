@@ -106,10 +106,19 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { repository } = await req.json();
+    let { repository } = await req.json();
+    
+    // Handle both "owner/repo" and full GitHub URLs
+    if (repository.startsWith('http')) {
+      const match = repository.match(/github\.com\/([^\/]+\/[^\/\.]+)/);
+      if (!match) {
+        throw new Error('Invalid GitHub URL. Expected format: https://github.com/owner/repo');
+      }
+      repository = match[1];
+    }
     
     if (!repository || !repository.includes('/')) {
-      throw new Error('Invalid repository format. Use "owner/repo"');
+      throw new Error('Invalid repository format. Use "owner/repo" or full GitHub URL');
     }
 
     console.log(`Fetching repository tree for: ${repository}`);

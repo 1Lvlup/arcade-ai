@@ -998,96 +998,17 @@ serve(async (req) => {
     // If streaming is requested, handle it differently
     if (stream) {
       console.log("📡 Starting streaming response");
-      const ragResult = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images, true);
-      const { sources, strategy, chunks, figureResults, answer } = ragResult;
+      console.log("🔍 Using unified search:", query);
+      const ragResult = await runRagPipelineV3(query, effectiveManualId, tenant_id, model, messages, images, true, use_legacy_search || false);
+      const { sources, strategy, chunks, figureResults, answer, retrieval_quality } = ragResult;
+      console.log("📊 RAG Result - answer type:", typeof answer, "length:", answer?.length || 0);
+      const isWeak = retrieval_quality?.isWeak || false;
       
       // ============ QUALITY GRADING FOR STREAMING ============
-      console.log("📊 [GRADING] Starting quality evaluation for streaming response...");
-      const gradingStartTime = performance.now();
+      // Skip quality grading for streaming responses since we can't grade a stream before it completes
+      console.log("⏭️ Skipping quality grading for streaming response (answer is a stream)");
       
-      const response_text = typeof answer === 'string' ? answer : JSON.stringify(answer);
-      
-      // 1. Extract claims
-      const claims = response_text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-      
-      // 2. Detect numbers
-      const numericMatches = [...response_text.matchAll(/(\d+\.?\d*)\s*([a-zA-Z]+)?/g)];
-      const numeric_flags = numericMatches.map(m => ({
-        value: m[1],
-        unit: m[2] || '',
-        context: response_text.substring(
-          Math.max(0, m.index! - 20),
-          Math.min(response_text.length, m.index! + m[0].length + 40)
-        )
-      }));
-      
-      // 3. Calculate claim coverage
-      const topChunksForCoverage = chunks?.slice(0, 3) || [];
-      let supportedClaims = 0;
-      
-      for (const claim of claims) {
-        const claimWords = claim.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
-        
-        for (const chunk of topChunksForCoverage) {
-          const chunkText = (chunk.content || '').toLowerCase();
-          const matchedWords = claimWords.filter((w: string) => chunkText.includes(w));
-          
-          if (claimWords.length > 0 && matchedWords.length / claimWords.length > 0.3) {
-            supportedClaims++;
-            break;
-          }
-        }
-      }
-      
-      const claim_coverage = claims.length > 0 ? supportedClaims / claims.length : 1.0;
-      
-      // 4. Calculate quality score
-      const vectorMean = chunks && chunks.length > 0 
-        ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.score || 0), 0) / Math.min(3, chunks.length)
-        : 0;
-      const rerankMean = chunks && chunks.length > 0
-        ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.rerank_score || 0), 0) / Math.min(3, chunks.length)
-        : 0;
-      
-      const coverageWeight = 0.5;
-      const retrievalWeight = 0.3;
-      const penaltyWeight = 0.2;
-      
-      const retrievalScore = (vectorMean * 0.4 + rerankMean * 0.6);
-      const numericPenalty = numeric_flags.length > 0 ? 0.3 : 0.0;
-      
-      const quality_score = (
-        claim_coverage * coverageWeight +
-        retrievalScore * retrievalWeight -
-        numericPenalty * penaltyWeight
-      );
-      
-      // 5. Determine quality tier
-      let quality_tier = 'low';
-      if (claim_coverage >= 0.8 && numeric_flags.length === 0) {
-        quality_tier = 'high';
-      } else if (claim_coverage >= 0.5) {
-        quality_tier = 'medium';
-      }
-      
-      const gradingEndTime = performance.now();
-      const gradingDuration = gradingEndTime - gradingStartTime;
-      
-      console.log('📊 Quality Assessment (Streaming):', {
-        tier: quality_tier,
-        score: quality_score.toFixed(3),
-        coverage: claim_coverage.toFixed(2),
-        claims_total: claims.length,
-        claims_supported: supportedClaims,
-        numeric_flags: numeric_flags.length,
-        vector_mean: vectorMean.toFixed(3),
-        rerank_mean: rerankMean.toFixed(3),
-        grading_time_ms: gradingDuration.toFixed(0)
-      });
-      console.log(`⏱️ [GRADING] Completed in ${gradingDuration.toFixed(0)}ms`);
-      // ============ END QUALITY GRADING ============
-      
-      // Log the query with quality metrics
+      // Log the query WITHOUT quality metrics (since we can't compute them yet)
       let queryLogId = null;
       try {
         const { data: logData, error: logError } = await supabase
@@ -1097,31 +1018,39 @@ serve(async (req) => {
             normalized_query: normalizeQuery(query),
             model_name: model,
             retrieval_method: strategy,
-            response_text,
+            response_text: '', // Empty for streaming
             manual_id: effectiveManualId || null,
             top_doc_ids: chunks?.slice(0, 10).map(c => c.id) || [],
             top_doc_pages: chunks?.slice(0, 10).map(c => c.page_start || 0) || [],
             top_doc_scores: chunks?.slice(0, 10).map(c => c.rerank_score || 0) || [],
-            // Quality metrics
-            numeric_flags: JSON.stringify(numeric_flags),
-            claim_coverage,
-            quality_score,
-            quality_tier,
-            vector_mean: vectorMean,
-            rerank_mean: rerankMean,
           })
           .select('id')
           .single();
 
         if (!logError && logData) {
           queryLogId = logData.id;
-          console.log('✅ Query logged with quality metrics, ID:', queryLogId);
+          console.log('✅ Query logged, ID:', queryLogId);
         } else {
-          console.error('❌ Failed to log query with quality metrics:', logError);
+          console.error('❌ Failed to log query:', logError);
         }
       } catch (e) {
         console.error('❌ Error logging query:', e);
       }
+      
+      // Compute signals and scores for stream wrapper (needed for RAG debug)
+      const vectorMean = chunks && chunks.length > 0 
+        ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.score || 0), 0) / Math.min(3, chunks.length)
+        : 0;
+      const rerankMean = chunks && chunks.length > 0
+        ? chunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.rerank_score || 0), 0) / Math.min(3, chunks.length)
+        : 0;
+      const maxRerankScore = chunks && chunks.length > 0
+        ? Math.max(...chunks.map((c: any) => c.rerank_score ?? c.score ?? 0))
+        : 0;
+      const maxBaseScore = chunks && chunks.length > 0
+        ? Math.max(...chunks.map((c: any) => c.score ?? 0))
+        : 0;
+      const quality_score = (vectorMean * 0.4 + rerankMean * 0.6);
       
       // Compute signals for streaming response (required for Answer Style V2)
       const streamSignals = computeSignals((chunks || []).map(c => ({ score: c.rerank_score ?? c.score ?? 0 })));
@@ -1130,13 +1059,9 @@ serve(async (req) => {
       console.log("✍️ [STAGE 3/4] Generating answer...");
       const generateStart = performance.now();
       
-      // Get the answer stream with conversation history
-      const answerStream = await generateAnswer(query, chunks || [], model, {
-        retrievalWeak: false,
-        signals: streamSignals, // Pass signals for Answer Style V2
-        stream: true,
-        conversationHistory: messages
-      }) as ReadableStream;
+      // Use the answer stream that was already created by runRagPipelineV3
+      console.log("📊 Answer type:", typeof answer, "is ReadableStream:", answer instanceof ReadableStream);
+      const answerStream = answer as ReadableStream;
       
       // Create a new stream that sends metadata first, then the answer
       const streamWithMetadata = new ReadableStream({
@@ -1264,8 +1189,8 @@ serve(async (req) => {
                   total_ms: totalTime.toFixed(0)
                 },
                 answer_style: {
-                  is_weak: shaped.isWeak || false,
-                  adaptive_mode: shaped.isWeak ? 'cautious' : 'confident'
+                  is_weak: isWeak || false,
+                  adaptive_mode: isWeak ? 'cautious' : 'confident'
                 },
                 strategy: strategy
               }

@@ -90,61 +90,60 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[700px] bg-background overflow-hidden">
-          <div className="w-full relative z-20">
-            {/* Text Content - Centered at top */}
-            <div className="w-full text-center mb-6 px-4 pt-2 md:pt-10 lg:pt-16">
-              <h1 className="text-4xl sm:text-5xl tracking-tight mb-4 leading-tight font-medium lg:text-5xl text-center font-tech text-orange">
-                STOP LOSING MONEY TO DEAD GAMES
-              </h1>
-              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 max-w-4xl mx-auto font-sans">
-                LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
-                from problem to solution, so dead cabinets start earning again fast.
-              </p>
+        <section className="relative bg-background overflow-hidden py-12 md:py-20">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left Column - Text Content */}
+              <div className="flex flex-col">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl tracking-tight mb-6 leading-tight font-medium font-tech text-orange">
+                  STOP LOSING MONEY TO DEAD GAMES
+                </h1>
+                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 font-sans">
+                  LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
+                  from problem to solution, so dead cabinets start earning again fast.
+                </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-5xl mx-auto text-sm">
-                <div className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">
-                    Every fix across every arcade is stored into the database.
-                  </span>
+                <div className="flex flex-col gap-3 mb-8 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span className="text-muted-foreground font-sans">
+                      Every fix across every arcade is stored into the database.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span className="text-muted-foreground font-sans">
+                      Over time it will instantly know every solution to every problem with little to no troubleshooting
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span className="text-muted-foreground font-sans">
+                      Recover revenue from games that would sit dark for days or weeks.
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">
-                    Over time it will instantly know every solution to every problem with little to no troubleshooting
-                  </span>
+
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                  <Button onClick={handleStartGeneralChat} size="lg" variant="orange" className="text-xl font-semibold px-12 sm:w-auto animate-glow-pulse hover:shadow-[0_0_35px_rgba(255,107,0,0.6)] transition-shadow duration-300">
+                    Launch Arcade Intelligence
+                  </Button>
+                  {isAdmin && <Button asChild size="lg" variant="outline" className="text-base font-semibold px-12 w-full sm:w-auto">
+                      <Link to="/lead-intelligence">Outbound Sales Hub</Link>
+                    </Button>}
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">
-                    Recover revenue from games that would sit dark for days or weeks.
-                  </span>
-                </div>
+
+                <p className="text-xs text-muted-foreground font-sans">
+                  No credit card · Built inside a live FEC with 80+ games
+                </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-center gap-3 mb-3">
-              <Button onClick={handleStartGeneralChat} size="lg" variant="orange" className="text-xl font-semibold px-12 sm:w-auto animate-glow-pulse hover:shadow-[0_0_35px_rgba(255,107,0,0.6)] transition-shadow duration-300">
-                Launch Arcade Intelligence
-              </Button>
-                {isAdmin && <Button asChild size="lg" variant="outline" className="text-base font-semibold px-12 w-full sm:w-auto">
-                    <Link to="/lead-intelligence">Outbound Sales Hub</Link>
-                  </Button>}
-              </div>
-
-              <p className="text-xs text-muted-foreground font-sans">
-                No credit card · Built inside a live FEC with 80+ games
-              </p>
-            </div>
-
-            {/* Background Image - Main focal point, fully visible */}
-            <div className="relative w-full mt-8">
-              {/* Dark gradient overlay for depth and readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/80 z-10 pointer-events-none" />
-              <div className="absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-background/40 z-10 pointer-events-none" />
-
-              <div className="relative rounded-lg overflow-hidden shadow-2xl ml-8 md:ml-12 lg:ml-20">
-                <img ref={heroImageRef} src={chatUIBackground} alt="LevelUp Chat Interface" className="w-full h-auto brightness-105" loading="lazy" decoding="async" />
+              {/* Right Column - Screenshot */}
+              <div className="relative">
+                <div className="relative rounded-lg overflow-hidden shadow-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/40 z-10 pointer-events-none" />
+                  <img ref={heroImageRef} src={chatUIBackground} alt="LevelUp Chat Interface" className="w-full h-auto brightness-105" loading="lazy" decoding="async" />
+                </div>
               </div>
             </div>
           </div>

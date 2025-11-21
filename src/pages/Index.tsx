@@ -151,7 +151,7 @@ const Index = () => {
         </section>
 
           {/* Features Section */}
-          <section className="py-20">
+          <section className="py-20 -mt-12 md:-mt-16">
             <div className="mb-12 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 ADVANCED CAPABILITIES

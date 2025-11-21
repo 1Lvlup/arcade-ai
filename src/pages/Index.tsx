@@ -95,17 +95,35 @@ const Index = () => {
             {/* Centered Text Content */}
             {/* Title Box - Raised Effect */}
             <div className="max-w-[800px] mx-auto text-center mb-8 rounded-xl shadow-[0_30px_90px_-15px_rgba(0,0,0,0.8),0_15px_40px_-10px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.1)] bg-[#0e0e0e]/[0.9] border border-white/10 transform hover:translate-y-[-4px] transition-all duration-300 py-8 px-6">
-              <h1 className="text-4xl sm:text-5xl tracking-tight leading-tight font-medium font-tech text-slate-50 lg:text-5xl">
+              <h1 className="text-4xl sm:text-5xl tracking-tight leading-tight font-medium font-tech text-slate-50 lg:text-5xl mb-6">
                 STOP LOSING MONEY TO <span className="text-primary">DEAD GAMES</span>
               </h1>
-            </div>
-
-            {/* Subheading and Content - Outside Box */}
-            <div className="max-w-[800px] mx-auto text-center mb-8">
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed font-sans">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
                 from problem to solution, so dead cabinets start earning again fast.
               </p>
+            </div>
+
+            {/* Bullet Points - Outside Box */}
+            <div className="flex flex-col gap-3 mb-8 text-sm max-w-[700px] mx-auto">
+              <div className="flex items-start gap-2">
+                <span className="text-primary mt-1">•</span>
+                <span className="text-muted-foreground font-sans">
+                  Every fix across every arcade is stored into the database.
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary mt-1">•</span>
+                <span className="text-muted-foreground font-sans">
+                  Over time it will instantly know every solution to every problem with little to no troubleshooting
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary mt-1">•</span>
+                <span className="text-muted-foreground font-sans">
+                  Recover revenue from games that would sit dark for days or weeks.
+                </span>
+              </div>
             </div>
 
             {/* CTA Buttons - Outside the box */}

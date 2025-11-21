@@ -26,6 +26,7 @@ export default function BlogEditor() {
     slug: '',
     excerpt: '',
     content: '',
+    content_format: 'html',
     category_id: '',
     featured_image: '',
     meta_description: '',
@@ -64,6 +65,7 @@ export default function BlogEditor() {
         slug: data.slug || '',
         excerpt: data.excerpt || '',
         content: data.content || '',
+        content_format: data.content_format || 'html',
         category_id: data.category_id || '',
         featured_image: data.featured_image || '',
         meta_description: data.meta_description || '',
@@ -209,17 +211,38 @@ export default function BlogEditor() {
 
               {/* Content */}
               <div className="space-y-2">
-                <Label htmlFor="content">Content * (HTML supported)</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="content">Content *</Label>
+                  <Select
+                    value={formData.content_format}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, content_format: value }))}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="html">HTML</SelectItem>
+                      <SelectItem value="markdown">Markdown</SelectItem>
+                      <SelectItem value="plaintext">Plain Text</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Textarea
                   id="content"
                   value={formData.content}
                   onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="Write your post content here. You can use HTML tags."
+                  placeholder={
+                    formData.content_format === 'html' 
+                      ? '<p>Write HTML here...</p>'
+                      : formData.content_format === 'markdown'
+                      ? '# Write Markdown here...'
+                      : 'Write plain text here...'
+                  }
                   rows={15}
                   className="font-mono"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Estimated read time: {calculateReadTime(formData.content)} minutes
+                  Format: {formData.content_format.toUpperCase()} | Estimated read time: {calculateReadTime(formData.content)} minutes
                 </p>
               </div>
 

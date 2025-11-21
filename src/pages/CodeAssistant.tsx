@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { SharedHeader } from '@/components/SharedHeader';
-import { Send, Code, Copy, Bot, User, Sparkles, FileCode, Plus, Trash2, History, MessageSquare, Upload, X, Folder, FileText, Database, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Send, Code, Copy, Bot, User, Sparkles, FileCode, Plus, Trash2, History, MessageSquare, Upload, X, Folder, FileText, Database, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -712,6 +712,26 @@ export function CodeAssistant() {
                       )}
                     </div>
                   ))}
+                  
+                  {isLoading && (
+                    <div className="flex gap-4 justify-start">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Bot className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 max-w-[80%]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="secondary">AI</Badge>
+                        </div>
+                        <div className="rounded-lg p-4 bg-muted">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-sm">AI is thinking...</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div ref={scrollRef} />
                 </div>
               </ScrollArea>
@@ -732,7 +752,11 @@ export function CodeAssistant() {
                     disabled={isLoading}
                   />
                   <Button onClick={sendMessage} disabled={isLoading || !input.trim()} size="lg">
-                    <Send className="h-5 w-5" />
+                    {isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Send className="h-5 w-5" />
+                    )}
                   </Button>
                 </div>
               </div>

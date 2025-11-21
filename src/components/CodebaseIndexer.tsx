@@ -34,6 +34,7 @@ interface SyncResult {
 export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [isIndexing, setIsIndexing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingProject, setIsSyncingProject] = useState(false);
   const [isLoadingIndexed, setIsLoadingIndexed] = useState(false);
   const [indexedCount, setIndexedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
@@ -80,6 +81,58 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
       }
     }
   }, [autoSyncEnabled, dirHandle]);
+
+  const syncCurrentProject = async () => {
+    setIsSyncingProject(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-project-files');
+      
+      if (error) throw error;
+      
+      if (!data.files || data.files.length === 0) {
+        toast({ 
+          title: 'No files found', 
+          description: 'No indexable files found in current project',
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      // Insert files into indexed_codebase
+      const filesToInsert = data.files.map((file: any) => ({
+        file_path: file.path,
+        file_content: file.content,
+        language: file.language,
+        last_modified: new Date().toISOString(),
+      }));
+
+      const { error: insertError } = await supabase
+        .from('indexed_codebase')
+        .upsert(filesToInsert, { 
+          onConflict: 'file_path',
+          ignoreDuplicates: false 
+        });
+
+      if (insertError) throw insertError;
+      
+      toast({ 
+        title: 'Success', 
+        description: `Synced ${data.files.length} files from current project` 
+      });
+      
+      await loadIndexedFilesList();
+      if (onIndexComplete) onIndexComplete();
+    } catch (error: any) {
+      console.error('Error syncing project:', error);
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to sync current project', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsSyncingProject(false);
+    }
+  };
 
   const shouldIndexFile = (path: string): boolean => {
     const skipPatterns = [
@@ -894,11 +947,30 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
         )}
 
         <div className="space-y-2">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              onClick={syncCurrentProject}
+              disabled={isSyncingProject || isIndexing || isLoadingIndexed || isSyncing}
+              className="flex-1 min-w-[140px]"
+              variant="default"
+            >
+              {isSyncingProject ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <FileCode className="h-4 w-4 mr-2" />
+                  Sync Project
+                </>
+              )}
+            </Button>
+            
             <Button 
               onClick={() => folderInputRef.current?.click()}
-              disabled={isIndexing || isLoadingIndexed}
-              className="flex-1"
+              disabled={isIndexing || isLoadingIndexed || isSyncingProject || isSyncing}
+              className="flex-1 min-w-[140px]"
               variant="outline"
             >
               {isIndexing ? (
@@ -909,14 +981,16 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
               ) : (
                 <>
                   <Upload className="h-4 w-4 mr-2" />
-                  Index from Computer
+                  From Computer
                 </>
               )}
             </Button>
+            
             <Button 
               onClick={clearIndex}
-              disabled={isIndexing || isLoadingIndexed}
+              disabled={isIndexing || isLoadingIndexed || isSyncingProject || isSyncing}
               variant="outline"
+              className="min-w-[100px]"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Clear All

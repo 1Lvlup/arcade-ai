@@ -481,8 +481,8 @@ export function CodeAssistant() {
       <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
       
       <main className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <Card className="lg:col-span-1">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6">
+          <Card className="xl:col-span-1 h-full">
             <Tabs defaultValue="files">
               <TabsList className="w-full">
                 <TabsTrigger value="files" className="flex-1">
@@ -512,27 +512,29 @@ export function CodeAssistant() {
                   className="hidden"
                   accept=".tsx,.ts,.jsx,.js,.py,.java,.cpp,.c,.h,.css,.html,.json,.md,.txt,.sql,.toml,.yml,.yaml"
                 />
-                <Button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full" 
-                  size="sm"
-                  variant="outline"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Files
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1" 
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Files
+                  </Button>
 
-                <Button 
-                  onClick={() => setShowFileDialog(true)}
-                  className="w-full"
-                  variant="outline"
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Paste Code
-                </Button>
+                  <Button 
+                    onClick={() => setShowFileDialog(true)}
+                    className="flex-1"
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Paste Code
+                  </Button>
+                </div>
 
-                <ScrollArea className="h-[450px]">
+                <ScrollArea className="h-[calc(100vh-500px)] min-h-[300px] max-h-[450px]">
                   <div className="space-y-2">
                     {codeFiles.map(file => (
                       <div key={file.id} className="flex items-center justify-between p-2 border rounded-lg bg-muted/50 group">
@@ -562,7 +564,7 @@ export function CodeAssistant() {
               </TabsContent>
 
               <TabsContent value="history" className="p-4">
-                <ScrollArea className="h-[500px]">
+                <ScrollArea className="h-[calc(100vh-400px)] min-h-[300px] max-h-[500px]">
                   <div className="space-y-2">
                     {conversations.map(conv => (
                       <div
@@ -586,8 +588,8 @@ export function CodeAssistant() {
             </Tabs>
           </Card>
 
-          <Card className="lg:col-span-3">
-            <CardHeader className="border-b bg-gradient-to-r from-primary/10 to-purple-500/10">
+          <Card className="xl:col-span-3 h-full flex flex-col">
+            <CardHeader className="border-b bg-gradient-to-r from-primary/10 to-purple-500/10 flex-shrink-0">
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-6 w-6 text-primary" />
                 {conversations.find(c => c.id === currentConversation)?.title}
@@ -596,8 +598,8 @@ export function CodeAssistant() {
                 {codeFiles.length} file{codeFiles.length !== 1 ? 's' : ''} in context
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[600px] p-6">
+            <CardContent className="p-0 flex-1 flex flex-col min-h-0">
+              <ScrollArea className="h-[calc(100vh-300px)] min-h-[400px] max-h-[700px] p-6">
                 <div className="space-y-6">
                   {messages.map((message, index) => (
                     <div

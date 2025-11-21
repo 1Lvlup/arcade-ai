@@ -121,6 +121,7 @@ export type Database = {
           author_name: string | null
           category_id: string | null
           content: string
+          content_format: string | null
           created_at: string | null
           excerpt: string | null
           featured_image: string | null
@@ -140,6 +141,7 @@ export type Database = {
           author_name?: string | null
           category_id?: string | null
           content: string
+          content_format?: string | null
           created_at?: string | null
           excerpt?: string | null
           featured_image?: string | null
@@ -159,6 +161,7 @@ export type Database = {
           author_name?: string | null
           category_id?: string | null
           content?: string
+          content_format?: string | null
           created_at?: string | null
           excerpt?: string | null
           featured_image?: string | null

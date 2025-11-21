@@ -9,12 +9,14 @@ import { Clock, Calendar, User, ArrowLeft, Share2, Facebook, Twitter, Linkedin }
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { SharedHeader } from '@/components/SharedHeader';
+import ReactMarkdown from 'react-markdown';
 
 interface BlogPost {
   id: string;
   title: string;
   slug: string;
   content: string;
+  content_format: string;
   featured_image: string | null;
   published_at: string;
   read_time_minutes: number | null;
@@ -49,6 +51,7 @@ export default function BlogPost() {
         title,
         slug,
         content,
+        content_format,
         featured_image,
         published_at,
         read_time_minutes,
@@ -247,10 +250,22 @@ export default function BlogPost() {
           {/* Article Content */}
           <Card className="border-primary/30 mb-12">
             <CardContent className="prose prose-invert max-w-none p-8">
-              <div 
-                className="text-foreground leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
+              {post.content_format === 'markdown' ? (
+                <div className="text-foreground leading-relaxed">
+                  <ReactMarkdown>
+                    {post.content}
+                  </ReactMarkdown>
+                </div>
+              ) : post.content_format === 'plaintext' ? (
+                <div className="text-foreground leading-relaxed whitespace-pre-wrap">
+                  {post.content}
+                </div>
+              ) : (
+                <div 
+                  className="text-foreground leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: post.content }}
+                />
+              )}
             </CardContent>
           </Card>
 

@@ -200,3 +200,6 @@ verify_jwt = true
 
 [functions.sync-github-repo]
 verify_jwt = true
+
+[functions.structured-troubleshoot]
+verify_jwt = false

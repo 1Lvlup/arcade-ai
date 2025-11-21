@@ -93,35 +93,19 @@ const Index = () => {
         <section className="relative bg-background overflow-hidden pt-8 md:pt-12 pb-12 md:pb-20 px-0 my-0 mx-0">
           <div className="container mx-auto px-4 my-0">
             {/* Centered Text Content */}
-            <div className="max-w-[800px] mx-auto text-center mb-12 md:mb-16 rounded-xl opacity-100 shadow-[0_25px_80px_-15px_rgba(0,0,0,0.7),0_10px_30px_-10px_rgba(0,0,0,0.8)] bg-[#0e0e0e]/[0.85] border border-white/5 transform translate-y-0 hover:translate-y-[-3px] transition-all duration-300">
-              <h1 className="text-4xl sm:text-5xl tracking-tight mb-3 leading-tight font-medium font-tech text-slate-50 lg:text-5xl text-center">
-                STOP LOSING MONEY TO DEAD GAMES
+            {/* Title Box - Raised Effect */}
+            <div className="max-w-[800px] mx-auto text-center mb-8 rounded-xl shadow-[0_30px_90px_-15px_rgba(0,0,0,0.8),0_15px_40px_-10px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.1)] bg-[#0e0e0e]/[0.9] border border-white/10 transform hover:translate-y-[-4px] transition-all duration-300 py-8 px-6">
+              <h1 className="text-4xl sm:text-5xl tracking-tight leading-tight font-medium font-tech text-slate-50 lg:text-5xl">
+                STOP LOSING MONEY TO <span className="text-primary">DEAD GAMES</span>
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 font-sans">
+            </div>
+
+            {/* Subheading and Content - Outside Box */}
+            <div className="max-w-[800px] mx-auto text-center mb-8">
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed font-sans">
                 LevelUp is an AI technician for your arcade that understands your exact games and walks any tech through
                 from problem to solution, so dead cabinets start earning again fast.
               </p>
-
-              <div className="flex flex-col gap-3 mb-6 text-sm max-w-[700px] mx-auto">
-                <div className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">
-                    Every fix across every arcade is stored into the database.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">
-                    Over time it will instantly know every solution to every problem with little to no troubleshooting
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span className="text-muted-foreground font-sans">
-                    Recover revenue from games that would sit dark for days or weeks.
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* CTA Buttons - Outside the box */}

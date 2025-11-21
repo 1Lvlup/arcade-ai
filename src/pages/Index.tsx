@@ -90,10 +90,10 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative bg-background overflow-hidden py-12 md:py-0 px-0 my-0 mx-0">
-          <div className="container mx-auto px-4 my-0 py-[20px]">
+        <section className="relative bg-background overflow-hidden pt-8 md:pt-12 pb-12 md:pb-20 px-0 my-0 mx-0">
+          <div className="container mx-auto px-4 my-0">
             {/* Centered Text Content */}
-            <div className="max-w-[800px] mx-auto text-center mb-12 md:mb-16 rounded-xl opacity-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] bg-[#0e0e0e]/[0.73] transform translate-y-0 hover:translate-y-[-2px] transition-transform duration-300">
+            <div className="max-w-[800px] mx-auto text-center mb-12 md:mb-16 rounded-xl opacity-100 shadow-[0_25px_80px_-15px_rgba(0,0,0,0.7),0_10px_30px_-10px_rgba(0,0,0,0.8)] bg-[#0e0e0e]/[0.85] border border-white/5 transform translate-y-0 hover:translate-y-[-3px] transition-all duration-300">
               <h1 className="text-4xl sm:text-5xl tracking-tight mb-3 leading-tight font-medium font-tech text-slate-50 lg:text-5xl text-center">
                 STOP LOSING MONEY TO DEAD GAMES
               </h1>

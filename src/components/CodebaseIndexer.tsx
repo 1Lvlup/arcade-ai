@@ -162,7 +162,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
         // @ts-ignore - webkitRelativePath is available on File objects from directory input
         const path = file.webkitRelativePath || file.name;
         
-        if (shouldIndexFile(path) && file.size <= 500000) {
+        if (shouldIndexFile(path) && file.size <= 2000000) { // Increased to 2MB limit
           try {
             const content = await file.text();
             filesToIndex.push({ 

@@ -1544,9 +1544,10 @@ serve(async (req) => {
         .join("\n\n---\n\n") || "";
 
         // Build RAG debug data for testing lab - ALWAYS include this
-    const debugChunks = chunks || result.chunks || [];
+       const debugChunks = chunks || result.chunks || [];
     const topScore =
       debugChunks?.[0]?.rerank_score ?? debugChunks?.[0]?.score ?? 0;
+
     const avgTop3 =
       debugChunks && debugChunks.length > 0
         ? debugChunks
@@ -1557,6 +1558,7 @@ serve(async (req) => {
               0,
             ) / Math.min(3, debugChunks.length)
         : 0;
+
     const strongHits =
       debugChunks?.filter(
         (c: any) => (c.rerank_score ?? c.score ?? 0) > 0.62,
@@ -1570,19 +1572,19 @@ serve(async (req) => {
             ),
           )
         : 0;
+
     const maxBaseScore =
       debugChunks.length > 0
         ? Math.max(...debugChunks.map((c: any) => c.score ?? 0))
         : 0;
 
     const rag_debug = {
-      // Match RAGDebugPanel.tsx + ChatMessage type
+      // Shape matches RAGDebugPanel + ChatBot expectations
       chunks:
         debugChunks
           ?.slice(0, 10)
           .map((chunk: any) => ({
-            content_preview:
-              chunk.content?.substring(0, 150) || "",
+            content_preview: chunk.content?.substring(0, 150) || "",
             page_start: chunk.page_start || 0,
             page_end: chunk.page_end || chunk.page_start || 0,
             score: chunk.score || 0,
@@ -1598,6 +1600,20 @@ serve(async (req) => {
       max_rerank_score: maxRerankScore,
       max_base_score: maxBaseScore,
       performance: {
+        // RAGDebugPanel expects strings like "123"
+        search_ms: ((result.search_time ?? 0)).toFixed(0),
+        generation_ms: (
+          (result.total_time ?? 0) - (result.search_time ?? 0)
+        ).toFixed(0),
+        total_ms: ((result.total_time ?? 0)).toFixed(0),
+      },
+      answer_style: {
+        is_weak: quality_tier === "low",
+        adaptive_mode: quality_tier === "low" ? "cautious" : "confident",
+      },
+      strategy,
+    };
+ {
         // Panel expects strings like "123"
         search_ms: ((result.search_time ?? 0)).toFixed(0),
         generation_ms: (

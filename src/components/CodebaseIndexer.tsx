@@ -186,9 +186,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
 
       const { error: insertError } = await supabase
         .from('indexed_codebase')
-        .upsert(filesToInsert, {
-          onConflict: 'file_path',
-        });
+        .upsert(filesToInsert);
 
       if (insertError) throw insertError;
 

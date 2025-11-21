@@ -19,10 +19,19 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY not configured');
     }
 
+    // Limit codebase context to ~200k characters (~50k tokens) to stay within model limits
+    const MAX_CONTEXT_CHARS = 200000;
+    let limitedContext = codebaseContext || 'No specific context provided';
+    
+    if (limitedContext.length > MAX_CONTEXT_CHARS) {
+      console.log(`⚠️ Codebase context truncated from ${limitedContext.length} to ${MAX_CONTEXT_CHARS} chars`);
+      limitedContext = limitedContext.substring(0, MAX_CONTEXT_CHARS) + '\n\n[... context truncated due to size limits. Consider loading fewer files for better results.]';
+    }
+
     const systemPrompt = `You are an expert React/TypeScript coding assistant helping with a Supabase-powered web application.
 
 CODEBASE CONTEXT:
-${codebaseContext || 'No specific context provided'}
+${limitedContext}
 
 YOUR CAPABILITIES:
 - Analyze existing code and suggest improvements
@@ -79,7 +88,7 @@ Be concise but thorough. Focus on practical, working solutions.`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI API error:', response.status, errorText);
+      console.error('❌ AI API error:', response.status, errorText);
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ 
@@ -90,7 +99,24 @@ Be concise but thorough. Focus on practical, working solutions.`;
         });
       }
       
-      throw new Error(`AI API error: ${response.status}`);
+      // Parse error message for better user feedback
+      let userMessage = `AI API error: ${response.status}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error?.message) {
+          userMessage = errorData.error.message;
+        }
+      } catch {
+        // Use default message if parsing fails
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: userMessage 
+      }), {
+        status: response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     }
 
     const data = await response.json();

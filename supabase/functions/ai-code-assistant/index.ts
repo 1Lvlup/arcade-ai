@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,48 @@ serve(async (req) => {
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY not configured');
     }
+
+    // Initialize Supabase client to fetch AI config
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Supabase configuration missing');
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user's tenant from auth header
+    const authHeader = req.headers.get('authorization');
+    let tenantId = '00000000-0000-0000-0000-000000000001'; // Default tenant
+    
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (!authError && user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('fec_tenant_id')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (profile?.fec_tenant_id) {
+          tenantId = profile.fec_tenant_id;
+        }
+      }
+    }
+
+    // Fetch configured model from ai_config
+    const { data: modelConfig } = await supabase
+      .from('ai_config')
+      .select('config_value')
+      .eq('config_key', 'code_assistant_model')
+      .eq('fec_tenant_id', tenantId)
+      .single();
+
+    const model = (modelConfig?.config_value as string) || 'gpt-5-mini-2025-08-07';
+    console.log(`🤖 Using Code Assistant model: ${model} for tenant: ${tenantId}`);
 
     // Limit codebase context to ~200k characters (~50k tokens) to stay within model limits
     const MAX_CONTEXT_CHARS = 200000;
@@ -77,7 +120,7 @@ Be concise but thorough. Focus on practical, working solutions.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: model,
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages

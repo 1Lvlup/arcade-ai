@@ -1690,9 +1690,6 @@ export function ChatBot({
     }
   };
 
-  const isStructuredAnswer = (content: any): content is StructuredAnswer => {
-    return typeof content === "object" && content !== null && "summary" in content;
-  };
 
   const handleComponentInteraction = (componentId: string, type: string, value: any) => {
     const interaction: ComponentInteraction = {
@@ -1736,293 +1733,6 @@ export function ChatBot({
     // Auto-send the form data as a message
     setInputValue(`Form Response:\n${formattedMessage}`);
   };
-
-  const renderInteractiveComponent = (component: InteractiveComponent, index: number) => {
-    const componentId = component.id || `component-${index}`;
-
-    switch (component.type) {
-      case "progress":
-        return (
-          <div key={index} className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium">{component.data.label || "Progress"}</span>
-              <span className="text-xs text-muted-foreground">{component.data.value || 0}%</span>
-            </div>
-            <Progress value={component.data.value || 0} className="h-2" />
-            {component.data.description && (
-              <p className="text-xs text-muted-foreground">{component.data.description}</p>
-            )}
-          </div>
-        );
-
-      case "status":
-        return (
-          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border">
-            {component.data.icon && (
-              <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                  component.data.status === "success"
-                    ? "bg-green-500/20 text-green-500"
-                    : component.data.status === "error"
-                      ? "bg-red-500/20 text-red-500"
-                      : component.data.status === "warning"
-                        ? "bg-yellow-500/20 text-yellow-500"
-                        : "bg-blue-500/20 text-blue-500"
-                }`}
-              >
-                {component.data.icon}
-              </div>
-            )}
-            <div className="flex-1">
-              <div className="text-xs font-medium">{component.data.title}</div>
-              {component.data.message && <div className="text-xs text-muted-foreground">{component.data.message}</div>}
-            </div>
-          </div>
-        );
-
-      case "button_group":
-        return (
-          <div key={index} className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border border-border">
-            {component.data.title && <div className="w-full text-xs font-medium mb-1">{component.data.title}</div>}
-            {component.data.buttons?.map((btn: any, i: number) => (
-              <Button
-                key={i}
-                variant={btn.variant || "outline"}
-                size="sm"
-                onClick={() =>
-                  handleComponentInteraction(`${componentId}-btn-${i}`, "button_click", {
-                    label: btn.label,
-                    action: btn.action,
-                    autoSendMessage: btn.autoSendMessage,
-                  })
-                }
-                disabled={btn.disabled}
-              >
-                {btn.icon && <span className="mr-2">{btn.icon}</span>}
-                {btn.label}
-              </Button>
-            ))}
-          </div>
-        );
-
-      case "checklist":
-        return (
-          <div key={index} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
-            {component.data.title && <div className="text-xs font-medium">{component.data.title}</div>}
-            <div className="space-y-2">
-              {component.data.items?.map((item: any, i: number) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`${componentId}-${i}`}
-                    checked={componentInteractions.get(`${componentId}-${i}`) || item.checked || false}
-                    onCheckedChange={(checked) =>
-                      handleComponentInteraction(`${componentId}-${i}`, "checkbox_change", checked)
-                    }
-                  />
-                  <Label htmlFor={`${componentId}-${i}`} className="text-xs cursor-pointer">
-                    {typeof item === "string" ? item : item.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case "form":
-        return (
-          <div key={index} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
-            {component.data.title && <div className="text-xs font-medium mb-2">{component.data.title}</div>}
-            {component.data.fields?.map((field: any, i: number) => (
-              <div key={i} className="space-y-1">
-                {field.label && (
-                  <Label htmlFor={`${componentId}-field-${i}`} className="text-xs">
-                    {field.label}
-                  </Label>
-                )}
-                {field.type === "input" && (
-                  <Input
-                    id={`${componentId}-field-${i}`}
-                    type={field.inputType || "text"}
-                    placeholder={field.placeholder}
-                    value={componentInteractions.get(`${componentId}-field-${i}`) || ""}
-                    onChange={(e) =>
-                      handleComponentInteraction(`${componentId}-field-${i}`, "input_change", e.target.value)
-                    }
-                    className="text-xs"
-                  />
-                )}
-                {field.type === "select" && (
-                  <Select
-                    value={componentInteractions.get(`${componentId}-field-${i}`) || field.defaultValue}
-                    onValueChange={(value) =>
-                      handleComponentInteraction(`${componentId}-field-${i}`, "select_change", value)
-                    }
-                  >
-                    <SelectTrigger className="text-xs">
-                      <SelectValue placeholder={field.placeholder || "Select..."} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {field.options?.map((opt: any, optIdx: number) => (
-                        <SelectItem key={optIdx} value={typeof opt === "string" ? opt : opt.value} className="text-xs">
-                          {typeof opt === "string" ? opt : opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            ))}
-            {component.data.submitButton && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  const formData: Record<string, any> = {};
-                  component.data.fields?.forEach((_field: any, i: number) => {
-                    formData[`field-${i}`] = componentInteractions.get(`${componentId}-field-${i}`);
-                  });
-                  handleFormSubmit(componentId, formData);
-                }}
-                className="mt-2"
-              >
-                {component.data.submitButton.label || "Submit"}
-              </Button>
-            )}
-          </div>
-        );
-
-      case "code":
-        return (
-          <div
-            key={index}
-            className="p-4 bg-black/50 rounded-lg border border-border font-mono text-xs overflow-x-auto"
-          >
-            <pre className="text-primary">{component.data.code}</pre>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const renderStructuredAnswer = (answer: StructuredAnswer, messageId: string) => (
-    <div className="space-y-3">
-      {/* Summary */}
-      <div className="text-xs leading-relaxed">{answer.summary}</div>
-
-      {/* Interactive Components - DISABLED */}
-      {/* {answer.interactive_components && answer.interactive_components.length > 0 && (
-        <div className="space-y-3">
-          {answer.interactive_components.map((component, index) => 
-            renderInteractiveComponent(component, index)
-          )}
-        </div>
-      )} */}
-
-      {/* Steps as Checklist */}
-      {answer.steps && answer.steps.length > 0 && (
-        <div className="space-y-2">
-          <div className="font-semibold text-[10px] text-primary uppercase tracking-wider">Procedure</div>
-          {answer.steps.map((stepItem, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1 space-y-1">
-                <div className="flex items-start gap-2">
-                  <span className="text-xs">{stepItem.step}</span>
-                  {stepItem.source && (
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${
-                        stepItem.source === "manual"
-                          ? "bg-green-500/10 text-green-500 border-green-500/30"
-                          : "bg-primary/10 text-primary border-primary/30"
-                      }`}
-                    >
-                      {stepItem.source}
-                    </Badge>
-                  )}
-                </div>
-                {stepItem.expected && (
-                  <div className="text-[10px] text-muted-foreground">Expected: {stepItem.expected}</div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Why Explanation */}
-      {answer.why && answer.why.length > 0 && (
-        <div className="space-y-2">
-          <div className="font-semibold text-[10px] text-primary uppercase tracking-wider">Why This Works</div>
-          {answer.why.map((reason, i) => (
-            <div key={i} className="text-xs text-muted-foreground pl-4 border-l-2 border-primary/20">
-              {reason}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Expert Advice / Pro Tips */}
-      {answer.expert_advice && answer.expert_advice.length > 0 && (
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-[10px] text-primary uppercase tracking-wider">
-            <Lightbulb className="h-4 w-4" />
-            Pro Tips
-          </div>
-          {answer.expert_advice.map((tip, i) => (
-            <div key={i} className="text-xs">
-              • {tip}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Safety Warnings */}
-      {answer.safety && answer.safety.length > 0 && (
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-[10px] text-primary uppercase tracking-wider">
-            <AlertTriangle className="h-4 w-4" />
-            Safety
-          </div>
-          {answer.safety.map((warning, i) => (
-            <div key={i} className="text-xs">
-              ⚠️ {warning}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Sources Toggle */}
-      {answer.sources && answer.sources.length > 0 && (
-        <div className="border-t border-border pt-3">
-          <button
-            onClick={() => setExpandedSources(expandedSources === messageId ? null : messageId)}
-            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
-          >
-            {expandedSources === messageId ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            <FileText size={14} />
-            View Sources ({answer.sources.length})
-          </button>
-
-          {expandedSources === messageId && (
-            <div className="mt-2 space-y-2">
-              {answer.sources.map((source, i) => (
-                <div key={i} className="text-xs p-2 bg-background/50 rounded border border-border">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline" className="text-xs">
-                      Page {source.page}
-                    </Badge>
-                    <span className="text-muted-foreground">{source.note}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 
   const generateSummary = async () => {
     if (messages.length <= 1) {
@@ -2094,212 +1804,63 @@ export function ChatBot({
     <div className="relative h-full flex flex-col">
       {/* Main Chat Area */}
       <Card className="tech-card h-full flex flex-col w-full rounded-none border-0 bg-black">
-        <CardHeader className="border-b border-white/10 flex-shrink-0 py-3 px-6">
-          <CardTitle className="flex items-center justify-between text-base">
-            <div className="flex items-center gap-3">
-              <span className="tracking-wider font-bold text-white font-tech">LEVEL UP</span>
-              {selectedManualId && manualTitle && (
-                <Badge className="bg-orange/20 text-orange border-orange/30 text-xs">{manualTitle}</Badge>
-              )}
-              {!user && (
-                <Badge variant="outline" className="text-xs border-white/20 text-muted-foreground">
-                  {GUEST_MESSAGE_LIMIT - guestMessageCount} free questions left
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <InteractiveComponentLibrary />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={startNewConversation}
-                className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-white/5"
-                title="Start new conversation"
-              >
-                <MessageSquarePlus className="h-4 w-4 mr-1.5" />
-                <span className="text-xs">New</span>
-              </Button>
-              {user && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={saveConversation}
-                    disabled={messages.length <= 1 || isSaving}
-                    className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-50"
-                    title="Save conversation"
-                  >
-                    <Save className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={exportConversation}
-                    disabled={messages.length <= 1}
-                    className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-50"
-                    title="Export conversation"
-                  >
-                    <FileDown className="h-4 w-4" />
-                  </Button>
-                  
-                  {/* Streaming toggle */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setUseStreaming(prev => {
-                        const newValue = !prev;
-                        localStorage.setItem('chatStreamingMode', JSON.stringify(newValue));
-                        toast({
-                          title: newValue ? "Streaming enabled" : "Streaming disabled",
-                          description: newValue ? "Real-time token-by-token responses" : "Full response at once",
-                        });
-                        return newValue;
-                      });
-                    }}
-                    className={`h-8 px-2 ${useStreaming ? 'text-green-500' : 'text-muted-foreground'} hover:text-foreground hover:bg-white/5`}
-                    title={useStreaming ? "Streaming: Real-time token-by-token" : "Streaming disabled: Full response at once"}
-                  >
-                    {useStreaming ? <Zap className="h-4 w-4" /> : <ZapOff className="h-4 w-4" />}
-                  </Button>
-                  
-                  {/* Debug mode toggle */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setDebugMode(prev => {
-                        const newValue = !prev;
-                        localStorage.setItem('chatDebugMode', JSON.stringify(newValue));
-                        toast({
-                          title: newValue ? "Debug mode enabled" : "Debug mode disabled",
-                          description: newValue ? "Showing RAG debug panels" : "Debug panels hidden",
-                        });
-                        return newValue;
-                      });
-                    }}
-                    className={`h-8 px-2 ${debugMode ? 'text-primary' : 'text-muted-foreground'} hover:text-foreground hover:bg-white/5`}
-                    title={debugMode ? "Debug mode: ON" : "Debug mode: OFF"}
-                  >
-                    <span className="text-sm">🔧</span>
-                  </Button>
-                  
-                  <Sheet open={showHistory} onOpenChange={setShowHistory}>
-                    <SheetTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-white/5"
-                        title="View conversation history"
-                      >
-                        <History className="h-4 w-4" />
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto bg-black border-white/10">
-                      <SheetHeader>
-                        <SheetTitle className="font-tech text-white">CONVERSATION HISTORY</SheetTitle>
-                      </SheetHeader>
-                      <div className="mt-6 space-y-3">
-                        {conversations.length === 0 ? (
-                          <div className="text-center py-8 text-muted-foreground">No saved conversations yet</div>
-                        ) : (
-                          conversations.map((conv) => (
-                            <Card
-                              key={conv.id}
-                              className={`hover:border-orange/50 transition-colors bg-white/5 border-white/10 ${
-                                currentConversationId === conv.id ? "border-orange/50" : ""
-                              }`}
-                            >
-                              <CardContent className="pt-4 pb-3">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex-1 cursor-pointer" onClick={() => loadConversation(conv.id)}>
-                                    {editingConversationId === conv.id ? (
-                                      <Input
-                                        value={editingTitle}
-                                        onChange={(e) => setEditingTitle(e.target.value)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") {
-                                            renameConversation(conv.id, editingTitle);
-                                          } else if (e.key === "Escape") {
-                                            setEditingConversationId(null);
-                                            setEditingTitle("");
-                                          }
-                                        }}
-                                        onBlur={() => {
-                                          if (editingTitle.trim()) {
-                                            renameConversation(conv.id, editingTitle);
-                                          } else {
-                                            setEditingConversationId(null);
-                                            setEditingTitle("");
-                                          }
-                                        }}
-                                        className="text-white bg-white/10"
-                                        autoFocus
-                                        onClick={(e) => e.stopPropagation()}
-                                      />
-                                    ) : (
-                                      <div className="font-medium mb-1 line-clamp-2 text-white">{conv.title}</div>
-                                    )}
-                                    <div className="text-xs text-muted-foreground">
-                                      {new Date(conv.last_message_at).toLocaleDateString()} at{" "}
-                                      {new Date(conv.last_message_at).toLocaleTimeString()}
-                                    </div>
-                                  </div>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                                      >
-                                        <MoreVertical className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingConversationId(conv.id);
-                                          setEditingTitle(conv.title);
-                                        }}
-                                      >
-                                        <Edit className="h-4 w-4 mr-2" />
-                                        Rename
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setConversationToDelete(conv.id);
-                                          setShowDeleteDialog(true);
-                                        }}
-                                        className="text-destructive focus:text-destructive"
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Delete
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))
-                        )}
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                </>
-              )}
-            </div>
-          </CardTitle>
-          {currentConversationId && (
-            <div className="mt-2">
-              <Badge variant="outline" className="text-sm px-3 py-1 bg-white/5 text-muted-foreground border-white/10">
-                Saved conversation
-              </Badge>
-            </div>
-          )}
-        </CardHeader>
+        <ChatHeader
+          manualTitle={manualTitle}
+          selectedManualId={selectedManualId}
+          user={user}
+          guestMessageCount={guestMessageCount}
+          guestMessageLimit={GUEST_MESSAGE_LIMIT}
+          onNewConversation={startNewConversation}
+          onSaveConversation={saveConversation}
+          onExportConversation={exportConversation}
+          onToggleHistory={() => setShowHistory(!showHistory)}
+          isSaving={isSaving}
+          messagesLength={messages.length}
+          currentConversationId={currentConversationId}
+          useStreaming={useStreaming}
+          onToggleStreaming={() => {
+            setUseStreaming(prev => {
+              const newValue = !prev;
+              localStorage.setItem('chatStreamingMode', JSON.stringify(newValue));
+              toast({
+                title: newValue ? "Streaming enabled" : "Streaming disabled",
+                description: newValue ? "Real-time token-by-token responses" : "Full response at once",
+              });
+              return newValue;
+            });
+          }}
+          debugMode={debugMode}
+          onToggleDebug={() => {
+            setDebugMode(prev => {
+              const newValue = !prev;
+              localStorage.setItem('chatDebugMode', JSON.stringify(newValue));
+              toast({
+                title: newValue ? "Debug mode enabled" : "Debug mode disabled",
+                description: newValue ? "Showing RAG debug panels" : "Debug panels hidden",
+              });
+              return newValue;
+            });
+          }}
+          showHistory={showHistory}
+          conversations={conversations}
+          onLoadConversation={loadConversation}
+          onDeleteConversation={(id) => {
+            setConversationToDelete(id);
+            setShowDeleteDialog(true);
+          }}
+          onRenameConversation={renameConversation}
+          editingConversationId={editingConversationId}
+          editingTitle={editingTitle}
+          onStartEditTitle={(id, title) => {
+            setEditingConversationId(id);
+            setEditingTitle(title);
+          }}
+          onCancelEditTitle={() => {
+            setEditingConversationId(null);
+            setEditingTitle("");
+          }}
+          onSetEditTitle={setEditingTitle}
+        />
 
         <CardContent className="flex-1 flex flex-col p-0 min-h-0">
           {/* Saved Conversations Sidebar */}
@@ -2368,327 +1929,59 @@ export function ChatBot({
             )}
 
             {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`w-full rounded-lg p-5 font-sans text-white ${
-                    message.type === "user"
-                      ? "bg-white/[0.08] border border-white/40 hover:bg-white/[0.10] shadow-[0_0_10px_rgba(255,255,255,0.15)]"
-                      : "bg-white/[0.02] border-l-4 border-l-[hsl(24,100%,60%)]"
-                  }`}
-                >
-                  {message.type === "user" && (
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <User className="h-5 w-5" />
-                        <span className="text-sm opacity-70">{message.timestamp.toLocaleTimeString()}</span>
-                      </div>
-                      {message.status && (
-                        <div className="flex items-center space-x-1">
-                          {message.status === "sending" && (
-                            <>
-                              <Clock className="h-4 w-4 opacity-70" />
-                              <span className="text-xs opacity-70">Sending...</span>
-                            </>
-                          )}
-                          {message.status === "sent" && (
-                            <>
-                              <CheckCheck className="h-4 w-4 opacity-70" />
-                              <span className="text-xs opacity-70">Sent</span>
-                            </>
-                          )}
-                          {message.status === "failed" && (
-                            <>
-                              <XCircle className="h-4 w-4 text-red-400" />
-                              <span className="text-xs text-red-400">Failed</span>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {message.type === "user" ? (
-                    <>
-                      <div className="text-xs whitespace-pre-wrap leading-relaxed">{message.content as string}</div>
-                      {message.images && message.images.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {message.images.map((imageUrl, idx) => (
-                            <img
-                              key={idx}
-                              src={imageUrl}
-                              alt={`Uploaded ${idx + 1}`}
-                              className="h-32 w-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => setSelectedImage({ url: imageUrl, title: `Image ${idx + 1}` })}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          <Bot className="h-5 w-5" />
-                          <span className="text-xs opacity-70">{message.timestamp.toLocaleTimeString()}</span>
-                          {/* NEW: Visual indicator for which pipeline was used */}
-                          {message.rag_debug?.strategy && (
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ml-2 ${
-                                message.rag_debug.strategy.includes('legacy') 
-                                  ? 'border-orange-500/50 text-orange-500' 
-                                  : 'border-blue-500/50 text-blue-500'
-                              }`}
-                            >
-                              {message.rag_debug.strategy.includes('legacy') ? '🔄 Legacy' : '⚡ V3'}
-                            </Badge>
-                          )}
-                        </div>
-                        {!message.content && (
-                          <div className="flex items-center space-x-1">
-                            <Loader2 className="h-4 w-4 animate-spin opacity-70" />
-                            <span className="text-xs opacity-70">{currentStatus || "Typing..."}</span>
-                          </div>
-                        )}
-                      </div>
-                      {isStructuredAnswer(message.content) ? (
-                        renderStructuredAnswer(message.content, message.id)
-                      ) : (
-                        <div className="text-xs whitespace-pre-wrap leading-relaxed">
-                          {typeof message.content === "string" ? message.content : JSON.stringify(message.content)}
-                        </div>
-                      )}
-
-                      {/* Render interactive components - DISABLED */}
-                      {/* {message.interactiveComponents && message.interactiveComponents.length > 0 && (
-                        <div className="space-y-2">
-                          {message.interactiveComponents.map((component) => (
-                            <InteractiveComponentRenderer
-                              key={component.id}
-                              component={component}
-                              onAutoSend={(text) => {
-                                setInputValue(text);
-                                setTimeout(() => handleSendMessage(), 100);
-                              }}
-                            />
-                          ))}
-                        </div>
-                      )} */}
-                    </>
-                  )}
-
-                  {/* Manual Source Info */}
-                  {message.type === "bot" && message.manual_id && (
-                    <div className="mt-4 pt-4 border-t border-primary/10">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <FileText className="h-4 w-4" />
-                        <span>Source: {message.manual_title || message.manual_id}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Display thumbnails/images */}
-                  {message.type === "bot" && message.thumbnails && message.thumbnails.length > 0 && (
-                    <div className="mt-6 pt-6 border-t border-primary/10">
-                      <div className="text-xs font-semibold text-primary mb-3">Reference Images</div>
-                      <div className="grid grid-cols-2 gap-4">
-                        {message.thumbnails.map((thumb, idx) => (
-                          <div
-                            key={idx}
-                            className="tech-card bg-background/50 overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
-                            onClick={() => setSelectedImage({ url: thumb.url, title: thumb.title })}
-                          >
-                            <img
-                              src={thumb.url}
-                              alt={thumb.title}
-                              className="w-full h-auto object-contain bg-background/20"
-                              onError={(e) => {
-                                e.currentTarget.src =
-                                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23888"%3EImage unavailable%3C/text%3E%3C/svg%3E';
-                              }}
-                            />
-                            <div className="p-3 text-xs text-muted-foreground">{thumb.title}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* RAG Debug Panel */}
-                  {message.type === "bot" && message.rag_debug && debugMode && (
-                    <RAGDebugPanel 
-                      ragData={message.rag_debug} 
-                      className="mt-6" 
-                      useLegacySearch={useLegacySearch}
-                      onToggleLegacy={(enabled) => {
-                        setUseLegacySearch(enabled);
-                        localStorage.setItem('chatLegacySearch', JSON.stringify(enabled));
-                        toast({
-                          title: enabled ? "Legacy Search Enabled" : "V3 Search Enabled",
-                          description: enabled 
-                            ? "Using search-manuals-robust (old pipeline)" 
-                            : "Using search-unified (current pipeline)",
-                        });
-                      }}
-                    />
-                  )}
-
-                  {/* Thumbs Up/Down + Report Issue for Bot Messages */}
-                  {message.type === "bot" && (
-                    <div className="mt-4 pt-4 border-t border-primary/10 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-muted-foreground mr-2">Was this helpful?</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleFeedback(message.id, "thumbs_up")}
-                          disabled={message.feedback !== null}
-                          className={`h-9 px-4 ${
-                            message.feedback === "thumbs_up"
-                              ? "bg-green-500/20 text-green-500 border border-green-500/30"
-                              : "hover:bg-green-500/10 hover:text-green-500"
-                          }`}
-                        >
-                          <ThumbsUp className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleFeedback(message.id, "thumbs_down")}
-                          disabled={message.feedback !== null}
-                          className={`h-9 px-4 ${
-                            message.feedback === "thumbs_down"
-                              ? "bg-red-500/20 text-red-500 border border-red-500/30"
-                              : "hover:bg-red-500/10 hover:text-red-500"
-                          }`}
-                        >
-                          <ThumbsDown className="h-5 w-5" />
-                        </Button>
-                      </div>
-
-                      {/* Report Issue Button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedMessageForFeedback(message);
-                          setFeedbackDialogOpen(true);
-                        }}
-                        className="h-8 text-xs hover:bg-orange-500/10 hover:text-orange-500 hover:border-orange-500/30"
-                      >
-                        <Flag className="h-3 w-3 mr-1" />
-                        Report an Issue
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <MessageRenderer
+                key={message.id}
+                message={message}
+                currentStatus={currentStatus}
+                debugMode={debugMode}
+                useLegacySearch={useLegacySearch}
+                onToggleLegacy={(enabled) => {
+                  setUseLegacySearch(enabled);
+                  localStorage.setItem('chatLegacySearch', JSON.stringify(enabled));
+                  toast({
+                    title: enabled ? "Legacy Search Enabled" : "V3 Search Enabled",
+                    description: enabled 
+                      ? "Using search-manuals-robust (old pipeline)" 
+                      : "Using search-unified (current pipeline)",
+                  });
+                }}
+                onFeedback={handleFeedback}
+                onThumbnailClick={(url, title) => setSelectedImage({ url, title })}
+                onAutoSend={(text) => {
+                  setInputValue(text);
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+                onReportIssue={(message) => {
+                  setSelectedMessageForFeedback(message);
+                  setFeedbackDialogOpen(true);
+                }}
+              />
             ))}
 
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="border-t border-border py-5 px-6 flex-shrink-0 w-full">
-            <>
-              {/* Image Previews */}
-              {imagePreviewUrls.length > 0 && (
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {imagePreviewUrls.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Upload ${index + 1}`}
-                        className="h-20 w-20 object-cover rounded-lg border border-border"
-                      />
-                      <button
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex space-x-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  variant="ghost"
-                  size="lg"
-                  className="h-12 px-4"
-                  title="Upload images"
-                  disabled={isLoading || !selectedManualId || selectedImages.length >= 4}
-                >
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-                <Input
-                  value={inputValue}
-                  onChange={(e) => {
-                    setInputValue(e.target.value);
-
-                    // Set typing indicator
-                    setIsTyping(true);
-
-                    // Clear existing timeout
-                    if (typingTimeoutRef.current) {
-                      clearTimeout(typingTimeoutRef.current);
-                    }
-
-                    // Clear typing after 2 seconds of no typing
-                    typingTimeoutRef.current = setTimeout(() => {
-                      setIsTyping(false);
-                    }, 2000);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    selectedManualId
-                      ? "Ask me about arcade machine troubleshooting..."
-                      : "Select a manual from the sidebar to start asking questions"
-                  }
-                  disabled={isLoading || !selectedManualId}
-                  className="flex-1 text-base h-12"
-                />
-                {messages.length > 1 && (
-                  <Button
-                    onClick={startNewConversation}
-                    variant="ghost"
-                    size="lg"
-                    className="h-12 px-4"
-                    title="Clear chat (keeps history saved)"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                )}
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={(!inputValue.trim() && selectedImages.length === 0) || isLoading || !selectedManualId}
-                  size="lg"
-                  variant="orange"
-                  className="h-12 px-6"
-                >
-                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                </Button>
-              </div>
-              <div className="text-sm text-muted-foreground mt-3 flex items-center justify-between">
-                <span>Press Enter to send • Shift+Enter for new line • 📎 Upload images</span>
-                {!user && (
-                  <span className="text-orange-500 font-medium">
-                    {guestMessageCount}/{GUEST_MESSAGE_LIMIT} free questions used
-                  </span>
-                )}
-              </div>
-            </>
-          </div>
+          <ChatInput
+            value={inputValue}
+            onChange={(value) => {
+              setInputValue(value);
+              setIsTyping(true);
+              if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+              }
+              typingTimeoutRef.current = setTimeout(() => {
+                setIsTyping(false);
+              }, 2000);
+            }}
+            onSend={handleSendMessage}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading || !selectedManualId}
+            selectedImages={selectedImages}
+            imagePreviewUrls={imagePreviewUrls}
+            onImageSelect={handleImageSelect}
+            onRemoveImage={removeImage}
+            fileInputRef={fileInputRef}
+          />
         </CardContent>
 
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -93,8 +93,8 @@ const Index = () => {
         <section className="relative bg-background overflow-hidden pt-8 md:pt-12 pb-12 md:pb-20 px-0 my-0 mx-0">
           <div className="container mx-auto px-4 my-0">
             {/* Centered Text Content */}
-            {/* Title Box - Raised Effect */}
-            <div className="max-w-[800px] mx-auto text-center mb-8 rounded-xl shadow-[0_30px_90px_-15px_rgba(0,0,0,0.8),0_15px_40px_-10px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.1)] bg-[#0e0e0e]/[0.9] border border-white/10 transform hover:translate-y-[-4px] transition-all duration-300 py-8 px-6">
+            {/* Title - No Box */}
+            <div className="max-w-[800px] mx-auto text-center mb-6">
               <h1 className="text-4xl sm:text-5xl tracking-tight leading-tight font-medium font-tech text-slate-50 lg:text-5xl mb-6">
                 STOP LOSING MONEY TO <span className="text-primary">DEAD GAMES</span>
               </h1>

@@ -1543,35 +1543,76 @@ serve(async (req) => {
         })
         .join("\n\n---\n\n") || "";
 
-    // Build RAG debug data for testing lab - ALWAYS include this
+        // Build RAG debug data for testing lab - ALWAYS include this
     const debugChunks = chunks || result.chunks || [];
-    const topScore = debugChunks?.[0]?.rerank_score ?? debugChunks?.[0]?.score ?? 0;
-    const avgTop3 = debugChunks && debugChunks.length > 0
-      ? debugChunks.slice(0, 3).reduce((sum: number, c: any) => sum + (c.rerank_score ?? c.score ?? 0), 0) / Math.min(3, debugChunks.length)
-      : 0;
-    const strongHits = debugChunks?.filter((c: any) => (c.rerank_score ?? c.score ?? 0) > 0.62).length ?? 0;
+    const topScore =
+      debugChunks?.[0]?.rerank_score ?? debugChunks?.[0]?.score ?? 0;
+    const avgTop3 =
+      debugChunks && debugChunks.length > 0
+        ? debugChunks
+            .slice(0, 3)
+            .reduce(
+              (sum: number, c: any) =>
+                sum + (c.rerank_score ?? c.score ?? 0),
+              0,
+            ) / Math.min(3, debugChunks.length)
+        : 0;
+    const strongHits =
+      debugChunks?.filter(
+        (c: any) => (c.rerank_score ?? c.score ?? 0) > 0.62,
+      ).length ?? 0;
+
+    const maxRerankScore =
+      debugChunks.length > 0
+        ? Math.max(
+            ...debugChunks.map(
+              (c: any) => c.rerank_score ?? c.score ?? 0,
+            ),
+          )
+        : 0;
+    const maxBaseScore =
+      debugChunks.length > 0
+        ? Math.max(...debugChunks.map((c: any) => c.score ?? 0))
+        : 0;
 
     const rag_debug = {
-      retrieved_chunks: debugChunks?.slice(0, 10).map((chunk: any) => ({
-        id: chunk.id,
-        content: chunk.content?.substring(0, 500) || '', // Limit content length
-        score: chunk.score || 0,
-        rerank_score: chunk.rerank_score || 0,
-        page_start: chunk.page_start,
-        page_end: chunk.page_end,
-        content_type: chunk.content_type || 'text',
-      })) || [],
-      performance: {
-        search_time: result.search_time ?? 0,
-        total_time: result.total_time ?? 0,
-      },
+      // Match RAGDebugPanel.tsx + ChatMessage type
+      chunks:
+        debugChunks
+          ?.slice(0, 10)
+          .map((chunk: any) => ({
+            content_preview:
+              chunk.content?.substring(0, 150) || "",
+            page_start: chunk.page_start || 0,
+            page_end: chunk.page_end || chunk.page_start || 0,
+            score: chunk.score || 0,
+            rerank_score: chunk.rerank_score ?? chunk.score ?? 0,
+            menu_path: chunk.menu_path || "",
+          })) || [],
       signals: {
-        top_score: topScore,
-        avg_top_3: avgTop3,
-        strong_hits: strongHits,
+        topScore,
+        avgTop3,
+        strongHits,
       },
-      strategy: strategy,
+      quality_score: quality_score || 0,
+      max_rerank_score: maxRerankScore,
+      max_base_score: maxBaseScore,
+      performance: {
+        // Panel expects strings like "123"
+        search_ms: ((result.search_time ?? 0)).toFixed(0),
+        generation_ms: (
+          (result.total_time ?? 0) - (result.search_time ?? 0)
+        ).toFixed(0),
+        total_ms: ((result.total_time ?? 0)).toFixed(0),
+      },
+      answer_style: {
+        // Good enough proxy: low-tier = weak
+        is_weak: quality_tier === "low",
+        adaptive_mode: quality_tier === "low" ? "cautious" : "confident",
+      },
+      strategy,
     };
+
 
     return new Response(
       JSON.stringify({

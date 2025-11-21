@@ -8,6 +8,7 @@ import { TrainingAuthProvider } from "@/hooks/useTrainingAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import WhatIsLevelUp from "./pages/WhatIsLevelUp";
 import ManualManagement from "./pages/ManualManagement";
 import Chat from "./pages/Chat";
 import { ManualDetail } from "./pages/ManualDetail";
@@ -72,6 +73,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<Index />} />
+            <Route path="/what-is-level-up" element={<WhatIsLevelUp />} />
             <Route path="/manuals" element={
               <ProtectedRoute>
                 <ManualManagement />

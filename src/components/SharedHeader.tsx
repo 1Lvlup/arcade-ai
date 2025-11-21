@@ -96,31 +96,29 @@ export const SharedHeader = ({
             <span className="text-lg font-tech font-bold text-foreground">Level Up</span>
           </Link>
           
-          {/* Main Navigation Links - Non-admin users */}
-          {!isAdmin && (
-            <nav className="flex items-center space-x-1 ml-2">
-              <Link to="/">
-                <Button variant="minimal" size="sm">
-                  Home
-                </Button>
-              </Link>
-              <Link to="/what-is-level-up">
-                <Button variant="minimal" size="sm">
-                  What is Level Up?
-                </Button>
-              </Link>
-              <Link to="/blog">
-                <Button variant="minimal" size="sm">
-                  Blog
-                </Button>
-              </Link>
-              <Link to="/pricing">
-                <Button variant="minimal" size="sm">
-                  Early Access
-                </Button>
-              </Link>
-            </nav>
-          )}
+          {/* Main Navigation Links - Always visible */}
+          <nav className="flex items-center space-x-1 ml-2">
+            <Link to="/">
+              <Button variant="minimal" size="sm">
+                Home
+              </Button>
+            </Link>
+            <Link to="/what-is-level-up">
+              <Button variant="minimal" size="sm">
+                What is Level Up?
+              </Button>
+            </Link>
+            <Link to="/blog">
+              <Button variant="minimal" size="sm">
+                Blog
+              </Button>
+            </Link>
+            <Link to="/pricing">
+              <Button variant="minimal" size="sm">
+                Early Access
+              </Button>
+            </Link>
+          </nav>
 
           {/* Admin Pages Dropdown */}
           {isAdmin && (

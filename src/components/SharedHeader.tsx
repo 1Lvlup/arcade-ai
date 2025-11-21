@@ -88,102 +88,113 @@ export const SharedHeader = ({
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-black/50 z-[1]" />
 
-      <div className="container mx-auto px-6 py-3 flex items-center justify-between relative z-10">
-        <div className="flex items-center space-x-6">
-          {showBackButton &&
-            (onBackClick ? (
-              <Button variant="minimal" size="sm" onClick={onBackClick}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            ) : (
-              <Link to={backTo}>
+      <div className="container mx-auto px-3 py-3 flex items-center justify-between relative z-10">
+        <div className="flex items-center space-x-3">
+          {/* Level Up Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <Brain className="h-6 w-6 text-orange" />
+            <span className="text-lg font-tech font-bold text-foreground">Level Up</span>
+          </Link>
+          
+          {/* Main Navigation Links - Non-admin users */}
+          {!isAdmin && (
+            <nav className="flex items-center space-x-1 ml-2">
+              <Link to="/">
                 <Button variant="minimal" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                  Home
                 </Button>
               </Link>
-            ))}
-          {title && (
-            <div className="flex items-center space-x-3">
-              <Brain className="h-6 w-6 text-orange" />
-              <h1 className={titleClassName || "text-xl font-tech font-bold text-foreground"}>{title}</h1>
-            </div>
-          )}
-          
-          {/* Pages Dropdown - Left Side */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="minimal" size="sm">
-                <Menu className="h-4 w-4 mr-2" />
-                Pages
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 bg-background border-border z-50 max-h-[80vh] overflow-y-auto">
-              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Public</div>
-              <DropdownMenuItem asChild>
-                <Link to="/" className="cursor-pointer">
-                  <Home className="mr-2 h-4 w-4" />
-                  Home
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/forum" className="cursor-pointer">
-                  <Users className="mr-2 h-4 w-4" />
-                  Forum
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/blog" className="cursor-pointer">
-                  <FileText className="mr-2 h-4 w-4" />
+              <Link to="/what-is-level-up">
+                <Button variant="minimal" size="sm">
+                  What is Level Up?
+                </Button>
+              </Link>
+              <Link to="/blog">
+                <Button variant="minimal" size="sm">
                   Blog
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/pricing" className="cursor-pointer">
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Pricing
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/privacy" className="cursor-pointer">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Privacy Policy
-                </Link>
-              </DropdownMenuItem>
-              
-              {user && (
-                <>
-                  <DropdownMenuSeparator />
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">User</div>
-                  <DropdownMenuItem asChild>
-                    <Link to="/chat" className="cursor-pointer">
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      Chat
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/vision-board" className="cursor-pointer">
-                      <Brain className="mr-2 h-4 w-4" />
-                      Vision Board
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/support" className="cursor-pointer">
-                      <HelpCircle className="mr-2 h-4 w-4" />
-                      Support
-                    </Link>
-                  </DropdownMenuItem>
-                </>
-              )}
-              
-              {isAdmin && (
+                </Button>
+              </Link>
+              <Link to="/pricing">
+                <Button variant="minimal" size="sm">
+                  Early Access
+                </Button>
+              </Link>
+            </nav>
+          )}
+
+          {/* Admin Pages Dropdown */}
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="minimal" size="sm">
+                  <Menu className="h-4 w-4 mr-2" />
+                  Pages
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 bg-background border-border z-50 max-h-[80vh] overflow-y-auto">
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Public</div>
+                <DropdownMenuItem asChild>
+                  <Link to="/" className="cursor-pointer">
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/forum" className="cursor-pointer">
+                    <Users className="mr-2 h-4 w-4" />
+                    Forum
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/blog" className="cursor-pointer">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Blog
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/pricing" className="cursor-pointer">
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Pricing
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/privacy" className="cursor-pointer">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Privacy Policy
+                  </Link>
+                </DropdownMenuItem>
+                
+                {user && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">User</div>
+                    <DropdownMenuItem asChild>
+                      <Link to="/chat" className="cursor-pointer">
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        Chat
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/vision-board" className="cursor-pointer">
+                        <Brain className="mr-2 h-4 w-4" />
+                        Vision Board
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/support" className="cursor-pointer">
+                        <HelpCircle className="mr-2 h-4 w-4" />
+                        Support
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                
                 <>
                   <DropdownMenuSeparator />
                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Admin</div>
@@ -302,27 +313,11 @@ export const SharedHeader = ({
                     </Link>
                   </DropdownMenuItem>
                 </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
-        <div className="flex items-center space-x-4">
-          {/* Public Navigation Links */}
-          <div className="flex items-center gap-1">
-            <Link to="/forum">
-              <Button variant="minimal" size="sm">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Forum
-              </Button>
-            </Link>
-            <Link to="/blog">
-              <Button variant="minimal" size="sm">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Blog
-              </Button>
-            </Link>
-          </div>
-
+        <div className="flex items-center space-x-2">
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -2322,6 +2322,122 @@ export type Database = {
           },
         ]
       }
+      troubleshooting_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          escalation_info: Json | null
+          fec_tenant_id: string
+          game_id: string | null
+          game_name: string | null
+          id: string
+          last_result: string | null
+          location_name: string | null
+          session_id: string
+          status: string
+          steps_tried: string[] | null
+          symptom: string
+          tech_skill_level: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          escalation_info?: Json | null
+          fec_tenant_id?: string
+          game_id?: string | null
+          game_name?: string | null
+          id?: string
+          last_result?: string | null
+          location_name?: string | null
+          session_id: string
+          status?: string
+          steps_tried?: string[] | null
+          symptom: string
+          tech_skill_level?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          escalation_info?: Json | null
+          fec_tenant_id?: string
+          game_id?: string | null
+          game_name?: string | null
+          id?: string
+          last_result?: string | null
+          location_name?: string | null
+          session_id?: string
+          status?: string
+          steps_tried?: string[] | null
+          symptom?: string
+          tech_skill_level?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      troubleshooting_steps: {
+        Row: {
+          assumptions: string[] | null
+          branch_logic: string | null
+          checks_performed: string[] | null
+          created_at: string
+          id: string
+          next_actions: string[]
+          questions_for_tech: string[] | null
+          results_expected: string[] | null
+          session_id: string
+          status: string
+          step_label: string
+          step_number: number
+          summary: string
+          tech_response: string | null
+        }
+        Insert: {
+          assumptions?: string[] | null
+          branch_logic?: string | null
+          checks_performed?: string[] | null
+          created_at?: string
+          id?: string
+          next_actions: string[]
+          questions_for_tech?: string[] | null
+          results_expected?: string[] | null
+          session_id: string
+          status: string
+          step_label: string
+          step_number: number
+          summary: string
+          tech_response?: string | null
+        }
+        Update: {
+          assumptions?: string[] | null
+          branch_logic?: string | null
+          checks_performed?: string[] | null
+          created_at?: string
+          id?: string
+          next_actions?: string[]
+          questions_for_tech?: string[] | null
+          results_expected?: string[] | null
+          session_id?: string
+          status?: string
+          step_label?: string
+          step_number?: number
+          summary?: string
+          tech_response?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "troubleshooting_steps_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "troubleshooting_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usage_limits: {
         Row: {
           created_at: string

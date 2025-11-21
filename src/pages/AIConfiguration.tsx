@@ -233,6 +233,31 @@ export default function AIConfiguration() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-base text-muted-foreground">
+                      Used for user-facing chat interface
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="code-assistant-model" className="text-base">Code Assistant Model</Label>
+                    <Select
+                      value={getConfigValue('code_assistant_model', 'gpt-5-mini-2025-08-07')}
+                      onValueChange={(value) => handleConfigChange('code_assistant_model', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select code assistant model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AI_MODELS.chat.map((model) => (
+                          <SelectItem key={model.value} value={model.value}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-base text-muted-foreground">
+                      Used for AI Code Assistant (faster models recommended)
+                    </p>
                   </div>
 
                   <div className="space-y-2">

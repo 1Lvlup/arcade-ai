@@ -4,13 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Folder, Trash2, Loader2, FileCode, CheckSquare, Square, RefreshCw, Clock } from 'lucide-react';
+import { Upload, Folder, Trash2, Loader2, FileCode, CheckSquare, Square, RefreshCw, Clock, Github } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 interface CodebaseIndexerProps {
   onIndexComplete?: () => void;
@@ -34,7 +36,7 @@ interface SyncResult {
 export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [isIndexing, setIsIndexing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isSyncingProject, setIsSyncingProject] = useState(false);
+  const [isSyncingGitHub, setIsSyncingGitHub] = useState(false);
   const [isLoadingIndexed, setIsLoadingIndexed] = useState(false);
   const [indexedCount, setIndexedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
@@ -46,6 +48,8 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [dirHandle, setDirHandle] = useState<any>(null);
+  const [showGitHubDialog, setShowGitHubDialog] = useState(false);
+  const [gitHubRepo, setGitHubRepo] = useState('');
   const folderInputRef = useRef<HTMLInputElement>(null);
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
@@ -81,58 +85,6 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
       }
     }
   }, [autoSyncEnabled, dirHandle]);
-
-  const syncCurrentProject = async () => {
-    setIsSyncingProject(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('sync-project-files');
-      
-      if (error) throw error;
-      
-      if (!data.files || data.files.length === 0) {
-        toast({ 
-          title: 'No files found', 
-          description: 'No indexable files found in current project',
-          variant: 'destructive' 
-        });
-        return;
-      }
-
-      // Insert files into indexed_codebase
-      const filesToInsert = data.files.map((file: any) => ({
-        file_path: file.path,
-        file_content: file.content,
-        language: file.language,
-        last_modified: new Date().toISOString(),
-      }));
-
-      const { error: insertError } = await supabase
-        .from('indexed_codebase')
-        .upsert(filesToInsert, { 
-          onConflict: 'file_path',
-          ignoreDuplicates: false 
-        });
-
-      if (insertError) throw insertError;
-      
-      toast({ 
-        title: 'Success', 
-        description: `Synced ${data.files.length} files from current project` 
-      });
-      
-      await loadIndexedFilesList();
-      if (onIndexComplete) onIndexComplete();
-    } catch (error: any) {
-      console.error('Error syncing project:', error);
-      toast({ 
-        title: 'Error', 
-        description: error.message || 'Failed to sync current project', 
-        variant: 'destructive' 
-      });
-    } finally {
-      setIsSyncingProject(false);
-    }
-  };
 
   const shouldIndexFile = (path: string): boolean => {
     const skipPatterns = [
@@ -195,6 +147,70 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
       'yml': 'yaml',
     };
     return langMap[ext || ''] || 'text';
+  };
+
+  const syncFromGitHub = async () => {
+    if (!gitHubRepo.trim()) {
+      toast({
+        title: "Repository Required",
+        description: "Please enter a GitHub repository",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSyncingGitHub(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-github-repo', {
+        body: { repository: gitHubRepo.trim() },
+      });
+      
+      if (error) throw error;
+      
+      if (!data?.files || data.files.length === 0) {
+        toast({
+          title: "No Files Found",
+          description: "No indexable files found in repository",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Insert files into indexed_codebase
+      const filesToInsert = data.files.map((file: any) => ({
+        file_path: file.path,
+        file_content: file.content,
+        language: file.language,
+        last_modified: file.last_modified,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('indexed_codebase')
+        .upsert(filesToInsert, {
+          onConflict: 'file_path',
+        });
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Success",
+        description: `Indexed ${data.files.length} files from ${gitHubRepo}`,
+      });
+
+      await loadIndexedFilesList();
+      setShowGitHubDialog(false);
+      setGitHubRepo('');
+      if (onIndexComplete) onIndexComplete();
+    } catch (error: any) {
+      console.error('GitHub sync error:', error);
+      toast({
+        title: "GitHub Sync Failed",
+        description: error.message || "Failed to sync repository",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncingGitHub(false);
+    }
   };
 
   const handleFolderSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -949,27 +965,27 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
         <div className="space-y-2">
           <div className="flex gap-2 flex-wrap">
             <Button 
-              onClick={syncCurrentProject}
-              disabled={isSyncingProject || isIndexing || isLoadingIndexed || isSyncing}
+              onClick={() => setShowGitHubDialog(true)}
+              disabled={isSyncingGitHub || isIndexing || isLoadingIndexed || isSyncing}
               className="flex-1 min-w-[140px]"
               variant="default"
             >
-              {isSyncingProject ? (
+              {isSyncingGitHub ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Syncing...
                 </>
               ) : (
                 <>
-                  <FileCode className="h-4 w-4 mr-2" />
-                  Sync Project
+                  <Github className="h-4 w-4 mr-2" />
+                  Sync from GitHub
                 </>
               )}
             </Button>
             
             <Button 
               onClick={() => folderInputRef.current?.click()}
-              disabled={isIndexing || isLoadingIndexed || isSyncingProject || isSyncing}
+              disabled={isIndexing || isLoadingIndexed || isSyncingGitHub || isSyncing}
               className="flex-1 min-w-[140px]"
               variant="outline"
             >
@@ -988,7 +1004,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
             
             <Button 
               onClick={clearIndex}
-              disabled={isIndexing || isLoadingIndexed || isSyncingProject || isSyncing}
+              disabled={isIndexing || isLoadingIndexed || isSyncingGitHub || isSyncing}
               variant="outline"
               className="min-w-[100px]"
             >
@@ -1002,6 +1018,61 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
           Supported files: TypeScript, JavaScript, CSS, JSON, Markdown, SQL, and more
         </p>
       </CardContent>
+
+      <Dialog open={showGitHubDialog} onOpenChange={setShowGitHubDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sync from GitHub</DialogTitle>
+            <DialogDescription>
+              Enter your GitHub repository to index its files
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="github-repo">Repository</Label>
+              <Input
+                id="github-repo"
+                placeholder="owner/repo (e.g., facebook/react)"
+                value={gitHubRepo}
+                onChange={(e) => setGitHubRepo(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isSyncingGitHub) {
+                    syncFromGitHub();
+                  }
+                }}
+              />
+              <p className="text-sm text-muted-foreground">
+                Make sure you've added your GitHub token to Supabase secrets
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowGitHubDialog(false);
+                setGitHubRepo('');
+              }}
+              disabled={isSyncingGitHub}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={syncFromGitHub}
+              disabled={isSyncingGitHub || !gitHubRepo.trim()}
+            >
+              {isSyncingGitHub ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                'Sync Repository'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

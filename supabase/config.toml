@@ -198,5 +198,5 @@ verify_jwt = true
 [functions.recalculate-lead-momentum]
 verify_jwt = true
 
-[functions.sync-project-files]
+[functions.sync-github-repo]
 verify_jwt = true

@@ -1063,140 +1063,41 @@ serve(async (req) => {
       console.log("📊 Answer type:", typeof answer, "is ReadableStream:", answer instanceof ReadableStream);
       const answerStream = answer as ReadableStream;
       
-      // Create a new stream that sends metadata first, then the answer
+      // SIMPLIFIED: Create a bare-bones stream with ONLY content chunks (no metadata for debug)
       const streamWithMetadata = new ReadableStream({
         async start(controller) {
-          // PHASE 2.1: Enhanced logging and contamination detection
-          const chunkIds = (chunks || []).map(c => c.id).filter(Boolean);
-          let thumbnails: any[] = [];
+          console.log("🚀 SIMPLIFIED STREAMING: Only emitting content chunks");
           
-          // Auto-detect manual_id from chunks if not provided
-          let effectiveManualId = manual_id;
-          if (!effectiveManualId && chunks && chunks.length > 0) {
-            const firstManualId = chunks[0]?.manual_id;
-            if (firstManualId) {
-              effectiveManualId = firstManualId;
-              console.log(`🔍 Auto-detected manual_id from chunks: ${effectiveManualId}`);
-            }
-          }
+          // COMMENTED OUT FOR DEBUG - Pre-validation and contamination detection
+          // const chunkIds = (chunks || []).map(c => c.id).filter(Boolean);
+          // let thumbnails: any[] = [];
+          // let effectiveManualId = manual_id;
+          // if (!effectiveManualId && chunks && chunks.length > 0) {
+          //   const firstManualId = chunks[0]?.manual_id;
+          //   if (firstManualId) {
+          //     effectiveManualId = firstManualId;
+          //     console.log(`🔍 Auto-detected manual_id from chunks: ${effectiveManualId}`);
+          //   }
+          // }
           
-          // Pre-validation: check for cross-manual contamination
-          if (effectiveManualId && chunks && chunks.length > 0) {
-            const chunksByManual = new Map<string, number>();
-            for (const chunk of chunks) {
-              const mid = chunk.manual_id || 'unknown';
-              chunksByManual.set(mid, (chunksByManual.get(mid) || 0) + 1);
-            }
-            
-            // Check if chunks span multiple manuals
-            if (chunksByManual.size > 1) {
-              const manualBreakdown = Array.from(chunksByManual.entries())
-                .map(([mid, count]) => `${mid}(${count})`)
-                .join(', ');
-              const wrongManualChunks = chunks.filter(c => c.manual_id !== effectiveManualId);
-              console.error(`❌ CROSS-MANUAL CONTAMINATION DETECTED!`);
-              console.error(`   Expected: ${effectiveManualId} only`);
-              console.error(`   Found: ${manualBreakdown}`);
-              console.error(`   Wrong chunks: ${wrongManualChunks.length}/${chunks.length}`);
-            } else {
-              console.log(`✅ PRE-VALIDATION: All ${chunks.length} chunks from correct manual: ${effectiveManualId}`);
-            }
-          }
+          // COMMENTED OUT FOR DEBUG - Cross-manual contamination check
+          // if (effectiveManualId && chunks && chunks.length > 0) { ... }
           
-          if (chunkIds.length > 0 && effectiveManualId) {
-            try {
-              console.log("🖼️ [STAGE 4/4] Loading images...");
-              const imageStart = performance.now();
-              
-              // Pass figure results from search to buildCitationsAndImages
-              const figures = figureResults || [];
-              const { thumbnails: imgs } = await buildCitationsAndImages(supabase, chunkIds, figures, effectiveManualId);
-              thumbnails = imgs || [];
-              
-              const imageEnd = performance.now();
-              console.log(`🖼️ Retrieved ${thumbnails.length} images for manual: ${effectiveManualId} (${(imageEnd - imageStart).toFixed(0)}ms)`);
-            } catch (e) {
-              console.error('❌ Error fetching images:', e);
-              // Don't fail the entire request, just log and continue without images
-            }
-          } else if (!effectiveManualId) {
-            console.warn('⚠️ No manual_id detected, skipping image retrieval');
-          }
+          // COMMENTED OUT FOR DEBUG - Image/thumbnail loading
+          // if (chunkIds.length > 0 && effectiveManualId) { ... }
           
-          // Get manual title if manual_id is specified
-          let manualTitle = null;
-          if (effectiveManualId) {
-            try {
-              const { data: manualData } = await supabase
-                .from('manual_metadata')
-                .select('canonical_title')
-                .eq('manual_id', effectiveManualId)
-                .single();
-              manualTitle = manualData?.canonical_title || null;
-            } catch (e) {
-              console.error('Error fetching manual title:', e);
-            }
-          }
+          // COMMENTED OUT FOR DEBUG - Manual title lookup
+          // let manualTitle = null;
+          // if (effectiveManualId) { ... }
           
-          // Send status updates to frontend
-          controller.enqueue(new TextEncoder().encode(
-            `data: ${JSON.stringify({ type: 'status', data: { message: 'Searching manuals...' } })}\n\n`
-          ));
+          // COMMENTED OUT FOR DEBUG - Status updates
+          // controller.enqueue(new TextEncoder().encode(
+          //   `data: ${JSON.stringify({ type: 'status', data: { message: 'Searching manuals...' } })}\n\n`
+          // ));
           
-          // After search completes
-          controller.enqueue(new TextEncoder().encode(
-            `data: ${JSON.stringify({ type: 'status', data: { message: 'Analyzing results...' } })}\n\n`
-          ));
-          
-          // Before generating answer
-          controller.enqueue(new TextEncoder().encode(
-            `data: ${JSON.stringify({ type: 'status', data: { message: 'Generating answer...' } })}\n\n`
-          ));
-          
-          // Send metadata first (including query_log_id for feedback and thumbnails)
-          const metadata = {
-            type: 'metadata',
-            data: {
-              sources: sources?.slice(0, 5).map(s => ({
-                page_start: s.page_start,
-                page_end: s.page_end,
-              })) || [],
-              strategy,
-              query_log_id: queryLogId,
-              thumbnails,
-              manual_id: effectiveManualId || null,
-              manual_title: manualTitle,
-              auto_detected: detectedManualTitle ? true : false,
-              detected_manual_title: detectedManualTitle,
-              
-              // RAG Debug Data
-              rag_debug: {
-                chunks: chunks?.slice(0, 10).map(c => ({
-                  content_preview: c.content.substring(0, 150) + '...',
-                  page_start: c.page_start || 0,
-                  page_end: c.page_end || c.page_start || 0,
-                  score: c.score || 0,
-                  rerank_score: c.rerank_score || c.score || 0,
-                  menu_path: c.menu_path || ''
-                })) || [],
-                signals: streamSignals,
-                quality_score: quality_score || 0,
-                max_rerank_score: maxRerankScore || 0,
-                max_base_score: maxBaseScore || 0,
-                performance: {
-                  search_ms: (searchEnd - searchStart).toFixed(0),
-                  generation_ms: (generateEnd - generateStart).toFixed(0),
-                  total_ms: totalTime.toFixed(0)
-                },
-                answer_style: {
-                  is_weak: isWeak || false,
-                  adaptive_mode: isWeak ? 'cautious' : 'confident'
-                },
-                strategy: strategy
-              }
-            }
-          };
-          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));
+          // COMMENTED OUT FOR DEBUG - Metadata payload
+          // const metadata = { ... };
+          // controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));
           
           const generateEnd = performance.now();
           const pipelineEndTime = performance.now();

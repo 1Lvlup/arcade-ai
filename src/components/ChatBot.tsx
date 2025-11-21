@@ -13,6 +13,9 @@ import { InteractiveComponentLibrary } from "@/components/InteractiveComponentLi
 import { InteractiveComponentRenderer } from "@/components/InteractiveComponentRenderer";
 import { DiagnosticWizard } from "@/components/DiagnosticWizard";
 import { RAGDebugPanel } from "@/components/RAGDebugPanel";
+import { SessionSelector } from "@/components/SessionSelector";
+import { EscalationPanel } from "@/components/EscalationPanel";
+import { SessionSummaryCard } from "@/components/SessionSummaryCard";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -110,10 +113,29 @@ interface StructuredAnswer {
   interactive_components?: InteractiveComponent[];
 }
 
+interface TroubleshootingResponse {
+  summary: string;
+  next_actions: string[];
+  questions_for_tech: string[];
+  status: "continue" | "probably_fixed" | "escalate" | "need_manual" | "done";
+  escalation?: {
+    reason: string;
+    recommended_target: string;
+    info_to_pass_on: string;
+  };
+  log_step?: {
+    step_label: string;
+    assumptions: string[];
+    checks_performed: string[];
+    results_expected: string[];
+    branch_logic: string;
+  };
+}
+
 interface ChatMessage {
   id: string;
   type: "user" | "bot";
-  content: string | StructuredAnswer;
+  content: string | StructuredAnswer | TroubleshootingResponse;
   timestamp: Date;
   query_log_id?: string;
   feedback?: "thumbs_up" | "thumbs_down" | null;

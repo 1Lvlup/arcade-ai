@@ -1806,17 +1806,18 @@ export function ChatBot({
       <Card className="tech-card h-full flex flex-col w-full rounded-none border-0 bg-black">
         <ChatHeader
           manualTitle={manualTitle}
-          selectedManualId={selectedManualId}
           user={user}
           guestMessageCount={guestMessageCount}
-          guestMessageLimit={GUEST_MESSAGE_LIMIT}
+          guestLimit={GUEST_MESSAGE_LIMIT}
           onNewConversation={startNewConversation}
-          onSaveConversation={saveConversation}
-          onExportConversation={exportConversation}
-          onToggleHistory={() => setShowHistory(!showHistory)}
+          onSave={saveConversation}
+          onExport={exportConversation}
+          canSave={messages.length > 1}
+          canExport={messages.length > 1}
           isSaving={isSaving}
-          messagesLength={messages.length}
-          currentConversationId={currentConversationId}
+          showHistory={showHistory}
+          onToggleHistory={() => setShowHistory(!showHistory)}
+          structuredMode={false}
           useStreaming={useStreaming}
           onToggleStreaming={() => {
             setUseStreaming(prev => {
@@ -1829,6 +1830,7 @@ export function ChatBot({
               return newValue;
             });
           }}
+          onToggleStructured={() => {}}
           debugMode={debugMode}
           onToggleDebug={() => {
             setDebugMode(prev => {
@@ -1841,25 +1843,26 @@ export function ChatBot({
               return newValue;
             });
           }}
-          showHistory={showHistory}
-          conversations={conversations}
-          onLoadConversation={loadConversation}
-          onDeleteConversation={(id) => {
-            setConversationToDelete(id);
-            setShowDeleteDialog(true);
-          }}
-          onRenameConversation={renameConversation}
-          editingConversationId={editingConversationId}
-          editingTitle={editingTitle}
-          onStartEditTitle={(id, title) => {
-            setEditingConversationId(id);
-            setEditingTitle(title);
-          }}
-          onCancelEditTitle={() => {
-            setEditingConversationId(null);
-            setEditingTitle("");
-          }}
-          onSetEditTitle={setEditingTitle}
+          historyContent={
+            conversations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">No saved conversations yet</div>
+            ) : (
+              <div className="space-y-3">
+                {conversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    onClick={() => loadConversation(conv.id)}
+                    className="p-3 rounded-lg border border-white/10 hover:border-orange/50 cursor-pointer transition-colors"
+                  >
+                    <div className="font-medium text-white mb-1">{conv.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(conv.last_message_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          }
         />
 
         <CardContent className="flex-1 flex flex-col p-0 min-h-0">
@@ -1946,7 +1949,7 @@ export function ChatBot({
                   });
                 }}
                 onFeedback={handleFeedback}
-                onThumbnailClick={(url, title) => setSelectedImage({ url, title })}
+                onThumbnailClick={(thumb) => setSelectedImage({ url: thumb.url, title: thumb.title })}
                 onAutoSend={(text) => {
                   setInputValue(text);
                   setTimeout(() => handleSendMessage(), 100);

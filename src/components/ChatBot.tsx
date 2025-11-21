@@ -1466,10 +1466,10 @@ export function ChatBot({
               const parsed = JSON.parse(jsonStr);
               console.log("📦 Received chunk:", parsed);
 
-              // Handle status updates
-              if (parsed.type === "status" && parsed.data?.message) {
-                setCurrentStatus(parsed.data.message);
-              }
+              // SIMPLIFIED: Handle status updates (COMMENTED OUT FOR DEBUG)
+              // if (parsed.type === "status" && parsed.data?.message) {
+              //   setCurrentStatus(parsed.data.message);
+              // }
 
               // Handle content chunks (streaming answer)
               if (parsed.type === "content" && parsed.data) {
@@ -1495,6 +1495,8 @@ export function ChatBot({
               }
 
 
+              // SIMPLIFIED: Commented out metadata handling for debug
+              /*
               // Handle metadata (usage, manual detection, sources)
               if (parsed.type === "metadata" && parsed.data) {
                 metadata = { ...metadata, ...parsed.data };
@@ -1527,7 +1529,10 @@ export function ChatBot({
                   }
                 }
               }
+              */
 
+              // SIMPLIFIED: Commented out legacy metadata handling for debug
+              /*
               // Handle metadata (legacy format)
               if (parsed.metadata) {
                 metadata = { ...metadata, ...parsed.metadata };
@@ -1563,7 +1568,8 @@ export function ChatBot({
                     });
                   }
                 }
-              }
+               }
+               */
             } catch (e) {
               console.error("Failed to parse SSE line:", e);
             }
@@ -1571,16 +1577,17 @@ export function ChatBot({
         }
       }
 
-      // Final update with metadata (thumbnails, manual info)
+      // SIMPLIFIED: Final update (only content, no metadata for debug)
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === botMessageId
             ? {
                 ...msg,
                 content: accumulatedContent,
-                thumbnails: metadata.sources?.map((s: any) => s.thumbnail).filter(Boolean),
-                manual_id: metadata.manual_id,
-                manual_title: metadata.manual_title,
+                // COMMENTED OUT FOR DEBUG:
+                // thumbnails: metadata.sources?.map((s: any) => s.thumbnail).filter(Boolean),
+                // manual_id: metadata.manual_id,
+                // manual_title: metadata.manual_title,
               }
             : msg,
         ),

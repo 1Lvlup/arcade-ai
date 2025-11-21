@@ -29,7 +29,15 @@ export default function BlogAdmin() {
     const { data } = await supabase
       .from('blog_posts')
       .select(`
-        *,
+        id,
+        title,
+        slug,
+        excerpt,
+        status,
+        author_name,
+        views_count,
+        published_at,
+        created_at,
         category:blog_categories(name)
       `)
       .order('created_at', { ascending: false });

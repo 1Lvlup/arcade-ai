@@ -20,13 +20,10 @@ interface BlogPost {
   read_time_minutes: number | null;
   meta_description: string | null;
   meta_keywords: string[] | null;
+  author_name: string | null;
   category: {
     name: string;
     slug: string;
-  } | null;
-  author: {
-    display_name: string;
-    avatar_url: string | null;
   } | null;
 }
 
@@ -58,8 +55,8 @@ export default function BlogPost() {
         meta_description,
         meta_keywords,
         category_id,
-        category:blog_categories(name, slug),
-        author:profiles(display_name, avatar_url)
+        author_name,
+        category:blog_categories(name, slug)
       `)
       .eq('slug', slug)
       .eq('status', 'published')
@@ -201,10 +198,12 @@ export default function BlogPost() {
             </h1>
 
             <div className="flex flex-wrap items-center gap-4 text-muted-foreground mb-6">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>{post.author?.display_name || 'Level Up Team'}</span>
-              </div>
+              {post.author_name && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>{post.author_name}</span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 <span>{format(new Date(post.published_at), 'MMMM d, yyyy')}</span>
@@ -301,7 +300,7 @@ export default function BlogPost() {
           "datePublished": post.published_at,
           "author": {
             "@type": "Person",
-            "name": post.author?.display_name || "Level Up Team"
+            "name": post.author_name || "Level Up Team"
           },
           "publisher": {
             "@type": "Organization",

@@ -18,12 +18,10 @@ interface BlogPost {
   featured_image: string | null;
   published_at: string;
   read_time_minutes: number | null;
+  author_name: string | null;
   category: {
     name: string;
     slug: string;
-  } | null;
-  author: {
-    display_name: string;
   } | null;
 }
 
@@ -78,8 +76,8 @@ export default function Blog() {
         featured_image,
         published_at,
         read_time_minutes,
-        category:blog_categories(name, slug),
-        author:profiles(display_name)
+        author_name,
+        category:blog_categories(name, slug)
       `)
       .eq('status', 'published')
       .order('published_at', { ascending: false });

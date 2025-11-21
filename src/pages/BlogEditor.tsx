@@ -31,7 +31,8 @@ export default function BlogEditor() {
     meta_description: '',
     meta_keywords: '',
     status: 'draft',
-    read_time_minutes: 5
+    read_time_minutes: 5,
+    author_name: ''
   });
 
   useEffect(() => {
@@ -68,7 +69,8 @@ export default function BlogEditor() {
         meta_description: data.meta_description || '',
         meta_keywords: data.meta_keywords?.join(', ') || '',
         status: data.status || 'draft',
-        read_time_minutes: data.read_time_minutes || 5
+        read_time_minutes: data.read_time_minutes || 5,
+        author_name: data.author_name || ''
       });
     }
   };
@@ -107,7 +109,6 @@ export default function BlogEditor() {
 
     const postData = {
       ...formData,
-      author_id: user!.id,
       meta_keywords: formData.meta_keywords ? formData.meta_keywords.split(',').map(k => k.trim()) : [],
       read_time_minutes: calculateReadTime(formData.content),
       published_at: formData.status === 'published' ? new Date().toISOString() : null
@@ -180,6 +181,17 @@ export default function BlogEditor() {
                   value={formData.slug}
                   onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
                   placeholder="post-url-slug"
+                />
+              </div>
+
+              {/* Author Name */}
+              <div className="space-y-2">
+                <Label htmlFor="author_name">Author Name</Label>
+                <Input
+                  id="author_name"
+                  value={formData.author_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, author_name: e.target.value }))}
+                  placeholder="Your name"
                 />
               </div>
 

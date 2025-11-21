@@ -190,13 +190,22 @@ Deno.serve(async (req) => {
     const treeData = await treeResponse.json();
     const files: GitHubFile[] = [];
     const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    
+    const skippedFiles = {
+      tooLarge: [] as string[],
+      fetchFailed: [] as string[],
+      filtered: 0,
+    };
 
     // Filter for indexable files
-    const indexableFiles = treeData.tree.filter((item: any) => 
-      item.type === 'blob' && shouldIndexFile(item.path)
-    );
+    const allBlobs = treeData.tree.filter((item: any) => item.type === 'blob');
+    const indexableFiles = allBlobs.filter((item: any) => {
+      const shouldIndex = shouldIndexFile(item.path);
+      if (!shouldIndex) skippedFiles.filtered++;
+      return shouldIndex;
+    });
 
-    console.log(`Found ${indexableFiles.length} indexable files`);
+    console.log(`Total blobs: ${allBlobs.length}, Indexable: ${indexableFiles.length}, Filtered: ${skippedFiles.filtered}`);
 
     // Fetch file contents (with batching to avoid rate limits)
     const BATCH_SIZE = 10;
@@ -208,6 +217,7 @@ Deno.serve(async (req) => {
           // Check size before fetching
           if (item.size > MAX_FILE_SIZE) {
             console.log(`Skipping large file: ${item.path} (${item.size} bytes)`);
+            skippedFiles.tooLarge.push(item.path);
             return null;
           }
 
@@ -224,6 +234,7 @@ Deno.serve(async (req) => {
 
           if (!contentResponse.ok) {
             console.error(`Failed to fetch ${item.path}: ${contentResponse.statusText}`);
+            skippedFiles.fetchFailed.push(item.path);
             return null;
           }
 
@@ -237,6 +248,7 @@ Deno.serve(async (req) => {
           };
         } catch (error) {
           console.error(`Error fetching ${item.path}:`, error);
+          skippedFiles.fetchFailed.push(item.path);
           return null;
         }
       });
@@ -251,12 +263,18 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Successfully fetched ${files.length} files`);
+    console.log(`Skipped: ${skippedFiles.tooLarge.length} too large, ${skippedFiles.fetchFailed.length} fetch failed, ${skippedFiles.filtered} filtered out`);
 
     return new Response(
       JSON.stringify({ 
         files,
         repository,
         total_files: files.length,
+        skipped: {
+          too_large: skippedFiles.tooLarge.length,
+          fetch_failed: skippedFiles.fetchFailed.length,
+          filtered: skippedFiles.filtered,
+        },
       }),
       { 
         headers: { 

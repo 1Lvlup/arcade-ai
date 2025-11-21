@@ -192,7 +192,7 @@ export function CodebaseIndexer({ onIndexComplete }: CodebaseIndexerProps) {
 
       toast({
         title: "Success",
-        description: `Indexed ${data.files.length} files from ${gitHubRepo}`,
+        description: `Indexed ${data.files.length} files from ${gitHubRepo}${data.skipped ? ` (skipped: ${data.skipped.too_large} too large, ${data.skipped.fetch_failed} failed, ${data.skipped.filtered} filtered)` : ''}`,
       });
 
       await loadIndexedFilesList();

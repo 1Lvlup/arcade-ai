@@ -102,7 +102,7 @@ const Index = () => {
                 from problem to solution, so dead cabinets start earning again fast.
               </p>
 
-              <div className="flex flex-col gap-3 mb-8 text-sm max-w-[700px] mx-auto">
+              <div className="flex flex-col gap-3 mb-6 text-sm max-w-[700px] mx-auto">
                 <div className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <span className="text-muted-foreground font-sans">
@@ -122,20 +122,21 @@ const Index = () => {
                   </span>
                 </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4">
-                <Button onClick={handleStartGeneralChat} size="lg" variant="orange" className="text-xl font-semibold px-12 sm:w-auto animate-glow-pulse hover:shadow-[0_0_35px_rgba(255,107,0,0.6)] transition-shadow duration-300">
-                  Launch Arcade Intelligence
-                </Button>
-                {isAdmin && <Button asChild size="lg" variant="outline" className="text-base font-semibold px-12 w-full sm:w-auto">
-                    <Link to="/lead-intelligence">Outbound Sales Hub</Link>
-                  </Button>}
-              </div>
-
-              <p className="text-xs text-muted-foreground font-sans">
-                No credit card · Built inside a live FEC with 80+ games
-              </p>
             </div>
+
+            {/* CTA Buttons - Outside the box */}
+            <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4 mt-8">
+              <Button onClick={handleStartGeneralChat} size="lg" variant="orange" className="text-xl font-semibold px-12 sm:w-auto animate-glow-pulse hover:shadow-[0_0_35px_rgba(255,107,0,0.6)] transition-shadow duration-300">
+                Launch Arcade Intelligence
+              </Button>
+              {isAdmin && <Button asChild size="lg" variant="outline" className="text-base font-semibold px-12 w-full sm:w-auto">
+                  <Link to="/lead-intelligence">Outbound Sales Hub</Link>
+                </Button>}
+            </div>
+
+            <p className="text-xs text-muted-foreground font-sans text-center mb-12 md:mb-16">
+              No credit card · Built inside a live FEC with 80+ games
+            </p>
 
             {/* Product Screenshot - Full Width Card */}
             <div className="w-[80%] max-w-[1200px] mx-auto mt-12 md:mt-16">

@@ -63,7 +63,7 @@ export function MessageRenderer({
 
       <div className={`flex-1 max-w-[85%] ${message.type === "user" ? "flex flex-col items-end" : ""}`}>
         {/* Loading status for bot messages */}
-        {message.type === "bot" && !message.content && currentStatus && (
+        {message.type === "bot" && (!message.content || String(message.content).trim() === '') && currentStatus && (
           <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>{currentStatus}</span>
@@ -81,7 +81,9 @@ export function MessageRenderer({
           {isStructuredAnswer(message.content) ? (
             <StructuredAnswerRenderer content={message.content as any} />
           ) : (
-            <div className="text-sm text-foreground/90 whitespace-pre-wrap">{String(message.content)}</div>
+            <div className="text-sm text-foreground/90 whitespace-pre-wrap">
+              {String(message.content) || (message.type === "bot" ? "..." : "")}
+            </div>
           )}
 
           {/* User Images */}

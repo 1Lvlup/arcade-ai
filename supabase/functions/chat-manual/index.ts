@@ -1613,21 +1613,6 @@ serve(async (req) => {
       },
       strategy,
     };
- {
-        // Panel expects strings like "123"
-        search_ms: ((result.search_time ?? 0)).toFixed(0),
-        generation_ms: (
-          (result.total_time ?? 0) - (result.search_time ?? 0)
-        ).toFixed(0),
-        total_ms: ((result.total_time ?? 0)).toFixed(0),
-      },
-      answer_style: {
-        // Good enough proxy: low-tier = weak
-        is_weak: quality_tier === "low",
-        adaptive_mode: quality_tier === "low" ? "cautious" : "confident",
-      },
-      strategy,
-    };
 
 
     return new Response(

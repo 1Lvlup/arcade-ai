@@ -93,8 +93,8 @@ const Index = () => {
         <section className="relative bg-background overflow-hidden py-12 md:py-0 px-0 my-0 mx-0">
           <div className="container mx-auto px-4 my-0 py-[20px]">
             {/* Centered Text Content */}
-            <div className="max-w-[800px] mx-auto text-center mb-12 md:mb-16 rounded-xl opacity-100 shadow-2xl bg-[#0e0e0e]/[0.73]">
-              <h1 className="text-4xl sm:text-5xl tracking-tight mb-6 leading-tight font-medium font-tech text-slate-50 lg:text-5xl text-center">
+            <div className="max-w-[800px] mx-auto text-center mb-12 md:mb-16 rounded-xl opacity-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] bg-[#0e0e0e]/[0.73] transform translate-y-0 hover:translate-y-[-2px] transition-transform duration-300">
+              <h1 className="text-4xl sm:text-5xl tracking-tight mb-3 leading-tight font-medium font-tech text-slate-50 lg:text-5xl text-center">
                 STOP LOSING MONEY TO DEAD GAMES
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 font-sans">

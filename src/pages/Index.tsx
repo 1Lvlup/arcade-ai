@@ -150,8 +150,57 @@ const Index = () => {
           </div>
         </section>
 
+          {/* How it Works */}
+          <section className="py-20 border-t border-b border-border -mt-12 md:-mt-16">
+            <div className="mb-16 text-center flex flex-col items-center">
+              <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
+                INSIDE THE INTELLIGENCE
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold font-tech uppercase mb-4">
+                How it <span className="text-primary text-4xl font-semibold">works</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl">
+                Intelligent retrieval meets deep reasoning so your techs get reliable answers fast.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="space-y-4 flex flex-col items-center text-center">
+                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
+                  <span className="text-2xl font-bold text-primary">1</span>
+                </div>
+                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">Describe the issue</h3>
+                <p className="text-muted-foreground">
+                  Your tech explains what the game is doing in <span className="text-primary">plain language</span>—no special phrasing needed.
+                </p>
+              </div>
+
+              <div className="space-y-4 flex flex-col items-center text-center">
+                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
+                  <span className="text-2xl font-bold text-primary">2</span>
+                </div>
+                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">LevelUp analyzes it</h3>
+                <p className="text-muted-foreground">
+                  The system uses everything it knows about that game—behavior, wiring, error patterns, and past
+                  fixes—to propose a <span className="text-primary">focused troubleshooting path</span>.
+                </p>
+              </div>
+
+              <div className="space-y-4 flex flex-col items-center text-center">
+                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
+                  <span className="text-2xl font-bold text-primary">3</span>
+                </div>
+                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">You confirm the fix</h3>
+                <p className="text-muted-foreground">
+                  Your tech follows the guided steps, confirms what worked, and that <span className="text-primary">resolution is saved</span> so the next
+                  time it's almost instant.
+                </p>
+              </div>
+            </div>
+          </section>
+
           {/* Features Section */}
-          <section className="py-20 -mt-12 md:-mt-16">
+          <section className="py-20">
             <div className="mb-12 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 ADVANCED CAPABILITIES
@@ -224,55 +273,6 @@ const Index = () => {
                   </CardDescription>
                 </CardHeader>
               </Card>
-            </div>
-          </section>
-
-          {/* How it Works */}
-          <section className="py-20 border-t border-border">
-            <div className="mb-16 text-center flex flex-col items-center">
-              <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
-                INSIDE THE INTELLIGENCE
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-bold font-tech uppercase mb-4">
-                How it <span className="text-primary text-4xl font-semibold">works</span>
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl">
-                Intelligent retrieval meets deep reasoning so your techs get reliable answers fast.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="space-y-4 flex flex-col items-center text-center">
-                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
-                  <span className="text-2xl font-bold text-primary">1</span>
-                </div>
-                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">Describe the issue</h3>
-                <p className="text-muted-foreground">
-                  Your tech explains what the game is doing in <span className="text-primary">plain language</span>—no special phrasing needed.
-                </p>
-              </div>
-
-              <div className="space-y-4 flex flex-col items-center text-center">
-                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
-                  <span className="text-2xl font-bold text-primary">2</span>
-                </div>
-                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">LevelUp analyzes it</h3>
-                <p className="text-muted-foreground">
-                  The system uses everything it knows about that game—behavior, wiring, error patterns, and past
-                  fixes—to propose a <span className="text-primary">focused troubleshooting path</span>.
-                </p>
-              </div>
-
-              <div className="space-y-4 flex flex-col items-center text-center">
-                <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center border-2 border-primary shadow-[0_0_20px_rgba(255,107,0,0.4)]">
-                  <span className="text-2xl font-bold text-primary">3</span>
-                </div>
-                <h3 className="text-xl font-semibold text-foreground font-tech uppercase">You confirm the fix</h3>
-                <p className="text-muted-foreground">
-                  Your tech follows the guided steps, confirms what worked, and that <span className="text-primary">resolution is saved</span> so the next
-                  time it's almost instant.
-                </p>
-              </div>
             </div>
           </section>
 

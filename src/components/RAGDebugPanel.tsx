@@ -52,6 +52,10 @@ export function RAGDebugPanel({ ragData, className = "", useLegacySearch = false
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  
+  // Defensive check for chunks array
+  const chunks = ragData?.chunks || [];
+  const chunkCount = chunks.length;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(JSON.stringify(ragData, null, 2));
@@ -107,13 +111,13 @@ export function RAGDebugPanel({ ragData, className = "", useLegacySearch = false
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">🔧 RAG Debug Info</span>
               <Badge variant="outline" className="text-xs">
-                {ragData.chunks.length} chunks
+                {chunkCount} chunks
               </Badge>
               <Badge 
                 variant="outline" 
-                className={`text-xs ${ragData.answer_style.is_weak ? 'border-yellow-500/50 text-yellow-500' : 'border-green-500/50 text-green-500'}`}
+                className={`text-xs ${ragData?.answer_style?.is_weak ? 'border-yellow-500/50 text-yellow-500' : 'border-green-500/50 text-green-500'}`}
               >
-                {ragData.answer_style.adaptive_mode}
+                {ragData?.answer_style?.adaptive_mode || 'standard'}
               </Badge>
             </div>
             {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -169,10 +173,10 @@ export function RAGDebugPanel({ ragData, className = "", useLegacySearch = false
             {/* Retrieved Chunks */}
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Retrieved Chunks (Top {Math.min(5, ragData.chunks.length)})
+                Retrieved Chunks (Top {Math.min(5, chunkCount)})
               </h4>
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {ragData.chunks.slice(0, 5).map((chunk, idx) => (
+                {chunks.slice(0, 5).map((chunk, idx) => (
                   <div key={idx} className="border border-border/50 rounded-md p-3 bg-background/50 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">

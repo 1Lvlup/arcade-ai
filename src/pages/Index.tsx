@@ -90,11 +90,11 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative bg-background overflow-hidden py-12 md:py-20">
-          <div className="container mx-auto px-4">
+        <section className="relative bg-background overflow-hidden py-12 md:py-0 px-0 my-0 mx-0">
+          <div className="container mx-auto px-4 my-0 py-[20px]">
             {/* Centered Text Content */}
-            <div className="max-w-[800px] mx-auto text-center mb-12 md:mb-16">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl tracking-tight mb-6 leading-tight font-medium font-tech text-orange">
+            <div className="max-w-[800px] mx-auto text-center mb-12 md:mb-16 rounded-xl opacity-100 shadow-2xl bg-[#0e0e0e]/[0.73]">
+              <h1 className="text-4xl sm:text-5xl tracking-tight mb-6 leading-tight font-medium font-tech text-slate-50 lg:text-5xl text-center">
                 STOP LOSING MONEY TO DEAD GAMES
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 font-sans">
@@ -139,9 +139,9 @@ const Index = () => {
 
             {/* Product Screenshot - Full Width Card */}
             <div className="w-[80%] max-w-[1200px] mx-auto mt-12 md:mt-16">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl my-0">
                 <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/40 z-10 pointer-events-none" />
-                <img ref={heroImageRef} src={chatUIBackground} alt="LevelUp Chat Interface" className="w-full h-auto brightness-105" loading="lazy" decoding="async" />
+                <img ref={heroImageRef} src={chatUIBackground} alt="LevelUp Chat Interface" loading="lazy" decoding="async" className="w-full h-auto brightness-105 object-fill rounded-md shadow-xl opacity-100" />
               </div>
             </div>
           </div>

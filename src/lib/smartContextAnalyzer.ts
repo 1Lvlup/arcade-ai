@@ -1,4 +1,4 @@
-import { CodeChunk } from './codeParser';
+import { CodeChunk } from '@/lib/codeParser';
 
 interface IndexedFile {
   id: string;

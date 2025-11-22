@@ -113,7 +113,7 @@ You MUST follow this exact format when providing code suggestions:
 
 Be concise but thorough. Focus on practical, working solutions.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -121,11 +121,12 @@ Be concise but thorough. Focus on practical, working solutions.`;
       },
       body: JSON.stringify({
         model: model,
-        messages: [
+        input: [
           { role: 'system', content: systemPrompt },
           ...messages
         ],
-        max_completion_tokens: 4000,
+        max_output_tokens: 4000,
+        store: true,
       }),
     });
 

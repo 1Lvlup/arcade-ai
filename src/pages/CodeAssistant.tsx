@@ -22,7 +22,6 @@ import { FilePreviewPanel } from '@/components/code-assistant/FilePreviewPanel';
 import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeIndicator';
 import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
 import { RelatedFilesPanel } from '@/components/code-assistant/RelatedFilesPanel';
-import { FileChunkSelector } from '@/components/code-assistant/FileChunkSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { parseFileIntoChunks } from '@/lib/codeParser';
 

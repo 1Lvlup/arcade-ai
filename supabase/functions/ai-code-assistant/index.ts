@@ -168,6 +168,12 @@ Be concise but thorough. Focus on practical, working solutions.`;
     // Check for incomplete response
     if (data.status === 'incomplete') {
       console.warn('⚠️ Response incomplete:', data.incomplete_details?.reason);
+      return new Response(JSON.stringify({ 
+        error: 'Response incomplete - the model ran out of tokens. Try asking a simpler question or selecting fewer files.' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     // Parse Responses API format - look for message-type output
@@ -218,12 +224,23 @@ Be concise but thorough. Focus on practical, working solutions.`;
     } catch (parseError) {
       console.error('❌ Error parsing response:', parseError);
       console.error('📦 Response data:', JSON.stringify(data, null, 2));
+      return new Response(JSON.stringify({ 
+        error: 'Failed to parse AI response' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     if (!assistantMessage || assistantMessage.trim() === '') {
       console.error('❌ Could not extract message from response');
       console.error('📦 Response structure:', JSON.stringify(data, null, 2));
-      throw new Error('AI response was empty or in unexpected format');
+      return new Response(JSON.stringify({ 
+        error: 'AI response was empty or in unexpected format' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     console.log('✅ Successfully extracted message, length:', assistantMessage.length);

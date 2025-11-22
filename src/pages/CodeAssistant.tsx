@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,7 +23,11 @@ import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeInd
 import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
 import { RelatedFilesPanel } from '@/components/code-assistant/RelatedFilesPanel';
 import { FileChunkSelector } from '@/components/code-assistant/FileChunkSelector';
+import { SmartOptimizeToggle } from '@/components/code-assistant/SmartOptimizeToggle';
+import { SelectionPreview } from '@/components/code-assistant/SelectionPreview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { parseFileIntoChunks } from '@/lib/codeParser';
+import { getSuggestedSelection, generateSelectionPreview } from '@/lib/smartContextAnalyzer';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -78,6 +82,12 @@ export function CodeAssistant() {
   const [chunkSelections, setChunkSelections] = useState<Map<string, Set<string>>>(new Map());
   const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
   const [templates, setTemplates] = useState<ConversationTemplate[]>([]);
+  
+  // Smart Optimize state
+  const [smartOptimizeEnabled, setSmartOptimizeEnabled] = useState(false);
+  const [relevanceThreshold, setRelevanceThreshold] = useState(5);
+  const [maxChunks, setMaxChunks] = useState(20);
+  const [selectionPreview, setSelectionPreview] = useState('');
   
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -540,6 +550,7 @@ export function CodeAssistant() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const userQuery = input;
     setInput('');
     setIsLoading(true);
 
@@ -549,19 +560,45 @@ export function CodeAssistant() {
         .insert({
           conversation_id: currentConversation,
           role: 'user',
-          content: input
+          content: userQuery
         });
 
       // Build codebase context from selected files and chunks
-      const { parseFileIntoChunks } = await import('@/lib/codeParser');
       const selectedFiles = indexedFiles.filter(f => selectedFileIds.has(f.id));
       
+      // Parse all selected files into chunks
+      const fileChunksMap = new Map();
+      selectedFiles.forEach(file => {
+        const chunks = parseFileIntoChunks(file.file_path, file.file_content);
+        fileChunksMap.set(file.id, chunks);
+      });
+
+      let effectiveChunkSelections = chunkSelections;
+
+      // If Smart Optimize is enabled, auto-select relevant chunks
+      if (smartOptimizeEnabled && selectedFiles.length > 0) {
+        effectiveChunkSelections = getSuggestedSelection(
+          userQuery,
+          selectedFiles,
+          fileChunksMap,
+          chunkSelections
+        );
+        
+        // Generate and show preview
+        const preview = generateSelectionPreview(
+          effectiveChunkSelections,
+          fileChunksMap,
+          selectedFiles
+        );
+        setSelectionPreview(preview);
+      }
+      
       const codebaseContext = selectedFiles.map(file => {
-        const selectedChunkIds = chunkSelections.get(file.id);
+        const selectedChunkIds = effectiveChunkSelections.get(file.id);
         
         if (selectedChunkIds && selectedChunkIds.size > 0) {
           // Use only selected chunks
-          const chunks = parseFileIntoChunks(file.file_path, file.file_content);
+          const chunks = fileChunksMap.get(file.id) || [];
           const selectedChunks = chunks.filter(c => selectedChunkIds.has(c.id));
           
           if (selectedChunks.length === 0) return null;
@@ -657,9 +694,9 @@ export function CodeAssistant() {
     <div className="min-h-screen mesh-gradient">
       <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
       
-      <main className="flex h-[calc(100vh-64px)] w-full">
+      <main className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
         {/* Left Sidebar - File Tree */}
-        <div className="w-[350px] border-r bg-background flex flex-col">
+        <div className="w-[350px] flex-shrink-0 border-r bg-background flex flex-col overflow-hidden">
           <div className="p-4 border-b flex items-center justify-between">
             <h2 className="font-semibold text-sm">Project Files</h2>
             <CodeAssistantSettings
@@ -692,16 +729,16 @@ export function CodeAssistant() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden flex flex-col">
             <Tabs defaultValue="files" className="flex flex-col h-full">
-              <TabsList className="grid w-full grid-cols-4 mx-3 mt-2">
+              <TabsList className="grid w-full grid-cols-4 mx-3 mt-2 flex-shrink-0">
                 <TabsTrigger value="files">Files</TabsTrigger>
                 <TabsTrigger value="chunks">Chunks</TabsTrigger>
                 <TabsTrigger value="related">Related</TabsTrigger>
                 <TabsTrigger value="preview">Preview</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="files" className="flex-1 mt-2 px-3">
+              <TabsContent value="files" className="flex-1 mt-2 px-3 overflow-hidden">
                 <FileTreeView
                   files={indexedFiles}
                   selectedFileIds={selectedFileIds}
@@ -717,7 +754,7 @@ export function CodeAssistant() {
                 />
               </TabsContent>
 
-              <TabsContent value="chunks" className="flex-1 mt-2">
+              <TabsContent value="chunks" className="flex-1 mt-2 overflow-hidden">
                 <FileChunkSelector
                   files={indexedFiles}
                   selectedFileIds={Array.from(selectedFileIds)}
@@ -730,7 +767,7 @@ export function CodeAssistant() {
                 />
               </TabsContent>
 
-              <TabsContent value="related" className="flex-1 mt-2 px-3">
+              <TabsContent value="related" className="flex-1 mt-2 px-3 overflow-hidden">
                 <RelatedFilesPanel
                   files={indexedFiles}
                   selectedFileIds={selectedFileIds}
@@ -738,7 +775,7 @@ export function CodeAssistant() {
                 />
               </TabsContent>
 
-              <TabsContent value="preview" className="flex-1 mt-2 px-3">
+              <TabsContent value="preview" className="flex-1 mt-2 px-3 overflow-hidden">
                 <FilePreviewPanel
                   file={previewFile}
                   isSelected={previewFile ? selectedFileIds.has(previewFile.id) : false}
@@ -753,10 +790,21 @@ export function CodeAssistant() {
             </Tabs>
           </div>
           
-          <ContextSizeIndicator
-            selectedFiles={indexedFiles.filter(f => selectedFileIds.has(f.id))}
-            chunkSelections={chunkSelections}
-          />
+          <div className="p-3 space-y-3 border-t">
+            <SmartOptimizeToggle
+              enabled={smartOptimizeEnabled}
+              onToggle={setSmartOptimizeEnabled}
+              relevanceThreshold={relevanceThreshold}
+              onThresholdChange={setRelevanceThreshold}
+              maxChunks={maxChunks}
+              onMaxChunksChange={setMaxChunks}
+            />
+            
+            <ContextSizeIndicator
+              selectedFiles={indexedFiles.filter(f => selectedFileIds.has(f.id))}
+              chunkSelections={chunkSelections}
+            />
+          </div>
         </div>
 
         {/* Right Side - Conversations + Chat */}
@@ -915,7 +963,12 @@ export function CodeAssistant() {
               </ScrollArea>
 
               {/* Input Area */}
-              <div className="border-t p-4 bg-background">
+              <div className="border-t p-4 bg-background space-y-3">
+                <SelectionPreview 
+                  preview={selectionPreview} 
+                  show={smartOptimizeEnabled && selectionPreview.length > 0}
+                />
+                
                 <div className="max-w-4xl mx-auto flex gap-2">
                   <Textarea
                     value={input}

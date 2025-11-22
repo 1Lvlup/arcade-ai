@@ -163,25 +163,43 @@ Be concise but thorough. Focus on practical, working solutions.`;
     }
 
     const data = await response.json();
+    console.log('📦 Raw API Response:', JSON.stringify(data, null, 2));
     
-    // Parse Responses API format (different from Chat Completions)
+    // Parse Responses API format - try multiple extraction paths
     let assistantMessage = '';
-    if (data.output_text) {
-      // Direct output_text field
-      assistantMessage = data.output_text;
-    } else if (data.output && Array.isArray(data.output)) {
-      // Output array format
-      const textOutput = data.output.find((item: any) => item.type === 'message');
-      assistantMessage = textOutput?.output_text || textOutput?.content || '';
-    } else if (data.choices && data.choices[0]) {
-      // Fallback to Chat Completions format (shouldn't happen but safe)
-      assistantMessage = data.choices[0].message?.content || '';
+    
+    try {
+      // Try different response structures
+      if (typeof data === 'string') {
+        assistantMessage = data;
+      } else if (data.output_text) {
+        assistantMessage = data.output_text;
+      } else if (data.output) {
+        if (Array.isArray(data.output) && data.output.length > 0) {
+          const firstOutput = data.output[0];
+          assistantMessage = firstOutput.output_text || firstOutput.content || firstOutput.text || '';
+        } else if (typeof data.output === 'string') {
+          assistantMessage = data.output;
+        }
+      } else if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+        // Fallback to Chat Completions format
+        const choice = data.choices[0];
+        assistantMessage = choice.message?.content || choice.text || '';
+      } else if (data.message?.content) {
+        assistantMessage = data.message.content;
+      }
+    } catch (parseError) {
+      console.error('❌ Error parsing response:', parseError);
+      console.error('📦 Response data:', JSON.stringify(data, null, 2));
     }
     
-    if (!assistantMessage) {
-      console.error('❌ Unexpected response format:', JSON.stringify(data, null, 2));
-      throw new Error('Failed to parse AI response');
+    if (!assistantMessage || assistantMessage.trim() === '') {
+      console.error('❌ Could not extract message from response');
+      console.error('📦 Response structure:', JSON.stringify(data, null, 2));
+      throw new Error('AI response was empty or in unexpected format');
     }
+    
+    console.log('✅ Successfully extracted message, length:', assistantMessage.length);
 
     return new Response(JSON.stringify({ 
       message: assistantMessage,

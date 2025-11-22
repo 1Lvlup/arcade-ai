@@ -75,7 +75,6 @@ export function CodeAssistant() {
   const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
   const [searchFilter, setSearchFilter] = useState('');
   const [previewFile, setPreviewFile] = useState<IndexedFile | null>(null);
-  const [chunkSelections, setChunkSelections] = useState<Map<string, Set<string>>>(new Map());
   const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
   const [templates, setTemplates] = useState<ConversationTemplate[]>([]);
   

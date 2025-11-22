@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { GameSidebar } from "@/components/GameSidebar";
 import { DetailedFeedbackDialog } from "@/components/DetailedFeedbackDialog";
 import { GameRequestDialog } from "@/components/GameRequestDialog";
@@ -225,6 +226,7 @@ export function ChatBot({
   onUsageUpdate,
 }: ChatBotProps) {
   const { user } = useAuth();
+  const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -1864,6 +1866,7 @@ export function ChatBot({
               return newValue;
             });
           }}
+          isAdmin={isAdmin}
           historyContent={
             conversations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">No saved conversations yet</div>

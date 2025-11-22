@@ -23,11 +23,8 @@ import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeInd
 import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
 import { RelatedFilesPanel } from '@/components/code-assistant/RelatedFilesPanel';
 import { FileChunkSelector } from '@/components/code-assistant/FileChunkSelector';
-import { SmartOptimizeToggle } from '@/components/code-assistant/SmartOptimizeToggle';
-import { SelectionPreview } from '@/components/code-assistant/SelectionPreview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { parseFileIntoChunks } from '@/lib/codeParser';
-import { getSuggestedSelection, generateSelectionPreview } from '@/lib/smartContextAnalyzer';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -82,12 +79,6 @@ export function CodeAssistant() {
   const [chunkSelections, setChunkSelections] = useState<Map<string, Set<string>>>(new Map());
   const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
   const [templates, setTemplates] = useState<ConversationTemplate[]>([]);
-  
-  // Smart Optimize state
-  const [smartOptimizeEnabled, setSmartOptimizeEnabled] = useState(false);
-  const [relevanceThreshold, setRelevanceThreshold] = useState(5);
-  const [maxChunks, setMaxChunks] = useState(20);
-  const [selectionPreview, setSelectionPreview] = useState('');
   
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -566,39 +557,12 @@ export function CodeAssistant() {
       // Build codebase context from selected files and chunks
       const selectedFiles = indexedFiles.filter(f => selectedFileIds.has(f.id));
       
-      // Parse all selected files into chunks
-      const fileChunksMap = new Map();
-      selectedFiles.forEach(file => {
-        const chunks = parseFileIntoChunks(file.file_path, file.file_content);
-        fileChunksMap.set(file.id, chunks);
-      });
-
-      let effectiveChunkSelections = chunkSelections;
-
-      // If Smart Optimize is enabled, auto-select relevant chunks
-      if (smartOptimizeEnabled && selectedFiles.length > 0) {
-        effectiveChunkSelections = getSuggestedSelection(
-          userQuery,
-          selectedFiles,
-          fileChunksMap,
-          chunkSelections
-        );
-        
-        // Generate and show preview
-        const preview = generateSelectionPreview(
-          effectiveChunkSelections,
-          fileChunksMap,
-          selectedFiles
-        );
-        setSelectionPreview(preview);
-      }
-      
       const codebaseContext = selectedFiles.map(file => {
-        const selectedChunkIds = effectiveChunkSelections.get(file.id);
+        const selectedChunkIds = chunkSelections.get(file.id);
         
         if (selectedChunkIds && selectedChunkIds.size > 0) {
           // Use only selected chunks
-          const chunks = fileChunksMap.get(file.id) || [];
+          const chunks = parseFileIntoChunks(file.file_path, file.file_content);
           const selectedChunks = chunks.filter(c => selectedChunkIds.has(c.id));
           
           if (selectedChunks.length === 0) return null;
@@ -790,16 +754,7 @@ export function CodeAssistant() {
             </Tabs>
           </div>
           
-          <div className="p-3 space-y-3 border-t">
-            <SmartOptimizeToggle
-              enabled={smartOptimizeEnabled}
-              onToggle={setSmartOptimizeEnabled}
-              relevanceThreshold={relevanceThreshold}
-              onThresholdChange={setRelevanceThreshold}
-              maxChunks={maxChunks}
-              onMaxChunksChange={setMaxChunks}
-            />
-            
+          <div className="p-3 border-t">
             <ContextSizeIndicator
               selectedFiles={indexedFiles.filter(f => selectedFileIds.has(f.id))}
               chunkSelections={chunkSelections}
@@ -963,12 +918,7 @@ export function CodeAssistant() {
               </ScrollArea>
 
               {/* Input Area */}
-              <div className="border-t p-4 bg-background space-y-3">
-                <SelectionPreview 
-                  preview={selectionPreview} 
-                  show={smartOptimizeEnabled && selectionPreview.length > 0}
-                />
-                
+              <div className="border-t p-4 bg-background">
                 <div className="max-w-4xl mx-auto flex gap-2">
                   <Textarea
                     value={input}

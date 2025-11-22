@@ -344,6 +344,7 @@ export type Database = {
           created_at: string | null
           fec_tenant_id: string
           id: string
+          selected_file_ids: Json | null
           title: string
           updated_at: string | null
           user_id: string
@@ -352,6 +353,7 @@ export type Database = {
           created_at?: string | null
           fec_tenant_id?: string
           id?: string
+          selected_file_ids?: Json | null
           title: string
           updated_at?: string | null
           user_id: string
@@ -360,6 +362,7 @@ export type Database = {
           created_at?: string | null
           fec_tenant_id?: string
           id?: string
+          selected_file_ids?: Json | null
           title?: string
           updated_at?: string | null
           user_id?: string
@@ -1637,6 +1640,10 @@ export type Database = {
           email: string
           facility_name: string | null
           fec_tenant_id: string
+          github_auto_sync_enabled: boolean | null
+          github_branch: string | null
+          github_last_sync: string | null
+          github_repository: string | null
           id: string
           position: string | null
           total_games: number | null
@@ -1651,6 +1658,10 @@ export type Database = {
           email: string
           facility_name?: string | null
           fec_tenant_id: string
+          github_auto_sync_enabled?: boolean | null
+          github_branch?: string | null
+          github_last_sync?: string | null
+          github_repository?: string | null
           id?: string
           position?: string | null
           total_games?: number | null
@@ -1665,6 +1676,10 @@ export type Database = {
           email?: string
           facility_name?: string | null
           fec_tenant_id?: string
+          github_auto_sync_enabled?: boolean | null
+          github_branch?: string | null
+          github_last_sync?: string | null
+          github_repository?: string | null
           id?: string
           position?: string | null
           total_games?: number | null

@@ -26,9 +26,10 @@ interface FileTreeViewProps {
   onToggleFile: (fileId: string) => void;
   onToggleFolder: (folderPath: string, select: boolean) => void;
   searchFilter: string;
+  onPreviewFile?: (file: IndexedFile) => void;
 }
 
-export function FileTreeView({ files, selectedFileIds, onToggleFile, onToggleFolder, searchFilter }: FileTreeViewProps) {
+export function FileTreeView({ files, selectedFileIds, onToggleFile, onToggleFolder, searchFilter, onPreviewFile }: FileTreeViewProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['root']));
 
   // Build tree structure from flat file list
@@ -157,9 +158,8 @@ export function FileTreeView({ files, selectedFileIds, onToggleFile, onToggleFol
       return (
         <div
           key={node.path}
-          className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted/50 rounded-sm cursor-pointer group"
+          className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted/50 rounded-sm group"
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
-          onClick={() => onToggleFile(node.file!.id)}
         >
           <Checkbox
             checked={isSelected}
@@ -167,7 +167,12 @@ export function FileTreeView({ files, selectedFileIds, onToggleFile, onToggleFol
             onClick={(e) => e.stopPropagation()}
           />
           {getLanguageIcon(node.file.language)}
-          <span className="flex-1 text-sm truncate">{node.name}</span>
+          <span 
+            className="flex-1 text-sm truncate cursor-pointer hover:text-primary"
+            onClick={() => onPreviewFile?.(node.file!)}
+          >
+            {node.name}
+          </span>
           <Badge variant="secondary" className="text-xs opacity-0 group-hover:opacity-100 transition-opacity">
             {getFileSize(node.file.file_content)}
           </Badge>

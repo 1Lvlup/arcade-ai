@@ -22,6 +22,8 @@ import { FilePreviewPanel } from '@/components/code-assistant/FilePreviewPanel';
 import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeIndicator';
 import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
 import { RelatedFilesPanel } from '@/components/code-assistant/RelatedFilesPanel';
+import { FileChunkSelector } from '@/components/code-assistant/FileChunkSelector';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -73,6 +75,7 @@ export function CodeAssistant() {
   const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
   const [searchFilter, setSearchFilter] = useState('');
   const [previewFile, setPreviewFile] = useState<IndexedFile | null>(null);
+  const [chunkSelections, setChunkSelections] = useState<Map<string, Set<string>>>(new Map());
   const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
   const [templates, setTemplates] = useState<ConversationTemplate[]>([]);
   
@@ -549,10 +552,38 @@ export function CodeAssistant() {
           content: input
         });
 
+      // Build codebase context from selected files and chunks
+      const { parseFileIntoChunks } = await import('@/lib/codeParser');
       const selectedFiles = indexedFiles.filter(f => selectedFileIds.has(f.id));
-      const codebaseContext = selectedFiles.length > 0 
-        ? `# Project Files:\n\n${selectedFiles.map(f => `## ${f.file_path}\n\n\`\`\`${f.language || 'text'}\n${f.file_content}\n\`\`\``).join('\n\n')}`
-        : '';
+      
+      const codebaseContext = selectedFiles.map(file => {
+        const selectedChunkIds = chunkSelections.get(file.id);
+        
+        if (selectedChunkIds && selectedChunkIds.size > 0) {
+          // Use only selected chunks
+          const chunks = parseFileIntoChunks(file.file_path, file.file_content);
+          const selectedChunks = chunks.filter(c => selectedChunkIds.has(c.id));
+          
+          if (selectedChunks.length === 0) return null;
+          
+          let fileContext = `File: ${file.file_path}\n`;
+          selectedChunks.forEach(chunk => {
+            fileContext += `\n### ${chunk.name} (lines ${chunk.startLine}-${chunk.endLine})\n`;
+            fileContext += `\`\`\`${file.language || 'plaintext'}\n${chunk.content}\n\`\`\`\n`;
+          });
+          
+          // Add summary of excluded chunks
+          const excludedChunks = chunks.filter(c => !selectedChunkIds.has(c.id));
+          if (excludedChunks.length > 0) {
+            fileContext += `\n<!-- EXCLUDED CHUNKS: ${excludedChunks.map(c => c.name).join(', ')} -->\n`;
+          }
+          
+          return fileContext;
+        } else {
+          // Use full file if no chunks selected
+          return `File: ${file.file_path}\n\`\`\`${file.language || 'plaintext'}\n${file.file_content}\n\`\`\``;
+        }
+      }).filter(Boolean).join('\n\n');
 
       const { data, error } = await supabase.functions.invoke('ai-code-assistant', {
         body: {
@@ -661,41 +692,70 @@ export function CodeAssistant() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-hidden relative flex flex-col gap-3 p-3">
-            <FileTreeView
-              files={indexedFiles}
-              selectedFileIds={selectedFileIds}
-              onToggleFile={handleToggleFile}
-              onToggleFolder={handleToggleFolder}
-              searchFilter={searchFilter}
-              onPreviewFile={setPreviewFile}
-              onSelectAll={handleSelectAll}
-              onDeselectAll={handleDeselectAll}
-              onSelectByType={handleSelectByType}
-              recentlyUsedFiles={recentlyUsedFiles}
-              onSelectRecentFiles={handleSelectRecentFiles}
-            />
-            
-            <RelatedFilesPanel
-              files={indexedFiles}
-              selectedFileIds={selectedFileIds}
-              onToggleFile={handleToggleFile}
-            />
-            
-            <FilePreviewPanel
-              file={previewFile}
-              isSelected={previewFile ? selectedFileIds.has(previewFile.id) : false}
-              onClose={() => setPreviewFile(null)}
-              onToggleSelection={() => {
-                if (previewFile) {
-                  handleToggleFile(previewFile.id);
-                }
-              }}
-            />
+          <div className="flex-1 overflow-hidden">
+            <Tabs defaultValue="files" className="flex flex-col h-full">
+              <TabsList className="grid w-full grid-cols-4 mx-3 mt-2">
+                <TabsTrigger value="files">Files</TabsTrigger>
+                <TabsTrigger value="chunks">Chunks</TabsTrigger>
+                <TabsTrigger value="related">Related</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="files" className="flex-1 mt-2 px-3">
+                <FileTreeView
+                  files={indexedFiles}
+                  selectedFileIds={selectedFileIds}
+                  onToggleFile={handleToggleFile}
+                  onToggleFolder={handleToggleFolder}
+                  searchFilter={searchFilter}
+                  onPreviewFile={setPreviewFile}
+                  onSelectAll={handleSelectAll}
+                  onDeselectAll={handleDeselectAll}
+                  onSelectByType={handleSelectByType}
+                  recentlyUsedFiles={recentlyUsedFiles}
+                  onSelectRecentFiles={handleSelectRecentFiles}
+                />
+              </TabsContent>
+
+              <TabsContent value="chunks" className="flex-1 mt-2">
+                <FileChunkSelector
+                  files={indexedFiles}
+                  selectedFileIds={Array.from(selectedFileIds)}
+                  chunkSelections={chunkSelections}
+                  onChunkSelectionChange={(fileId, chunkIds) => {
+                    const newSelections = new Map(chunkSelections);
+                    newSelections.set(fileId, chunkIds);
+                    setChunkSelections(newSelections);
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="related" className="flex-1 mt-2 px-3">
+                <RelatedFilesPanel
+                  files={indexedFiles}
+                  selectedFileIds={selectedFileIds}
+                  onToggleFile={handleToggleFile}
+                />
+              </TabsContent>
+
+              <TabsContent value="preview" className="flex-1 mt-2 px-3">
+                <FilePreviewPanel
+                  file={previewFile}
+                  isSelected={previewFile ? selectedFileIds.has(previewFile.id) : false}
+                  onClose={() => setPreviewFile(null)}
+                  onToggleSelection={() => {
+                    if (previewFile) {
+                      handleToggleFile(previewFile.id);
+                    }
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
           
           <ContextSizeIndicator
             selectedFiles={indexedFiles.filter(f => selectedFileIds.has(f.id))}
+            chunkSelections={chunkSelections}
           />
         </div>
 

@@ -13,15 +13,39 @@ interface IndexedFile {
 
 interface ContextSizeIndicatorProps {
   selectedFiles: IndexedFile[];
+  chunkSelections?: Map<string, Set<string>>; // fileId -> Set of chunkIds
   maxSize?: number; // in KB
 }
 
-export function ContextSizeIndicator({ selectedFiles, maxSize = 200 }: ContextSizeIndicatorProps) {
+export function ContextSizeIndicator({ selectedFiles, chunkSelections, maxSize = 200 }: ContextSizeIndicatorProps) {
   const calculateTotalSize = (): number => {
     let totalBytes = 0;
-    selectedFiles.forEach(file => {
-      totalBytes += new Blob([file.file_content]).size;
-    });
+    
+    if (chunkSelections && chunkSelections.size > 0) {
+      // Calculate size based on selected chunks
+      const { parseFileIntoChunks } = require('@/lib/codeParser');
+      
+      selectedFiles.forEach(file => {
+        const selectedChunkIds = chunkSelections.get(file.id);
+        if (selectedChunkIds && selectedChunkIds.size > 0) {
+          const chunks = parseFileIntoChunks(file.file_path, file.file_content);
+          chunks.forEach(chunk => {
+            if (selectedChunkIds.has(chunk.id)) {
+              totalBytes += chunk.size;
+            }
+          });
+        } else {
+          // No chunks selected for this file, include full file
+          totalBytes += new Blob([file.file_content]).size;
+        }
+      });
+    } else {
+      // No chunk selection active, use full files
+      selectedFiles.forEach(file => {
+        totalBytes += new Blob([file.file_content]).size;
+      });
+    }
+    
     return totalBytes / 1024; // Convert to KB
   };
 

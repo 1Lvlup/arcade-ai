@@ -21,6 +21,7 @@ import { CodeAssistantSettings } from '@/components/code-assistant/CodeAssistant
 import { FilePreviewPanel } from '@/components/code-assistant/FilePreviewPanel';
 import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeIndicator';
 import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
+import { RelatedFilesPanel } from '@/components/code-assistant/RelatedFilesPanel';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -660,7 +661,7 @@ export function CodeAssistant() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-hidden relative flex flex-col gap-3 p-3">
             <FileTreeView
               files={indexedFiles}
               selectedFileIds={selectedFileIds}
@@ -673,6 +674,12 @@ export function CodeAssistant() {
               onSelectByType={handleSelectByType}
               recentlyUsedFiles={recentlyUsedFiles}
               onSelectRecentFiles={handleSelectRecentFiles}
+            />
+            
+            <RelatedFilesPanel
+              files={indexedFiles}
+              selectedFileIds={selectedFileIds}
+              onToggleFile={handleToggleFile}
             />
             
             <FilePreviewPanel

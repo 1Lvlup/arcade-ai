@@ -184,11 +184,26 @@ Be concise but thorough. Focus on practical, working solutions.`;
           // Look specifically for message-type output (not reasoning)
           const messageOutput = data.output.find((item: any) => item.type === 'message');
           if (messageOutput) {
-            assistantMessage = messageOutput.output_text || messageOutput.content || messageOutput.text || '';
+            // Extract text from content array if present
+            if (Array.isArray(messageOutput.content) && messageOutput.content.length > 0) {
+              const textContent = messageOutput.content.find((c: any) => c.type === 'output_text');
+              assistantMessage = textContent?.text || '';
+            } else if (typeof messageOutput.content === 'string') {
+              assistantMessage = messageOutput.content;
+            } else {
+              assistantMessage = messageOutput.output_text || messageOutput.text || '';
+            }
           } else {
             // Fallback: try first output if no message type found
             const firstOutput = data.output[0];
-            assistantMessage = firstOutput.output_text || firstOutput.content || firstOutput.text || '';
+            if (Array.isArray(firstOutput.content) && firstOutput.content.length > 0) {
+              const textContent = firstOutput.content.find((c: any) => c.type === 'output_text');
+              assistantMessage = textContent?.text || '';
+            } else if (typeof firstOutput.content === 'string') {
+              assistantMessage = firstOutput.content;
+            } else {
+              assistantMessage = firstOutput.output_text || firstOutput.text || '';
+            }
           }
         } else if (typeof data.output === 'string') {
           assistantMessage = data.output;

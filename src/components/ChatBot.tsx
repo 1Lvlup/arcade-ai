@@ -321,6 +321,28 @@ export function ChatBot({
     }
   }, [user]);
 
+  // Show toast when streaming mode changes (after render)
+  useEffect(() => {
+    // Skip on initial mount
+    if (!isInitialized) return;
+    
+    toast({
+      title: useStreaming ? "Streaming enabled" : "Streaming disabled",
+      description: useStreaming ? "Real-time token-by-token responses" : "Full response at once",
+    });
+  }, [useStreaming, isInitialized]);
+
+  // Show toast when debug mode changes (after render)
+  useEffect(() => {
+    // Skip on initial mount
+    if (!isInitialized) return;
+    
+    toast({
+      title: debugMode ? "Debug mode enabled" : "Debug mode disabled",
+      description: debugMode ? "Showing RAG debug panels" : "Debug panels hidden",
+    });
+  }, [debugMode, isInitialized]);
+
   // Detect manual scrolling
   // Set up presence tracking for the current conversation
   useEffect(() => {
@@ -1830,10 +1852,6 @@ export function ChatBot({
             setUseStreaming(prev => {
               const newValue = !prev;
               localStorage.setItem('chatStreamingMode', JSON.stringify(newValue));
-              toast({
-                title: newValue ? "Streaming enabled" : "Streaming disabled",
-                description: newValue ? "Real-time token-by-token responses" : "Full response at once",
-              });
               return newValue;
             });
           }}
@@ -1843,10 +1861,6 @@ export function ChatBot({
             setDebugMode(prev => {
               const newValue = !prev;
               localStorage.setItem('chatDebugMode', JSON.stringify(newValue));
-              toast({
-                title: newValue ? "Debug mode enabled" : "Debug mode disabled",
-                description: newValue ? "Showing RAG debug panels" : "Debug panels hidden",
-              });
               return newValue;
             });
           }}

@@ -1,24 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { SharedHeader } from '@/components/SharedHeader';
-import { Send, Code, Copy, Bot, User, Sparkles, FileCode, Plus, Trash2, History, MessageSquare, Upload, X, Folder, FileText, Database, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
+import { Send, Code, Copy, Bot, User, FileCode, Plus, Trash2, MessageSquare, X, Search, Loader2, CheckSquare, Square } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
-import { Label } from '@/components/ui/label';
-import { CodebaseIndexer } from '@/components/CodebaseIndexer';
 import { CodeSuggestion } from '@/components/CodeSuggestion';
+import { FileTreeView } from '@/components/code-assistant/FileTreeView';
+import { SyncStatusBar } from '@/components/code-assistant/SyncStatusBar';
+import { CodeAssistantSettings } from '@/components/code-assistant/CodeAssistantSettings';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -33,18 +32,20 @@ interface ParsedCodeBlock {
   action: 'CREATE' | 'EDIT';
 }
 
-interface CodeFile {
-  id: string;
-  file_path: string;
-  file_content: string;
-  language?: string;
-}
-
 interface Conversation {
   id: string;
   title: string;
   created_at: string;
   updated_at: string;
+  selected_file_ids?: any;
+}
+
+interface IndexedFile {
+  id: string;
+  file_path: string;
+  file_content: string;
+  language: string | null;
+  last_modified: string;
 }
 
 export function CodeAssistant() {
@@ -52,21 +53,30 @@ export function CodeAssistant() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [codeFiles, setCodeFiles] = useState<CodeFile[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showFileDialog, setShowFileDialog] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(null);
-  const [newFilePath, setNewFilePath] = useState('');
-  const [newFileContent, setNewFileContent] = useState('');
-  const [isIndexingCodebase, setIsIndexingCodebase] = useState(false);
+  
+  // GitHub & File Management
+  const [repository, setRepository] = useState('');
+  const [branch, setBranch] = useState('main');
+  const [autoSyncInterval, setAutoSyncInterval] = useState(300000); // 5 mins default
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [indexedFiles, setIndexedFiles] = useState<IndexedFile[]>([]);
+  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
+  const [searchFilter, setSearchFilter] = useState('');
+  
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    loadUserSettings();
     loadConversations();
+    loadIndexedFiles();
   }, []);
 
   useEffect(() => {
@@ -81,6 +91,37 @@ export function CodeAssistant() {
     }
   }, [messages]);
 
+  // Auto-sync effect
+  useEffect(() => {
+    if (autoSyncInterval > 0 && repository) {
+      syncGitHub();
+      syncIntervalRef.current = setInterval(() => {
+        syncGitHub();
+      }, autoSyncInterval);
+
+      return () => {
+        if (syncIntervalRef.current) {
+          clearInterval(syncIntervalRef.current);
+        }
+      };
+    }
+  }, [autoSyncInterval, repository]);
+
+  const loadUserSettings = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('github_repository, github_branch')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (data) {
+      setRepository(data.github_repository || '');
+      setBranch(data.github_branch || 'main');
+    }
+  };
+
   const loadConversations = async () => {
     const { data } = await supabase
       .from('code_assistant_conversations')
@@ -88,6 +129,17 @@ export function CodeAssistant() {
       .order('updated_at', { ascending: false });
     
     if (data) setConversations(data);
+  };
+
+  const loadIndexedFiles = async () => {
+    const { data, error } = await supabase
+      .from('indexed_codebase')
+      .select('*')
+      .order('file_path');
+    
+    if (!error && data) {
+      setIndexedFiles(data);
+    }
   };
 
   const loadConversationData = async () => {
@@ -107,12 +159,97 @@ export function CodeAssistant() {
       })));
     }
 
-    const { data: filesData } = await supabase
-      .from('code_assistant_files')
-      .select('*')
-      .eq('conversation_id', currentConversation);
+    // Load selected files for this conversation
+    const { data: convData } = await supabase
+      .from('code_assistant_conversations')
+      .select('selected_file_ids')
+      .eq('id', currentConversation)
+      .single();
 
-    if (filesData) setCodeFiles(filesData);
+    if (convData?.selected_file_ids && Array.isArray(convData.selected_file_ids)) {
+      setSelectedFileIds(new Set(convData.selected_file_ids as string[]));
+    } else {
+      setSelectedFileIds(new Set());
+    }
+  };
+
+  const syncGitHub = async () => {
+    if (!repository) return;
+    
+    setIsSyncing(true);
+    setSyncError(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-github-repo', {
+        body: { repository },
+      });
+      
+      if (error) throw error;
+      
+      if (!data?.files || data.files.length === 0) {
+        throw new Error('No files found in repository');
+      }
+
+      // Clear existing indexed files and insert new ones
+      await supabase.from('indexed_codebase').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+      const filesToInsert = data.files.map((file: any) => ({
+        file_path: file.path,
+        file_content: file.content,
+        language: file.language,
+        last_modified: file.last_modified,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('indexed_codebase')
+        .insert(filesToInsert);
+
+      if (insertError) throw insertError;
+
+      await loadIndexedFiles();
+      setLastSync(new Date());
+      
+      toast({
+        title: 'GitHub Synced',
+        description: `Indexed ${data.files.length} files from ${repository}`,
+      });
+    } catch (error: any) {
+      console.error('GitHub sync error:', error);
+      setSyncError(error.message);
+      toast({
+        title: 'Sync Failed',
+        description: error.message || 'Failed to sync with GitHub',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const saveSettings = async (settings: { repository: string; branch: string; autoSyncInterval: number }) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        github_repository: settings.repository,
+        github_branch: settings.branch,
+      })
+      .eq('user_id', user.id);
+    
+    if (!error) {
+      setRepository(settings.repository);
+      setBranch(settings.branch);
+      setAutoSyncInterval(settings.autoSyncInterval);
+      
+      toast({ title: 'Settings Saved', description: 'Your settings have been updated' });
+      
+      if (settings.repository !== repository) {
+        syncGitHub();
+      }
+    } else {
+      toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' });
+    }
   };
 
   const createNewConversation = async () => {
@@ -134,7 +271,7 @@ export function CodeAssistant() {
 
     setCurrentConversation(data.id);
     setMessages([]);
-    setCodeFiles([]);
+    setSelectedFileIds(new Set());
     loadConversations();
   };
 
@@ -148,118 +285,50 @@ export function CodeAssistant() {
     if (currentConversation === id) {
       setCurrentConversation(null);
       setMessages([]);
-      setCodeFiles([]);
+      setSelectedFileIds(new Set());
     }
   };
 
-  const addCodeFile = async () => {
-    if (!currentConversation || !newFilePath.trim() || !newFileContent.trim()) return;
-
-    const language = detectLanguage(newFilePath);
-    const { data, error } = await supabase
-      .from('code_assistant_files')
-      .insert({
-        conversation_id: currentConversation,
-        file_path: newFilePath,
-        file_content: newFileContent,
-        language
-      })
-      .select()
-      .single();
-
-    if (!error && data) {
-      setCodeFiles([...codeFiles, { ...data, id: data.id }]);
-      setNewFilePath('');
-      setNewFileContent('');
-      setShowFileDialog(false);
-      toast({ title: 'Success', description: `Added ${newFilePath} to context` });
+  const handleToggleFile = (fileId: string) => {
+    const newSelection = new Set(selectedFileIds);
+    if (newSelection.has(fileId)) {
+      newSelection.delete(fileId);
     } else {
-      toast({ title: 'Error', description: 'Failed to add file', variant: 'destructive' });
+      newSelection.add(fileId);
+    }
+    setSelectedFileIds(newSelection);
+    
+    // Save selection to conversation
+    if (currentConversation) {
+      supabase
+        .from('code_assistant_conversations')
+        .update({ selected_file_ids: Array.from(newSelection) })
+        .eq('id', currentConversation)
+        .then();
     }
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || !currentConversation) return;
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const content = await file.text();
-      const language = detectLanguage(file.name);
-
-      const { data, error } = await supabase
-        .from('code_assistant_files')
-        .insert({
-          conversation_id: currentConversation,
-          file_path: file.name,
-          file_content: content,
-          language
-        })
-        .select()
-        .single();
-
-      if (!error && data) {
-        setCodeFiles(prev => [...prev, { ...data, id: data.id }]);
-      }
-    }
+  const handleToggleFolder = (folderPath: string, select: boolean) => {
+    const folderFiles = indexedFiles.filter(f => f.file_path.startsWith(folderPath));
+    const newSelection = new Set(selectedFileIds);
     
-    toast({ title: 'Success', description: `Added ${files.length} file(s) to context` });
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const indexCodebase = async () => {
-    if (!currentConversation) return;
+    folderFiles.forEach(file => {
+      if (select) {
+        newSelection.add(file.id);
+      } else {
+        newSelection.delete(file.id);
+      }
+    });
     
-    setIsIndexingCodebase(true);
-    try {
-      // Fetch all indexed codebase files
-      const { data: indexedFiles, error } = await supabase
-        .from('indexed_codebase')
-        .select('*');
-
-      if (error) throw error;
-
-      if (!indexedFiles || indexedFiles.length === 0) {
-        toast({ 
-          title: 'No files found', 
-          description: 'No indexed files available. Upload files to get started.',
-          variant: 'destructive' 
-        });
-        return;
-      }
-
-      // Add all indexed files to the conversation context
-      const filesToAdd = indexedFiles.map(file => ({
-        conversation_id: currentConversation,
-        file_path: file.file_path,
-        file_content: file.file_content,
-        language: file.language || detectLanguage(file.file_path)
-      }));
-
-      const { data: addedFiles, error: insertError } = await supabase
-        .from('code_assistant_files')
-        .insert(filesToAdd)
-        .select();
-
-      if (insertError) throw insertError;
-
-      if (addedFiles) {
-        setCodeFiles(prev => [...prev, ...addedFiles]);
-      }
-
-      toast({ 
-        title: 'Success', 
-        description: `Indexed ${indexedFiles.length} files from your codebase` 
-      });
-    } catch (error) {
-      console.error('Error indexing codebase:', error);
-      toast({ 
-        title: 'Error', 
-        description: 'Failed to index codebase', 
-        variant: 'destructive' 
-      });
-    } finally {
-      setIsIndexingCodebase(false);
+    setSelectedFileIds(newSelection);
+    
+    // Save selection to conversation
+    if (currentConversation) {
+      supabase
+        .from('code_assistant_conversations')
+        .update({ selected_file_ids: Array.from(newSelection) })
+        .eq('id', currentConversation)
+        .then();
     }
   };
 
@@ -279,7 +348,7 @@ export function CodeAssistant() {
         feedback_text: feedbackText,
         expected_answer: expectedAnswer,
         actual_answer: message.content,
-        context: { files: codeFiles.map(f => f.file_path) }
+        context: { selectedFiles: Array.from(selectedFileIds) }
       });
 
     if (!error) {
@@ -289,25 +358,6 @@ export function CodeAssistant() {
     } else {
       toast({ title: 'Error', description: 'Failed to submit feedback', variant: 'destructive' });
     }
-  };
-
-  const removeCodeFile = async (id: string) => {
-    await supabase
-      .from('code_assistant_files')
-      .delete()
-      .eq('id', id);
-    
-    setCodeFiles(codeFiles.filter(f => f.id !== id));
-  };
-
-  const detectLanguage = (path: string): string => {
-    const ext = path.split('.').pop()?.toLowerCase();
-    const langMap: Record<string, string> = {
-      'ts': 'typescript', 'tsx': 'typescript', 'js': 'javascript', 
-      'jsx': 'javascript', 'py': 'python', 'css': 'css', 'html': 'html',
-      'json': 'json', 'md': 'markdown', 'sql': 'sql'
-    };
-    return langMap[ext || ''] || 'text';
   };
 
   const sendMessage = async () => {
@@ -332,8 +382,9 @@ export function CodeAssistant() {
           content: input
         });
 
-      const codebaseContext = codeFiles.length > 0 
-        ? `# Project Files:\n\n${codeFiles.map(f => `## ${f.file_path}\n\n\`\`\`${f.language}\n${f.file_content}\n\`\`\``).join('\n\n')}`
+      const selectedFiles = indexedFiles.filter(f => selectedFileIds.has(f.id));
+      const codebaseContext = selectedFiles.length > 0 
+        ? `# Project Files:\n\n${selectedFiles.map(f => `## ${f.file_path}\n\n\`\`\`${f.language || 'text'}\n${f.file_content}\n\`\`\``).join('\n\n')}`
         : '';
 
       const { data, error } = await supabase.functions.invoke('ai-code-assistant', {
@@ -376,7 +427,6 @@ export function CodeAssistant() {
         variant: 'destructive',
       });
       
-      // Remove the user message from UI if the API call failed
       setMessages(prev => prev.filter(m => m.timestamp !== userMessage.timestamp));
     } finally {
       setIsLoading(false);
@@ -390,9 +440,6 @@ export function CodeAssistant() {
 
   const parseCodeBlocks = (content: string): ParsedCodeBlock[] => {
     const blocks: ParsedCodeBlock[] = [];
-    
-    // Regex to match the format: 📄 **File: `path/to/file.tsx`** [CREATE] or [EDIT]
-    // followed by a code block
     const pattern = /📄\s*\*\*File:\s*`([^`]+)`\*\*\s*\[(CREATE|EDIT)\]\s*\n```(\w+)\n([\s\S]*?)```/g;
     
     let match;
@@ -408,336 +455,219 @@ export function CodeAssistant() {
     return blocks;
   };
 
-  const getExistingFileContent = (filePath: string): string | undefined => {
-    const file = codeFiles.find(f => f.file_path === filePath);
-    return file?.file_content;
-  };
-
-  if (!currentConversation) {
-    return (
-      <div className="min-h-screen mesh-gradient">
-        <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
-        
-        <main className="container mx-auto px-6 py-8">
-          <Card className="max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary" />
-                Welcome to AI Code Assistant
-              </CardTitle>
-              <CardDescription>
-                Your personal AI coding partner with full codebase understanding
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold">Features:</h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>✅ Upload multiple files with drag & drop</li>
-                  <li>✅ Index entire codebase for instant context</li>
-                  <li>✅ Persistent conversations with history</li>
-                  <li>✅ Train the model with feedback</li>
-                  <li>✅ Generate production-ready code</li>
-                </ul>
-              </div>
-
-              <Button onClick={createNewConversation} className="w-full" size="lg">
-                <Plus className="h-5 w-5 mr-2" />
-                Start New Conversation
-              </Button>
-
-              {conversations.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold">Recent Conversations:</h3>
-                  <ScrollArea className="h-[300px]">
-                    {conversations.map(conv => (
-                      <div key={conv.id} className="flex items-center justify-between p-3 border rounded-lg mb-2 hover:bg-muted/50 cursor-pointer" onClick={() => setCurrentConversation(conv.id)}>
-                        <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4" />
-                          <div>
-                            <div className="font-medium">{conv.title}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(conv.updated_at).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </ScrollArea>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen mesh-gradient">
       <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
       
-      <main className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6">
-          <Card className="xl:col-span-1 h-full">
-            <Tabs defaultValue="files">
-              <TabsList className="w-full">
-                <TabsTrigger value="files" className="flex-1">
-                  <Folder className="h-4 w-4 mr-1" />
-                  Files
-                </TabsTrigger>
-                <TabsTrigger value="history" className="flex-1">
-                  <History className="h-4 w-4 mr-1" />
-                  History
-                </TabsTrigger>
-              </TabsList>
+      <main className="flex h-[calc(100vh-64px)] w-full">
+        {/* Left Sidebar - File Tree */}
+        <div className="w-[350px] border-r bg-background flex flex-col">
+          <div className="p-4 border-b flex items-center justify-between">
+            <h2 className="font-semibold text-sm">Project Files</h2>
+            <CodeAssistantSettings
+              repository={repository}
+              branch={branch}
+              autoSyncInterval={autoSyncInterval}
+              onSave={saveSettings}
+            />
+          </div>
+          
+          <SyncStatusBar
+            repository={repository}
+            branch={branch}
+            lastSync={lastSync}
+            isSyncing={isSyncing}
+            syncError={syncError}
+            fileCount={indexedFiles.length}
+            onSync={syncGitHub}
+          />
+          
+          <div className="p-4 border-b">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search files..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="pl-8 h-9"
+              />
+            </div>
+          </div>
+          
+          <FileTreeView
+            files={indexedFiles}
+            selectedFileIds={selectedFileIds}
+            onToggleFile={handleToggleFile}
+            onToggleFolder={handleToggleFolder}
+            searchFilter={searchFilter}
+          />
+          
+          <div className="p-4 border-t mt-auto">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{selectedFileIds.size} selected</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setSelectedFileIds(new Set())}
+                disabled={selectedFileIds.size === 0}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
 
-              <TabsContent value="files" className="p-4 space-y-4">
-                <CodebaseIndexer onIndexComplete={loadConversationData} />
+        {/* Right Side - Conversations + Chat */}
+        <div className="flex-1 flex flex-col">
+          {!currentConversation ? (
+            <div className="flex items-center justify-center h-full">
+              <Card className="max-w-lg mx-auto">
+                <CardContent className="pt-6 space-y-6">
+                  <div className="text-center space-y-2">
+                    <h3 className="text-xl font-semibold">Welcome to AI Code Assistant</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your AI pair programmer with full project understanding
+                    </p>
+                  </div>
 
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Or manually add specific files:
-                  </p>
-                </div>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  accept=".tsx,.ts,.jsx,.js,.py,.java,.cpp,.c,.h,.css,.html,.json,.md,.txt,.sql,.toml,.yml,.yaml"
-                />
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex-1" 
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Files
+                  <Button onClick={createNewConversation} className="w-full" size="lg">
+                    <Plus className="h-5 w-5 mr-2" />
+                    Start New Conversation
                   </Button>
 
-                  <Button 
-                    onClick={() => setShowFileDialog(true)}
-                    className="flex-1"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Paste Code
-                  </Button>
-                </div>
-
-                <ScrollArea className="h-[calc(100vh-500px)] min-h-[300px] max-h-[450px]">
-                  <div className="space-y-2">
-                    {codeFiles.map(file => (
-                      <div key={file.id} className="flex items-center justify-between p-2 border rounded-lg bg-muted/50 group">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <FileText className="h-4 w-4 flex-shrink-0" />
-                          <span className="text-sm truncate" title={file.file_path}>
-                            {file.file_path}
-                          </span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeCodeFile(file.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    {codeFiles.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        No files added yet
-                      </p>
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="history" className="p-4">
-                <ScrollArea className="h-[calc(100vh-400px)] min-h-[300px] max-h-[500px]">
-                  <div className="space-y-2">
-                    {conversations.map(conv => (
-                      <div
-                        key={conv.id}
-                        className={`p-3 border rounded-lg cursor-pointer hover:bg-muted/50 ${currentConversation === conv.id ? 'bg-primary/10 border-primary' : ''}`}
-                        onClick={() => setCurrentConversation(conv.id)}
-                      >
-                        <div className="font-medium text-sm truncate">{conv.title}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(conv.updated_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-                <Button onClick={createNewConversation} className="w-full mt-4" variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Chat
-                </Button>
-              </TabsContent>
-            </Tabs>
-          </Card>
-
-          <Card className="xl:col-span-3 h-full flex flex-col">
-            <CardHeader className="border-b bg-gradient-to-r from-primary/10 to-purple-500/10 flex-shrink-0">
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary" />
-                {conversations.find(c => c.id === currentConversation)?.title}
-              </CardTitle>
-              <CardDescription>
-                {codeFiles.length} file{codeFiles.length !== 1 ? 's' : ''} in context
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col min-h-0">
-              <ScrollArea className="h-[calc(100vh-300px)] min-h-[400px] max-h-[700px] p-6">
-                <div className="space-y-6">
-                  {messages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {message.role === 'assistant' && (
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Bot className="h-5 w-5 text-primary" />
-                        </div>
-                      )}
-                      
-                      <div className={`flex-1 max-w-[80%] ${message.role === 'user' ? 'order-first' : ''}`}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant={message.role === 'user' ? 'default' : 'secondary'}>
-                            {message.role === 'user' ? 'You' : 'AI'}
-                          </Badge>
-                        </div>
-                        
-                        <div className={`rounded-lg p-4 ${message.role === 'user' ? 'bg-primary text-primary-foreground ml-auto' : 'bg-muted'}`}>
-                          <div className="space-y-2">
-                            <div className="prose prose-sm max-w-none dark:prose-invert">
-                              <ReactMarkdown
-                                components={{
-                                  code({ node, className, children, ...props }) {
-                                    const match = /language-(\w+)/.exec(className || '');
-                                    const isInline = !match;
-                                    
-                                    return !isInline ? (
-                                      <div className="relative group">
-                                        <SyntaxHighlighter
-                                          style={vscDarkPlus as any}
-                                          language={match[1]}
-                                          PreTag="div"
-                                        >
-                                          {String(children).replace(/\n$/, '')}
-                                        </SyntaxHighlighter>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
-                                          onClick={() => copyToClipboard(String(children))}
-                                        >
-                                          <Code className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <code className={className} {...props}>
-                                        {children}
-                                      </code>
-                                    );
-                                  },
-                                }}
-                              >
-                                {message.content}
-                              </ReactMarkdown>
-                            </div>
-                            {message.role === 'assistant' && (
-                              <div className="flex gap-2 pt-2 border-t border-border/50">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setFeedbackMessageId(message.timestamp);
-                                    setShowFeedbackDialog(true);
-                                  }}
-                                >
-                                  <ThumbsUp className="h-3 w-3 mr-1" />
-                                  Good
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setFeedbackMessageId(message.timestamp);
-                                    setShowFeedbackDialog(true);
-                                  }}
-                                >
-                                  <ThumbsDown className="h-3 w-3 mr-1" />
-                                  Needs Work
-                                </Button>
+                  {conversations.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Recent Conversations</h4>
+                      <ScrollArea className="h-[300px]">
+                        {conversations.map(conv => (
+                          <div 
+                            key={conv.id} 
+                            className="flex items-center justify-between p-3 border rounded-lg mb-2 hover:bg-muted/50 cursor-pointer" 
+                            onClick={() => setCurrentConversation(conv.id)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium text-sm">{conv.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(conv.updated_at).toLocaleString()}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {message.role === 'assistant' && (() => {
-                          const codeBlocks = parseCodeBlocks(message.content);
-                          return codeBlocks.length > 0 && (
-                            <div className="mt-4 space-y-3">
-                              {codeBlocks.map((block, blockIndex) => (
-                                <CodeSuggestion
-                                  key={blockIndex}
-                                  filePath={block.filePath}
-                                  code={block.code}
-                                  language={block.language}
-                                  action={block.action}
-                                  existingContent={getExistingFileContent(block.filePath)}
-                                />
-                              ))}
                             </div>
-                          );
-                        })()}
-                      </div>
-                      
-                      {message.role === 'user' && (
-                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                          <User className="h-5 w-5 text-primary-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {isLoading && (
-                    <div className="flex gap-4 justify-start">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Bot className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 max-w-[80%]">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="secondary">AI</Badge>
-                        </div>
-                        <div className="rounded-lg p-4 bg-muted">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="text-sm">AI is thinking...</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                        </div>
-                      </div>
+                        ))}
+                      </ScrollArea>
                     </div>
                   )}
-                  
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <>
+              {/* Chat Header */}
+              <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={createNewConversation}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    New
+                  </Button>
+                  <span className="text-sm font-medium">
+                    {conversations.find(c => c.id === currentConversation)?.title}
+                  </span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {selectedFileIds.size} {selectedFileIds.size === 1 ? 'file' : 'files'} loaded
+                </Badge>
+              </div>
+
+              {/* Messages Area */}
+              <ScrollArea className="flex-1 p-6">
+                <div className="max-w-4xl mx-auto space-y-6">
+                  {messages.map((message, idx) => (
+                    <div key={idx} className="flex gap-4">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        message.role === 'user' ? 'bg-primary' : 'bg-muted'
+                      }`}>
+                        {message.role === 'user' ? (
+                          <User className="h-4 w-4 text-primary-foreground" />
+                        ) : (
+                          <Bot className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                          <ReactMarkdown
+                            components={{
+                              code({ className, children, ...props }: any) {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const codeString = String(children).replace(/\n$/, '');
+                                const inline = !className;
+                                
+                                return !inline && match ? (
+                                  <div className="relative group">
+                                    <SyntaxHighlighter
+                                      language={match[1]}
+                                      PreTag="div"
+                                      {...props}
+                                    >
+                                      {codeString}
+                                    </SyntaxHighlighter>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={() => copyToClipboard(codeString)}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                );
+                              },
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                        
+                        {message.role === 'assistant' && parseCodeBlocks(message.content).length > 0 && (
+                          <div className="space-y-2">
+                            {parseCodeBlocks(message.content).map((block, blockIdx) => (
+                              <CodeSuggestion
+                                key={blockIdx}
+                                filePath={block.filePath}
+                                code={block.code}
+                                language={block.language}
+                                action={block.action}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                   <div ref={scrollRef} />
                 </div>
               </ScrollArea>
 
-              <div className="border-t p-4">
-                <div className="flex gap-2">
+              {/* Input Area */}
+              <div className="border-t p-4 bg-background">
+                <div className="max-w-4xl mx-auto flex gap-2">
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -748,60 +678,27 @@ export function CodeAssistant() {
                       }
                     }}
                     placeholder="Ask about your code..."
-                    className="min-h-[80px]"
+                    className="min-h-[80px] resize-none"
                     disabled={isLoading}
                   />
-                  <Button onClick={sendMessage} disabled={isLoading || !input.trim()} size="lg">
+                  <Button
+                    onClick={sendMessage}
+                    disabled={isLoading || !input.trim()}
+                    size="icon"
+                    className="h-[80px] w-[80px] flex-shrink-0"
+                  >
                     {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <Loader2 className="h-6 w-6 animate-spin" />
                     ) : (
-                      <Send className="h-5 w-5" />
+                      <Send className="h-6 w-6" />
                     )}
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </>
+          )}
         </div>
       </main>
-
-      <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Add Code File</DialogTitle>
-            <DialogDescription>
-              Paste code to add to the conversation context
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>File Path</Label>
-              <Input
-                value={newFilePath}
-                onChange={(e) => setNewFilePath(e.target.value)}
-                placeholder="e.g., src/components/MyComponent.tsx"
-              />
-            </div>
-            <div>
-              <Label>Code Content</Label>
-              <Textarea
-                value={newFileContent}
-                onChange={(e) => setNewFileContent(e.target.value)}
-                placeholder="Paste your code here..."
-                className="min-h-[300px] font-mono text-sm"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowFileDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={addCodeFile}>
-              Add File
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <FeedbackDialog
         open={showFeedbackDialog}
@@ -811,4 +708,3 @@ export function CodeAssistant() {
     </div>
   );
 }
-

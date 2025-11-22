@@ -20,6 +20,7 @@ import { SyncStatusBar } from '@/components/code-assistant/SyncStatusBar';
 import { CodeAssistantSettings } from '@/components/code-assistant/CodeAssistantSettings';
 import { FilePreviewPanel } from '@/components/code-assistant/FilePreviewPanel';
 import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeIndicator';
+import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -72,6 +73,7 @@ export function CodeAssistant() {
   const [searchFilter, setSearchFilter] = useState('');
   const [previewFile, setPreviewFile] = useState<IndexedFile | null>(null);
   const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<ConversationTemplate[]>([]);
   
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -82,6 +84,7 @@ export function CodeAssistant() {
     loadConversations();
     loadIndexedFiles();
     loadRecentlyUsedFiles();
+    loadTemplates();
   }, []);
 
   useEffect(() => {
@@ -435,12 +438,64 @@ export function CodeAssistant() {
     }
   };
 
+  const loadTemplates = () => {
+    const stored = localStorage.getItem('codeAssistantTemplates');
+    if (stored) {
+      try {
+        setTemplates(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse templates:', e);
+      }
+    }
+  };
+
   const updateRecentlyUsedFiles = (fileId: string) => {
     setRecentlyUsedFiles(prev => {
       const updated = [fileId, ...prev.filter(id => id !== fileId)].slice(0, 10);
       localStorage.setItem('codeAssistantRecentFiles', JSON.stringify(updated));
       return updated;
     });
+  };
+
+  const handleSaveTemplate = (name: string, description?: string) => {
+    const newTemplate: ConversationTemplate = {
+      id: Date.now().toString(),
+      name,
+      description,
+      selectedFileIds: Array.from(selectedFileIds),
+      fileCount: selectedFileIds.size,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedTemplates = [...templates, newTemplate];
+    setTemplates(updatedTemplates);
+    localStorage.setItem('codeAssistantTemplates', JSON.stringify(updatedTemplates));
+  };
+
+  const handleLoadTemplate = (template: ConversationTemplate) => {
+    setSelectedFileIds(new Set(template.selectedFileIds));
+    
+    if (currentConversation) {
+      supabase
+        .from('code_assistant_conversations')
+        .update({ selected_file_ids: template.selectedFileIds })
+        .eq('id', currentConversation)
+        .then();
+    }
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    const updatedTemplates = templates.filter(t => t.id !== templateId);
+    setTemplates(updatedTemplates);
+    localStorage.setItem('codeAssistantTemplates', JSON.stringify(updatedTemplates));
+  };
+
+  const handleRenameTemplate = (templateId: string, newName: string, newDescription?: string) => {
+    const updatedTemplates = templates.map(t =>
+      t.id === templateId ? { ...t, name: newName, description: newDescription } : t
+    );
+    setTemplates(updatedTemplates);
+    localStorage.setItem('codeAssistantTemplates', JSON.stringify(updatedTemplates));
   };
 
   const submitFeedback = async (rating: string, feedbackText: string, expectedAnswer?: string) => {
@@ -694,6 +749,14 @@ export function CodeAssistant() {
               {/* Chat Header */}
               <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="flex items-center gap-2">
+                  <TemplateManager
+                    templates={templates}
+                    selectedFileIds={selectedFileIds}
+                    onSaveTemplate={handleSaveTemplate}
+                    onLoadTemplate={handleLoadTemplate}
+                    onDeleteTemplate={handleDeleteTemplate}
+                    onRenameTemplate={handleRenameTemplate}
+                  />
                   <Button
                     variant="outline"
                     size="sm"

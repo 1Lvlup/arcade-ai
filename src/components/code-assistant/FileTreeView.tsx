@@ -3,6 +3,7 @@ import { Folder, File, ChevronRight, ChevronDown, FileCode } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { SelectionToolbar } from './SelectionToolbar';
 
 interface IndexedFile {
   id: string;
@@ -27,9 +28,26 @@ interface FileTreeViewProps {
   onToggleFolder: (folderPath: string, select: boolean) => void;
   searchFilter: string;
   onPreviewFile?: (file: IndexedFile) => void;
+  onSelectAll?: () => void;
+  onDeselectAll?: () => void;
+  onSelectByType?: (type: string) => void;
+  recentlyUsedFiles?: string[];
+  onSelectRecentFiles?: () => void;
 }
 
-export function FileTreeView({ files, selectedFileIds, onToggleFile, onToggleFolder, searchFilter, onPreviewFile }: FileTreeViewProps) {
+export function FileTreeView({ 
+  files, 
+  selectedFileIds, 
+  onToggleFile, 
+  onToggleFolder, 
+  searchFilter, 
+  onPreviewFile,
+  onSelectAll,
+  onDeselectAll,
+  onSelectByType,
+  recentlyUsedFiles = [],
+  onSelectRecentFiles,
+}: FileTreeViewProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['root']));
 
   // Build tree structure from flat file list
@@ -230,15 +248,41 @@ export function FileTreeView({ files, selectedFileIds, onToggleFile, onToggleFol
 
   if (!filteredTree || (filteredTree.children?.length === 0)) {
     return (
-      <div className="text-center text-muted-foreground py-8 text-sm">
-        {searchFilter ? 'No files match your search' : 'No files indexed yet'}
-      </div>
+      <>
+        {onSelectAll && onDeselectAll && onSelectByType && (
+          <SelectionToolbar
+            files={files}
+            selectedFileIds={selectedFileIds}
+            onSelectAll={onSelectAll}
+            onDeselectAll={onDeselectAll}
+            onSelectByType={onSelectByType}
+            recentlyUsedFiles={recentlyUsedFiles}
+            onSelectRecentFiles={onSelectRecentFiles || (() => {})}
+          />
+        )}
+        <div className="text-center text-muted-foreground py-8 text-sm">
+          {searchFilter ? 'No files match your search' : 'No files indexed yet'}
+        </div>
+      </>
     );
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-280px)]">
-      {filteredTree.children?.map(child => renderNode(child, 0))}
-    </ScrollArea>
+    <>
+      {onSelectAll && onDeselectAll && onSelectByType && (
+        <SelectionToolbar
+          files={files}
+          selectedFileIds={selectedFileIds}
+          onSelectAll={onSelectAll}
+          onDeselectAll={onDeselectAll}
+          onSelectByType={onSelectByType}
+          recentlyUsedFiles={recentlyUsedFiles}
+          onSelectRecentFiles={onSelectRecentFiles || (() => {})}
+        />
+      )}
+      <ScrollArea className="h-[calc(100vh-340px)]">
+        {filteredTree.children?.map(child => renderNode(child, 0))}
+      </ScrollArea>
+    </>
   );
 }

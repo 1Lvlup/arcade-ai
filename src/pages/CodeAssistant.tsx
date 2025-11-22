@@ -71,6 +71,7 @@ export function CodeAssistant() {
   const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
   const [searchFilter, setSearchFilter] = useState('');
   const [previewFile, setPreviewFile] = useState<IndexedFile | null>(null);
+  const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
   
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -80,6 +81,7 @@ export function CodeAssistant() {
     loadUserSettings();
     loadConversations();
     loadIndexedFiles();
+    loadRecentlyUsedFiles();
   }, []);
 
   useEffect(() => {
@@ -301,6 +303,11 @@ export function CodeAssistant() {
     }
     setSelectedFileIds(newSelection);
     
+    // Track recently used files
+    if (newSelection.has(fileId)) {
+      updateRecentlyUsedFiles(fileId);
+    }
+    
     // Save selection to conversation
     if (currentConversation) {
       supabase
@@ -318,6 +325,7 @@ export function CodeAssistant() {
     folderFiles.forEach(file => {
       if (select) {
         newSelection.add(file.id);
+        updateRecentlyUsedFiles(file.id);
       } else {
         newSelection.delete(file.id);
       }
@@ -333,6 +341,106 @@ export function CodeAssistant() {
         .eq('id', currentConversation)
         .then();
     }
+  };
+
+  const handleSelectAll = () => {
+    const allFileIds = new Set(indexedFiles.map(f => f.id));
+    setSelectedFileIds(allFileIds);
+    
+    if (currentConversation) {
+      supabase
+        .from('code_assistant_conversations')
+        .update({ selected_file_ids: Array.from(allFileIds) })
+        .eq('id', currentConversation)
+        .then();
+    }
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedFileIds(new Set());
+    
+    if (currentConversation) {
+      supabase
+        .from('code_assistant_conversations')
+        .update({ selected_file_ids: [] })
+        .eq('id', currentConversation)
+        .then();
+    }
+  };
+
+  const handleSelectByType = (type: string) => {
+    let filteredFiles: IndexedFile[] = [];
+    
+    switch (type) {
+      case 'typescript':
+        filteredFiles = indexedFiles.filter(f => 
+          f.language === 'typescript' || 
+          f.language === 'javascript' ||
+          f.file_path.endsWith('.ts') ||
+          f.file_path.endsWith('.tsx') ||
+          f.file_path.endsWith('.js') ||
+          f.file_path.endsWith('.jsx')
+        );
+        break;
+      case 'edge-functions':
+        filteredFiles = indexedFiles.filter(f => f.file_path.includes('supabase/functions'));
+        break;
+      case 'components':
+        filteredFiles = indexedFiles.filter(f => 
+          f.file_path.includes('/components/') && 
+          (f.file_path.endsWith('.tsx') || f.file_path.endsWith('.jsx'))
+        );
+        break;
+      case 'migrations':
+        filteredFiles = indexedFiles.filter(f => f.file_path.includes('migrations'));
+        break;
+    }
+    
+    const newSelection = new Set(filteredFiles.map(f => f.id));
+    setSelectedFileIds(newSelection);
+    
+    filteredFiles.forEach(file => updateRecentlyUsedFiles(file.id));
+    
+    if (currentConversation) {
+      supabase
+        .from('code_assistant_conversations')
+        .update({ selected_file_ids: Array.from(newSelection) })
+        .eq('id', currentConversation)
+        .then();
+    }
+  };
+
+  const handleSelectRecentFiles = () => {
+    const recentFiles = indexedFiles.filter(f => recentlyUsedFiles.includes(f.id));
+    const newSelection = new Set(recentFiles.map(f => f.id));
+    setSelectedFileIds(newSelection);
+    
+    if (currentConversation) {
+      supabase
+        .from('code_assistant_conversations')
+        .update({ selected_file_ids: Array.from(newSelection) })
+        .eq('id', currentConversation)
+        .then();
+    }
+  };
+
+  const loadRecentlyUsedFiles = () => {
+    const stored = localStorage.getItem('codeAssistantRecentFiles');
+    if (stored) {
+      try {
+        setRecentlyUsedFiles(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse recent files:', e);
+      }
+    }
+  };
+
+  const updateRecentlyUsedFiles = (fileId: string) => {
+    setRecentlyUsedFiles(prev => {
+      const updated = [fileId, ...prev.filter(id => id !== fileId)].slice(0, 10);
+      localStorage.setItem('codeAssistantRecentFiles', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const submitFeedback = async (rating: string, feedbackText: string, expectedAnswer?: string) => {
@@ -505,6 +613,11 @@ export function CodeAssistant() {
               onToggleFolder={handleToggleFolder}
               searchFilter={searchFilter}
               onPreviewFile={setPreviewFile}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
+              onSelectByType={handleSelectByType}
+              recentlyUsedFiles={recentlyUsedFiles}
+              onSelectRecentFiles={handleSelectRecentFiles}
             />
             
             <FilePreviewPanel

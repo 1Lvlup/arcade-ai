@@ -163,7 +163,25 @@ Be concise but thorough. Focus on practical, working solutions.`;
     }
 
     const data = await response.json();
-    const assistantMessage = data.choices[0].message.content;
+    
+    // Parse Responses API format (different from Chat Completions)
+    let assistantMessage = '';
+    if (data.output_text) {
+      // Direct output_text field
+      assistantMessage = data.output_text;
+    } else if (data.output && Array.isArray(data.output)) {
+      // Output array format
+      const textOutput = data.output.find((item: any) => item.type === 'message');
+      assistantMessage = textOutput?.output_text || textOutput?.content || '';
+    } else if (data.choices && data.choices[0]) {
+      // Fallback to Chat Completions format (shouldn't happen but safe)
+      assistantMessage = data.choices[0].message?.content || '';
+    }
+    
+    if (!assistantMessage) {
+      console.error('❌ Unexpected response format:', JSON.stringify(data, null, 2));
+      throw new Error('Failed to parse AI response');
+    }
 
     return new Response(JSON.stringify({ 
       message: assistantMessage,

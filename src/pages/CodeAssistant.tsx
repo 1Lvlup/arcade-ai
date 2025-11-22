@@ -694,7 +694,7 @@ export function CodeAssistant() {
     <div className="min-h-screen mesh-gradient">
       <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
       
-      <main className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
+      <main className="flex h-[calc(100vh-64px)] w-full max-w-full overflow-x-auto overflow-y-hidden">
         {/* Left Sidebar - File Tree */}
         <div className="w-[350px] flex-shrink-0 border-r bg-background flex flex-col overflow-hidden">
           <div className="p-4 border-b flex items-center justify-between">

@@ -437,6 +437,29 @@ export function ChatBot({
     setMessages([welcomeMessage]);
   };
 
+  // Clear conversations and reset when user changes
+  useEffect(() => {
+    // Clear all conversation-related state when user changes
+    setConversations([]);
+    setSavedConversations([]);
+    setCurrentConversationId(null);
+    setMessages([]);
+    
+    // Clear localStorage conversation data
+    localStorage.removeItem("last_conversation_id");
+    // Clear all cached messages
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('chat_messages_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Reload conversations for the new user
+    if (user) {
+      loadConversations();
+    }
+  }, [user?.id]); // Only trigger on user ID change
+
   // Initial load - always start fresh with game selection
   useEffect(() => {
     const initializeChat = async () => {
@@ -478,12 +501,18 @@ export function ChatBot({
   }, [selectedManualId, manualTitle]);
 
   const loadConversations = async () => {
-    if (!user) return; // Only load conversations for logged-in users
+    if (!user) {
+      // Clear conversations when not logged in
+      setConversations([]);
+      setSavedConversations([]);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
         .from("conversations")
         .select("*")
+        .eq("user_id", user.id) // CRITICAL: Explicit user filter
         .order("last_message_at", { ascending: false })
         .limit(50);
 
@@ -492,6 +521,9 @@ export function ChatBot({
       setSavedConversations(data || []);
     } catch (error) {
       console.error("Error loading conversations:", error);
+      // Clear on error to prevent showing stale data
+      setConversations([]);
+      setSavedConversations([]);
     }
   };
 
@@ -545,14 +577,27 @@ export function ChatBot({
   };
 
   const loadConversation = async (conversationId: string) => {
+    if (!user) return;
+    
     try {
       const { data: conversationData, error: convError } = await supabase
         .from("conversations")
         .select("*")
         .eq("id", conversationId)
+        .eq("user_id", user.id) // CRITICAL: Verify ownership
         .single();
 
-      if (convError) throw convError;
+      if (convError) {
+        if (convError.code === 'PGRST116') {
+          // No rows returned - user doesn't own this conversation
+          toast({
+            title: "Access Denied",
+            description: "You don't have access to this conversation.",
+            variant: "destructive",
+          });
+        }
+        throw convError;
+      }
 
       const { data: messagesData, error: msgError } = await supabase
         .from("conversation_messages")

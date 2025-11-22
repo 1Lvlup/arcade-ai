@@ -625,7 +625,7 @@ export function CodeAssistant() {
       const { data, error } = await supabase.functions.invoke('ai-code-assistant', {
         body: {
           messages: messages.map(m => ({ role: m.role, content: m.content })).concat([
-            { role: 'user', content: input }
+            { role: 'user', content: userQuery }
           ]),
           codebaseContext
         }

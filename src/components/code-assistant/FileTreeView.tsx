@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Folder, File, ChevronRight, ChevronDown, FileCode } from 'lucide-react';
+import { Folder, ChevronRight, ChevronDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { SelectionToolbar } from './SelectionToolbar';
+import { EnhancedFileIcon } from './EnhancedFileIcon';
+import { FileTooltip } from './FileTooltip';
 
 interface IndexedFile {
   id: string;
@@ -157,11 +159,6 @@ export function FileTreeView({
     onToggleFolder(node.path, !allSelected);
   };
 
-  const getLanguageIcon = (language: string | null) => {
-    if (!language) return <FileCode className="h-4 w-4 text-muted-foreground" />;
-    return <FileCode className="h-4 w-4 text-muted-foreground" />;
-  };
-
   const getFileSize = (content: string): string => {
     const bytes = new Blob([content]).size;
     if (bytes < 1024) return `${bytes}B`;
@@ -174,27 +171,31 @@ export function FileTreeView({
       const isSelected = selectedFileIds.has(node.file.id);
       
       return (
-        <div
-          key={node.path}
-          className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted/50 rounded-sm group"
-          style={{ paddingLeft: `${depth * 16 + 8}px` }}
-        >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={() => onToggleFile(node.file!.id)}
-            onClick={(e) => e.stopPropagation()}
-          />
-          {getLanguageIcon(node.file.language)}
-          <span 
-            className="flex-1 text-sm truncate cursor-pointer hover:text-primary"
-            onClick={() => onPreviewFile?.(node.file!)}
+        <FileTooltip key={node.path} file={node.file}>
+          <div
+            className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted/50 rounded-sm group"
+            style={{ paddingLeft: `${depth * 16 + 8}px` }}
           >
-            {node.name}
-          </span>
-          <Badge variant="secondary" className="text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-            {getFileSize(node.file.file_content)}
-          </Badge>
-        </div>
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleFile(node.file!.id)}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <EnhancedFileIcon 
+              filePath={node.file.file_path} 
+              language={node.file.language} 
+            />
+            <span 
+              className="flex-1 text-sm truncate cursor-pointer hover:text-primary"
+              onClick={() => onPreviewFile?.(node.file!)}
+            >
+              {node.name}
+            </span>
+            <Badge variant="secondary" className="text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+              {getFileSize(node.file.file_content)}
+            </Badge>
+          </div>
+        </FileTooltip>
       );
     }
     

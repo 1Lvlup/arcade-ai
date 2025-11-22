@@ -34,12 +34,12 @@ export function SelectionToolbar({
   const someSelected = selectedFileIds.size > 0 && selectedFileIds.size < files.length;
 
   return (
-    <div className="flex items-center gap-2 p-3 border-b bg-muted/30">
+    <div className="flex flex-wrap items-center gap-2 p-3 border-b bg-muted/30">
       <Button
         variant="outline"
         size="sm"
         onClick={allSelected ? onDeselectAll : onSelectAll}
-        className="gap-2"
+        className="gap-2 shrink-0"
       >
         {allSelected || someSelected ? (
           <CheckSquare className="h-4 w-4" />
@@ -51,9 +51,9 @@ export function SelectionToolbar({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="gap-2 shrink-0">
             <Filter className="h-4 w-4" />
-            Select by Type
+            By Type
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 bg-background z-50">
@@ -99,16 +99,16 @@ export function SelectionToolbar({
           variant="outline"
           size="sm"
           onClick={onSelectRecentFiles}
-          className="gap-2"
+          className="gap-2 shrink-0"
         >
           <Clock className="h-4 w-4" />
-          Load Recent
+          Recent
           <Badge variant="secondary">{recentlyUsedFiles.length}</Badge>
         </Button>
       )}
 
-      <div className="ml-auto text-xs text-muted-foreground">
-        {selectedFileIds.size} / {files.length} files selected
+      <div className="ml-auto text-xs text-muted-foreground shrink-0">
+        {selectedFileIds.size} / {files.length} selected
       </div>
     </div>
   );

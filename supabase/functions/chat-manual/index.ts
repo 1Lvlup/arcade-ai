@@ -1161,32 +1161,8 @@ serve(async (req) => {
                       content = parsed.delta;
                       console.log('✅ [Wrapper] Extracted legacy delta:', content.slice(0, 50));
                     } 
-                    else if (parsed.type === "response.output_text.done" && typeof parsed.text === "string") {
-                      content = parsed.text;
-                      console.log('✅ [Wrapper] Extracted legacy done text:', content.slice(0, 50));
-                    }
-                    // Final completion event
-                    else if (parsed.type === "response.completed" && parsed.response?.output) {
-                      console.log('✅ [Wrapper] Response completed, extracting final text...');
-                      const outputs = parsed.response.output;
-                      for (const out of outputs) {
-                        if (Array.isArray(out.output_text)) {
-                          for (const seg of out.output_text) {
-                            if (typeof seg.text === "string") {
-                              content += seg.text;
-                            }
-                          }
-                        }
-                        if (out.type === "message" && Array.isArray(out.content)) {
-                          for (const part of out.content) {
-                            if (part.type === "output_text" && typeof part.text === "string") {
-                              content += part.text;
-                            }
-                          }
-                        }
-                      }
-                      console.log('✅ [Wrapper] Final content length:', content.length);
-                    }
+                    // SKIP "done" and "completed" events to avoid duplicating the full response
+                    // All content is already received via delta events
 
                     if (content) {
                       const chunk = {

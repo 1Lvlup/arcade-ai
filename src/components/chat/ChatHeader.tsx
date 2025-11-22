@@ -32,6 +32,7 @@ interface ChatHeaderProps {
   showHistory: boolean;
   onToggleHistory: () => void;
   historyContent?: React.ReactNode;
+  isAdmin?: boolean;
 }
 
 export function ChatHeader({
@@ -54,6 +55,7 @@ export function ChatHeader({
   showHistory,
   onToggleHistory,
   historyContent,
+  isAdmin = false,
 }: ChatHeaderProps) {
   return (
     <div className="border-b border-white/10 flex-shrink-0 py-3 px-6">
@@ -113,27 +115,32 @@ export function ChatHeader({
                 <FileDown className="h-4 w-4" />
               </Button>
 
-              {/* Streaming toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onToggleStreaming}
-                className={`h-8 px-2 ${useStreaming ? 'text-green-500' : 'text-muted-foreground'} hover:text-foreground hover:bg-white/5`}
-                title={useStreaming ? "Streaming: Real-time token-by-token" : "Streaming disabled: Full response at once"}
-              >
-                {useStreaming ? <Zap className="h-4 w-4" /> : <ZapOff className="h-4 w-4" />}
-              </Button>
+              {/* Admin-only toggles */}
+              {isAdmin && (
+                <>
+                  {/* Streaming toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onToggleStreaming}
+                    className={`h-8 px-2 ${useStreaming ? 'text-green-500' : 'text-muted-foreground'} hover:text-foreground hover:bg-white/5`}
+                    title={useStreaming ? "Streaming: Real-time token-by-token" : "Streaming disabled: Full response at once"}
+                  >
+                    {useStreaming ? <Zap className="h-4 w-4" /> : <ZapOff className="h-4 w-4" />}
+                  </Button>
 
-              {/* Debug mode toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onToggleDebug}
-                className={`h-8 px-2 ${debugMode ? 'text-primary' : 'text-muted-foreground'} hover:text-foreground hover:bg-white/5`}
-                title={debugMode ? "Debug mode: ON" : "Debug mode: OFF"}
-              >
-                <span className="text-sm">🔧</span>
-              </Button>
+                  {/* Debug mode toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onToggleDebug}
+                    className={`h-8 px-2 ${debugMode ? 'text-primary' : 'text-muted-foreground'} hover:text-foreground hover:bg-white/5`}
+                    title={debugMode ? "Debug mode: ON" : "Debug mode: OFF"}
+                  >
+                    <span className="text-sm">🔧</span>
+                  </Button>
+                </>
+              )}
 
               {/* Structured mode toggle */}
               <Button

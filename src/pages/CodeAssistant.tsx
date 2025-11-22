@@ -16,7 +16,9 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { CodeSuggestion } from '@/components/CodeSuggestion';
 import { FileTreeView } from '@/components/code-assistant/FileTreeView';
+import { FileChunkSelector } from '@/components/code-assistant/FileChunkSelector';
 import { SyncStatusBar } from '@/components/code-assistant/SyncStatusBar';
+import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeIndicator';
 import { CodeAssistantSettings } from '@/components/code-assistant/CodeAssistantSettings';
 import { FilePreviewPanel } from '@/components/code-assistant/FilePreviewPanel';
 import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
@@ -72,6 +74,7 @@ export function CodeAssistant() {
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [indexedFiles, setIndexedFiles] = useState<IndexedFile[]>([]);
   const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
+  const [chunkSelections, setChunkSelections] = useState<Map<string, Set<string>>>(new Map());
   const [searchFilter, setSearchFilter] = useState('');
   const [previewFile, setPreviewFile] = useState<IndexedFile | null>(null);
   const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
@@ -550,6 +553,38 @@ export function CodeAssistant() {
           role: 'user',
           content: userQuery
         });
+
+      // Build codebase context from selected files and chunks
+      const selectedFiles = indexedFiles.filter(f => selectedFileIds.has(f.id));
+      
+      const codebaseContext = selectedFiles.map(file => {
+        const selectedChunkIds = chunkSelections.get(file.id);
+        
+        if (selectedChunkIds && selectedChunkIds.size > 0) {
+          // Use only selected chunks
+          const chunks = parseFileIntoChunks(file.file_path, file.file_content);
+          const selectedChunks = chunks.filter(c => selectedChunkIds.has(c.id));
+          
+          if (selectedChunks.length === 0) return null;
+          
+          let fileContext = `File: ${file.file_path}\n`;
+          selectedChunks.forEach(chunk => {
+            fileContext += `\n### ${chunk.name} (lines ${chunk.startLine}-${chunk.endLine})\n`;
+            fileContext += `\`\`\`${file.language || 'plaintext'}\n${chunk.content}\n\`\`\`\n`;
+          });
+          
+          // Add summary of excluded chunks
+          const excludedChunks = chunks.filter(c => !selectedChunkIds.has(c.id));
+          if (excludedChunks.length > 0) {
+            fileContext += `\n<!-- EXCLUDED CHUNKS: ${excludedChunks.map(c => c.name).join(', ')} -->\n`;
+          }
+          
+          return fileContext;
+        } else {
+          // Use full file if no chunks selected
+          return `File: ${file.file_path}\n\`\`\`${file.language || 'plaintext'}\n${file.file_content}\n\`\`\``;
+        }
+      }).filter(Boolean).join('\n\n');
 
       const { data, error } = await supabase.functions.invoke('ai-code-assistant', {
         body: {

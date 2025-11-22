@@ -867,42 +867,53 @@ export function CodeAssistant() {
                         )}
                       </div>
                       <div className="flex-1 space-y-2">
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                          <ReactMarkdown
-                            components={{
-                              code({ className, children, ...props }: any) {
-                                const match = /language-(\w+)/.exec(className || '');
-                                const codeString = String(children).replace(/\n$/, '');
-                                const inline = !className;
-                                
-                                return !inline && match ? (
-                                  <div className="relative group">
-                                    <SyntaxHighlighter
-                                      language={match[1]}
-                                      PreTag="div"
-                                      {...props}
-                                    >
-                                      {codeString}
-                                    </SyntaxHighlighter>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onClick={() => copyToClipboard(codeString)}
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <code className={className} {...props}>
-                                    {children}
-                                  </code>
-                                );
-                              },
-                            }}
+                        <div className="relative group">
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <ReactMarkdown
+                              components={{
+                                code({ className, children, ...props }: any) {
+                                  const match = /language-(\w+)/.exec(className || '');
+                                  const codeString = String(children).replace(/\n$/, '');
+                                  const inline = !className;
+                                  
+                                  return !inline && match ? (
+                                    <div className="relative group">
+                                      <SyntaxHighlighter
+                                        language={match[1]}
+                                        PreTag="div"
+                                        {...props}
+                                      >
+                                        {codeString}
+                                      </SyntaxHighlighter>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => copyToClipboard(codeString)}
+                                      >
+                                        <Copy className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <code className={className} {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                },
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => copyToClipboard(message.content)}
+                            title="Copy message"
                           >
-                            {message.content}
-                          </ReactMarkdown>
+                            <Copy className="h-4 w-4" />
+                          </Button>
                         </div>
                         
                         {message.role === 'assistant' && parseCodeBlocks(message.content).length > 0 && (

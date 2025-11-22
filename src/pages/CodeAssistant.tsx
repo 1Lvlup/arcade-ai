@@ -219,7 +219,15 @@ export function CodeAssistant() {
 
       if (insertError) throw insertError;
 
+      // Preserve current file selections before reloading
+      const currentSelections = new Set(selectedFileIds);
       await loadIndexedFiles();
+      
+      // Restore selections after reload
+      if (currentSelections.size > 0) {
+        setSelectedFileIds(currentSelections);
+      }
+      
       setLastSync(new Date());
       
       toast({

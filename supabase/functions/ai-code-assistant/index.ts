@@ -125,7 +125,7 @@ Be concise but thorough. Focus on practical, working solutions.`;
           { role: 'system', content: systemPrompt },
           ...messages
         ],
-        max_output_tokens: 4000,
+        max_output_tokens: 16000,
         store: true,
       }),
     });
@@ -165,7 +165,12 @@ Be concise but thorough. Focus on practical, working solutions.`;
     const data = await response.json();
     console.log('📦 Raw API Response:', JSON.stringify(data, null, 2));
     
-    // Parse Responses API format - try multiple extraction paths
+    // Check for incomplete response
+    if (data.status === 'incomplete') {
+      console.warn('⚠️ Response incomplete:', data.incomplete_details?.reason);
+    }
+    
+    // Parse Responses API format - look for message-type output
     let assistantMessage = '';
     
     try {
@@ -176,8 +181,15 @@ Be concise but thorough. Focus on practical, working solutions.`;
         assistantMessage = data.output_text;
       } else if (data.output) {
         if (Array.isArray(data.output) && data.output.length > 0) {
-          const firstOutput = data.output[0];
-          assistantMessage = firstOutput.output_text || firstOutput.content || firstOutput.text || '';
+          // Look specifically for message-type output (not reasoning)
+          const messageOutput = data.output.find((item: any) => item.type === 'message');
+          if (messageOutput) {
+            assistantMessage = messageOutput.output_text || messageOutput.content || messageOutput.text || '';
+          } else {
+            // Fallback: try first output if no message type found
+            const firstOutput = data.output[0];
+            assistantMessage = firstOutput.output_text || firstOutput.content || firstOutput.text || '';
+          }
         } else if (typeof data.output === 'string') {
           assistantMessage = data.output;
         }

@@ -1100,13 +1100,10 @@ serve(async (req) => {
           // controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(metadata)}\n\n`));
           
           const generateEnd = performance.now();
-          const pipelineEndTime = performance.now();
-          const totalTime = pipelineEndTime - pipelineStartTime;
+          const generationMs = generateEnd - generateStart;
           
           console.log(`📊 Performance Breakdown:
-  - Search (embed + vector + rerank): ${(searchEnd - searchStart).toFixed(0)}ms
-  - Generation (setup + first token): ${(generateEnd - generateStart).toFixed(0)}ms
-  - Total: ${(totalTime / 1000).toFixed(2)}s
+  - Generation (first token): ${generationMs.toFixed(0)}ms
 `);
           
           // Stream the answer

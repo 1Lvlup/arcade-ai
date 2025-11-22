@@ -18,6 +18,8 @@ import { CodeSuggestion } from '@/components/CodeSuggestion';
 import { FileTreeView } from '@/components/code-assistant/FileTreeView';
 import { SyncStatusBar } from '@/components/code-assistant/SyncStatusBar';
 import { CodeAssistantSettings } from '@/components/code-assistant/CodeAssistantSettings';
+import { FilePreviewPanel } from '@/components/code-assistant/FilePreviewPanel';
+import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeIndicator';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -68,6 +70,7 @@ export function CodeAssistant() {
   const [indexedFiles, setIndexedFiles] = useState<IndexedFile[]>([]);
   const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
   const [searchFilter, setSearchFilter] = useState('');
+  const [previewFile, setPreviewFile] = useState<IndexedFile | null>(null);
   
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -494,28 +497,31 @@ export function CodeAssistant() {
             </div>
           </div>
           
-          <FileTreeView
-            files={indexedFiles}
-            selectedFileIds={selectedFileIds}
-            onToggleFile={handleToggleFile}
-            onToggleFolder={handleToggleFolder}
-            searchFilter={searchFilter}
-          />
-          
-          <div className="p-4 border-t mt-auto">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{selectedFileIds.size} selected</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setSelectedFileIds(new Set())}
-                disabled={selectedFileIds.size === 0}
-              >
-                Clear
-              </Button>
-            </div>
+          <div className="flex-1 overflow-hidden relative">
+            <FileTreeView
+              files={indexedFiles}
+              selectedFileIds={selectedFileIds}
+              onToggleFile={handleToggleFile}
+              onToggleFolder={handleToggleFolder}
+              searchFilter={searchFilter}
+              onPreviewFile={setPreviewFile}
+            />
+            
+            <FilePreviewPanel
+              file={previewFile}
+              isSelected={previewFile ? selectedFileIds.has(previewFile.id) : false}
+              onClose={() => setPreviewFile(null)}
+              onToggleSelection={() => {
+                if (previewFile) {
+                  handleToggleFile(previewFile.id);
+                }
+              }}
+            />
           </div>
+          
+          <ContextSizeIndicator
+            selectedFiles={indexedFiles.filter(f => selectedFileIds.has(f.id))}
+          />
         </div>
 
         {/* Right Side - Conversations + Chat */}

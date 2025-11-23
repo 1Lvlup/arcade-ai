@@ -73,14 +73,14 @@ export const SharedHeader = ({
   };
 
   return (
-    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden">
+    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden max-h-[70px]">
       {/* Video Background */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        className="absolute inset-0 w-full h-full object-contain z-0"
         style={{ objectPosition: "center 50%" }}
       >
         <source src="/AIGlitch.mp4" type="video/mp4" />

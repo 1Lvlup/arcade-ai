@@ -11,7 +11,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, CheckCircle2, Clock, Wrench, Pencil, Trash2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Wrench, Pencil, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -25,6 +25,7 @@ const DownGamesDashboard = () => {
     const [loading, setLoading] = React.useState(true);
     const [editingGame, setEditingGame] = React.useState<any>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+    const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
     const [formData, setFormData] = React.useState({
         name: "",
         status: "New",
@@ -77,6 +78,7 @@ const DownGamesDashboard = () => {
                 down_since: new Date().toISOString().split('T')[0],
                 last_update_note: "",
             });
+            setIsAddDialogOpen(false);
             fetchGames();
         } catch (error) {
             console.error('Error adding game:', error);
@@ -162,71 +164,13 @@ const DownGamesDashboard = () => {
             <SharedHeader />
 
             <main className="container mx-auto px-4 py-8 space-y-8">
-                {/* Add Game Form */}
-                <Card className="bg-card border-border">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xl font-bold">Add Down Game</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-end">
-                            <div className="space-y-2">
-                                <label htmlFor="name" className="text-sm font-medium">Game Name</label>
-                                <input
-                                    id="name"
-                                    name="name"
-                                    required
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label htmlFor="status" className="text-sm font-medium">Status</label>
-                                <select
-                                    id="status"
-                                    name="status"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={formData.status}
-                                    onChange={handleInputChange}
-                                >
-                                    <option value="New">New</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="Waiting on Parts">Waiting on Parts</option>
-                                    <option value="Testing">Testing</option>
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label htmlFor="down_since" className="text-sm font-medium">Down Since</label>
-                                <input
-                                    type="date"
-                                    id="down_since"
-                                    name="down_since"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={formData.down_since}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className="space-y-2 md:col-span-2 lg:col-span-1">
-                                <label htmlFor="last_update_note" className="text-sm font-medium">Notes</label>
-                                <input
-                                    id="last_update_note"
-                                    name="last_update_note"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={formData.last_update_note}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className="md:col-span-2 lg:col-span-3">
-                                <button
-                                    type="submit"
-                                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full md:w-auto"
-                                >
-                                    Add Game
-                                </button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold">Down Games Dashboard</h1>
+                    <Button onClick={() => setIsAddDialogOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Down Game
+                    </Button>
+                </div>
 
                 {/* Summary Card */}
                 <Card className="bg-card border-border">
@@ -331,6 +275,70 @@ const DownGamesDashboard = () => {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Add Game Dialog */}
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Add Down Game</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <label htmlFor="add-name" className="text-sm font-medium">Game Name</label>
+                                <input
+                                    id="add-name"
+                                    name="name"
+                                    required
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="add-status" className="text-sm font-medium">Status</label>
+                                <select
+                                    id="add-status"
+                                    name="status"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.status}
+                                    onChange={handleInputChange}
+                                >
+                                    <option value="New">New</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Waiting on Parts">Waiting on Parts</option>
+                                    <option value="Testing">Testing</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="add-down_since" className="text-sm font-medium">Down Since</label>
+                                <input
+                                    type="date"
+                                    id="add-down_since"
+                                    name="down_since"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.down_since}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="add-last_update_note" className="text-sm font-medium">Notes</label>
+                                <input
+                                    id="add-last_update_note"
+                                    name="last_update_note"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.last_update_note}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit">Add Game</Button>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
 
                 {/* Edit Dialog */}
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

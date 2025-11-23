@@ -197,7 +197,7 @@ export default function WhatIsLevelUp() {
               <p className="text-muted-foreground">
                 If you'd like to walk through a real troubleshooting example, talk about your game mix and pain points, or see where this could fit in your operation, reach out and we'll schedule a conversation.
               </p>
-              <Link to="/support">
+              <Link to="/contact">
                 <Button size="lg" className="mt-4">
                   Get in Touch
                 </Button>

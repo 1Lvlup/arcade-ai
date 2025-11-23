@@ -60,6 +60,7 @@ import OutboundImport from "./pages/OutboundImport";
 import OutboundCommand from "./pages/OutboundCommand";
 import QualityMetrics from "./pages/QualityMetrics";
 import DownGamesDashboard from "./pages/DownGamesDashboard";
+import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -283,6 +284,7 @@ const App = () => (
                   </AdminRoute>
                 </ProtectedRoute>
               } />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/admin/blog" element={

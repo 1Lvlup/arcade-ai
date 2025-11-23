@@ -11,6 +11,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -21,6 +28,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { User, Lock, Mail, Trash2, CreditCard, ExternalLink, MessageSquare, CheckCircle2 } from 'lucide-react';
+
+const COUNTRY_CODES = [
+  { code: '+1', country: 'US/Canada', flag: '🇺🇸' },
+  { code: '+44', country: 'UK', flag: '🇬🇧' },
+  { code: '+61', country: 'Australia', flag: '🇦🇺' },
+  { code: '+64', country: 'New Zealand', flag: '🇳🇿' },
+  { code: '+81', country: 'Japan', flag: '🇯🇵' },
+  { code: '+86', country: 'China', flag: '🇨🇳' },
+  { code: '+33', country: 'France', flag: '🇫🇷' },
+  { code: '+49', country: 'Germany', flag: '🇩🇪' },
+];
 
 export default function AccountSettings() {
   const { user, updatePassword, signOut } = useAuth();
@@ -37,6 +55,7 @@ export default function AccountSettings() {
 
   // SMS opt-in states
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [countryCode, setCountryCode] = useState('+1');
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [smsOptInDate, setSmsOptInDate] = useState<string | null>(null);
   const [smsLoading, setSmsLoading] = useState(false);
@@ -44,6 +63,7 @@ export default function AccountSettings() {
 
   // Public opt-in states
   const [publicPhoneNumber, setPublicPhoneNumber] = useState('');
+  const [publicCountryCode, setPublicCountryCode] = useState('+1');
   const [publicEmail, setPublicEmail] = useState('');
   const [publicConsent, setPublicConsent] = useState(false);
   const [publicSuccess, setPublicSuccess] = useState(false);
@@ -163,7 +183,17 @@ export default function AccountSettings() {
         .single();
 
       if (!error && data) {
-        setPhoneNumber(data.phone_number || '');
+        const fullNumber = data.phone_number || '';
+        // Extract country code and phone number if exists
+        if (fullNumber) {
+          const matchedCode = COUNTRY_CODES.find(cc => fullNumber.startsWith(cc.code));
+          if (matchedCode) {
+            setCountryCode(matchedCode.code);
+            setPhoneNumber(fullNumber.substring(matchedCode.code.length));
+          } else {
+            setPhoneNumber(fullNumber);
+          }
+        }
         setSmsOptIn(data.sms_opt_in || false);
         setSmsOptInDate(data.sms_opt_in_date);
       }
@@ -173,41 +203,45 @@ export default function AccountSettings() {
   }, [user]);
 
   // Validate and format phone number to E.164 format
-  const validateAndFormatPhone = (phone: string): { valid: boolean; formatted: string; error: string } => {
+  const validateAndFormatPhone = (phone: string, selectedCountryCode: string): { valid: boolean; formatted: string; error: string } => {
     if (!phone.trim()) {
       return { valid: true, formatted: "", error: "" };
     }
 
-    // Remove all non-digit characters except leading +
-    let cleaned = phone.replace(/[^\d+]/g, '');
+    // Remove all non-digit characters (dashes, spaces, parentheses, etc.)
+    const digitsOnly = phone.replace(/\D/g, '');
     
-    // If it already starts with +, validate it
-    if (cleaned.startsWith('+')) {
-      const digitsOnly = cleaned.substring(1);
-      if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-        return { valid: true, formatted: cleaned, error: "" };
-      }
+    if (!digitsOnly) {
       return { 
         valid: false, 
         formatted: phone, 
-        error: "Please use format: +1 followed by 10 digits (e.g., +17017209099)" 
+        error: "Please enter a valid phone number with digits only" 
       };
     }
-    
-    // Remove all non-digits
-    const digitsOnly = cleaned.replace(/\D/g, '');
-    
-    // Check if it's a valid US number (10 digits) or already has country code (11 digits starting with 1)
-    if (digitsOnly.length === 10) {
-      return { valid: true, formatted: `+1${digitsOnly}`, error: "" };
-    } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-      return { valid: true, formatted: `+${digitsOnly}`, error: "" };
+
+    // Validate based on country code
+    if (selectedCountryCode === '+1') {
+      // US/Canada: expect 10 digits
+      if (digitsOnly.length === 10) {
+        return { valid: true, formatted: `${selectedCountryCode}${digitsOnly}`, error: "" };
+      } else {
+        return { 
+          valid: false, 
+          formatted: phone, 
+          error: "US/Canada numbers must be 10 digits (no dashes or spaces)" 
+        };
+      }
     } else {
-      return { 
-        valid: false, 
-        formatted: phone, 
-        error: "Please enter a valid US phone number (10 digits)" 
-      };
+      // For other countries, accept 7-15 digits
+      if (digitsOnly.length >= 7 && digitsOnly.length <= 15) {
+        return { valid: true, formatted: `${selectedCountryCode}${digitsOnly}`, error: "" };
+      } else {
+        return { 
+          valid: false, 
+          formatted: phone, 
+          error: "Phone number must be 7-15 digits (no dashes or spaces)" 
+        };
+      }
     }
   };
 
@@ -216,7 +250,7 @@ export default function AccountSettings() {
     if (!user) return;
 
     // Validate phone number
-    const validation = validateAndFormatPhone(phoneNumber);
+    const validation = validateAndFormatPhone(phoneNumber, countryCode);
     if (!validation.valid) {
       setPhoneError(validation.error);
       return;
@@ -224,7 +258,7 @@ export default function AccountSettings() {
     setPhoneError("");
 
     // Require phone number if enabling SMS
-    if (smsOptIn && !validation.formatted) {
+    if (smsOptIn && !phoneNumber.trim()) {
       setPhoneError("Phone number is required to enable SMS notifications");
       return;
     }
@@ -243,9 +277,6 @@ export default function AccountSettings() {
         .eq('user_id', user.id);
 
       if (error) throw error;
-
-      // Update local state with formatted number
-      setPhoneNumber(validation.formatted);
 
       toast({
         title: 'Success',
@@ -280,7 +311,7 @@ export default function AccountSettings() {
       return;
     }
 
-    const validation = validateAndFormatPhone(publicPhoneNumber);
+    const validation = validateAndFormatPhone(publicPhoneNumber, publicCountryCode);
     if (!validation.valid) {
       setPublicPhoneError(validation.error);
       return;
@@ -401,25 +432,47 @@ export default function AccountSettings() {
 
                 <div className="space-y-2">
                   <Label htmlFor="public-phone" className="text-white">Phone Number</Label>
-                  <Input
-                    id="public-phone"
-                    type="tel"
-                    value={publicPhoneNumber}
-                    onChange={(e) => {
-                      setPublicPhoneNumber(e.target.value);
-                      setPublicPhoneError("");
-                    }}
-                    placeholder="+1 (555) 123-4567"
-                    className={`bg-white/5 border-white/10 text-white placeholder:text-muted-foreground ${
-                      publicPhoneError ? 'border-red-500' : ''
-                    }`}
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <Select value={publicCountryCode} onValueChange={setPublicCountryCode}>
+                      <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-900 border-white/10 z-50">
+                        {COUNTRY_CODES.map((country) => (
+                          <SelectItem 
+                            key={country.code} 
+                            value={country.code}
+                            className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                          >
+                            {country.flag} {country.code}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="public-phone"
+                      type="tel"
+                      value={publicPhoneNumber}
+                      onChange={(e) => {
+                        // Only allow digits, remove any dashes or formatting
+                        const cleaned = e.target.value.replace(/\D/g, '');
+                        setPublicPhoneNumber(cleaned);
+                        setPublicPhoneError("");
+                      }}
+                      placeholder={publicCountryCode === '+1' ? '5551234567' : 'Phone number'}
+                      className={`flex-1 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground ${
+                        publicPhoneError ? 'border-red-500' : ''
+                      }`}
+                      required
+                    />
+                  </div>
                   {publicPhoneError ? (
                     <p className="text-xs text-red-500">{publicPhoneError}</p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      US phone number (will be formatted to +1...)
+                      {publicCountryCode === '+1' 
+                        ? '10 digits, no dashes (e.g., 5551234567)' 
+                        : '7-15 digits, no dashes or spaces'}
                     </p>
                   )}
                 </div>
@@ -615,24 +668,46 @@ export default function AccountSettings() {
             <form onSubmit={handleSmsUpdate} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="phone-number" className="text-white">Phone Number</Label>
-                <Input
-                  id="phone-number"
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => {
-                    setPhoneNumber(e.target.value);
-                    setPhoneError("");
-                  }}
-                  placeholder="+1 (555) 123-4567"
-                  className={`bg-white/5 border-white/10 text-white placeholder:text-muted-foreground ${
-                    phoneError ? 'border-red-500' : ''
-                  }`}
-                />
+                <div className="flex gap-2">
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/10 z-50">
+                      {COUNTRY_CODES.map((country) => (
+                        <SelectItem 
+                          key={country.code} 
+                          value={country.code}
+                          className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                        >
+                          {country.flag} {country.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="phone-number"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      // Only allow digits, remove any dashes or formatting
+                      const cleaned = e.target.value.replace(/\D/g, '');
+                      setPhoneNumber(cleaned);
+                      setPhoneError("");
+                    }}
+                    placeholder={countryCode === '+1' ? '5551234567' : 'Phone number'}
+                    className={`flex-1 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground ${
+                      phoneError ? 'border-red-500' : ''
+                    }`}
+                  />
+                </div>
                 {phoneError ? (
                   <p className="text-xs text-red-500">{phoneError}</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Enter US phone number (will be formatted to E.164: +1...)
+                    {countryCode === '+1' 
+                      ? '10 digits, no dashes (e.g., 5551234567)' 
+                      : '7-15 digits, no dashes or spaces'}
                   </p>
                 )}
               </div>

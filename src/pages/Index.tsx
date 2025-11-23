@@ -312,7 +312,11 @@ const Index = () => {
                       <span className="text-muted-foreground">Email support</span>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full mt-6">
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-6"
+                    onClick={handleStartGeneralChat}
+                  >
                     Get started
                   </Button>
                 </CardContent>
@@ -353,8 +357,11 @@ const Index = () => {
                       <span className="text-muted-foreground">Custom integrations</span>
                     </div>
                   </div>
-                  <Button className="w-full mt-6 bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)]">
-                    Start free trial
+                  <Button 
+                    className="w-full mt-6 bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)]"
+                    asChild
+                  >
+                    <Link to="/pricing">Start free trial</Link>
                   </Button>
                 </CardContent>
               </Card>

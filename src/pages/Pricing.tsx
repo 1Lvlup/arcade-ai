@@ -17,10 +17,9 @@ export default function Pricing() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [annual, setAnnual] = useState(true);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleCheckout = async (tier: 'starter' | 'pro') => {
+  const handleCheckout = async () => {
     if (!user) {
       toast({
         title: 'Authentication Required',
@@ -31,10 +30,9 @@ export default function Pricing() {
       return;
     }
 
-    const priceKey = `${tier}_${annual ? 'annual' : 'monthly'}` as keyof typeof SUBSCRIPTION_TIERS;
-    const priceId = SUBSCRIPTION_TIERS[priceKey].price_id;
+    const priceId = SUBSCRIPTION_TIERS.basic_monthly.price_id;
 
-    setLoading(tier);
+    setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId },
@@ -52,7 +50,7 @@ export default function Pricing() {
         variant: 'destructive',
       });
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
 
@@ -65,66 +63,19 @@ export default function Pricing() {
     "--text-dim": "#A9B2B7",
   };
 
-  const plans = useMemo(() => {
-    const starterMonthly = 149;
-    const proMonthly = 249;
-    const starterAnnual = 1345; // 3 months free
-    const proAnnual = 2245; // 3 months free
-    
-    const starterMonthlyOld = 299;
-    const proMonthlyOld = 499;
-    const starterAnnualOld = 2700;
-    const proAnnualOld = 4500;
-
-    return {
-      starter: {
-        title: "Starter",
-        priceMain: annual ? `$${starterAnnual.toLocaleString()}` : `$${starterMonthly}`,
-        oldPrice: annual ? `$${starterAnnualOld.toLocaleString()}` : `$${starterMonthlyOld}`,
-        cadence: annual ? "/ yr" : "/ mo",
-        subNote: annual
-          ? "(3 months free)"
-          : `(or $${starterAnnual.toLocaleString()}/yr — 3 months free)`,
-        features: [
-          "1 FEC location included",
-          "Up to 40 games",
-          "Unlimited tech accounts",
-          "Instant AI troubleshooting access",
-          "Email support (24 hr response)",
-          strike("Repair Ticket Handler (Add-On)"),
-        ],
-      },
-      pro: {
-        title: "Pro (Recommended)",
-        priceMain: annual ? `$${proAnnual.toLocaleString()}` : `$${proMonthly}`,
-        oldPrice: annual ? `$${proAnnualOld.toLocaleString()}` : `$${proMonthlyOld}`,
-        cadence: annual ? "/ yr" : "/ mo",
-        subNote: annual
-          ? "(3 months free)"
-          : `(or $${proAnnual.toLocaleString()}/yr — 3 months free)`,
-        features: [
-          "Everything in Starter",
-          "Unlimited games",
-          "Priority email & chat support",
-          "Early access to new modules",
-          strike("Repair Ticket Handler (Add-On)"),
-        ],
-      },
-      addon: {
-        title: "Repair Ticket Handler Add-On",
-        priceMain: "$99",
-        cadence: "one-time setup",
-        subNote: "(optional)",
-        bullets: [
-          "Create & close tickets in seconds",
-          "Auto-link tickets to specific games",
-          "Track average fix times",
-          "Weekly email summaries",
-          "Downloadable CSV",
-        ],
-      },
-    };
-  }, [annual]);
+  const plan = {
+    title: "Basic Plan",
+    priceMain: "$99",
+    cadence: "/ mo",
+    subNote: "Cancel anytime",
+    features: [
+      "Access to Level Up AI troubleshooting assistant",
+      "Unlimited queries",
+      "Game manual knowledge base",
+      "Email support (24 hr response)",
+      "SMS support for quick questions",
+    ],
+  };
 
   return (
     <div className="min-h-screen bg-black flex flex-col">
@@ -158,60 +109,20 @@ export default function Pricing() {
           >
             Built for busy FEC technicians who want less paperwork and faster fixes.
           </p>
-
-          {/* Billing Toggle */}
-          <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#0F1115] px-2 py-2 ring-1 ring-white/10">
-            <ToggleButton
-              label="Monthly"
-              active={!annual}
-              onClick={() => setAnnual(false)}
-            />
-            <ToggleButton
-              label="Annual"
-              sub="(3 months free)"
-              active={annual}
-              onClick={() => setAnnual(true)}
-            />
-          </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="mx-auto mt-12 grid max-w-6xl grid-cols-1 gap-6 px-6 md:mt-16 md:grid-cols-3">
-          {/* Starter */}
+        {/* Pricing Card */}
+        <div className="mx-auto mt-12 max-w-md px-6 md:mt-16">
           <PlanCard
-            title={plans.starter.title}
-            priceMain={plans.starter.priceMain}
-            oldPrice={plans.starter.oldPrice}
-            cadence={plans.starter.cadence}
-            subNote={plans.starter.subNote}
-            features={plans.starter.features}
-            buttonLabel={loading === 'starter' ? 'Loading...' : 'Start Starter Plan'}
-            highlight={false}
-            onButtonClick={() => handleCheckout('starter')}
-            disabled={loading === 'starter'}
-          />
-
-          {/* Pro (featured) */}
-          <PlanCard
-            title={plans.pro.title}
-            priceMain={plans.pro.priceMain}
-            oldPrice={plans.pro.oldPrice}
-            cadence={plans.pro.cadence}
-            subNote={plans.pro.subNote}
-            features={plans.pro.features}
-            buttonLabel={loading === 'pro' ? 'Loading...' : 'Upgrade to Pro'}
+            title={plan.title}
+            priceMain={plan.priceMain}
+            cadence={plan.cadence}
+            subNote={plan.subNote}
+            features={plan.features}
+            buttonLabel={loading ? 'Loading...' : 'Subscribe Now'}
             highlight={true}
-            onButtonClick={() => handleCheckout('pro')}
-            disabled={loading === 'pro'}
-          />
-
-          {/* Add-On */}
-          <AddOnCard
-            title={plans.addon.title}
-            priceMain={plans.addon.priceMain}
-            cadence={plans.addon.cadence}
-            subNote={plans.addon.subNote}
-            bullets={plans.addon.bullets}
+            onButtonClick={handleCheckout}
+            disabled={loading}
           />
         </div>
 
@@ -360,73 +271,6 @@ function PlanCard(props: {
   );
 }
 
-function AddOnCard(props: {
-  title: string;
-  priceMain: string;
-  cadence: string;
-  subNote: string;
-  bullets: string[];
-}) {
-  const { title, priceMain, cadence, subNote, bullets } = props;
-
-  return (
-    <div
-      className="relative rounded-3xl border border-white/8 bg-[color:var(--bg-card)] p-6 md:p-7 ring-1 ring-white/5"
-      style={{ boxShadow: "0 0 24px rgba(0,245,255,0.08)" }}
-    >
-      <h3
-        className="mb-3 text-xl md:text-2xl font-extrabold"
-        style={{ color: "white", fontFamily: "Montserrat, ui-sans-serif, system-ui" }}
-      >
-        {title}
-      </h3>
-
-      <div className="flex items-baseline gap-1">
-        <span
-          className="text-2xl md:text-3xl font-extrabold"
-          style={{ color: "var(--accent-orange)", fontFamily: "Inter, ui-sans-serif, system-ui" }}
-        >
-          {priceMain}
-        </span>
-        <span className="text-base md:text-lg font-medium text-white/90" style={{ fontFamily: "Inter, ui-sans-serif, system-ui" }}>
-          {` ${cadence}`}
-        </span>
-      </div>
-      <p className="mt-1 text-sm italic" style={{ color: "var(--text-dim)", fontFamily: "Inter, ui-sans-serif, system-ui" }}>
-        {subNote}
-      </p>
-
-      <p className="mt-4 text-sm text-white/90" style={{ fontFamily: "Inter, ui-sans-serif, system-ui" }}>
-        Keep repairs organized — without complex software.
-        <strong> Simplified dashboard:</strong> open → in&nbsp;progress → fixed.
-      </p>
-
-      <ul className="mt-5 space-y-2">
-        {bullets.map((b, i) => (
-          <li key={i} className="flex items-start gap-3">
-            <DotIcon />
-            <span className="text-sm leading-6 text-white/90" style={{ fontFamily: "Inter, ui-sans-serif, system-ui" }}>
-              {b}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <button
-        className="mt-7 w-full rounded-2xl border border-white/15 bg-transparent px-4 py-3 text-sm font-semibold text-white
-                   transition-colors hover:border-[color:var(--accent-orange)] hover:text-[color:var(--accent-orange)] focus:outline-none"
-        style={{ fontFamily: "Inter, ui-sans-serif, system-ui" }}
-      >
-        Add the Ticket Handler
-      </button>
-
-      <p className="mt-2 text-center text-[13px]" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "Inter, ui-sans-serif, system-ui" }}>
-        (Available only with active Starter or Pro plan.)
-      </p>
-    </div>
-  );
-}
-
 /* ---------- tiny helpers ---------- */
 
 function CheckIcon() {
@@ -440,36 +284,4 @@ function CheckIcon() {
       <path d="M8 12.5l2.5 2.5L16 9" stroke="var(--glow-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-}
-
-function DotIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 10 10" fill="none" className="mt-2 flex-none">
-      <circle cx="5" cy="5" r="4" fill="var(--glow-teal)" />
-    </svg>
-  );
-}
-
-function ToggleButton({ label, sub, active, onClick }: { label: string; sub?: string; active: boolean; onClick: () => void; }) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "rounded-full px-4 py-2 text-sm font-semibold transition",
-        active
-          ? "bg-[color:var(--accent-orange)] text-white shadow-[0_0_14px_rgba(255,102,0,0.45)]"
-          : "text-white/80 hover:text-white"
-      ].join(" ")}
-      style={{ fontFamily: "Inter, ui-sans-serif, system-ui" }}
-    >
-      {label} {sub && <span className="ml-1 text-xs italic opacity-80"> {sub}</span>}
-    </button>
-  );
-}
-
-function emphasized(txt: string) {
-  return <strong className="font-semibold">{txt}</strong>;
-}
-function strike(txt: string) {
-  return <span className="opacity-70 line-through">{txt}</span>;
 }

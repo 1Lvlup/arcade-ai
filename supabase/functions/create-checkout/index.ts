@@ -51,11 +51,23 @@ serve(async (req) => {
       logStep("No existing customer found");
     }
 
+    const { priceId } = await req.json();
+    if (!priceId) {
+      throw new Error("priceId is required");
+    }
+    logStep("Price ID received", { priceId });
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      mode: "setup",
-      success_url: `${req.headers.get("origin")}/server-capacity`,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: "subscription",
+      success_url: `${req.headers.get("origin")}/account-settings?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/pricing?subscription=canceled`,
     });
     logStep("Checkout session created", { sessionId: session.id });

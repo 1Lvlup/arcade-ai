@@ -205,16 +205,16 @@ const DownGamesDashboard = () => {
                 {/* Summary Card */}
                 <Card className="bg-card border-border">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                            <Wrench className="h-6 w-6 text-orange" />
+                        <CardTitle className="text-xl font-bold flex items-center gap-2">
+                            <Wrench className="h-5 w-5 text-orange" />
                             Dashboard: Down Games
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-foreground">
+                    <CardContent className="py-3">
+                        <div className="text-xl font-bold text-foreground">
                             Games currently down: <span className="text-orange">{loading ? "..." : gamesDownCount}</span>
                         </div>
-                        <p className="text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground mt-0.5">
                             Overview of all machines currently out of order.
                         </p>
                     </CardContent>

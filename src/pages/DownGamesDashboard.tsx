@@ -166,7 +166,7 @@ const DownGamesDashboard = () => {
   return <div className="min-h-screen bg-background">
             <SharedHeader />
 
-            <main className="container mx-auto px-4 py-8 space-y-8">
+            <main className="container space-y-8 mx-0 my-[18px] px-0 py-[30px]">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold">Down Games Dashboard</h1>
                     <Button onClick={() => setIsAddDialogOpen(true)}>
@@ -176,7 +176,7 @@ const DownGamesDashboard = () => {
                 </div>
 
                 {/* Summary Card */}
-                <Card className="bg-card border-border">
+                <Card className="bg-card border-border py-0 px-0 mx-0 my-0">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
                             <Wrench className="h-5 w-5 text-orange" />
@@ -199,12 +199,12 @@ const DownGamesDashboard = () => {
                         {loading ? <div className="p-8 text-center text-muted-foreground">Loading...</div> : <div className="space-y-8">
                                 {/* Active Games */}
                                 {activeGames.length > 0 && <div>
-                                        <h3 className="text-lg mb-4 text-center mx-0 px-0 py-0 text-orange-light font-extrabold bg-stone-950">Active Issues </h3>
+                                        <h3 className="text-lg mb-4 text-center text-orange-light font-extrabold bg-stone-950 mx-[240px] px-0 py-0 my-[12px]">Active Issues </h3>
                                         <div className="overflow-x-auto">
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow className="hover:bg-transparent border-b border-border/50">
-                                                        <TableHead className="w-[200px]">Game</TableHead>
+                                                        <TableHead className="w-[200px] mx-0 my-0">Game</TableHead>
                                                         <TableHead>Days Down</TableHead>
                                                         <TableHead>Status</TableHead>
                                                         <TableHead>Parts Changed</TableHead>

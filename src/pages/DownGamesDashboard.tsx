@@ -167,21 +167,21 @@ const DownGamesDashboard = () => {
             <SharedHeader />
 
             <main className="container space-y-8 mx-0 my-[18px] px-0 py-[30px]">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-3xl font-bold">Down Games Dashboard</h1>
-                    <Button onClick={() => setIsAddDialogOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Down Game
-                    </Button>
-                </div>
+                <h1 className="text-3xl font-bold mb-4">Down Games Dashboard</h1>
 
                 {/* Summary Card */}
                 <Card className="bg-card border-border py-0 px-0 mx-0 my-0">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-xl font-bold flex items-center gap-2">
-                            <Wrench className="h-5 w-5 text-orange" />
-                            Dashboard: Down Games
-                        </CardTitle>
+                        <div className="flex justify-between items-center">
+                            <CardTitle className="text-xl font-bold flex items-center gap-2">
+                                <Wrench className="h-5 w-5 text-orange" />
+                                Dashboard: Down Games
+                            </CardTitle>
+                            <Button onClick={() => setIsAddDialogOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Down Game
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent className="py-3">
                         <div className="text-xl font-bold text-foreground">

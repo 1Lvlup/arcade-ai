@@ -73,14 +73,14 @@ export const SharedHeader = ({
   };
 
   return (
-    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden max-h-[50px]">
+    <header className="relative bg-black border-t-2 border-t-orange/30 overflow-hidden max-h-[70px]">
       {/* Video Background */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-[40px] object-cover z-0"
         style={{ objectPosition: "center 50%" }}
       >
         <source src="/AIGlitch.mp4" type="video/mp4" />
@@ -89,7 +89,7 @@ export const SharedHeader = ({
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-black/50 z-[1]" />
 
-      <div className="container mx-auto px-3 py-2 flex items-center justify-between relative z-10">
+      <div className="container mx-auto px-3 py-3 flex items-center justify-between relative z-10">
         <div className="flex items-center space-x-3">
           {/* Level Up Logo */}
           <Link to="/" className="flex items-center space-x-2">

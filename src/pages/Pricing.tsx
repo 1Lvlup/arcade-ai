@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { SharedHeader } from "@/components/SharedHeader";
 import { Footer } from "@/components/Footer";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
@@ -54,14 +55,6 @@ export default function Pricing() {
     }
   };
 
-  const themeVars: React.CSSProperties = {
-    // @ts-ignore
-    "--glow-teal": "#00F5FF",
-    "--accent-orange": "#FF6600",
-    "--bg-deep": "#0B0E11",
-    "--bg-card": "#121418",
-    "--text-dim": "#A9B2B7",
-  };
 
   const plan = {
     title: "Basic Plan",
@@ -78,41 +71,22 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <SharedHeader title="Pricing" showBackButton={true} backTo="/" />
       
-      <section
-        className="relative py-16 md:py-24 flex-1"
-        style={themeVars as React.CSSProperties}
-      >
-        {/* subtle radial ambience */}
-        <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute inset-0"
-               style={{
-                 background:
-                   "radial-gradient(1200px 600px at 50% -10%, rgba(0,245,255,0.18), rgba(0,0,0,0) 70%)",
-               }}
-          />
-        </div>
-
+      <section className="relative py-16 md:py-24 flex-1">
         {/* Header */}
-        <div className="mx-auto max-w-5xl px-6 text-center">
-          <h1
-            className="text-4xl md:text-5xl font-extrabold tracking-tight"
-            style={{ fontFamily: "Montserrat, ui-sans-serif, system-ui", color: "white" }}
-          >
-            Choose your <span style={{ color: "var(--glow-teal)" }}>Level Up</span> plan
+        <div className="container mx-auto max-w-5xl px-6 text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight font-tech text-foreground">
+            Choose your <span className="text-primary">Level Up</span> plan
           </h1>
-          <p
-            className="mt-4 text-base md:text-lg"
-            style={{ color: "var(--text-dim)", fontFamily: "Inter, ui-sans-serif, system-ui" }}
-          >
+          <p className="mt-4 text-base md:text-lg text-muted-foreground font-body">
             Built for busy FEC technicians who want less paperwork and faster fixes.
           </p>
         </div>
 
         {/* Pricing Card */}
-        <div className="mx-auto mt-12 max-w-md px-6 md:mt-16">
+        <div className="container mx-auto mt-12 max-w-md px-6 md:mt-16">
           <PlanCard
             title={plan.title}
             priceMain={plan.priceMain}
@@ -127,31 +101,22 @@ export default function Pricing() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="mx-auto mt-12 max-w-3xl px-6 text-center md:mt-16">
-          <h2
-            className="text-2xl md:text-3xl font-bold"
-            style={{ fontFamily: "Montserrat, ui-sans-serif, system-ui", color: "white" }}
-          >
+        <div className="container mx-auto mt-12 max-w-3xl px-6 text-center md:mt-16">
+          <h2 className="text-2xl md:text-3xl font-bold font-tech text-foreground">
             Ready to Level Up your maintenance game?
           </h2>
-          <p
-            className="mt-3 text-base"
-            style={{ color: "var(--text-dim)", fontFamily: "Inter, ui-sans-serif, system-ui" }}
-          >
+          <p className="mt-3 text-base text-muted-foreground font-body">
             30-day risk-free. No setup fees. Cancel anytime.
           </p>
-          <button
-            className="mt-6 inline-flex items-center justify-center rounded-2xl px-6 py-3 text-base font-semibold text-white transition
-                       shadow-[0_0_24px_rgba(255,102,0,0.35)]
-                       hover:shadow-[0_0_32px_rgba(255,102,0,0.5)]
-                       focus:outline-none"
-            style={{
-              backgroundColor: "var(--accent-orange)",
-            }}
-            onClick={() => navigate('/')}
+          <Button
+            variant="orange"
+            size="lg"
+            className="mt-6"
+            onClick={handleCheckout}
+            disabled={loading}
           >
-            Get Started
-          </button>
+            {loading ? 'Loading...' : 'Get Started'}
+          </Button>
         </div>
       </section>
 
@@ -176,62 +141,36 @@ function PlanCard(props: {
 }) {
   const { title, priceMain, oldPrice, cadence, subNote, features, buttonLabel, highlight, onButtonClick, disabled } = props;
   return (
-    <div
-      className={[
-        "relative rounded-3xl p-6 md:p-7",
-        "border border-white/8 bg-[color:var(--bg-card)]",
-        "shadow-[0_0_24px_rgba(0,245,255,0.08)]",
-        highlight ? "ring-2 ring-[color:var(--accent-orange)]" : "ring-1 ring-white/5",
-      ].join(" ")}
-    >
+    <div className={`relative rounded-3xl p-6 md:p-7 border bg-card transition-all duration-300 ${
+      highlight 
+        ? 'border-primary shadow-[0_0_30px_rgba(255,107,0,0.2)]' 
+        : 'border-border'
+    }`}>
       {highlight && (
-        <span
-          className="absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-semibold"
-          style={{
-            background: "linear-gradient(90deg, rgba(255,102,0,0.2), rgba(255,102,0,0.05))",
-            border: "1px solid rgba(255,102,0,0.45)",
-            color: "white",
-            fontFamily: "Inter, ui-sans-serif, system-ui",
-          }}
-        >
+        <span className="absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-semibold bg-primary/20 border border-primary text-foreground">
           Featured
         </span>
       )}
 
-      <h3
-        className="mb-3 text-xl md:text-2xl font-extrabold"
-        style={{ color: "white", fontFamily: "Montserrat, ui-sans-serif, system-ui" }}
-      >
+      <h3 className="mb-3 text-xl md:text-2xl font-extrabold font-tech text-foreground uppercase">
         {title}
       </h3>
 
       <div className="flex items-baseline gap-2 flex-wrap">
         {oldPrice && (
-          <span
-            className="text-xl md:text-2xl font-semibold line-through opacity-50"
-            style={{ color: "var(--text-dim)", fontFamily: "Inter, ui-sans-serif, system-ui" }}
-          >
+          <span className="text-xl md:text-2xl font-semibold line-through opacity-50 text-muted-foreground font-body">
             {oldPrice}
           </span>
         )}
-        <span
-          className="text-3xl md:text-4xl font-extrabold"
-          style={{ color: "var(--accent-orange)", fontFamily: "Inter, ui-sans-serif, system-ui" }}
-        >
+        <span className="text-3xl md:text-4xl font-extrabold text-primary font-body">
           {priceMain}
         </span>
-        <span
-          className="text-base md:text-lg font-medium text-white/90"
-          style={{ fontFamily: "Inter, ui-sans-serif, system-ui" }}
-        >
+        <span className="text-base md:text-lg font-medium text-foreground/90 font-body">
           {` ${cadence}`}
         </span>
       </div>
 
-      <p
-        className="mt-1 text-sm italic"
-        style={{ color: "var(--text-dim)", fontFamily: "Inter, ui-sans-serif, system-ui" }}
-      >
+      <p className="mt-1 text-sm italic text-muted-foreground font-body">
         {subNote}
       </p>
 
@@ -239,32 +178,23 @@ function PlanCard(props: {
         {features.map((f, i) => (
           <li key={i} className="flex items-start gap-3">
             <CheckIcon />
-            <span className="text-sm leading-6 text-white/90" style={{ fontFamily: "Inter, ui-sans-serif, system-ui" }}>
+            <span className="text-sm leading-6 text-foreground/90 font-body">
               {f}
             </span>
           </li>
         ))}
       </ul>
 
-      <button
+      <Button
         onClick={onButtonClick}
         disabled={disabled}
-        className="mt-7 w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition
-                   hover:shadow-[0_0_28px_rgba(255,102,0,0.45)]
-                   focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{
-          backgroundColor: "var(--accent-orange)",
-          boxShadow: "0 0 22px rgba(255,102,0,0.35)",
-          fontFamily: "Inter, ui-sans-serif, system-ui",
-        }}
+        variant="orange"
+        className="mt-7 w-full"
       >
         {buttonLabel}
-      </button>
+      </Button>
 
-      <p
-        className="mt-2 text-center text-[13px]"
-        style={{ color: "rgba(255,255,255,0.6)", fontFamily: "Inter, ui-sans-serif, system-ui" }}
-      >
+      <p className="mt-2 text-center text-[13px] text-muted-foreground font-body">
         No contracts. Cancel anytime.
       </p>
     </div>
@@ -276,12 +206,14 @@ function PlanCard(props: {
 function CheckIcon() {
   return (
     <svg
-      width="18" height="18" viewBox="0 0 24 24" fill="none"
+      width="18" 
+      height="18" 
+      viewBox="0 0 24 24" 
+      fill="none"
       className="mt-1 flex-none"
-      style={{ filter: "drop-shadow(0 0 8px rgba(0,245,255,0.35))" }}
     >
-      <circle cx="12" cy="12" r="10" stroke="var(--glow-teal)" strokeWidth="1.5" />
-      <path d="M8 12.5l2.5 2.5L16 9" stroke="var(--glow-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="10" stroke="hsl(24 100% 60%)" strokeWidth="1.5" />
+      <path d="M8 12.5l2.5 2.5L16 9" stroke="hsl(24 100% 60%)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

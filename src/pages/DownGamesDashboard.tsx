@@ -207,11 +207,11 @@ const DownGamesDashboard = () => {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-2xl font-bold flex items-center gap-2">
                             <Wrench className="h-6 w-6 text-orange" />
-                            GM Dashboard: Down Games
+                            Dashboard: Down Games
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-4xl font-bold text-foreground">
+                        <div className="text-2xl font-bold text-foreground">
                             Games currently down: <span className="text-orange">{loading ? "..." : gamesDownCount}</span>
                         </div>
                         <p className="text-muted-foreground mt-1">

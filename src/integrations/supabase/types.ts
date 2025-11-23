@@ -2160,6 +2160,47 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_config: {
+        Row: {
+          auto_send_on_first_message: boolean | null
+          created_at: string | null
+          example_questions: string[] | null
+          fec_tenant_id: string
+          id: string
+          updated_at: string | null
+          welcome_message_enabled: boolean | null
+          welcome_message_template: string | null
+        }
+        Insert: {
+          auto_send_on_first_message?: boolean | null
+          created_at?: string | null
+          example_questions?: string[] | null
+          fec_tenant_id: string
+          id?: string
+          updated_at?: string | null
+          welcome_message_enabled?: boolean | null
+          welcome_message_template?: string | null
+        }
+        Update: {
+          auto_send_on_first_message?: boolean | null
+          created_at?: string | null
+          example_questions?: string[] | null
+          fec_tenant_id?: string
+          id?: string
+          updated_at?: string | null
+          welcome_message_enabled?: boolean | null
+          welcome_message_template?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_config_fec_tenant_id_fkey"
+            columns: ["fec_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "fec_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_logs: {
         Row: {
           ai_response: string | null

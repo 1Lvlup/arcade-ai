@@ -1,4 +1,4 @@
-import { Activity, Database, Brain, BarChart3, FlaskConical } from 'lucide-react';
+import { Activity, Database, Brain, BarChart3, FlaskConical, MessageSquare } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -43,6 +43,13 @@ const adminSections = [
     title: 'Analytics',
     icon: BarChart3,
     description: 'Users, Usage, Insights',
+    disabled: false,
+  },
+  {
+    id: 'sms-settings',
+    title: 'SMS Settings',
+    icon: MessageSquare,
+    description: 'Onboarding, Templates',
     disabled: false,
   },
   {

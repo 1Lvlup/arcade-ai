@@ -29,6 +29,7 @@ import UserConversationHistory from './UserConversationHistory';
 import { UsageTrackingDashboard } from '@/components/UsageTrackingDashboard';
 import { StrategicAnalytics } from '@/components/StrategicAnalytics';
 import { SMSAnalyticsDashboard } from '@/components/SMSAnalyticsDashboard';
+import { SMSSettingsManager } from '@/components/SMSSettingsManager';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('system');
@@ -424,6 +425,24 @@ const AdminDashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
+              </TabsContent>
+
+              {/* SMS SETTINGS TAB */}
+              <TabsContent value="sms-settings" className="space-y-6 mt-0">
+                <Card className="border-l-4 border-l-primary">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5" />
+                      SMS Onboarding Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      Configure welcome messages and onboarding flow for SMS users
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <SMSSettingsManager />
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </main>

@@ -696,6 +696,36 @@ export type Database = {
         }
         Relationships: []
       }
+      down_games: {
+        Row: {
+          down_since: string | null
+          id: string
+          last_update: string | null
+          last_update_note: string | null
+          location_zone: string | null
+          name: string | null
+          status: string | null
+        }
+        Insert: {
+          down_since?: string | null
+          id?: string
+          last_update?: string | null
+          last_update_note?: string | null
+          location_zone?: string | null
+          name?: string | null
+          status?: string | null
+        }
+        Update: {
+          down_since?: string | null
+          id?: string
+          last_update?: string | null
+          last_update_note?: string | null
+          location_zone?: string | null
+          name?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       fec_tenants: {
         Row: {
           created_at: string

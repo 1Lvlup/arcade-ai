@@ -40,7 +40,7 @@ serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
-    console.log("Received Twilio webhook request");
+    console.log("=== Twilio webhook request received ===");
 
     // Parse Twilio's form data
     const formData = await req.formData();
@@ -48,14 +48,21 @@ serve(async (req) => {
     const fromNumber = formData.get("From")?.toString() || "";
     const messageSid = formData.get("MessageSid")?.toString() || "";
 
-    console.log(`SMS from ${fromNumber}: ${messageBody}`);
+    console.log(`📱 From: ${fromNumber} | SID: ${messageSid}`);
+    console.log(`💬 Body: "${messageBody}"`);
 
     // Get user profile for tenant context (needed for all operations including logging)
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_id, fec_tenant_id, facility_name')
+      .select('user_id, fec_tenant_id, facility_name, sms_opt_in')
       .eq('phone_number', fromNumber)
       .single();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error("⚠️ Profile lookup error:", profileError);
+    }
+    
+    console.log(`👤 Profile found: ${profile ? 'YES' : 'NO'} | Opted in: ${profile?.sms_opt_in ? 'YES' : 'NO'}`);
 
     // Check if this is the user's first message
     const { data: previousMessages } = await supabase
@@ -67,9 +74,31 @@ serve(async (req) => {
 
     const isFirstMessage = !previousMessages || previousMessages.length === 0;
 
-    // Check for STOP/START keywords
+    // Check for PING command (for testing webhook connectivity)
     const normalizedBody = messageBody.trim().toUpperCase();
+    if (normalizedBody === "PING") {
+      console.log("🏓 PING command received");
+      
+      // Log ping event
+      if (profile) {
+        await supabase.from('sms_logs').insert({
+          fec_tenant_id: profile.fec_tenant_id,
+          user_id: profile.user_id,
+          phone_number: fromNumber,
+          direction: 'inbound',
+          event_type: 'ping',
+          message_body: messageBody,
+          facility_name: profile.facility_name,
+          twilio_message_sid: messageSid,
+        });
+      }
+      
+      return createTwiMLResponse(`PONG - SMS webhook is reachable. Your phone: ${fromNumber}`);
+    }
+    
+    // Check for STOP/START keywords
     if (normalizedBody === "STOP") {
+      console.log("🛑 STOP command received");
       await handleOptOut(fromNumber);
       
       // Log opt-out event
@@ -90,6 +119,7 @@ serve(async (req) => {
     }
     
     if (normalizedBody === "START") {
+      console.log("▶️ START command received");
       await handleOptIn(fromNumber);
       
       // Log opt-in event
@@ -118,25 +148,42 @@ serve(async (req) => {
     }
 
     // Check if user has opted in
-    const hasOptedIn = await checkOptInStatus(fromNumber);
+    const hasOptedIn = await checkOptInStatus(supabase, fromNumber);
+    console.log(`✅ Opt-in status check result: ${hasOptedIn}`);
+    
     if (!hasOptedIn) {
-      // Log error event for not opted in
+      console.log("❌ User not opted in or not found");
+      
+      // Log event - differentiate between unknown number and not opted in
+      const eventType = profile ? 'not_opted_in' : 'unknown_number';
+      
       if (profile) {
         await supabase.from('sms_logs').insert({
           fec_tenant_id: profile.fec_tenant_id,
           user_id: profile.user_id,
           phone_number: fromNumber,
           direction: 'inbound',
-          event_type: 'error',
+          event_type: eventType,
           message_body: messageBody,
-          error_message: 'User not opted in to SMS notifications',
+          error_message: profile ? 'User not opted in to SMS notifications' : 'Unknown phone number',
           facility_name: profile.facility_name,
+          twilio_message_sid: messageSid,
+        });
+      } else {
+        // Log even for unknown numbers (without tenant context)
+        await supabase.from('sms_logs').insert({
+          fec_tenant_id: '00000000-0000-0000-0000-000000000000', // Placeholder UUID
+          phone_number: fromNumber,
+          direction: 'inbound',
+          event_type: eventType,
+          message_body: messageBody,
+          error_message: 'Unknown phone number - not in profiles table',
           twilio_message_sid: messageSid,
         });
       }
       
       return createTwiMLResponse(
-        "Welcome to Level Up AI! To receive SMS support, please enable SMS notifications in your account settings at levelupai.com. Contact support if you need assistance."
+        "Welcome to Level Up AI! To receive SMS support, please opt in at https://1levelup.ai/account-settings or contact support for help."
       );
     }
 
@@ -146,8 +193,10 @@ serve(async (req) => {
     }
 
     // Get AI answer from RAG system
+    console.log("🤖 Calling RAG system...");
     const aiAnswer = await askLevelUpAI(messageBody, fromNumber);
     const responseTime = Date.now() - requestStartTime;
+    console.log(`⏱️ Response generated in ${responseTime}ms`);
     
     // Log successful message interaction
     if (profile) {
@@ -172,9 +221,10 @@ serve(async (req) => {
     return createTwiMLResponse(aiAnswer);
 
   } catch (error) {
-    console.error("Error processing SMS:", error);
+    console.error("❌ Error processing SMS:", error);
     
-    // Try to log error
+    // ALWAYS return a valid TwiML response, even on error
+    // Try to log error, but don't let logging failures break the response
     try {
       const formData = await req.formData();
       const fromNumber = formData.get("From")?.toString() || "";
@@ -201,11 +251,12 @@ serve(async (req) => {
         });
       }
     } catch (logError) {
-      console.error("Failed to log error:", logError);
+      console.error("⚠️ Failed to log error (non-fatal):", logError);
     }
     
+    // Return friendly error message - ALWAYS return TwiML
     return createTwiMLResponse(
-      "Sorry, I couldn't process that right now. Please try again or use the web dashboard at your facility."
+      "Sorry, I couldn't process that right now. Please try again or visit https://1levelup.ai for support."
     );
   }
 });
@@ -324,23 +375,32 @@ async function sendWelcomeMessageIfEnabled(
 
 /**
  * Check if a phone number has opted in to SMS notifications
+ * Now uses Supabase client for better error handling and logging
  */
-async function checkOptInStatus(phoneNumber: string): Promise<boolean> {
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
+async function checkOptInStatus(supabaseClient: any, phoneNumber: string): Promise<boolean> {
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=sms_opt_in&phone_number=eq.${encodeURIComponent(phoneNumber)}`, {
-      headers: {
-        "apikey": SUPABASE_SERVICE_ROLE_KEY,
-        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-    });
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('sms_opt_in')
+      .eq('phone_number', phoneNumber)
+      .single();
 
-    const data = await response.json();
-    return data?.[0]?.sms_opt_in === true;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned - unknown number
+        console.log(`📞 Phone number ${phoneNumber} not found in profiles`);
+        return false;
+      }
+      console.error("⚠️ Error checking opt-in status:", error);
+      return false;
+    }
+
+    const isOptedIn = data?.sms_opt_in === true;
+    console.log(`🔍 Opt-in check for ${phoneNumber}: ${isOptedIn}`);
+    return isOptedIn;
   } catch (error) {
-    console.error("Error checking opt-in status:", error);
+    console.error("❌ Exception in checkOptInStatus:", error);
+    // On any error, default to false (don't allow SMS)
     return false;
   }
 }

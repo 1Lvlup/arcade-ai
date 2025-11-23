@@ -28,7 +28,6 @@ import TrainingExport from "./pages/TrainingExport";
 import TrainingExamples from "./pages/TrainingExamples";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccountSettings from "./pages/AccountSettings";
-import SMSOptIn from "./pages/SMSOptIn";
 import Support from "./pages/Support";
 import SupportTickets from "./pages/SupportTickets";
 import QAAnalytics from "./pages/QAAnalytics";
@@ -174,12 +173,7 @@ const App = () => (
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/server-capacity" element={<ServerCapacity />} />
-              <Route path="/sms-opt-in" element={<SMSOptIn />} />
-              <Route path="/account-settings" element={
-                <ProtectedRoute>
-                  <AccountSettings />
-                </ProtectedRoute>
-              } />
+              <Route path="/account-settings" element={<AccountSettings />} />
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <Profile />

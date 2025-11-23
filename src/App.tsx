@@ -35,6 +35,7 @@ import RAGTestingLab from "./pages/RAGTestingLab";
 import Pricing from "./pages/Pricing";
 import ServerCapacity from "./pages/ServerCapacity";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SubscriptionProtectedRoute from "./components/SubscriptionProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import ReIngestManual from "./pages/ReIngestManual";
 import ManualProcessingTools from "./pages/ManualProcessingTools";
@@ -77,21 +78,21 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/what-is-level-up" element={<WhatIsLevelUp />} />
               <Route path="/manuals" element={
-                <ProtectedRoute>
+                <SubscriptionProtectedRoute>
                   <ManualManagement />
-                </ProtectedRoute>
+                </SubscriptionProtectedRoute>
               } />
               <Route path="/chat" element={
-                <ProtectedRoute>
+                <SubscriptionProtectedRoute>
                   <Chat />
-                </ProtectedRoute>
+                </SubscriptionProtectedRoute>
               } />
               <Route path="/forum" element={<Forum />} />
               <Route path="/forum/:id" element={<ForumPost />} />
               <Route path="/manuals/:manualId" element={
-                <ProtectedRoute>
+                <SubscriptionProtectedRoute>
                   <ManualDetail />
-                </ProtectedRoute>
+                </SubscriptionProtectedRoute>
               } />
               <Route path="/manuals/:manualId/tools" element={
                 <ProtectedRoute>
@@ -180,9 +181,9 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/support" element={
-                <ProtectedRoute>
+                <SubscriptionProtectedRoute>
                   <Support />
-                </ProtectedRoute>
+                </SubscriptionProtectedRoute>
               } />
               <Route path="/support-tickets" element={
                 <ProtectedRoute>
@@ -262,9 +263,9 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/add-games" element={
-                <ProtectedRoute>
+                <SubscriptionProtectedRoute>
                   <AddGames />
-                </ProtectedRoute>
+                </SubscriptionProtectedRoute>
               } />
               <Route path="/game-management" element={
                 <ProtectedRoute>
@@ -274,11 +275,9 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/downgames" element={
-                <ProtectedRoute>
-                  <AdminRoute>
-                    <DownGamesDashboard />
-                  </AdminRoute>
-                </ProtectedRoute>
+                <SubscriptionProtectedRoute>
+                  <DownGamesDashboard />
+                </SubscriptionProtectedRoute>
               } />
               <Route path="/contact" element={<Contact />} />
               <Route path="/blog" element={<Blog />} />

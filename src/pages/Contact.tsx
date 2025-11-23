@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Phone, MapPin, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -78,8 +78,7 @@ const Contact = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Contact Form */}
+          <div className="max-w-2xl mx-auto">
             <Card>
               <CardHeader>
                 <CardTitle>Send us a message</CardTitle>
@@ -151,66 +150,6 @@ const Contact = () => {
                 </form>
               </CardContent>
             </Card>
-
-            {/* Contact Info */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                  <CardDescription>
-                    You can also reach us through these channels
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Mail className="h-5 w-5 text-orange mt-1" />
-                    <div>
-                      <p className="font-semibold">Email</p>
-                      <p className="text-muted-foreground">support@levelup.com</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Phone className="h-5 w-5 text-orange mt-1" />
-                    <div>
-                      <p className="font-semibold">Phone</p>
-                      <p className="text-muted-foreground">+1 (555) 123-4567</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-orange mt-1" />
-                    <div>
-                      <p className="font-semibold">Address</p>
-                      <p className="text-muted-foreground">
-                        123 Gaming Street<br />
-                        Tech City, TC 12345
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Business Hours</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Monday - Friday</span>
-                    <span className="font-semibold">9:00 AM - 6:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Saturday</span>
-                    <span className="font-semibold">10:00 AM - 4:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Sunday</span>
-                    <span className="font-semibold">Closed</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </main>

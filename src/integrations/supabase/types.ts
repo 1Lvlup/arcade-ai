@@ -1684,7 +1684,11 @@ export type Database = {
           github_last_sync: string | null
           github_repository: string | null
           id: string
+          phone_number: string | null
           position: string | null
+          sms_opt_in: boolean | null
+          sms_opt_in_date: string | null
+          sms_opt_out_date: string | null
           total_games: number | null
           updated_at: string
           user_id: string
@@ -1702,7 +1706,11 @@ export type Database = {
           github_last_sync?: string | null
           github_repository?: string | null
           id?: string
+          phone_number?: string | null
           position?: string | null
+          sms_opt_in?: boolean | null
+          sms_opt_in_date?: string | null
+          sms_opt_out_date?: string | null
           total_games?: number | null
           updated_at?: string
           user_id: string
@@ -1720,7 +1728,11 @@ export type Database = {
           github_last_sync?: string | null
           github_repository?: string | null
           id?: string
+          phone_number?: string | null
           position?: string | null
+          sms_opt_in?: boolean | null
+          sms_opt_in_date?: string | null
+          sms_opt_out_date?: string | null
           total_games?: number | null
           updated_at?: string
           user_id?: string

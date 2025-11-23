@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SharedHeader } from '@/components/SharedHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { User, Lock, Mail, Trash2, CreditCard, ExternalLink } from 'lucide-react';
+import { User, Lock, Mail, Trash2, CreditCard, ExternalLink, MessageSquare } from 'lucide-react';
 
 export default function AccountSettings() {
   const { user, updatePassword, signOut } = useAuth();
@@ -33,6 +34,12 @@ export default function AccountSettings() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // SMS opt-in states
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [smsOptIn, setSmsOptIn] = useState(false);
+  const [smsOptInDate, setSmsOptInDate] = useState<string | null>(null);
+  const [smsLoading, setSmsLoading] = useState(false);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +141,67 @@ export default function AccountSettings() {
       price: tierConfig.price,
       interval: tierConfig.interval,
     };
+  };
+
+  // Load SMS preferences
+  useEffect(() => {
+    const loadSmsPreferences = async () => {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('phone_number, sms_opt_in, sms_opt_in_date')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!error && data) {
+        setPhoneNumber(data.phone_number || '');
+        setSmsOptIn(data.sms_opt_in || false);
+        setSmsOptInDate(data.sms_opt_in_date);
+      }
+    };
+
+    loadSmsPreferences();
+  }, [user]);
+
+  const handleSmsUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setSmsLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          phone_number: phoneNumber,
+          sms_opt_in: smsOptIn,
+          sms_opt_in_date: smsOptIn ? new Date().toISOString() : null,
+          sms_opt_out_date: !smsOptIn ? new Date().toISOString() : null,
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: smsOptIn 
+          ? 'SMS notifications enabled. You can now text questions to our support number.'
+          : 'SMS preferences updated successfully',
+      });
+
+      if (smsOptIn) {
+        setSmsOptInDate(new Date().toISOString());
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update SMS preferences',
+        variant: 'destructive',
+      });
+    } finally {
+      setSmsLoading(false);
+    }
   };
 
   return (
@@ -256,47 +324,115 @@ export default function AccountSettings() {
           </CardContent>
         </Card>
 
-        {/* Change Password */}
-        <Card>
+        {/* SMS Notifications */}
+        <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-tech text-white">
+              <MessageSquare className="h-5 w-5 text-orange" />
+              SMS NOTIFICATIONS
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Receive troubleshooting answers via text message
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSmsUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone-number" className="text-white">Phone Number</Label>
+                <Input
+                  id="phone-number"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                  className="bg-white/5 border-white/10 text-white placeholder:text-muted-foreground"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter your phone number in international format (e.g., +1 for US)
+                </p>
+              </div>
+
+              <div className="flex items-start space-x-3 space-y-0 rounded-md border border-white/10 p-4 bg-white/5">
+                <Checkbox
+                  id="sms-consent"
+                  checked={smsOptIn}
+                  onCheckedChange={(checked) => setSmsOptIn(checked as boolean)}
+                  className="mt-1"
+                />
+                <div className="space-y-1 leading-none">
+                  <Label
+                    htmlFor="sms-consent"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-white cursor-pointer"
+                  >
+                    I agree to receive SMS messages from Level Up AI
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Receive troubleshooting support via text message. Message and data rates may apply. 
+                    Reply STOP to opt-out at any time.
+                  </p>
+                </div>
+              </div>
+
+              {smsOptInDate && smsOptIn && (
+                <div className="text-xs text-muted-foreground bg-white/5 p-3 rounded-md border border-white/10">
+                  ✓ SMS enabled on {new Date(smsOptInDate).toLocaleDateString()}
+                </div>
+              )}
+
+              <Button 
+                type="submit" 
+                disabled={smsLoading || !phoneNumber.trim()}
+                className="w-full bg-orange hover:bg-orange/80 text-white font-tech"
+              >
+                {smsLoading ? 'SAVING...' : smsOptIn ? 'UPDATE SMS PREFERENCES' : 'ENABLE SMS SUPPORT'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Change Password */}
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
               <Lock className="h-5 w-5 text-primary" />
               Change Password
             </CardTitle>
-            <CardDescription>Update your password</CardDescription>
+            <CardDescription className="text-muted-foreground">Update your password</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
+                <Label htmlFor="new-password" className="text-white">New Password</Label>
                 <Input
                   id="new-password"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter new password"
+                  className="bg-white/5 border-white/10 text-white"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Label htmlFor="confirm-password" className="text-white">Confirm New Password</Label>
                 <Input
                   id="confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
+                  className="bg-white/5 border-white/10 text-white"
                   required
                 />
               </div>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="bg-orange hover:bg-orange/80 text-white">
                 {loading ? 'Updating...' : 'Update Password'}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <Separator />
+        <Separator className="bg-white/10" />
 
         {/* Danger Zone */}
         <Card className="border-destructive/50">

@@ -32,9 +32,29 @@ serve(async (req) => {
 
     console.log(`SMS from ${fromNumber}: ${messageBody}`);
 
+    // Check for STOP/START keywords
+    const normalizedBody = messageBody.trim().toUpperCase();
+    if (normalizedBody === "STOP") {
+      await handleOptOut(fromNumber);
+      return createTwiMLResponse("You've been unsubscribed from Level Up AI SMS. Text START to re-subscribe.");
+    }
+    
+    if (normalizedBody === "START") {
+      await handleOptIn(fromNumber);
+      return createTwiMLResponse("You've been re-subscribed to Level Up AI SMS support. Send your troubleshooting questions anytime!");
+    }
+
     // Validate we have a message
     if (!messageBody.trim()) {
       return createTwiMLResponse("Please send a question about your arcade game and I'll help troubleshoot it.");
+    }
+
+    // Check if user has opted in
+    const hasOptedIn = await checkOptInStatus(fromNumber);
+    if (!hasOptedIn) {
+      return createTwiMLResponse(
+        "Welcome to Level Up AI! To receive SMS support, please enable SMS notifications in your account settings at levelupai.com. Contact support if you need assistance."
+      );
     }
 
     // Get AI answer
@@ -111,6 +131,81 @@ If the question is unclear, ask ONE clarifying question.`;
   }
 
   return answer.trim();
+}
+
+/**
+ * Check if a phone number has opted in to SMS notifications
+ */
+async function checkOptInStatus(phoneNumber: string): Promise<boolean> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=sms_opt_in&phone_number=eq.${encodeURIComponent(phoneNumber)}`, {
+      headers: {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    });
+
+    const data = await response.json();
+    return data?.[0]?.sms_opt_in === true;
+  } catch (error) {
+    console.error("Error checking opt-in status:", error);
+    return false;
+  }
+}
+
+/**
+ * Handle SMS opt-out (STOP keyword)
+ */
+async function handleOptOut(phoneNumber: string): Promise<void> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles?phone_number=eq.${encodeURIComponent(phoneNumber)}`, {
+      method: "PATCH",
+      headers: {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+      },
+      body: JSON.stringify({
+        sms_opt_in: false,
+        sms_opt_out_date: new Date().toISOString(),
+      }),
+    });
+  } catch (error) {
+    console.error("Error handling opt-out:", error);
+  }
+}
+
+/**
+ * Handle SMS opt-in (START keyword)
+ */
+async function handleOptIn(phoneNumber: string): Promise<void> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles?phone_number=eq.${encodeURIComponent(phoneNumber)}`, {
+      method: "PATCH",
+      headers: {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+      },
+      body: JSON.stringify({
+        sms_opt_in: true,
+        sms_opt_in_date: new Date().toISOString(),
+      }),
+    });
+  } catch (error) {
+    console.error("Error handling opt-in:", error);
+  }
 }
 
 /**

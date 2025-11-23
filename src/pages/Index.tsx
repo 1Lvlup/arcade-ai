@@ -361,8 +361,11 @@ const Index = () => {
                     className="w-full mt-6 bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)]"
                     asChild
                   >
-                    <Link to="/pricing">Start free trial</Link>
+                    <Link to="/pricing">Subscribe Now - 14 Day Free Trial</Link>
                   </Button>
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Billing info required. Cancel anytime within 14 days.
+                  </p>
                 </CardContent>
               </Card>
             </div>

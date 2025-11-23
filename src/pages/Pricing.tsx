@@ -57,16 +57,16 @@ export default function Pricing() {
 
 
   const plan = {
-    title: "Basic Plan",
+    title: "Pro Plan",
     priceMain: "$99",
     cadence: "/ mo",
-    subNote: "Cancel anytime",
+    subNote: "14-day free trial, then $99/month",
     features: [
-      "Access to Level Up AI troubleshooting assistant",
-      "Unlimited queries",
-      "Game manual knowledge base",
-      "Email support (24 hr response)",
-      "SMS support for quick questions",
+      "Access to ALL game manuals in our system",
+      "Facility dashboard to track down games",
+      "Level Up AI troubleshooting assistant",
+      "Unlimited queries and support",
+      "Email & SMS support for quick questions",
     ],
   };
 
@@ -78,10 +78,13 @@ export default function Pricing() {
         {/* Header */}
         <div className="container mx-auto max-w-5xl px-6 text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight font-tech text-foreground">
-            Choose your <span className="text-primary">Level Up</span> plan
+            Start Your <span className="text-primary">14-Day Free Trial</span>
           </h1>
           <p className="mt-4 text-base md:text-lg text-muted-foreground font-body">
-            Built for busy FEC technicians who want less paperwork and faster fixes.
+            Full access to all manuals and features. Cancel anytime within 14 days—no charge.
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground font-body">
+            Billing information required to start trial. If you don't cancel within 14 days, you'll be charged $99/month.
           </p>
         </div>
 
@@ -93,7 +96,7 @@ export default function Pricing() {
             cadence={plan.cadence}
             subNote={plan.subNote}
             features={plan.features}
-            buttonLabel={loading ? 'Loading...' : 'Subscribe Now'}
+            buttonLabel={loading ? 'Loading...' : 'Start 14-Day Free Trial'}
             highlight={true}
             onButtonClick={handleCheckout}
             disabled={loading}
@@ -103,10 +106,10 @@ export default function Pricing() {
         {/* Bottom CTA */}
         <div className="container mx-auto mt-12 max-w-3xl px-6 text-center md:mt-16">
           <h2 className="text-2xl md:text-3xl font-bold font-tech text-foreground">
-            Ready to Level Up your maintenance game?
+            Try Level Up Risk-Free for 14 Days
           </h2>
           <p className="mt-3 text-base text-muted-foreground font-body">
-            30-day risk-free. No setup fees. Cancel anytime.
+            Access all manuals and features instantly. Cancel within 14 days for no charge.
           </p>
           <Button
             variant="orange"
@@ -115,8 +118,11 @@ export default function Pricing() {
             onClick={handleCheckout}
             disabled={loading}
           >
-            {loading ? 'Loading...' : 'Get Started'}
+            {loading ? 'Loading...' : 'Start My Free Trial'}
           </Button>
+          <p className="mt-3 text-xs text-muted-foreground font-body">
+            You'll enter billing info to begin. No charge for 14 days—cancel anytime before then.
+          </p>
         </div>
       </section>
 
@@ -195,7 +201,7 @@ function PlanCard(props: {
       </Button>
 
       <p className="mt-2 text-center text-[13px] text-muted-foreground font-body">
-        No contracts. Cancel anytime.
+        14-day free trial. Cancel within 14 days for no charge.
       </p>
     </div>
   );

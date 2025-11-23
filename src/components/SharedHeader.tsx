@@ -114,9 +114,9 @@ export const SharedHeader = ({
                 Blog
               </Button>
             </Link>
-            <Link to="/pricing">
+            <Link to="/downgames">
               <Button variant="minimal" size="sm">
-                Early Access
+                Facility Dashboard
               </Button>
             </Link>
           </nav>

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Settings, Database, Users, Activity, ArrowLeft } from 'lucide-react';
+import { Settings, Database, Users, Activity, ArrowLeft, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CleanupStaleJobs } from '@/components/CleanupStaleJobs';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,7 @@ import QAAnalytics from './QAAnalytics';
 import UserConversationHistory from './UserConversationHistory';
 import { UsageTrackingDashboard } from '@/components/UsageTrackingDashboard';
 import { StrategicAnalytics } from '@/components/StrategicAnalytics';
+import { SMSAnalyticsDashboard } from '@/components/SMSAnalyticsDashboard';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('system');
@@ -372,6 +373,22 @@ const AdminDashboard = () => {
                       </AlertDescription>
                     </Alert>
                     <UserConversationHistory />
+                  </CardContent>
+                </Card>
+
+                {/* SMS Analytics */}
+                <Card className="border-l-4 border-l-orange-500">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5" />
+                      SMS Support Analytics
+                    </CardTitle>
+                    <CardDescription>
+                      Track SMS questions, response times, and popular topics from technicians
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <SMSAnalyticsDashboard />
                   </CardContent>
                 </Card>
 

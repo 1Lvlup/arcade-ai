@@ -23,6 +23,7 @@ import {
   DollarSign,
   HelpCircle,
   FileText,
+  Wrench,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -95,7 +96,7 @@ export const SharedHeader = ({
             <Brain className="h-6 w-6 text-orange" />
             <span className="text-lg font-tech font-bold text-foreground">Level Up</span>
           </Link>
-          
+
           {/* Main Navigation Links - Always visible */}
           <nav className="flex items-center space-x-1 ml-2">
             <Link to="/">
@@ -161,7 +162,7 @@ export const SharedHeader = ({
                     Privacy Policy
                   </Link>
                 </DropdownMenuItem>
-                
+
                 {user && (
                   <>
                     <DropdownMenuSeparator />
@@ -192,7 +193,7 @@ export const SharedHeader = ({
                     </DropdownMenuItem>
                   </>
                 )}
-                
+
                 <>
                   <DropdownMenuSeparator />
                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Admin</div>
@@ -348,6 +349,12 @@ export const SharedHeader = ({
                   <Link to="/game-management" className="cursor-pointer">
                     <Gamepad2 className="h-4 w-4 mr-2" />
                     Game Management
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/gm/down-games" className="cursor-pointer">
+                    <Wrench className="h-4 w-4 mr-2" />
+                    Down Games (GM)
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

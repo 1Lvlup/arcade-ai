@@ -11,11 +11,20 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, CheckCircle2, Clock, Wrench } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Wrench, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 const DownGamesDashboard = () => {
     const [games, setGames] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [editingGame, setEditingGame] = React.useState<any>(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
     const [formData, setFormData] = React.useState({
         name: "",
         status: "New",
@@ -84,6 +93,53 @@ const DownGamesDashboard = () => {
         const diffTime = Math.abs(today.getTime() - downDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return Math.max(1, diffDays);
+    };
+
+    const handleEdit = (game: any) => {
+        setEditingGame(game);
+        setIsEditDialogOpen(true);
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const { error } = await supabase
+                .from('down_games')
+                .update({
+                    name: editingGame.name,
+                    status: editingGame.status,
+                    down_since: editingGame.down_since,
+                    last_update_note: editingGame.last_update_note,
+                    last_update: new Date().toISOString(),
+                })
+                .eq('id', editingGame.id);
+
+            if (error) throw error;
+
+            setIsEditDialogOpen(false);
+            setEditingGame(null);
+            fetchGames();
+        } catch (error) {
+            console.error('Error updating game:', error);
+            alert('Failed to update game. Please try again.');
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this game?')) return;
+        
+        try {
+            const { error } = await supabase
+                .from('down_games')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            fetchGames();
+        } catch (error) {
+            console.error('Error deleting game:', error);
+            alert('Failed to delete game. Please try again.');
+        }
     };
 
     const getStatusColor = (status: string) => {
@@ -210,7 +266,8 @@ const DownGamesDashboard = () => {
                                             <TableHead>Days Down</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead>Last Update</TableHead>
-                                            <TableHead className="text-right">Note</TableHead>
+                                            <TableHead>Note</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -244,8 +301,26 @@ const DownGamesDashboard = () => {
                                                             <span className="text-sm">{new Date(game.last_update).toLocaleDateString()}</span>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="text-right max-w-[250px] truncate" title={game.last_update_note}>
+                                                    <TableCell className="max-w-[250px] truncate" title={game.last_update_note}>
                                                         {game.last_update_note}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleEdit(game)}
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDelete(game.id)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </TableCell>
                                                 </TableRow>
                                             );
@@ -256,6 +331,70 @@ const DownGamesDashboard = () => {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Edit Dialog */}
+                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Edit Down Game</DialogTitle>
+                        </DialogHeader>
+                        {editingGame && (
+                            <form onSubmit={handleUpdate} className="space-y-4">
+                                <div className="space-y-2">
+                                    <label htmlFor="edit-name" className="text-sm font-medium">Game Name</label>
+                                    <input
+                                        id="edit-name"
+                                        required
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={editingGame.name}
+                                        onChange={(e) => setEditingGame({ ...editingGame, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="edit-status" className="text-sm font-medium">Status</label>
+                                    <select
+                                        id="edit-status"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={editingGame.status}
+                                        onChange={(e) => setEditingGame({ ...editingGame, status: e.target.value })}
+                                    >
+                                        <option value="New">New</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Waiting on Parts">Waiting on Parts</option>
+                                        <option value="Testing">Testing</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="edit-down-since" className="text-sm font-medium">Down Since</label>
+                                    <input
+                                        type="date"
+                                        id="edit-down-since"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={editingGame.down_since}
+                                        onChange={(e) => setEditingGame({ ...editingGame, down_since: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="edit-note" className="text-sm font-medium">Notes</label>
+                                    <input
+                                        id="edit-note"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={editingGame.last_update_note || ''}
+                                        onChange={(e) => setEditingGame({ ...editingGame, last_update_note: e.target.value })}
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit">
+                                        Save Changes
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </main>
         </div>
     );

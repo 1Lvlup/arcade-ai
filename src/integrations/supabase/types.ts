@@ -698,31 +698,40 @@ export type Database = {
       }
       down_games: {
         Row: {
+          completed_at: string | null
           down_since: string | null
           id: string
           last_update: string | null
           last_update_note: string | null
           location_zone: string | null
           name: string | null
+          parts_changed: string | null
           status: string | null
+          things_tried: string | null
         }
         Insert: {
+          completed_at?: string | null
           down_since?: string | null
           id?: string
           last_update?: string | null
           last_update_note?: string | null
           location_zone?: string | null
           name?: string | null
+          parts_changed?: string | null
           status?: string | null
+          things_tried?: string | null
         }
         Update: {
+          completed_at?: string | null
           down_since?: string | null
           id?: string
           last_update?: string | null
           last_update_note?: string | null
           location_zone?: string | null
           name?: string | null
+          parts_changed?: string | null
           status?: string | null
+          things_tried?: string | null
         }
         Relationships: []
       }

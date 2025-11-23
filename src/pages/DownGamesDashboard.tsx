@@ -11,7 +11,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, CheckCircle2, Clock, Wrench, Pencil, Trash2, Plus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Wrench, Pencil, Trash2, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -31,6 +31,8 @@ const DownGamesDashboard = () => {
         status: "New",
         down_since: new Date().toISOString().split('T')[0],
         last_update_note: "",
+        parts_changed: "",
+        things_tried: "",
     });
 
     const fetchGames = async () => {
@@ -39,6 +41,7 @@ const DownGamesDashboard = () => {
             const { data, error } = await supabase
                 .from('down_games')
                 .select('*')
+                .order('completed_at', { ascending: false, nullsFirst: false })
                 .order('down_since', { ascending: true });
 
             if (error) throw error;
@@ -77,6 +80,8 @@ const DownGamesDashboard = () => {
                 status: "New",
                 down_since: new Date().toISOString().split('T')[0],
                 last_update_note: "",
+                parts_changed: "",
+                things_tried: "",
             });
             setIsAddDialogOpen(false);
             fetchGames();
@@ -86,7 +91,9 @@ const DownGamesDashboard = () => {
         }
     };
 
-    const gamesDownCount = games.length;
+    const activeGames = games.filter(g => !g.completed_at);
+    const completedGames = games.filter(g => g.completed_at);
+    const gamesDownCount = activeGames.length;
 
     const getDaysDown = (dateString: string) => {
         if (!dateString) return 0;
@@ -112,6 +119,8 @@ const DownGamesDashboard = () => {
                     status: editingGame.status,
                     down_since: editingGame.down_since,
                     last_update_note: editingGame.last_update_note,
+                    parts_changed: editingGame.parts_changed,
+                    things_tried: editingGame.things_tried,
                     last_update: new Date().toISOString(),
                 })
                 .eq('id', editingGame.id);
@@ -124,6 +133,27 @@ const DownGamesDashboard = () => {
         } catch (error) {
             console.error('Error updating game:', error);
             alert('Failed to update game. Please try again.');
+        }
+    };
+
+    const handleComplete = async (id: string) => {
+        if (!confirm('Mark this game as completed? This will archive it with all its history.')) return;
+        
+        try {
+            const { error } = await supabase
+                .from('down_games')
+                .update({
+                    completed_at: new Date().toISOString(),
+                    status: 'Completed',
+                    last_update: new Date().toISOString(),
+                })
+                .eq('id', id);
+
+            if (error) throw error;
+            fetchGames();
+        } catch (error) {
+            console.error('Error completing game:', error);
+            alert('Failed to complete game. Please try again.');
         }
     };
 
@@ -195,82 +225,153 @@ const DownGamesDashboard = () => {
                     <CardContent className="p-0">
                         {loading ? (
                             <div className="p-8 text-center text-muted-foreground">Loading...</div>
-                        ) : gamesDownCount === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
-                                <h3 className="text-xl font-semibold text-foreground">All Systems Go!</h3>
-                                <p className="text-muted-foreground">All games are currently up. No downtime to report.</p>
-                            </div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="hover:bg-transparent border-b border-border/50">
-                                            <TableHead className="w-[200px]">Game</TableHead>
-                                            <TableHead>Days Down</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Last Update</TableHead>
-                                            <TableHead>Note</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {games.map((game) => {
-                                            const daysDown = getDaysDown(game.down_since);
-                                            const isLongDowntime = daysDown > 3;
+                            <div className="space-y-8">
+                                {/* Active Games */}
+                                {activeGames.length > 0 && (
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-4">Active Issues</h3>
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow className="hover:bg-transparent border-b border-border/50">
+                                                        <TableHead className="w-[200px]">Game</TableHead>
+                                                        <TableHead>Days Down</TableHead>
+                                                        <TableHead>Status</TableHead>
+                                                        <TableHead>Parts Changed</TableHead>
+                                                        <TableHead>Things Tried</TableHead>
+                                                        <TableHead>Note</TableHead>
+                                                        <TableHead className="text-right">Actions</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {activeGames.map((game) => {
+                                                        const daysDown = getDaysDown(game.down_since);
+                                                        const isLongDowntime = daysDown > 3;
 
-                                            return (
-                                                <TableRow key={game.id} className="hover:bg-muted/50 border-b border-border/50">
-                                                    <TableCell className="font-medium text-foreground">
-                                                        {game.name}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <span>{daysDown} days</span>
-                                                            {isLongDowntime && (
-                                                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
-                                                                    Over 3 days
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge className={getStatusColor(game.status)} variant="outline">
-                                                            {game.status}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                            <Clock className="h-3.5 w-3.5" />
-                                                            <span className="text-sm">{new Date(game.last_update).toLocaleDateString()}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="max-w-[250px] truncate" title={game.last_update_note}>
-                                                        {game.last_update_note}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleEdit(game)}
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleDelete(game.id)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
+                                                        return (
+                                                            <TableRow key={game.id} className="hover:bg-muted/50 border-b border-border/50">
+                                                                <TableCell className="font-medium text-foreground">
+                                                                    {game.name}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span>{daysDown} days</span>
+                                                                        {isLongDowntime && (
+                                                                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
+                                                                                Over 3 days
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge className={getStatusColor(game.status)} variant="outline">
+                                                                        {game.status}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell className="max-w-[150px] truncate" title={game.parts_changed}>
+                                                                    {game.parts_changed || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="max-w-[150px] truncate" title={game.things_tried}>
+                                                                    {game.things_tried || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="max-w-[150px] truncate" title={game.last_update_note}>
+                                                                    {game.last_update_note || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="text-right">
+                                                                    <div className="flex justify-end gap-2">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            onClick={() => handleComplete(game.id)}
+                                                                            title="Mark as completed"
+                                                                        >
+                                                                            <Check className="h-4 w-4" />
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            onClick={() => handleEdit(game)}
+                                                                        >
+                                                                            <Pencil className="h-4 w-4" />
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            onClick={() => handleDelete(game.id)}
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Completed Games */}
+                                {completedGames.length > 0 && (
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-4 text-muted-foreground">Completed Issues (History)</h3>
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow className="hover:bg-transparent border-b border-border/50">
+                                                        <TableHead className="w-[200px]">Game</TableHead>
+                                                        <TableHead>Down Duration</TableHead>
+                                                        <TableHead>Completed</TableHead>
+                                                        <TableHead>Parts Changed</TableHead>
+                                                        <TableHead>Things Tried</TableHead>
+                                                        <TableHead>Note</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {completedGames.map((game) => {
+                                                        const daysDown = getDaysDown(game.down_since);
+
+                                                        return (
+                                                            <TableRow key={game.id} className="hover:bg-muted/50 border-b border-border/50 opacity-70">
+                                                                <TableCell className="font-medium text-foreground">
+                                                                    {game.name}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {daysDown} days
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                                        <Clock className="h-3.5 w-3.5" />
+                                                                        <span className="text-sm">{new Date(game.completed_at).toLocaleDateString()}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="max-w-[150px] truncate" title={game.parts_changed}>
+                                                                    {game.parts_changed || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="max-w-[150px] truncate" title={game.things_tried}>
+                                                                    {game.things_tried || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="max-w-[200px] truncate" title={game.last_update_note}>
+                                                                    {game.last_update_note || '-'}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeGames.length === 0 && completedGames.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                                        <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
+                                        <h3 className="text-xl font-semibold text-foreground">All Systems Go!</h3>
+                                        <p className="text-muted-foreground">All games are currently up. No downtime to report.</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </CardContent>
@@ -321,11 +422,36 @@ const DownGamesDashboard = () => {
                                 />
                             </div>
                             <div className="space-y-2">
+                                <label htmlFor="add-parts_changed" className="text-sm font-medium">Parts Changed</label>
+                                <textarea
+                                    id="add-parts_changed"
+                                    name="parts_changed"
+                                    rows={2}
+                                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.parts_changed}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Control board, power supply..."
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="add-things_tried" className="text-sm font-medium">Things Tried</label>
+                                <textarea
+                                    id="add-things_tried"
+                                    name="things_tried"
+                                    rows={2}
+                                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.things_tried}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Reset, checked connections, tested voltage..."
+                                />
+                            </div>
+                            <div className="space-y-2">
                                 <label htmlFor="add-last_update_note" className="text-sm font-medium">Notes</label>
-                                <input
+                                <textarea
                                     id="add-last_update_note"
                                     name="last_update_note"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    rows={2}
+                                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     value={formData.last_update_note}
                                     onChange={handleInputChange}
                                 />
@@ -383,10 +509,33 @@ const DownGamesDashboard = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
+                                    <label htmlFor="edit-parts_changed" className="text-sm font-medium">Parts Changed</label>
+                                    <textarea
+                                        id="edit-parts_changed"
+                                        rows={2}
+                                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                        value={editingGame.parts_changed || ''}
+                                        onChange={(e) => setEditingGame({ ...editingGame, parts_changed: e.target.value })}
+                                        placeholder="e.g., Control board, power supply..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="edit-things_tried" className="text-sm font-medium">Things Tried</label>
+                                    <textarea
+                                        id="edit-things_tried"
+                                        rows={2}
+                                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                        value={editingGame.things_tried || ''}
+                                        onChange={(e) => setEditingGame({ ...editingGame, things_tried: e.target.value })}
+                                        placeholder="e.g., Reset, checked connections, tested voltage..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
                                     <label htmlFor="edit-note" className="text-sm font-medium">Notes</label>
-                                    <input
+                                    <textarea
                                         id="edit-note"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        rows={2}
+                                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                         value={editingGame.last_update_note || ''}
                                         onChange={(e) => setEditingGame({ ...editingGame, last_update_note: e.target.value })}
                                     />

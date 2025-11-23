@@ -171,8 +171,24 @@ export default function AccountSettings() {
       return { valid: true, formatted: "", error: "" };
     }
 
-    // Remove all non-digit characters
-    const digitsOnly = phone.replace(/\D/g, '');
+    // Remove all non-digit characters except leading +
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    
+    // If it already starts with +, validate it
+    if (cleaned.startsWith('+')) {
+      const digitsOnly = cleaned.substring(1);
+      if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+        return { valid: true, formatted: cleaned, error: "" };
+      }
+      return { 
+        valid: false, 
+        formatted: phone, 
+        error: "Please use format: +1 followed by 10 digits (e.g., +17017209099)" 
+      };
+    }
+    
+    // Remove all non-digits
+    const digitsOnly = cleaned.replace(/\D/g, '');
     
     // Check if it's a valid US number (10 digits) or already has country code (11 digits starting with 1)
     if (digitsOnly.length === 10) {

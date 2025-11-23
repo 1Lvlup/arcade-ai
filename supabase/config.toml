@@ -203,3 +203,6 @@ verify_jwt = true
 
 [functions.structured-troubleshoot]
 verify_jwt = false
+
+[functions.sms-tech-assistant]
+verify_jwt = false

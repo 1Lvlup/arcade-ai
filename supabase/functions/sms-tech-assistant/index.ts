@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,8 +58,8 @@ serve(async (req) => {
       );
     }
 
-    // Get AI answer
-    const aiAnswer = await askLevelUpAI(messageBody);
+    // Get AI answer from RAG system
+    const aiAnswer = await askLevelUpAI(messageBody, fromNumber);
     
     // Return TwiML response
     return createTwiMLResponse(aiAnswer);
@@ -72,65 +73,65 @@ serve(async (req) => {
 });
 
 /**
- * Helper function to get AI answer from Level Up
- * 
- * Current implementation: Uses Lovable AI with a simple prompt
- * 
- * TO SWAP TO EXISTING RAG SYSTEM LATER:
- * 1. Replace this function to call your existing chat-manual edge function
- * 2. You'll need to pass manual_id if you want specific game context
- * 3. The chat-manual function expects: { query, manual_id?, conversation_id? }
- * 4. Example call:
- *    const { data } = await supabase.functions.invoke('chat-manual', {
- *      body: { query: question, manual_id: 'some-game-id' }
- *    });
- *    return data.answer;
+ * Get AI answer from Level Up RAG system
+ * Connects to chat-manual edge function with full RAG pipeline
  */
-async function askLevelUpAI(question: string): Promise<string> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  
-  if (!LOVABLE_API_KEY) {
-    throw new Error("LOVABLE_API_KEY not configured");
+async function askLevelUpAI(question: string, fromNumber: string): Promise<string> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  try {
+    // Look up user profile by phone number to get tenant context
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('fec_tenant_id, user_id, facility_name')
+      .eq('phone_number', fromNumber)
+      .eq('sms_opt_in', true)
+      .single();
+
+    if (profileError || !profile) {
+      console.error("Profile lookup error:", profileError);
+      return "I couldn't find your account. Please make sure SMS notifications are enabled in your Level Up AI account settings.";
+    }
+
+    console.log(`SMS question from tenant ${profile.fec_tenant_id}: ${question}`);
+
+    // Call chat-manual edge function with RAG pipeline
+    const { data: chatData, error: chatError } = await supabase.functions.invoke('chat-manual', {
+      body: {
+        query: question,
+        // Don't specify manual_id - let the system search all accessible manuals
+        tenant_id: profile.fec_tenant_id,
+        user_id: profile.user_id
+      }
+    });
+
+    if (chatError) {
+      console.error("Chat-manual error:", chatError);
+      return "Sorry, I'm having trouble accessing the knowledge base right now. Please try again or use the web dashboard.";
+    }
+
+    // Extract the answer from the response
+    let answer = chatData?.answer || chatData?.content || "I couldn't generate an answer for that question.";
+
+    // Handle structured responses (if chat-manual returns JSON)
+    if (typeof answer === 'object') {
+      answer = answer.answer || answer.text || JSON.stringify(answer);
+    }
+
+    // Truncate for SMS if needed (max 300 chars, leave room for "... More at levelupai.com")
+    if (answer.length > 280) {
+      answer = answer.substring(0, 277) + "...";
+    }
+
+    return answer;
+
+  } catch (error) {
+    console.error("Error in askLevelUpAI:", error);
+    return "Sorry, I encountered an error. Please try again or contact support.";
   }
-
-  // System prompt optimized for SMS - short, actionable responses
-  const systemPrompt = `You are an arcade game technician assistant responding via SMS. 
-Keep answers SHORT and ACTIONABLE (max 160 characters if possible, 300 max).
-Focus on immediate next steps the tech can try right now.
-Use simple language, bullet points with dashes, no fancy formatting.
-If the question is unclear, ask ONE clarifying question.`;
-
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Tech question via SMS: ${question}` }
-      ],
-      temperature: 0.7,
-      max_tokens: 200, // Keep responses short for SMS
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("AI API error:", response.status, errorText);
-    throw new Error("AI service unavailable");
-  }
-
-  const data = await response.json();
-  const answer = data.choices?.[0]?.message?.content;
-
-  if (!answer) {
-    throw new Error("No answer from AI");
-  }
-
-  return answer.trim();
 }
 
 /**

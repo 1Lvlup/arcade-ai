@@ -40,6 +40,7 @@ export default function AccountSettings() {
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [smsOptInDate, setSmsOptInDate] = useState<string | null>(null);
   const [smsLoading, setSmsLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,9 +165,46 @@ export default function AccountSettings() {
     loadSmsPreferences();
   }, [user]);
 
+  // Validate and format phone number to E.164 format
+  const validateAndFormatPhone = (phone: string): { valid: boolean; formatted: string; error: string } => {
+    if (!phone.trim()) {
+      return { valid: true, formatted: "", error: "" };
+    }
+
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, '');
+    
+    // Check if it's a valid US number (10 digits) or already has country code (11 digits starting with 1)
+    if (digitsOnly.length === 10) {
+      return { valid: true, formatted: `+1${digitsOnly}`, error: "" };
+    } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+      return { valid: true, formatted: `+${digitsOnly}`, error: "" };
+    } else {
+      return { 
+        valid: false, 
+        formatted: phone, 
+        error: "Please enter a valid US phone number (10 digits)" 
+      };
+    }
+  };
+
   const handleSmsUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Validate phone number
+    const validation = validateAndFormatPhone(phoneNumber);
+    if (!validation.valid) {
+      setPhoneError(validation.error);
+      return;
+    }
+    setPhoneError("");
+
+    // Require phone number if enabling SMS
+    if (smsOptIn && !validation.formatted) {
+      setPhoneError("Phone number is required to enable SMS notifications");
+      return;
+    }
 
     setSmsLoading(true);
 
@@ -174,7 +212,7 @@ export default function AccountSettings() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          phone_number: phoneNumber,
+          phone_number: validation.formatted || null,
           sms_opt_in: smsOptIn,
           sms_opt_in_date: smsOptIn ? new Date().toISOString() : null,
           sms_opt_out_date: !smsOptIn ? new Date().toISOString() : null,
@@ -183,10 +221,13 @@ export default function AccountSettings() {
 
       if (error) throw error;
 
+      // Update local state with formatted number
+      setPhoneNumber(validation.formatted);
+
       toast({
         title: 'Success',
         description: smsOptIn 
-          ? 'SMS notifications enabled. You can now text questions to our support number.'
+          ? `SMS notifications enabled at ${validation.formatted}. You can now text questions!`
           : 'SMS preferences updated successfully',
       });
 
@@ -343,13 +384,22 @@ export default function AccountSettings() {
                   id="phone-number"
                   type="tel"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={(e) => {
+                    setPhoneNumber(e.target.value);
+                    setPhoneError("");
+                  }}
                   placeholder="+1 (555) 123-4567"
-                  className="bg-white/5 border-white/10 text-white placeholder:text-muted-foreground"
+                  className={`bg-white/5 border-white/10 text-white placeholder:text-muted-foreground ${
+                    phoneError ? 'border-red-500' : ''
+                  }`}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Enter your phone number in international format (e.g., +1 for US)
-                </p>
+                {phoneError ? (
+                  <p className="text-xs text-red-500">{phoneError}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Enter US phone number (will be formatted to E.164: +1...)
+                  </p>
+                )}
               </div>
 
               <div className="flex items-start space-x-3 space-y-0 rounded-md border border-white/10 p-4 bg-white/5">

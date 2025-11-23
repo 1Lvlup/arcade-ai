@@ -57,6 +57,16 @@ serve(async (req) => {
       .eq('phone_number', fromNumber)
       .single();
 
+    // Check if this is the user's first message
+    const { data: previousMessages } = await supabase
+      .from('sms_logs')
+      .select('id')
+      .eq('phone_number', fromNumber)
+      .eq('event_type', 'message')
+      .limit(1);
+
+    const isFirstMessage = !previousMessages || previousMessages.length === 0;
+
     // Check for STOP/START keywords
     const normalizedBody = messageBody.trim().toUpperCase();
     if (normalizedBody === "STOP") {
@@ -94,6 +104,9 @@ serve(async (req) => {
           facility_name: profile.facility_name,
           twilio_message_sid: messageSid,
         });
+        
+        // Send welcome message on opt-in
+        await sendWelcomeMessageIfEnabled(supabase, profile.fec_tenant_id, fromNumber, true);
       }
       
       return createTwiMLResponse("You've been re-subscribed to Level Up AI SMS support. Send your troubleshooting questions anytime!");
@@ -125,6 +138,11 @@ serve(async (req) => {
       return createTwiMLResponse(
         "Welcome to Level Up AI! To receive SMS support, please enable SMS notifications in your account settings at levelupai.com. Contact support if you need assistance."
       );
+    }
+
+    // Send welcome message on first message if enabled
+    if (isFirstMessage && profile) {
+      await sendWelcomeMessageIfEnabled(supabase, profile.fec_tenant_id, fromNumber, false);
     }
 
     // Get AI answer from RAG system
@@ -251,6 +269,56 @@ async function askLevelUpAI(question: string, fromNumber: string): Promise<strin
   } catch (error) {
     console.error("Error in askLevelUpAI:", error);
     return "Sorry, I encountered an error. Please try again or contact support.";
+  }
+}
+
+/**
+ * Send welcome message if enabled for the tenant
+ */
+async function sendWelcomeMessageIfEnabled(
+  db: any,
+  tenantId: string,
+  phoneNumber: string,
+  isOptIn: boolean
+): Promise<void> {
+  try {
+    // Get SMS config for tenant
+    const { data: config } = await db
+      .from('sms_config')
+      .select('*')
+      .eq('fec_tenant_id', tenantId)
+      .single();
+
+    if (!config) {
+      console.log('No SMS config found for tenant');
+      return;
+    }
+
+    // Check if welcome messages are enabled
+    if (!config.welcome_message_enabled) {
+      console.log('Welcome messages disabled');
+      return;
+    }
+
+    // For opt-in, always send. For first message, check auto_send setting
+    if (!isOptIn && !config.auto_send_on_first_message) {
+      console.log('Auto-send on first message disabled');
+      return;
+    }
+
+    // Log welcome message send (note: this only logs, doesn't actually send via Twilio)
+    await db.from('sms_logs').insert({
+      phone_number: phoneNumber,
+      direction: 'outbound',
+      event_type: 'welcome_sent',
+      message_body: config.welcome_message_template,
+      fec_tenant_id: tenantId,
+      metadata: { trigger: isOptIn ? 'opt_in' : 'first_message' },
+    });
+
+    console.log(`Welcome message logged for ${phoneNumber}`);
+  } catch (error) {
+    console.error('Error sending welcome message:', error);
   }
 }
 

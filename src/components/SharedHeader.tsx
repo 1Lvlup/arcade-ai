@@ -80,8 +80,8 @@ export const SharedHeader = ({
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0 scale-y-50"
-        style={{ objectPosition: "center 50%" }}
+        className="absolute inset-0 w-full h-full object-cover z-0"
+        style={{ objectPosition: "center 30%" }}
       >
         <source src="/AIGlitch.mp4" type="video/mp4" />
       </video>

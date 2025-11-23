@@ -2160,6 +2160,77 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_logs: {
+        Row: {
+          ai_response: string | null
+          created_at: string | null
+          direction: string
+          error_message: string | null
+          event_type: string
+          facility_name: string | null
+          fec_tenant_id: string
+          id: string
+          manual_id: string | null
+          message_body: string | null
+          phone_number: string
+          question_text: string | null
+          response_time_ms: number | null
+          topic_category: string | null
+          truncated: boolean | null
+          twilio_message_sid: string | null
+          twilio_status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_response?: string | null
+          created_at?: string | null
+          direction: string
+          error_message?: string | null
+          event_type: string
+          facility_name?: string | null
+          fec_tenant_id: string
+          id?: string
+          manual_id?: string | null
+          message_body?: string | null
+          phone_number: string
+          question_text?: string | null
+          response_time_ms?: number | null
+          topic_category?: string | null
+          truncated?: boolean | null
+          twilio_message_sid?: string | null
+          twilio_status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_response?: string | null
+          created_at?: string | null
+          direction?: string
+          error_message?: string | null
+          event_type?: string
+          facility_name?: string | null
+          fec_tenant_id?: string
+          id?: string
+          manual_id?: string | null
+          message_body?: string | null
+          phone_number?: string
+          question_text?: string | null
+          response_time_ms?: number | null
+          topic_category?: string | null
+          truncated?: boolean | null
+          twilio_message_sid?: string | null
+          twilio_status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_logs_fec_tenant_id_fkey"
+            columns: ["fec_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "fec_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           admin_notes: string | null

@@ -276,7 +276,7 @@ const App = () => (
                   </AdminRoute>
                 </ProtectedRoute>
               } />
-              <Route path="/gm/down-games" element={
+              <Route path="/downgames" element={
                 <ProtectedRoute>
                   <AdminRoute>
                     <DownGamesDashboard />

@@ -352,7 +352,7 @@ export const SharedHeader = ({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/gm/down-games" className="cursor-pointer">
+                  <Link to="/downgames" className="cursor-pointer">
                     <Wrench className="h-4 w-4 mr-2" />
                     Down Games (GM)
                   </Link>

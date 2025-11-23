@@ -18,7 +18,6 @@ const DownGamesDashboard = () => {
     const [loading, setLoading] = React.useState(true);
     const [formData, setFormData] = React.useState({
         name: "",
-        location_zone: "",
         status: "New",
         down_since: new Date().toISOString().split('T')[0],
         last_update_note: "",
@@ -65,7 +64,6 @@ const DownGamesDashboard = () => {
             // Reset form and refresh list
             setFormData({
                 name: "",
-                location_zone: "",
                 status: "New",
                 down_since: new Date().toISOString().split('T')[0],
                 last_update_note: "",
@@ -123,16 +121,6 @@ const DownGamesDashboard = () => {
                                     required
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     value={formData.name}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label htmlFor="location_zone" className="text-sm font-medium">Area on Floor</label>
-                                <input
-                                    id="location_zone"
-                                    name="location_zone"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={formData.location_zone}
                                     onChange={handleInputChange}
                                 />
                             </div>
@@ -219,7 +207,6 @@ const DownGamesDashboard = () => {
                                     <TableHeader>
                                         <TableRow className="hover:bg-transparent border-b border-border/50">
                                             <TableHead className="w-[200px]">Game</TableHead>
-                                            <TableHead>Area</TableHead>
                                             <TableHead>Days Down</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead>Last Update</TableHead>
@@ -236,7 +223,6 @@ const DownGamesDashboard = () => {
                                                     <TableCell className="font-medium text-foreground">
                                                         {game.name}
                                                     </TableCell>
-                                                    <TableCell>{game.location_zone}</TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
                                                             <span>{daysDown} days</span>

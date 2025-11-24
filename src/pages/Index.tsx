@@ -301,7 +301,7 @@ const Index = () => {
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-primary mt-0.5" />
-                      <span className="text-muted-foreground">50 queries per month</span>
+                      <span className="text-muted-foreground">10 queries per month</span>
                     </div>
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-primary mt-0.5" />

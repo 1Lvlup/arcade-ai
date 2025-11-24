@@ -51,12 +51,6 @@ serve(async (req) => {
       logStep("No existing customer found");
     }
 
-    const { priceId } = await req.json();
-    if (!priceId) {
-      throw new Error("priceId is required");
-    }
-    logStep("Price ID received", { priceId });
-
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,

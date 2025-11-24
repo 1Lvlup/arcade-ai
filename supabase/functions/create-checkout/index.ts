@@ -61,6 +61,9 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
+      subscription_data: {
+        trial_period_days: 14,
+      },
       success_url: `${req.headers.get("origin")}/account-settings?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/pricing?subscription=canceled`,
     });

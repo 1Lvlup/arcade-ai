@@ -38,32 +38,10 @@ export function GameSidebar({ selectedManualId, onManualChange, isCollapsed, onT
         throw new Error('Not authenticated');
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('fec_tenant_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      const { data: accessibleManuals, error: accessError } = await supabase
-        .from('tenant_manual_access')
-        .select('manual_id')
-        .eq('fec_tenant_id', profile.fec_tenant_id);
-
-      if (accessError) throw accessError;
-
-      if (!accessibleManuals || accessibleManuals.length === 0) {
-        setManuals([]);
-        return;
-      }
-
-      const manualIds = accessibleManuals.map(m => m.manual_id);
-
+      // All authenticated users can see all documents now
       const { data: docs, error: docsError } = await supabase
         .from('documents')
         .select('id, manual_id, title, source_filename')
-        .in('manual_id', manualIds)
         .order('title');
 
       if (docsError) throw docsError;

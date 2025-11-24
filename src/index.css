@@ -7,36 +7,36 @@
 @layer base {
   :root {
     /* Clean Professional Theme - Black, Orange, Grey, White */
-    --background: 0 0% 0%;           /* Pure Black */
-    --foreground: 0 0% 100%;         /* Pure White */
-    
-    --card: 0 0% 6%;                 /* Dark Grey Card */
-    --card-foreground: 0 0% 98%;     /* Off-White */
-    
+    --background: 0 0% 0%; /* Pure Black */
+    --foreground: 0 0% 100%; /* Pure White */
+
+    --card: 0 0% 6%; /* Dark Grey Card */
+    --card-foreground: 0 0% 98%; /* Off-White */
+
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
-    
-    --primary: 24 100% 60%;          /* Brighter Orange Accent */
+
+    --primary: 24 100% 60%; /* Brighter Orange Accent */
     --primary-foreground: 0 0% 100%;
-    
-    --secondary: 0 0% 12%;           /* Medium Dark Grey */
+
+    --secondary: 0 0% 12%; /* Medium Dark Grey */
     --secondary-foreground: 0 0% 98%;
-    
+
     --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 64%;    /* Medium Grey Text */
-    
-    --accent: 24 100% 60%;           /* Brighter Orange */
+    --muted-foreground: 0 0% 64%; /* Medium Grey Text */
+
+    --accent: 24 100% 60%; /* Brighter Orange */
     --accent-foreground: 0 0% 100%;
-    
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    
-    --border: 0 0% 20%;              /* Subtle Grey Border */
+
+    --border: 0 0% 20%; /* Subtle Grey Border */
     --input: 0 0% 12%;
-    --ring: 24 100% 60%;             /* Brighter Orange Ring */
-    
+    --ring: 24 100% 60%; /* Brighter Orange Ring */
+
     --radius: 0.5rem;
-    
+
     /* Shadows - Minimal and Clean */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1);
@@ -70,11 +70,15 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     margin: 0;
-    font-family: 'Exo 2', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family:
+      "Exo 2",
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
     line-height: 1.6;
     background: hsl(0 0% 0%);
     font-variant-numeric: tabular-nums;
@@ -86,13 +90,21 @@
 /* Clean Typography */
 @layer utilities {
   .font-tech {
-    font-family: 'Orbitron', system-ui, -apple-system, sans-serif;
+    font-family:
+      "Orbitron",
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
-  
+
   .font-body {
-    font-family: 'Exo 2', system-ui, -apple-system, sans-serif;
+    font-family:
+      "Exo 2",
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
-  
+
   /* Clean cards - minimal shadows */
   .stat-card {
     background: hsl(0 0% 6%);
@@ -100,62 +112,88 @@
     border-radius: 0.75rem;
     transition: all 0.2s ease;
   }
-  
+
   .stat-card:hover {
     border-color: hsl(24 100% 60% / 0.5);
     box-shadow: 0 4px 12px hsl(0 0% 0% / 0.3);
   }
-  
+
   .premium-card {
     background: hsl(0 0% 6%);
     border: 1px solid hsl(0 0% 15%);
     border-radius: 0.75rem;
     transition: all 0.2s ease;
   }
-  
+
   .premium-card:hover {
     border-color: hsl(0 0% 20%);
   }
-  
+
   .feature-card {
     background: hsl(0 0% 6%);
     border: 1px solid hsl(0 0% 15%);
     transition: all 0.2s ease;
   }
-  
+
   .feature-card:hover {
     border-color: hsl(24 100% 60% / 0.4);
     transform: translateY(-2px);
   }
-  
+
   .hover-lift {
     transition: all 0.2s ease;
   }
-  
+
   .hover-lift:hover {
     transform: translateY(-2px);
   }
-  
+
   /* Custom scrollbar */
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: hsl(0 0% 30%) transparent;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: hsl(0 0% 30%);
     border-radius: 3px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: hsl(0 0% 40%);
   }
+}
+
+/* Global typography spacing for blog + normal text */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+ul,
+ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem; /* indent bullets/numbers */
+}
+
+li {
+  margin-bottom: 0.25rem;
 }

@@ -36,6 +36,7 @@ import Pricing from "./pages/Pricing";
 import ServerCapacity from "./pages/ServerCapacity";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SubscriptionProtectedRoute from "./components/SubscriptionProtectedRoute";
+import AuthProtectedRoute from "./components/AuthProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import ReIngestManual from "./pages/ReIngestManual";
 import ManualProcessingTools from "./pages/ManualProcessingTools";
@@ -83,9 +84,9 @@ const App = () => (
                 </SubscriptionProtectedRoute>
               } />
               <Route path="/chat" element={
-                <SubscriptionProtectedRoute>
+                <AuthProtectedRoute>
                   <Chat />
-                </SubscriptionProtectedRoute>
+                </AuthProtectedRoute>
               } />
               <Route path="/forum" element={<Forum />} />
               <Route path="/forum/:id" element={<ForumPost />} />

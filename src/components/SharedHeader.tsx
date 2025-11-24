@@ -91,6 +91,15 @@ export const SharedHeader = ({
 
       <div className="container mx-auto px-3 py-3 flex items-center justify-between relative z-10">
         <div className="flex items-center space-x-3">
+          {/* Back Button */}
+          {showBackButton && (
+            <Link to={backTo} onClick={onBackClick}>
+              <Button variant="minimal" size="sm">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+          )}
+          
           {/* Level Up Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <Brain className="h-6 w-6 text-orange" />

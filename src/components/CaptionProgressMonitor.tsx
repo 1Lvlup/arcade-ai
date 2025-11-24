@@ -124,7 +124,7 @@ const CaptionProgressMonitor: React.FC<CaptionProgressMonitorProps> = ({ manualI
           Figure Caption Generation
         </CardTitle>
         <CardDescription>
-          Generate AI captions and embeddings for figures
+          AI captions are generated automatically after PDF processing. Click below to start processing manually if needed.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -132,7 +132,7 @@ const CaptionProgressMonitor: React.FC<CaptionProgressMonitorProps> = ({ manualI
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {uncaptionedCount} figures need captions. Click below to start background processing.
+              {uncaptionedCount} figures need captions. Captions generate automatically after upload, or click below to start manually.
             </AlertDescription>
           </Alert>
         )}

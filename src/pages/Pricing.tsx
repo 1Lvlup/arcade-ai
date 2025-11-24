@@ -19,6 +19,7 @@ export default function Pricing() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('annual');
 
   const handleCheckout = async () => {
     if (!user) {
@@ -31,7 +32,9 @@ export default function Pricing() {
       return;
     }
 
-    const priceId = SUBSCRIPTION_TIERS.basic_monthly.price_id;
+    const priceId = billingInterval === 'monthly' 
+      ? SUBSCRIPTION_TIERS.basic_monthly.price_id 
+      : SUBSCRIPTION_TIERS.basic_annual.price_id;
 
     setLoading(true);
     try {
@@ -56,19 +59,30 @@ export default function Pricing() {
   };
 
 
-  const plan = {
+  const monthlyPlan = {
     title: "Pro Plan",
     priceMain: "$99",
     cadence: "/ mo",
     subNote: "14-day free trial, then $99/month",
-    features: [
-      "Access to ALL game manuals in our system",
-      "Facility dashboard to track down games",
-      "Level Up AI troubleshooting assistant",
-      "Unlimited queries and support",
-      "Email & SMS support for quick questions",
-    ],
   };
+
+  const annualPlan = {
+    title: "Pro Plan",
+    priceMain: "$990",
+    oldPrice: "$1,188",
+    cadence: "/ year",
+    subNote: "14-day free trial, then $990/year (2 months free!)",
+  };
+
+  const plan = billingInterval === 'monthly' ? monthlyPlan : annualPlan;
+
+  const features = [
+    "Access to ALL game manuals in our system",
+    "Facility dashboard to track down games",
+    "Level Up AI troubleshooting assistant",
+    "Unlimited queries and support",
+    "Email & SMS support for quick questions",
+  ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -88,14 +102,36 @@ export default function Pricing() {
           </p>
         </div>
 
+        {/* Billing Toggle */}
+        <div className="container mx-auto mt-12 max-w-md px-6 flex items-center justify-center gap-4">
+          <span className={`text-sm font-medium transition-colors ${billingInterval === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
+            Monthly
+          </span>
+          <button
+            onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'annual' : 'monthly')}
+            className="relative inline-flex h-7 w-14 items-center rounded-full bg-primary/20 transition-colors hover:bg-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-primary transition-transform ${
+                billingInterval === 'annual' ? 'translate-x-8' : 'translate-x-1'
+              }`}
+            />
+          </button>
+          <span className={`text-sm font-medium transition-colors ${billingInterval === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
+            Annual
+            <span className="ml-1 text-xs text-primary font-semibold">(Save 2 months!)</span>
+          </span>
+        </div>
+
         {/* Pricing Card */}
-        <div className="container mx-auto mt-12 max-w-md px-6 md:mt-16">
+        <div className="container mx-auto mt-8 max-w-md px-6">
           <PlanCard
             title={plan.title}
             priceMain={plan.priceMain}
+            oldPrice={('oldPrice' in plan ? plan.oldPrice : undefined) as string | undefined}
             cadence={plan.cadence}
             subNote={plan.subNote}
-            features={plan.features}
+            features={features}
             buttonLabel={loading ? 'Loading...' : 'Start 14-Day Free Trial'}
             highlight={true}
             onButtonClick={handleCheckout}
@@ -163,17 +199,17 @@ function PlanCard(props: {
       </h3>
 
       <div className="flex items-baseline gap-2 flex-wrap">
-        {oldPrice && (
-          <span className="text-xl md:text-2xl font-semibold line-through opacity-50 text-muted-foreground font-body">
-            {oldPrice}
-          </span>
-        )}
         <span className="text-3xl md:text-4xl font-extrabold text-primary font-body">
           {priceMain}
         </span>
         <span className="text-base md:text-lg font-medium text-foreground/90 font-body">
           {` ${cadence}`}
         </span>
+        {oldPrice && (
+          <span className="ml-2 text-lg md:text-xl font-semibold line-through opacity-50 text-muted-foreground font-body">
+            {oldPrice}
+          </span>
+        )}
       </div>
 
       <p className="mt-1 text-sm italic text-muted-foreground font-body">

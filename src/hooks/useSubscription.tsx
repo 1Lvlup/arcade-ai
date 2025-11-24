@@ -7,9 +7,16 @@ export const SUBSCRIPTION_TIERS = {
   basic_monthly: {
     price_id: "price_1SWdLQKhihueLCnL07FYJFcr",
     product_id: "prod_TTaWsTfilkHfme",
-    name: "Basic",
+    name: "Pro",
     price: 99,
     interval: "month" as const,
+  },
+  basic_annual: {
+    price_id: "price_1SWonyKhihueLCnLg5DW1snH",
+    product_id: "prod_TTmMRx2BDAQ6s2",
+    name: "Pro",
+    price: 990,
+    interval: "year" as const,
   }
 } as const;
 

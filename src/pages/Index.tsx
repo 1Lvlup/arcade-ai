@@ -151,7 +151,7 @@ const Index = () => {
         </section>
 
           {/* How it Works */}
-          <section className="pt-20 pb-32 border-t border-b border-border -mt-12 md:-mt-16">
+          <section className="pt-20 pb-32 border-t border-b border-border -mt-12 md:-mt-16 px-4">
             <div className="mb-16 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 INSIDE THE INTELLIGENCE
@@ -200,7 +200,7 @@ const Index = () => {
           </section>
 
           {/* Features Section */}
-          <section className="pt-40 pb-20">
+          <section className="pt-40 pb-20 px-4">
             <div className="mb-12 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 ADVANCED CAPABILITIES
@@ -277,7 +277,7 @@ const Index = () => {
           </section>
 
           {/* Pricing */}
-          <section className="pt-40 pb-20">
+          <section className="pt-40 pb-20 px-4">
             <div className="mb-16 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 SIMPLE, TRANSPARENT PRICING
@@ -372,7 +372,7 @@ const Index = () => {
           </section>
 
           {/* Final CTA */}
-          <section className="py-20 border-t border-border">
+          <section className="py-20 border-t border-border px-4">
             <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
               <h2 className="text-4xl sm:text-5xl font-bold font-tech uppercase mb-6">
                 Ready to eliminate <span className="text-primary">downtime</span>?
@@ -392,7 +392,7 @@ const Index = () => {
           </section>
 
           {/* Admin Panel */}
-          {isAdmin && <section className="py-12 border-t border-border">
+          {isAdmin && <section className="py-12 border-t border-border px-4">
             <h2 className="text-2xl font-bold text-foreground mb-6">Admin Panel</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4 max-w-2xl">
               <Link to="/admin">

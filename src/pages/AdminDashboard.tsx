@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { SharedHeader } from '@/components/SharedHeader';
@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Settings, Database, Users, Activity, ArrowLeft, MessageSquare } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Settings, Database, Users, Activity, ArrowLeft, MessageSquare, FileText, Eye, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { CleanupStaleJobs } from '@/components/CleanupStaleJobs';
 import { Badge } from '@/components/ui/badge';
 import TenantManagement from './TenantManagement';
@@ -30,9 +30,86 @@ import { UsageTrackingDashboard } from '@/components/UsageTrackingDashboard';
 import { StrategicAnalytics } from '@/components/StrategicAnalytics';
 import { SMSAnalyticsDashboard } from '@/components/SMSAnalyticsDashboard';
 import { SMSSettingsManager } from '@/components/SMSSettingsManager';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('system');
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [blogStats, setBlogStats] = useState({ total: 0, published: 0, drafts: 0, totalViews: 0 });
+  const [loadingBlog, setLoadingBlog] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (activeTab === 'blog') {
+      loadBlogData();
+    }
+  }, [activeTab]);
+
+  const loadBlogData = async () => {
+    setLoadingBlog(true);
+    try {
+      const { data: posts, error } = await supabase
+        .from('blog_posts')
+        .select(`
+          *,
+          blog_categories (
+            name,
+            slug
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setBlogPosts(posts || []);
+      
+      const total = posts?.length || 0;
+      const published = posts?.filter(p => p.status === 'published').length || 0;
+      const drafts = posts?.filter(p => p.status === 'draft').length || 0;
+      const totalViews = posts?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
+
+      setBlogStats({ total, published, drafts, totalViews });
+    } catch (error) {
+      console.error('Error loading blog data:', error);
+      toast({
+        title: 'Error loading blog posts',
+        description: 'Failed to fetch blog data',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingBlog(false);
+    }
+  };
+
+  const handleDeletePost = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this blog post?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Blog post deleted successfully',
+      });
+
+      loadBlogData();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete blog post',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <>
@@ -425,6 +502,151 @@ const AdminDashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
+              </TabsContent>
+
+              {/* BLOG MANAGEMENT TAB */}
+              <TabsContent value="blog" className="space-y-6 mt-0">
+                {/* Blog Stats Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Posts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{blogStats.total}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Views</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold flex items-center gap-2">
+                        <Eye className="h-5 w-5 text-primary" />
+                        {blogStats.totalViews}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Published</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">{blogStats.published}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Drafts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-muted-foreground">{blogStats.drafts}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Blog Posts List */}
+                <Card className="border-l-4 border-l-primary">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Blog Posts
+                        </CardTitle>
+                        <CardDescription>
+                          Manage your blog posts and track performance
+                        </CardDescription>
+                      </div>
+                      <Button onClick={() => navigate('/admin/blog/new')}>
+                        New Post
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingBlog ? (
+                      <div className="text-center py-8 text-muted-foreground">Loading blog posts...</div>
+                    ) : blogPosts.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground mb-4">No blog posts yet</p>
+                        <Button onClick={() => navigate('/admin/blog/new')}>Create Your First Post</Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {blogPosts.map((post) => (
+                          <Card key={post.id} className="hover:bg-accent/50 transition-colors">
+                            <CardContent className="pt-6">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="font-semibold text-lg truncate">{post.title}</h3>
+                                    <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
+                                      {post.status}
+                                    </Badge>
+                                    {post.blog_categories && (
+                                      <Badge variant="outline">{post.blog_categories.name}</Badge>
+                                    )}
+                                  </div>
+                                  
+                                  {post.excerpt && (
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                      {post.excerpt}
+                                    </p>
+                                  )}
+
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <Eye className="h-3 w-3" />
+                                      <span>{post.views_count || 0} views</span>
+                                    </div>
+                                    {post.author_name && (
+                                      <span>By {post.author_name}</span>
+                                    )}
+                                    {post.read_time_minutes && (
+                                      <span>{post.read_time_minutes} min read</span>
+                                    )}
+                                    {post.published_at ? (
+                                      <span>Published {format(new Date(post.published_at), 'MMM d, yyyy')}</span>
+                                    ) : (
+                                      <span>Created {format(new Date(post.created_at), 'MMM d, yyyy')}</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => navigate(`/admin/blog/edit/${post.id}`)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeletePost(post.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* SMS SETTINGS TAB */}

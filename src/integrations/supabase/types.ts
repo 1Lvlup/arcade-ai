@@ -1203,6 +1203,39 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_usage_limits: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_hash: string
+          last_query_at: string | null
+          month_start: string | null
+          queries_per_month: number
+          queries_used_this_month: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_hash: string
+          last_query_at?: string | null
+          month_start?: string | null
+          queries_per_month?: number
+          queries_used_this_month?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_hash?: string
+          last_query_at?: string | null
+          month_start?: string | null
+          queries_per_month?: number
+          queries_used_this_month?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       indexed_codebase: {
         Row: {
           created_at: string | null
@@ -1683,6 +1716,7 @@ export type Database = {
           github_branch: string | null
           github_last_sync: string | null
           github_repository: string | null
+          has_ever_subscribed: boolean | null
           id: string
           phone_number: string | null
           position: string | null
@@ -1705,6 +1739,7 @@ export type Database = {
           github_branch?: string | null
           github_last_sync?: string | null
           github_repository?: string | null
+          has_ever_subscribed?: boolean | null
           id?: string
           phone_number?: string | null
           position?: string | null
@@ -1727,6 +1762,7 @@ export type Database = {
           github_branch?: string | null
           github_last_sync?: string | null
           github_repository?: string | null
+          has_ever_subscribed?: boolean | null
           id?: string
           phone_number?: string | null
           position?: string | null
@@ -2747,6 +2783,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_guest_query_count: {
+        Args: { p_ip_hash: string }
+        Returns: Json
       }
       increment_ip_query_count: {
         Args: { p_ip_address: string }

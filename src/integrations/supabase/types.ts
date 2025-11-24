@@ -2760,6 +2760,14 @@ export type Database = {
         }
         Returns: Json
       }
+      check_my_admin_status: {
+        Args: never
+        Returns: {
+          all_roles: string[]
+          has_admin_role: boolean
+          user_email: string
+        }[]
+      }
       fn_backfill_for_manual: { Args: { p_manual_id: string }; Returns: number }
       fn_backfill_for_manual_any: {
         Args: { p_manual_id: string }

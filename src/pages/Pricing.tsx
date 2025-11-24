@@ -138,28 +138,6 @@ export default function Pricing() {
             disabled={loading}
           />
         </div>
-
-        {/* Bottom CTA */}
-        <div className="container mx-auto mt-12 max-w-3xl px-6 text-center md:mt-16">
-          <h2 className="text-2xl md:text-3xl font-bold font-tech text-foreground">
-            Try Level Up Risk-Free for 14 Days
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground font-body">
-            Access all manuals and features instantly. Cancel within 14 days for no charge.
-          </p>
-          <Button
-            variant="orange"
-            size="lg"
-            className="mt-6"
-            onClick={handleCheckout}
-            disabled={loading}
-          >
-            {loading ? 'Loading...' : 'Start My Free Trial'}
-          </Button>
-          <p className="mt-3 text-xs text-muted-foreground font-body">
-            You'll enter billing info to begin. No charge for 14 days—cancel anytime before then.
-          </p>
-        </div>
       </section>
 
       <Footer />

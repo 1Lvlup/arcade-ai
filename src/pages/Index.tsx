@@ -95,7 +95,7 @@ const Index = () => {
             {/* Centered Text Content */}
             {/* Title - No Box */}
             <div className="max-w-[800px] mx-auto text-center mb-6">
-              <h1 className="text-4xl sm:text-5xl tracking-tight leading-tight font-medium font-tech text-slate-50 lg:text-5xl mb-6">
+              <h1 className="text-4xl sm:text-5xl tracking-tight leading-tight font-medium font-tech text-slate-50 mb-6 lg:text-4xl">
                 STOP LOSING MONEY TO <span className="text-primary">DEAD GAMES</span>
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed font-sans">
@@ -108,19 +108,19 @@ const Index = () => {
             <div className="flex flex-row gap-6 mb-8 text-sm max-w-[1000px] mx-auto justify-center">
               <div className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground font-sans">
+                <span className="font-sans text-[#d9d9d9]">
                   Every fix across every arcade is stored into the database.
                 </span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground font-sans">
+                <span className="font-sans text-left text-[#d7d7d7]">
                   Over time it will instantly know every solution to every problem with little to no troubleshooting
                 </span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground font-sans">
+                <span className="font-sans text-[#d9d9d9]">
                   Recover revenue from games that would sit dark for days or weeks.
                 </span>
               </div>
@@ -312,11 +312,7 @@ const Index = () => {
                       <span className="text-muted-foreground">Email support</span>
                     </div>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-6"
-                    onClick={handleStartGeneralChat}
-                  >
+                  <Button variant="outline" className="w-full mt-6" onClick={handleStartGeneralChat}>
                     Get started
                   </Button>
                 </CardContent>
@@ -357,10 +353,7 @@ const Index = () => {
                       <span className="text-muted-foreground">Custom integrations</span>
                     </div>
                   </div>
-                  <Button 
-                    className="w-full mt-6 bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)]"
-                    asChild
-                  >
+                  <Button className="w-full mt-6 bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)]" asChild>
                     <Link to="/pricing">Subscribe Now - 14 Day Free Trial</Link>
                   </Button>
                   <p className="text-xs text-center text-muted-foreground mt-2">

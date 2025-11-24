@@ -140,11 +140,11 @@ export default function Auth() {
       } else {
         toast({
           title: "Success!",
-          description: "Account created successfully! Welcome to Level Up.",
+          description: "Account created successfully! Please complete your 14-day free trial setup.",
         });
-        // Redirect to main chat after successful signup
+        // Redirect to pricing page to complete subscription after successful signup
         setTimeout(() => {
-          navigate('/');
+          navigate('/pricing');
         }, 1500);
       }
     } catch (err: any) {

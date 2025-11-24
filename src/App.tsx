@@ -277,9 +277,9 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/downgames" element={
-                <SubscriptionProtectedRoute>
+                <AdminOrSubscriptionRoute>
                   <DownGamesDashboard />
-                </SubscriptionProtectedRoute>
+                </AdminOrSubscriptionRoute>
               } />
               <Route path="/contact" element={<Contact />} />
               <Route path="/blog" element={<Blog />} />

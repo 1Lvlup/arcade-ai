@@ -249,7 +249,7 @@ export default function BlogPost() {
 
           {/* Article Content */}
           <Card className="border-primary/30 mb-12">
-            <CardContent className="prose prose-invert max-w-none p-8">
+            <CardContent className={`p-8 ${post.content_format === 'html' ? '' : 'prose prose-invert max-w-none'}`}>
               {post.content_format === 'markdown' ? (
                 <div className="text-foreground leading-relaxed">
                   <ReactMarkdown>
@@ -262,7 +262,7 @@ export default function BlogPost() {
                 </div>
               ) : (
                 <div 
-                  className="text-foreground leading-relaxed"
+                  className="blog-html-content"
                   dangerouslySetInnerHTML={{ __html: post.content }}
                 />
               )}

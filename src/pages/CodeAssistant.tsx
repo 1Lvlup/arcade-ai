@@ -23,6 +23,7 @@ import { CodeAssistantSettings } from '@/components/code-assistant/CodeAssistant
 import { FilePreviewPanel } from '@/components/code-assistant/FilePreviewPanel';
 import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
 import { RelatedFilesPanel } from '@/components/code-assistant/RelatedFilesPanel';
+import { ChatInput } from '@/components/code-assistant/ChatInput';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { parseFileIntoChunks } from '@/lib/codeParser';
 
@@ -60,7 +61,6 @@ export function CodeAssistant() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(null);
@@ -539,18 +539,17 @@ export function CodeAssistant() {
     }
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading || !currentConversation) return;
+  const sendMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading || !currentConversation) return;
 
     const userMessage: Message = {
       role: 'user',
-      content: input,
+      content: messageText,
       timestamp: new Date().toISOString()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const userQuery = input;
-    setInput('');
+    const userQuery = messageText;
     setIsLoading(true);
 
     try {
@@ -937,35 +936,7 @@ export function CodeAssistant() {
               </ScrollArea>
 
               {/* Input Area */}
-              <div className="border-t p-4 bg-background">
-                <div className="max-w-4xl mx-auto flex gap-2">
-                  <Textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    placeholder="Ask about your code..."
-                    className="min-h-[80px] resize-none"
-                    disabled={isLoading}
-                  />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={isLoading || !input.trim()}
-                    size="icon"
-                    className="h-[80px] w-[80px] flex-shrink-0"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    ) : (
-                      <Send className="h-6 w-6" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+              <ChatInput onSendMessage={sendMessage} isLoading={isLoading} />
             </>
           )}
         </div>

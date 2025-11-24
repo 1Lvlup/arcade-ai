@@ -37,6 +37,7 @@ import ServerCapacity from "./pages/ServerCapacity";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SubscriptionProtectedRoute from "./components/SubscriptionProtectedRoute";
 import AuthProtectedRoute from "./components/AuthProtectedRoute";
+import AdminOrSubscriptionRoute from "./components/AdminOrSubscriptionRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import ReIngestManual from "./pages/ReIngestManual";
 import ManualProcessingTools from "./pages/ManualProcessingTools";
@@ -79,9 +80,9 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/what-is-level-up" element={<WhatIsLevelUp />} />
               <Route path="/manuals" element={
-                <SubscriptionProtectedRoute>
+                <AdminOrSubscriptionRoute>
                   <ManualManagement />
-                </SubscriptionProtectedRoute>
+                </AdminOrSubscriptionRoute>
               } />
               <Route path="/chat" element={
                 <AuthProtectedRoute>
@@ -91,9 +92,9 @@ const App = () => (
               <Route path="/forum" element={<Forum />} />
               <Route path="/forum/:id" element={<ForumPost />} />
               <Route path="/manuals/:manualId" element={
-                <SubscriptionProtectedRoute>
+                <AdminOrSubscriptionRoute>
                   <ManualDetail />
-                </SubscriptionProtectedRoute>
+                </AdminOrSubscriptionRoute>
               } />
               <Route path="/manuals/:manualId/tools" element={
                 <ProtectedRoute>

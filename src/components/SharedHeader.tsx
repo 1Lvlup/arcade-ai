@@ -58,11 +58,16 @@ export const SharedHeader = ({
 
   useEffect(() => {
     const checkAdmin = async () => {
-      if (!user) return;
-      const { data } = await supabase.rpc("has_role", {
+      if (!user) {
+        console.log("SharedHeader: No user found");
+        return;
+      }
+      console.log("SharedHeader: Checking admin status for user:", user.id);
+      const { data, error } = await supabase.rpc("has_role", {
         _user_id: user.id,
         _role: "admin",
       });
+      console.log("SharedHeader: has_role response:", { data, error });
       setIsAdmin(data || false);
     };
     checkAdmin();

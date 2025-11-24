@@ -2706,21 +2706,21 @@ export type Database = {
       user_roles: {
         Row: {
           created_at: string | null
-          fec_tenant_id: string
+          fec_tenant_id: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string | null
-          fec_tenant_id: string
+          fec_tenant_id?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string | null
-          fec_tenant_id?: string
+          fec_tenant_id?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
@@ -2785,6 +2785,7 @@ export type Database = {
           platform: string
         }[]
       }
+      grant_me_admin: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -45,7 +45,6 @@ const CaptionProgressMonitor: React.FC<CaptionProgressMonitorProps> = ({ manualI
       .from('processing_status')
       .select('*')
       .eq('manual_id', manualId)
-      .eq('stage', 'caption_generation')
       .order('updated_at', { ascending: false })
       .limit(1)
       .single();
@@ -53,12 +52,14 @@ const CaptionProgressMonitor: React.FC<CaptionProgressMonitorProps> = ({ manualI
     if (data) {
       setStatus(data as ProcessingStatus);
       
-      // If status is processing, keep polling
-      if (data.status === 'processing') {
+      // If caption_generation stage is processing, keep polling
+      if (data.stage === 'caption_generation' && data.status === 'processing') {
         setIsProcessing(true);
-      } else if (data.status === 'completed') {
+      } else if (data.stage === 'caption_generation' && data.status === 'completed') {
         setIsProcessing(false);
         if (onComplete) onComplete();
+      } else {
+        setIsProcessing(false);
       }
     }
   };
@@ -128,7 +129,16 @@ const CaptionProgressMonitor: React.FC<CaptionProgressMonitorProps> = ({ manualI
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!isProcessing && uncaptionedCount !== null && uncaptionedCount > 0 && (
+        {status && status.stage === 'images_ready' && (
+          <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800 dark:text-orange-200">
+              Manual is stuck at image processing. Click below to start caption generation for {status.total_figures || 'all'} figures.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isProcessing && !status?.stage?.includes('images_ready') && uncaptionedCount !== null && uncaptionedCount > 0 && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>

@@ -666,7 +666,7 @@ export function CodeAssistant() {
     <div className="min-h-screen mesh-gradient">
       <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
       
-      <main className="flex h-[calc(100vh-64px)] w-full max-w-full overflow-x-auto overflow-y-hidden">
+      <main className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
         {/* Left Sidebar - File Tree */}
         <div className="w-[350px] flex-shrink-0 border-r bg-background flex flex-col overflow-hidden">
           <div className="p-4 border-b flex items-center justify-between">
@@ -771,7 +771,7 @@ export function CodeAssistant() {
         </div>
 
         {/* Right Side - Conversations + Chat */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {!currentConversation ? (
             <div className="flex items-center justify-center h-full">
               <Card className="max-w-lg mx-auto">
@@ -866,7 +866,7 @@ export function CodeAssistant() {
                           <Bot className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
-                      <div className="flex-1 space-y-2">
+                      <div className="flex-1 min-w-0 space-y-2">
                         <div className="relative group">
                           <div className="prose prose-sm dark:prose-invert max-w-none">
                             <ReactMarkdown

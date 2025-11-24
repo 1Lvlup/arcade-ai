@@ -848,12 +848,13 @@ serve(async (req) => {
         console.log(`🚀 Background task started: Processing ${imagesToProcess.length} images`);
         let figuresProcessed = 0;
         
+        // Create admin client for background operations (must be at function scope)
+        const adminClient = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+        
         try {
-          // Create admin client for background operations
-          const adminClient = createClient(
-            Deno.env.get('SUPABASE_URL')!,
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-          );
           
           const llamaApiKey = Deno.env.get('LLAMACLOUD_API_KEY');
           if (!llamaApiKey) {

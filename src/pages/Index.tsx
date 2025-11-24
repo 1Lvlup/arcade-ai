@@ -277,7 +277,7 @@ const Index = () => {
           </section>
 
           {/* Pricing */}
-          <section className="py-20">
+          <section className="pt-40 pb-20">
             <div className="mb-16 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 SIMPLE, TRANSPARENT PRICING

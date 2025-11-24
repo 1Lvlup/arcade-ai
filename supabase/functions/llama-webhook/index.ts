@@ -1011,21 +1011,51 @@ serve(async (req) => {
           console.error('❌ Background image processing error:', error);
         }
         
-        // Now trigger OCR processing
+        // Now trigger OCR processing AUTOMATICALLY
         try {
-          console.log(`🤖 Invoking process-figure-captions for manual: ${document.manual_id}`);
+          console.log(`🤖 AUTO-TRIGGERING caption generation for manual: ${document.manual_id}`);
+          console.log(`📊 Figures ready for processing: ${figuresProcessed}`);
+          
+          // Update status to show caption generation is starting
+          await adminClient
+            .from('processing_status')
+            .update({
+              stage: 'caption_generation',
+              current_task: `Auto-starting caption generation for ${figuresProcessed} figures`,
+              progress_percent: 47,
+              status: 'processing'
+            })
+            .eq('manual_id', document.manual_id);
           
           const ocrResponse = await adminClient.functions.invoke('process-figure-captions', {
             body: { manual_id: document.manual_id }
           });
           
           if (ocrResponse.error) {
-            console.error('❌ OCR processing failed:', ocrResponse.error);
+            console.error('❌ AUTO CAPTION GENERATION FAILED:', ocrResponse.error);
+            // Update status to show failure
+            await adminClient
+              .from('processing_status')
+              .update({
+                stage: 'caption_failed',
+                current_task: `Auto-caption generation failed: ${ocrResponse.error.message || 'Unknown error'}`,
+                error_message: JSON.stringify(ocrResponse.error)
+              })
+              .eq('manual_id', document.manual_id);
           } else {
-            console.log('✅ OCR processing completed:', ocrResponse.data);
+            console.log('✅ AUTO CAPTION GENERATION STARTED:', ocrResponse.data);
           }
         } catch (ocrError) {
-          console.error('❌ Error invoking OCR processing:', ocrError);
+          console.error('❌ CRITICAL ERROR invoking auto-caption generation:', ocrError);
+          // Update status to show critical failure
+          await adminClient
+            .from('processing_status')
+            .update({
+              stage: 'caption_failed',
+              current_task: `Critical error in auto-caption: ${ocrError instanceof Error ? ocrError.message : 'Unknown'}`,
+              error_message: ocrError instanceof Error ? ocrError.stack : String(ocrError)
+            })
+            .eq('manual_id', document.manual_id);
         }
         
         // Trigger automatic page detection

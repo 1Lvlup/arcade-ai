@@ -151,7 +151,7 @@ const Index = () => {
         </section>
 
           {/* How it Works */}
-          <section className="py-20 border-t border-b border-border -mt-12 md:-mt-16">
+          <section className="pt-20 pb-32 border-t border-b border-border -mt-12 md:-mt-16">
             <div className="mb-16 text-center flex flex-col items-center">
               <p className="text-xs uppercase tracking-widest text-primary mb-2 font-tech">
                 INSIDE THE INTELLIGENCE

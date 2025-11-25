@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Calendar, Crown, User, Trash2 } from 'lucide-react';
+import { Loader2, Mail, Calendar, Crown, User, Trash2, Shield } from 'lucide-react';
 import { SharedHeader } from '@/components/SharedHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -53,6 +53,7 @@ interface UserWithAccess extends UserProfile {
   override_reason: string | null;
   override_set_at: string | null;
   queries_per_week: number;
+  is_admin: boolean;
 }
 
 export default function TenantManagement() {
@@ -105,17 +106,29 @@ export default function TenantManagement() {
       }
 
       const tenantIds = profiles.map(p => p.fec_tenant_id);
-      const { data: limits, error: limitsError } = await supabase
-        .from('usage_limits')
-        .select('fec_tenant_id, manual_override, override_reason, override_set_at, queries_per_week')
-        .in('fec_tenant_id', tenantIds);
+      const userIds = profiles.map(p => p.user_id);
 
-      if (limitsError) throw limitsError;
+      const [limitsRes, rolesRes] = await Promise.all([
+        supabase
+          .from('usage_limits')
+          .select('fec_tenant_id, manual_override, override_reason, override_set_at, queries_per_week')
+          .in('fec_tenant_id', tenantIds),
+        supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('user_id', userIds)
+          .eq('role', 'admin')
+      ]);
+
+      if (limitsRes.error) throw limitsRes.error;
+      if (rolesRes.error) throw rolesRes.error;
 
       const limitsMap = new Map<string, UsageLimit>();
-      limits?.forEach(limit => {
+      limitsRes.data?.forEach(limit => {
         limitsMap.set(limit.fec_tenant_id, limit);
       });
+
+      const adminUserIds = new Set(rolesRes.data?.map(r => r.user_id) || []);
 
       const usersWithAccess: UserWithAccess[] = profiles.map(profile => {
         const limit = limitsMap.get(profile.fec_tenant_id);
@@ -125,6 +138,7 @@ export default function TenantManagement() {
           override_reason: limit?.override_reason || null,
           override_set_at: limit?.override_set_at || null,
           queries_per_week: limit?.queries_per_week || 300,
+          is_admin: adminUserIds.has(profile.user_id),
         };
       });
 
@@ -238,6 +252,50 @@ export default function TenantManagement() {
       });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleToggleAdminRole = async (userProfile: UserWithAccess, isCurrentlyAdmin: boolean) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/manage-user-role`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            userId: userProfile.user_id,
+            action: isCurrentlyAdmin ? 'demote' : 'promote'
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update role');
+      }
+
+      toast({
+        title: 'Success',
+        description: isCurrentlyAdmin 
+          ? `Removed admin role from ${userProfile.email}`
+          : `Promoted ${userProfile.email} to admin`,
+      });
+
+      await fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update role',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -507,6 +565,7 @@ export default function TenantManagement() {
                   <TableRow>
                     <TableHead>Email</TableHead>
                     <TableHead>Created</TableHead>
+                    <TableHead>Admin Role</TableHead>
                     <TableHead>Access Status</TableHead>
                     <TableHead>Override Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -525,6 +584,20 @@ export default function TenantManagement() {
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           {new Date(userProfile.created_at).toLocaleDateString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={userProfile.is_admin}
+                            onCheckedChange={() => handleToggleAdminRole(userProfile, userProfile.is_admin)}
+                          />
+                          {userProfile.is_admin && (
+                            <Badge variant="default" className="gap-1">
+                              <Shield className="h-3 w-3" />
+                              Admin
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

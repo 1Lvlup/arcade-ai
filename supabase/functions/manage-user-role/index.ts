@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    // Get the JWT token from the Authorization header
+    // Get the Authorization header (passed automatically by supabase.functions.invoke)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('No authorization header found');
@@ -22,45 +22,44 @@ serve(async (req) => {
       );
     }
 
-    // Extract the token from "Bearer <token>"
-    const token = authHeader.replace('Bearer ', '');
-    console.log('Token received:', token ? 'yes' : 'no');
+    // Client bound to the caller's JWT for permission checks / RLS
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
 
-    // Create admin client for role management
+    // Service-role client for actually mutating user_roles
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify the JWT token and get user
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !user) {
-      console.error('Auth error:', userError);
+    // Check if caller is admin using the RPC that relies on auth.uid()
+    const { data: statusRows, error: statusError } = await supabaseClient.rpc('check_my_admin_status');
+
+    if (statusError) {
+      console.error('check_my_admin_status error:', statusError);
       return new Response(
-        JSON.stringify({ error: 'Not authenticated', details: userError?.message }),
+        JSON.stringify({ error: 'Not authenticated', details: statusError.message }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User authenticated:', user.id);
-
-    // Check if caller is admin using admin client
-    const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('has_role', {
-      _user_id: user.id,
-      _role: 'admin'
-    });
-
-    if (roleError) {
-      console.error('Role check error:', roleError);
-      throw new Error('Failed to check admin role');
+    const status = statusRows && statusRows[0];
+    if (!status || !status.has_admin_role) {
+      console.error('User is not admin for manage-user-role');
+      return new Response(
+        JSON.stringify({ error: 'Not authorized - admin only' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    if (!isAdmin) {
-      console.error('User is not admin:', user.id);
-      throw new Error('Not authorized - admin only');
-    }
-
-    console.log('User is admin, proceeding with role change');
+    console.log('Admin caller:', status.user_email);
 
     const { userId, action } = await req.json();
 

@@ -214,27 +214,12 @@ export default function TenantManagement() {
 
     setDeleting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      const { data, error: invokeError } = await supabase.functions.invoke('delete-user', {
+        body: { email: userToDelete.email }
+      });
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/delete-user`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email: userToDelete.email }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete user');
-      }
+      if (invokeError) throw invokeError;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: 'Success',
@@ -257,30 +242,15 @@ export default function TenantManagement() {
 
   const handleToggleAdminRole = async (userProfile: UserWithAccess, isCurrentlyAdmin: boolean) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/manage-user-role`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            userId: userProfile.user_id,
-            action: isCurrentlyAdmin ? 'demote' : 'promote'
-          }),
+      const { data, error: invokeError } = await supabase.functions.invoke('manage-user-role', {
+        body: { 
+          userId: userProfile.user_id,
+          action: isCurrentlyAdmin ? 'demote' : 'promote'
         }
-      );
+      });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update role');
-      }
+      if (invokeError) throw invokeError;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: 'Success',

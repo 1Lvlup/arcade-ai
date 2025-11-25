@@ -12,32 +12,28 @@ serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
+    // Get the JWT token from the Authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header found');
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
+    // Extract the token from "Bearer <token>"
+    const token = authHeader.replace('Bearer ', '');
+    console.log('Token received:', token ? 'yes' : 'no');
 
+    // Create admin client for role management
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if caller is admin
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Verify the JWT token and get user
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(
@@ -46,14 +42,25 @@ serve(async (req) => {
       );
     }
 
-    const { data: isAdmin } = await supabaseClient.rpc('has_role', {
+    console.log('User authenticated:', user.id);
+
+    // Check if caller is admin using admin client
+    const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('has_role', {
       _user_id: user.id,
       _role: 'admin'
     });
 
+    if (roleError) {
+      console.error('Role check error:', roleError);
+      throw new Error('Failed to check admin role');
+    }
+
     if (!isAdmin) {
+      console.error('User is not admin:', user.id);
       throw new Error('Not authorized - admin only');
     }
+
+    console.log('User is admin, proceeding with role change');
 
     const { userId, action } = await req.json();
 

@@ -13,28 +13,34 @@ export function AdminRoute({ children }: AdminRouteProps) {
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checkingRole, setCheckingRole] = useState(true);
+  const [lastCheck, setLastCheck] = useState<number>(0);
 
   useEffect(() => {
     async function checkAdminRole() {
       if (!user) {
         setCheckingRole(false);
+        setIsAdmin(false);
         return;
       }
 
       try {
+        console.log('🔐 AdminRoute: Verifying admin role for user:', user.id);
         const { data, error } = await supabase.rpc('has_role', {
           _user_id: user.id,
           _role: 'admin'
         });
 
         if (error) {
-          console.error('Error checking admin role:', error);
+          console.error('❌ AdminRoute: Error checking admin role:', error);
           setIsAdmin(false);
         } else {
-          setIsAdmin(data);
+          const adminStatus = data === true;
+          console.log('🔐 AdminRoute: Admin status =', adminStatus);
+          setIsAdmin(adminStatus);
+          setLastCheck(Date.now());
         }
       } catch (err) {
-        console.error('Error checking admin role:', err);
+        console.error('❌ AdminRoute: Failed to check admin role:', err);
         setIsAdmin(false);
       } finally {
         setCheckingRole(false);
@@ -42,7 +48,18 @@ export function AdminRoute({ children }: AdminRouteProps) {
     }
 
     checkAdminRole();
-  }, [user]);
+
+    // Re-verify admin status every 30 seconds
+    const interval = setInterval(() => {
+      const timeSinceLastCheck = Date.now() - lastCheck;
+      if (timeSinceLastCheck > 25000) { // Re-check if 25+ seconds since last check
+        console.log('🔐 AdminRoute: Periodic re-verification...');
+        checkAdminRole();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [user, lastCheck]);
 
   if (loading || checkingRole) {
     return (

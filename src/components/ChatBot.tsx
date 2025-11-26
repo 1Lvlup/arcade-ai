@@ -1318,15 +1318,13 @@ export function ChatBot({
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Require game selection before sending message
-    if (!selectedManualId) {
+    // Optional: Show info toast if no manual selected (but don't block)
+    if (!selectedManualId && messages.length <= 1) {
       toast({
-        title: "Please select a game first",
-        description: "Choose which game you need help with from the dropdown above",
-        variant: "destructive",
-        duration: 5000,
+        title: "💡 Tip: Select a game for better results",
+        description: "Or just ask your question - we'll auto-detect the game!",
+        duration: 4000,
       });
-      return;
     }
 
     // Check guest user message limit

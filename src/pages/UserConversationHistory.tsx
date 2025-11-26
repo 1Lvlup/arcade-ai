@@ -41,6 +41,8 @@ const UserConversationHistory = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState({ totalConversations: 0, totalMessages: 0, avgMessagesPerConv: 0 });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [loading, setLoading] = useState({
     profiles: true,
     conversations: false,
@@ -49,8 +51,59 @@ const UserConversationHistory = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    checkAdminStatus();
     fetchProfiles();
   }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      setCheckingAdmin(true);
+      const { data, error } = await supabase.rpc('check_my_admin_status');
+      
+      if (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(data?.[0]?.has_admin_role || false);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setIsAdmin(false);
+    } finally {
+      setCheckingAdmin(false);
+    }
+  };
+
+  const grantAdminAccess = async () => {
+    try {
+      const { data, error } = await supabase.rpc('grant_me_admin');
+      
+      if (error) {
+        console.error('Error granting admin:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to grant admin access',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Admin access granted! Refreshing...',
+      });
+      
+      setIsAdmin(true);
+      await fetchProfiles();
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to grant admin access',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const fetchProfiles = async () => {
     try {
@@ -236,6 +289,18 @@ const UserConversationHistory = () => {
         <Alert variant="destructive">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {!checkingAdmin && !isAdmin && (
+        <Alert>
+          <AlertTitle>Admin Access Required</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <p>You need admin access to view all user conversations.</p>
+            <Button onClick={grantAdminAccess} size="sm" className="w-fit">
+              Grant Myself Admin Access
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 

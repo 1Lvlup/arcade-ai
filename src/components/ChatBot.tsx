@@ -1366,11 +1366,12 @@ export function ChatBot({
     setImagePreviewUrls([]);
     setIsLoading(true);
 
-    // Auto-save conversation when user sends first message
+    // Auto-create conversation for authenticated users
     let conversationIdToUse = currentConversationId;
-    if (user && !currentConversationId && messages.length === 1) {
-      const title = query.slice(0, 50);
+    if (user && !currentConversationId) {
+      const title = query.slice(0, 50) || "New Conversation";
       try {
+        console.log("🆕 Creating new conversation for user:", user.id);
         const { data: newConv, error } = await supabase
           .from("conversations")
           .insert([
@@ -1383,13 +1384,26 @@ export function ChatBot({
           .select()
           .single();
 
-        if (!error && newConv) {
+        if (error) {
+          console.error("❌ Failed to create conversation:", error);
+          toast({
+            title: "Warning",
+            description: "Conversation not saved (will be lost on refresh)",
+            variant: "destructive",
+          });
+        } else if (newConv) {
           conversationIdToUse = newConv.id;
           setCurrentConversationId(newConv.id);
           localStorage.setItem("last_conversation_id", newConv.id);
+          console.log("✅ Conversation created:", conversationIdToUse);
         }
       } catch (err) {
-        console.error("Failed to create conversation:", err);
+        console.error("❌ Exception creating conversation:", err);
+        toast({
+          title: "Error",
+          description: "Failed to create conversation",
+          variant: "destructive",
+        });
       }
     }
 

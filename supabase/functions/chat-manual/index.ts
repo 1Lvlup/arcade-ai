@@ -924,6 +924,7 @@ serve(async (req) => {
                      "unknown";
     
     let tenant_id: string | undefined;
+    let user_id: string | undefined;
     let usageInfo: any = null;
 
     if (authHeader) {
@@ -934,6 +935,7 @@ serve(async (req) => {
       } = await supabase.auth.getUser(jwt);
 
       if (user) {
+        user_id = user.id; // ✨ Store user_id for query logging
         const { data: profile } = await supabase
           .from("profiles")
           .select("fec_tenant_id")
@@ -943,7 +945,24 @@ serve(async (req) => {
         if (profile) {
           tenant_id = profile.fec_tenant_id;
           await supabase.rpc("set_tenant_context", { tenant_id });
+          console.log("👤 User ID:", user_id);
           console.log("👤 Tenant ID:", tenant_id);
+          
+          // ✨ Track usage limits for authenticated users
+          try {
+            const { data: usageData, error: usageError } = await supabase.rpc("increment_user_query_count", {
+              p_tenant_id: tenant_id
+            });
+            
+            if (!usageError && usageData) {
+              usageInfo = usageData;
+              console.log("📊 Usage tracked:", usageInfo);
+            } else {
+              console.warn("⚠️ Failed to track usage:", usageError);
+            }
+          } catch (e) {
+            console.warn("⚠️ Usage tracking error:", e);
+          }
         }
       }
     }
@@ -1020,6 +1039,7 @@ serve(async (req) => {
             retrieval_method: strategy,
             response_text: '', // Empty for streaming
             manual_id: effectiveManualId || null,
+            user_id: user_id || null, // ✨ Include user_id for tracking
             top_doc_ids: chunks?.slice(0, 10).map(c => c.id) || [],
             top_doc_pages: chunks?.slice(0, 10).map(c => c.page_start || 0) || [],
             top_doc_scores: chunks?.slice(0, 10).map(c => c.rerank_score || 0) || [],
@@ -1029,7 +1049,7 @@ serve(async (req) => {
 
         if (!logError && logData) {
           queryLogId = logData.id;
-          console.log('✅ Query logged, ID:', queryLogId);
+          console.log('✅ Query logged with user_id, ID:', queryLogId);
         } else {
           console.error('❌ Failed to log query:', logError);
         }
@@ -1300,6 +1320,7 @@ serve(async (req) => {
           retrieval_method: strategy,
           response_text,
           manual_id: effectiveManualId || null,
+          user_id: user_id || null, // ✨ Include user_id for tracking
           top_doc_ids: chunks?.slice(0, 10).map(c => c.id) || [],
           top_doc_pages: chunks?.slice(0, 10).map(c => c.page_start || 0) || [],
           top_doc_scores: chunks?.slice(0, 10).map(c => c.rerank_score || 0) || [],
@@ -1316,7 +1337,7 @@ serve(async (req) => {
         console.warn('⚠️ Failed to log query:', logError);
       } else {
         queryLogId = logData?.id;
-        console.log('✅ Query logged with ID:', queryLogId);
+        console.log('✅ Query logged with user_id, ID:', queryLogId);
         
         // Trigger automatic AI evaluation (async, don't wait for it)
         if (queryLogId) {

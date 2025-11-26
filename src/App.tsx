@@ -64,6 +64,7 @@ import OutboundCommand from "./pages/OutboundCommand";
 import QualityMetrics from "./pages/QualityMetrics";
 import DownGamesDashboard from "./pages/DownGamesDashboard";
 import Contact from "./pages/Contact";
+import AnswerQualityDashboard from "./pages/AnswerQualityDashboard";
 
 const queryClient = new QueryClient();
 
@@ -247,6 +248,13 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminRoute>
                     <QualityMetrics />
+                  </AdminRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/answer-quality" element={
+                <ProtectedRoute>
+                  <AdminRoute>
+                    <AnswerQualityDashboard />
                   </AdminRoute>
                 </ProtectedRoute>
               } />

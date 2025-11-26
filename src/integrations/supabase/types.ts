@@ -89,6 +89,71 @@ export type Database = {
         }
         Relationships: []
       }
+      answer_evaluations: {
+        Row: {
+          accuracy_score: number
+          auto_actions_taken: Json | null
+          citation_quality_score: number
+          clarity_score: number
+          completeness_score: number
+          created_at: string
+          evaluation_details: string | null
+          evaluation_timestamp: string
+          evaluator_model: string
+          fec_tenant_id: string
+          id: string
+          improvement_suggestions: Json | null
+          issues_found: Json | null
+          overall_grade: string
+          query_log_id: string
+          strengths: Json | null
+        }
+        Insert: {
+          accuracy_score: number
+          auto_actions_taken?: Json | null
+          citation_quality_score: number
+          clarity_score: number
+          completeness_score: number
+          created_at?: string
+          evaluation_details?: string | null
+          evaluation_timestamp?: string
+          evaluator_model?: string
+          fec_tenant_id?: string
+          id?: string
+          improvement_suggestions?: Json | null
+          issues_found?: Json | null
+          overall_grade: string
+          query_log_id: string
+          strengths?: Json | null
+        }
+        Update: {
+          accuracy_score?: number
+          auto_actions_taken?: Json | null
+          citation_quality_score?: number
+          clarity_score?: number
+          completeness_score?: number
+          created_at?: string
+          evaluation_details?: string | null
+          evaluation_timestamp?: string
+          evaluator_model?: string
+          fec_tenant_id?: string
+          id?: string
+          improvement_suggestions?: Json | null
+          issues_found?: Json | null
+          overall_grade?: string
+          query_log_id?: string
+          strengths?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_evaluations_query_log_id_fkey"
+            columns: ["query_log_id"]
+            isOneToOne: false
+            referencedRelation: "query_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_categories: {
         Row: {
           created_at: string | null

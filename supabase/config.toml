@@ -206,3 +206,6 @@ verify_jwt = false
 
 [functions.sms-tech-assistant]
 verify_jwt = false
+
+[functions.evaluate-answer]
+verify_jwt = false

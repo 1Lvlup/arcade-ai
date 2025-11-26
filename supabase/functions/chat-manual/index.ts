@@ -1317,6 +1317,27 @@ serve(async (req) => {
       } else {
         queryLogId = logData?.id;
         console.log('✅ Query logged with ID:', queryLogId);
+        
+        // Trigger automatic AI evaluation (async, don't wait for it)
+        if (queryLogId) {
+          console.log('🤖 Triggering automatic answer evaluation...');
+          supabase.functions.invoke('evaluate-answer', {
+            body: {
+              query_log_id: queryLogId,
+              question: query,
+              answer: response_text,
+              source_chunks: chunks?.slice(0, 3).map(c => ({
+                content: c.content,
+                page_start: c.page_start,
+                page_end: c.page_end,
+                score: c.rerank_score || c.score,
+              })) || [],
+              fec_tenant_id: tenant_id,
+            }
+          }).catch(evalError => {
+            console.warn('⚠️ Background evaluation failed:', evalError);
+          });
+        }
       }
     } catch (e) {
       console.warn('⚠️ Query logging error:', e);

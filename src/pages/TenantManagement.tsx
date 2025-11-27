@@ -269,6 +269,63 @@ export default function TenantManagement() {
     }
   };
 
+  const handleGrantAllManuals = async () => {
+    if (!selectedUser) return;
+
+    const grantingToast = toast({
+      title: 'Granting access...',
+      description: 'Adding all manuals to user\'s tenant',
+    });
+
+    try {
+      // Get all manual IDs
+      const allManualIds = manuals.map(m => m.manual_id);
+      
+      // Get current access for this tenant
+      const { data: currentAccess } = await supabase
+        .from('tenant_manual_access')
+        .select('manual_id')
+        .eq('fec_tenant_id', selectedUser.fec_tenant_id);
+
+      const currentManualIds = new Set(currentAccess?.map(a => a.manual_id) || []);
+      
+      // Find manuals that need to be added
+      const toAdd = allManualIds.filter(id => !currentManualIds.has(id));
+      
+      if (toAdd.length === 0) {
+        toast({
+          title: 'Already has access',
+          description: 'This user already has access to all manuals',
+        });
+        return;
+      }
+
+      // Add access to all missing manuals
+      const { error } = await supabase
+        .from('tenant_manual_access')
+        .insert(
+          toAdd.map(manual_id => ({
+            fec_tenant_id: selectedUser.fec_tenant_id,
+            manual_id,
+            granted_by: user?.id
+          }))
+        );
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `Granted access to ${toAdd.length} manual(s) for ${selectedUser.email}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to grant manual access',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const fetchTenantsAndManuals = async () => {
     setLoading(true);
     try {
@@ -663,6 +720,25 @@ export default function TenantManagement() {
                 ? 'Unlimited queries when full access is enabled'
                 : 'Number of questions this user can ask per week (default: 300)'}
             </p>
+          </div>
+
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <Shield className="h-5 w-5 text-primary mt-0.5" />
+              <div className="flex-1">
+                <Label className="text-base font-semibold">Manual Access</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Grant access to all {manuals.length} manuals in the system
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGrantAllManuals}
+            >
+              Grant Access to All Manuals
+            </Button>
           </div>
 
           {selectedUser?.manual_override && (

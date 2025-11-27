@@ -43,6 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle token refresh events
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('✅ Auth: Token refreshed successfully');
+        }
       }
     );
 
@@ -67,6 +72,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Proactive session refresh - check and refresh before expiry
+  useEffect(() => {
+    if (!session) return;
+
+    const checkAndRefreshSession = async () => {
+      try {
+        const expiresAt = session.expires_at;
+        if (!expiresAt) return;
+
+        const now = Math.floor(Date.now() / 1000);
+        const timeUntilExpiry = expiresAt - now;
+        
+        // Refresh if less than 5 minutes until expiry
+        if (timeUntilExpiry < 300) {
+          console.log('🔄 Auth: Proactively refreshing session');
+          const { data, error } = await supabase.auth.refreshSession();
+          
+          if (error) {
+            console.error('❌ Auth: Failed to refresh session:', error);
+          } else if (data.session) {
+            console.log('✅ Auth: Session refreshed proactively');
+            setSession(data.session);
+            setUser(data.session.user);
+          }
+        }
+      } catch (err) {
+        console.error('❌ Auth: Error checking session:', err);
+      }
+    };
+
+    // Check every minute
+    const interval = setInterval(checkAndRefreshSession, 60000);
+    
+    // Check immediately on mount
+    checkAndRefreshSession();
+
+    return () => clearInterval(interval);
+  }, [session]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

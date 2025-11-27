@@ -2884,45 +2884,86 @@ export type Database = {
           similarity: number
         }[]
       }
-      match_chunks_improved: {
-        Args: {
-          manual?: string
-          min_score?: number
-          query_embedding: string
-          tenant_id?: string
-          top_k?: number
-        }
-        Returns: {
-          content: string
-          content_type: string
-          figure_type: string
-          id: string
-          manual_id: string
-          menu_path: string
-          page_end: number
-          page_start: number
-          score: number
-          storage_url: string
-        }[]
-      }
-      match_chunks_text: {
-        Args: {
-          manual?: string
-          query_text: string
-          tenant_id?: string
-          top_k?: number
-        }
-        Returns: {
-          content: string
-          content_type: string
-          id: string
-          manual_id: string
-          menu_path: string
-          page_end: number
-          page_start: number
-          score: number
-        }[]
-      }
+      match_chunks_improved:
+        | {
+            Args: {
+              manual?: string
+              min_score?: number
+              query_embedding: string
+              tenant_id?: string
+              top_k?: number
+            }
+            Returns: {
+              content: string
+              content_type: string
+              figure_type: string
+              id: string
+              manual_id: string
+              menu_path: string
+              page_end: number
+              page_start: number
+              score: number
+              storage_url: string
+            }[]
+          }
+        | {
+            Args: {
+              manual?: string
+              min_score?: number
+              query_embedding: string
+              tenant_id?: string
+              top_k?: number
+            }
+            Returns: {
+              content: string
+              content_type: string
+              figure_type: string
+              id: string
+              manual_id: string
+              menu_path: string
+              page_end: number
+              page_start: number
+              score: number
+              storage_url: string
+            }[]
+          }
+      match_chunks_text:
+        | {
+            Args: {
+              manual?: string
+              query_text: string
+              tenant_id?: string
+              top_k?: number
+            }
+            Returns: {
+              content: string
+              content_type: string
+              id: string
+              manual_id: string
+              menu_path: string
+              page_end: number
+              page_start: number
+              score: number
+            }[]
+          }
+        | {
+            Args: {
+              manual?: string
+              query_text: string
+              tenant_id?: string
+              top_k?: number
+            }
+            Returns: {
+              content: string
+              content_type: string
+              id: string
+              manual_id: string
+              menu_path: string
+              page_end: number
+              page_start: number
+              score: number
+            }[]
+          }
       match_docs:
         | {
             Args: {

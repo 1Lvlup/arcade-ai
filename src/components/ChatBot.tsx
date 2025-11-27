@@ -1318,13 +1318,14 @@ export function ChatBot({
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Optional: Show info toast if no manual selected (but don't block)
-    if (!selectedManualId && messages.length <= 1) {
+    // Require game selection before allowing messages
+    if (!selectedManualId) {
       toast({
-        title: "💡 Tip: Select a game for better results",
-        description: "Or just ask your question - we'll auto-detect the game!",
-        duration: 4000,
+        title: "⚠️ Please select a game first",
+        description: "Choose a game from the sidebar to start chatting",
+        variant: "destructive",
       });
+      return;
     }
 
     // Check guest user message limit

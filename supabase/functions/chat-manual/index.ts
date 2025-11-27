@@ -1081,6 +1081,28 @@ serve(async (req) => {
       
       // Use the answer stream that was already created by runRagPipelineV3
       console.log("📊 Answer type:", typeof answer, "is ReadableStream:", answer instanceof ReadableStream);
+      
+      // Handle fallback string answers (when search returns 0 results)
+      if (typeof answer === 'string') {
+        console.log("📝 Fallback answer (string) - wrapping in stream");
+        const encoder = new TextEncoder();
+        const fallbackStream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'content', data: answer })}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        });
+        
+        return new Response(fallbackStream, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+          },
+        });
+      }
+      
       const answerStream = answer as ReadableStream;
       
       // SIMPLIFIED: Create a bare-bones stream with ONLY content chunks (no metadata for debug)

@@ -128,11 +128,13 @@ export const SharedHeader = ({
                 Blog
               </Button>
             </Link>
-            <Link to="/downgames">
-              <Button variant="minimal" size="sm">
-                Facility Dashboard
-              </Button>
-            </Link>
+            {isAdmin && (
+              <Link to="/downgames">
+                <Button variant="minimal" size="sm">
+                  Facility Dashboard
+                </Button>
+              </Link>
+            )}
           </nav>
 
           {/* Admin Pages Dropdown */}

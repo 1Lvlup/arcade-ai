@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Settings, Database, Users, Activity, ArrowLeft, MessageSquare, FileText, Eye, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { Settings, Database, Users, Activity, ArrowLeft, MessageSquare, FileText, Eye, Edit, Trash2, ExternalLink, FileCode } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import TenantManagement from './TenantManagement';
@@ -148,6 +148,26 @@ const AdminDashboard = () => {
 
               {/* SYSTEM MANAGEMENT TAB */}
               <TabsContent value="system" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileCode className="h-5 w-5" />
+                      System Architecture
+                    </CardTitle>
+                    <CardDescription>
+                      View detailed file mappings, edge functions, and database schema for each feature area
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link to="/admin/system-architecture">
+                      <Button className="w-full">
+                        <FileCode className="mr-2 h-4 w-4" />
+                        Open System Architecture Dashboard
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+
                 {/* Tenant & User Management Section */}
                 <Card className="border-l-4 border-l-orange">
                   <CardHeader>

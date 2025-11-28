@@ -29,6 +29,7 @@ import { UsageTrackingDashboard } from '@/components/UsageTrackingDashboard';
 import { StrategicAnalytics } from '@/components/StrategicAnalytics';
 import { SMSAnalyticsDashboard } from '@/components/SMSAnalyticsDashboard';
 import { SMSSettingsManager } from '@/components/SMSSettingsManager';
+import { SMSTestSender } from '@/components/SMSTestSender';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -598,6 +599,8 @@ const AdminDashboard = () => {
                     <SMSSettingsManager />
                   </CardContent>
                 </Card>
+
+                <SMSTestSender />
               </TabsContent>
             </Tabs>
           </main>

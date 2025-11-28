@@ -65,6 +65,7 @@ import QualityMetrics from "./pages/QualityMetrics";
 import DownGamesDashboard from "./pages/DownGamesDashboard";
 import Contact from "./pages/Contact";
 import AnswerQualityDashboard from "./pages/AnswerQualityDashboard";
+import SystemArchitecture from "./pages/SystemArchitecture";
 
 const queryClient = new QueryClient();
 
@@ -122,6 +123,13 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminRoute>
                     <AdminDashboard />
+                  </AdminRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/system-architecture" element={
+                <ProtectedRoute>
+                  <AdminRoute>
+                    <SystemArchitecture />
                   </AdminRoute>
                 </ProtectedRoute>
               } />

@@ -499,18 +499,23 @@ Reference specific observations from the images in your response and provide det
     ...(opts?.conversationHistory || []),
   ];
   
-  // Add user message with images if present
+  // Add user message with images if present (Responses API format)
   if (opts?.images && opts.images.length > 0) {
+    console.log(`🖼️ Formatting ${opts.images.length} image(s) for Responses API with input_image type`);
+    console.log(`📸 Image URLs:`, opts.images);
+    
     baseMessages.push({
       role: "user",
       content: [
-        { type: "text", text: userPrompt },
+        { type: "input_text", text: userPrompt },
         ...opts.images.map(url => ({
-          type: "image_url",
-          image_url: { url, detail: "high" }
+          type: "input_image",
+          image_url: url  // Responses API uses simple string format
         }))
       ]
     });
+    
+    console.log(`✅ Vision analysis requested - images will be analyzed with equal weight to text evidence`);
   } else {
     baseMessages.push({ role: "user", content: userPrompt });
   }

@@ -54,7 +54,7 @@ serve(async (req) => {
     // Get user profile for tenant context (needed for all operations including logging)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_id, fec_tenant_id, facility_name, sms_opt_in')
+      .select('user_id, fec_tenant_id, facility_name, sms_opt_in, sms_selected_manual_id, sms_selected_manual_title')
       .eq('phone_number', fromNumber)
       .single();
 
@@ -141,6 +141,33 @@ serve(async (req) => {
       
       return createTwiMLResponse("You've been re-subscribed to Level Up AI SMS support. Send your troubleshooting questions anytime!");
     }
+    
+    // Check for MENU/GAMES/CHANGE commands - show game list
+    if (["MENU", "GAMES", "CHANGE"].includes(normalizedBody)) {
+      console.log(`📋 ${normalizedBody} command received - showing game menu`);
+      
+      // Clear selected game
+      if (profile) {
+        await supabase
+          .from('profiles')
+          .update({ sms_selected_manual_id: null, sms_selected_manual_title: null })
+          .eq('phone_number', fromNumber);
+          
+        await supabase.from('sms_logs').insert({
+          fec_tenant_id: profile.fec_tenant_id,
+          user_id: profile.user_id,
+          phone_number: fromNumber,
+          direction: 'inbound',
+          event_type: 'menu_request',
+          message_body: messageBody,
+          facility_name: profile.facility_name,
+          twilio_message_sid: messageSid,
+        });
+      }
+      
+      const gameList = await getGameList(supabase);
+      return createTwiMLResponse(gameList);
+    }
 
     // Validate we have a message
     if (!messageBody.trim()) {
@@ -192,9 +219,33 @@ serve(async (req) => {
       await sendWelcomeMessageIfEnabled(supabase, profile.fec_tenant_id, fromNumber, false);
     }
 
-    // Get AI answer from RAG system
-    console.log("🤖 Calling RAG system...");
-    const aiAnswer = await askLevelUpAI(messageBody, fromNumber);
+    // Check if user has selected a game
+    if (!profile?.sms_selected_manual_id) {
+      console.log("📋 No game selected - showing game menu");
+      
+      // Check if message is a number (game selection)
+      const selectedNumber = parseInt(messageBody.trim());
+      if (!isNaN(selectedNumber)) {
+        const result = await handleGameSelection(supabase, fromNumber, selectedNumber, profile);
+        return createTwiMLResponse(result);
+      }
+      
+      // Not a number - show game list
+      const gameList = await getGameList(supabase);
+      return createTwiMLResponse(gameList);
+    }
+    
+    // User has a game selected - check if they're changing selection
+    const messageNum = parseInt(messageBody.trim());
+    if (!isNaN(messageNum) && messageNum >= 1 && messageNum <= 100) {
+      console.log(`🔄 User changing game selection to #${messageNum}`);
+      const result = await handleGameSelection(supabase, fromNumber, messageNum, profile);
+      return createTwiMLResponse(result);
+    }
+
+    // Get AI answer from RAG system with selected manual
+    console.log(`🤖 Calling RAG system for game: ${profile.sms_selected_manual_title}`);
+    const aiAnswer = await askLevelUpAI(messageBody, fromNumber, profile.sms_selected_manual_id);
     const responseTime = Date.now() - requestStartTime;
     console.log(`⏱️ Response generated in ${responseTime}ms`);
     
@@ -214,6 +265,7 @@ serve(async (req) => {
         facility_name: profile.facility_name,
         topic_category: categorizeQuestion(messageBody),
         twilio_message_sid: messageSid,
+        metadata: { manual_id: profile.sms_selected_manual_id, manual_title: profile.sms_selected_manual_title }
       });
     }
     
@@ -262,10 +314,97 @@ serve(async (req) => {
 });
 
 /**
+ * Get list of all available games
+ */
+async function getGameList(supabase: any): Promise<string> {
+  try {
+    const { data: manuals, error } = await supabase
+      .from('documents')
+      .select('manual_id, title')
+      .order('title');
+    
+    if (error || !manuals || manuals.length === 0) {
+      console.error("Error fetching manuals:", error);
+      return "Welcome to Level Up AI! I'm having trouble loading the game list. Please try again or visit https://1levelup.ai";
+    }
+    
+    let message = "Welcome to Level Up AI! Reply with # for your game:\n\n";
+    manuals.forEach((manual: any, index: number) => {
+      message += `${index + 1}. ${manual.title}\n`;
+    });
+    message += "\nReply MENU anytime to change games.";
+    
+    return message;
+  } catch (error) {
+    console.error("Exception in getGameList:", error);
+    return "Welcome to Level Up AI! Please visit https://1levelup.ai to get started.";
+  }
+}
+
+/**
+ * Handle game selection by number
+ */
+async function handleGameSelection(supabase: any, fromNumber: string, selectedNumber: number, profile: any): Promise<string> {
+  try {
+    // Fetch manuals list
+    const { data: manuals, error } = await supabase
+      .from('documents')
+      .select('manual_id, title')
+      .order('title');
+    
+    if (error || !manuals) {
+      console.error("Error fetching manuals:", error);
+      return "Sorry, I couldn't load the game list. Please try again or text MENU.";
+    }
+    
+    // Validate selection
+    if (selectedNumber < 1 || selectedNumber > manuals.length) {
+      return `Please select a number between 1 and ${manuals.length}. Text MENU to see the list again.`;
+    }
+    
+    const selectedManual = manuals[selectedNumber - 1];
+    
+    // Update profile with selection
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        sms_selected_manual_id: selectedManual.manual_id,
+        sms_selected_manual_title: selectedManual.title
+      })
+      .eq('phone_number', fromNumber);
+    
+    if (updateError) {
+      console.error("Error updating profile:", updateError);
+      return "Sorry, I couldn't save your selection. Please try again.";
+    }
+    
+    // Log selection
+    if (profile) {
+      await supabase.from('sms_logs').insert({
+        fec_tenant_id: profile.fec_tenant_id,
+        user_id: profile.user_id,
+        phone_number: fromNumber,
+        direction: 'inbound',
+        event_type: 'game_selected',
+        message_body: selectedNumber.toString(),
+        facility_name: profile.facility_name,
+        metadata: { manual_id: selectedManual.manual_id, manual_title: selectedManual.title }
+      });
+    }
+    
+    console.log(`✓ Game selected: ${selectedManual.title} (${selectedManual.manual_id})`);
+    return `✓ You selected ${selectedManual.title}. What's your question?`;
+  } catch (error) {
+    console.error("Exception in handleGameSelection:", error);
+    return "Sorry, I encountered an error. Please text MENU to try again.";
+  }
+}
+
+/**
  * Get AI answer from Level Up RAG system
  * Connects to chat-manual edge function with full RAG pipeline
  */
-async function askLevelUpAI(question: string, fromNumber: string): Promise<string> {
+async function askLevelUpAI(question: string, fromNumber: string, manualId?: string): Promise<string> {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -291,7 +430,7 @@ async function askLevelUpAI(question: string, fromNumber: string): Promise<strin
     const { data: chatData, error: chatError } = await supabase.functions.invoke('chat-manual', {
       body: {
         query: question,
-        // Don't specify manual_id - let the system search all accessible manuals
+        manual_id: manualId, // Now always specified from user selection
         tenant_id: profile.fec_tenant_id,
         user_id: profile.user_id
       }

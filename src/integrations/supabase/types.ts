@@ -1788,6 +1788,8 @@ export type Database = {
           sms_opt_in: boolean | null
           sms_opt_in_date: string | null
           sms_opt_out_date: string | null
+          sms_selected_manual_id: string | null
+          sms_selected_manual_title: string | null
           total_games: number | null
           updated_at: string
           user_id: string
@@ -1811,6 +1813,8 @@ export type Database = {
           sms_opt_in?: boolean | null
           sms_opt_in_date?: string | null
           sms_opt_out_date?: string | null
+          sms_selected_manual_id?: string | null
+          sms_selected_manual_title?: string | null
           total_games?: number | null
           updated_at?: string
           user_id: string
@@ -1834,6 +1838,8 @@ export type Database = {
           sms_opt_in?: boolean | null
           sms_opt_in_date?: string | null
           sms_opt_out_date?: string | null
+          sms_selected_manual_id?: string | null
+          sms_selected_manual_title?: string | null
           total_games?: number | null
           updated_at?: string
           user_id?: string

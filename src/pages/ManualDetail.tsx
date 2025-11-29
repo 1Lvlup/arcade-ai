@@ -67,6 +67,8 @@ export function ManualDetail() {
   const [processingCaptions, setProcessingCaptions] = useState(false);
   const [captionProgress, setCaptionProgress] = useState<{ current: number; total: number } | null>(null);
   const [retryingOCR, setRetryingOCR] = useState(false);
+  const [retryingTextChunks, setRetryingTextChunks] = useState(false);
+  const [failedChunksCount, setFailedChunksCount] = useState<number>(0);
 
   useEffect(() => {
     if (manualId) {
@@ -187,6 +189,15 @@ export function ManualDetail() {
       });
 
       const chunksCount = chunksCountExact || chunksData?.length || 0;
+
+      // Check for failed chunks in queue
+      const { count: failedCount } = await supabase
+        .from('manual_chunk_queue')
+        .select('id', { count: 'exact', head: true })
+        .eq('manual_id', manualId)
+        .eq('status', 'failed');
+
+      setFailedChunksCount(failedCount || 0);
 
       // Fetch figures count and caption stats
       const { data: figuresData, error: figuresError, count: figuresCountExact } = await supabase
@@ -493,6 +504,48 @@ export function ManualDetail() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mt-6">
+              {failedChunksCount > 0 && (
+                <Button 
+                  onClick={async () => {
+                    setRetryingTextChunks(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke('retry-text-chunks', {
+                        body: { manual_id: manualId }
+                      });
+
+                      if (error) throw error;
+
+                      toast({
+                        title: 'Text Chunks Retry Started',
+                        description: `Retrying ${failedChunksCount} failed chunks. Processing will continue in the background.`,
+                      });
+
+                      // Refresh stats after a short delay
+                      setTimeout(() => {
+                        fetchStats();
+                      }, 2000);
+                    } catch (error) {
+                      console.error('Error retrying chunks:', error);
+                      toast({
+                        title: 'Retry Failed',
+                        description: error instanceof Error ? error.message : 'Unknown error',
+                        variant: 'destructive',
+                      });
+                    } finally {
+                      setRetryingTextChunks(false);
+                    }
+                  }}
+                  disabled={retryingTextChunks}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                >
+                  {retryingTextChunks ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Database className="h-4 w-4 mr-2" />
+                  )}
+                  Retry Failed Text Chunks ({failedChunksCount})
+                </Button>
+              )}
               {processingStatus?.status === 'processing' && processingStatus.progress_percent > 90 && processingStatus.progress_percent < 100 && (
                 <Button 
                   onClick={retryOCRProcessing}

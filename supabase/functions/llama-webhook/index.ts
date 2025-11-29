@@ -576,107 +576,71 @@ serve(async (req) => {
       })
       .eq('job_id', jobId);
 
-    // STEP 4: Process chunks with embeddings in batches
-    let processedCount = 0;
-    const batchSize = 5;
+    // STEP 4: Enqueue chunks for batch processing with full metadata
+    console.log(`📋 Enqueueing ${allChunks.length} chunks for batch processing...`);
     
-    for (let i = 0; i < allChunks.length; i += batchSize) {
-      const batch = allChunks.slice(i, i + batchSize);
-      const batchProgress = Math.round(35 + (i / allChunks.length) * 35); // 35-70% range
-      
-      // Update progress for each batch
-      await supabase
-        .from('processing_status')
-        .update({
-          stage: 'vector_encoding',
-          current_task: `Encoding semantic vectors: ${i + batch.length}/${allChunks.length} chunks processed with contextual embeddings`,
-          chunks_processed: i + batch.length,
-          progress_percent: batchProgress
-        })
-        .eq('job_id', jobId);
-      
-      await Promise.all(batch.map(async (chunk, batchIndex) => {
-        try {
-          console.log(`🔄 Processing chunk ${i + batchIndex + 1}/${allChunks.length}`);
-          console.log(`- content preview: "${chunk.content.substring(0, 100)}..."`);
-          
-          // Generate embedding
-          console.log("🔮 Generating embedding...");
-          const embedding = await createEmbedding(chunk.content);
-          console.log("✅ Embedding generated, length:", embedding?.length || 0);
-          
-          // Store in database with enriched metadata
-          console.log("💾 Inserting into database...");
-          
-          // Build enriched chunk-level metadata
-          const chunkMetadata = {
-            chunk_type: chunk.chunk_type || 'content',
-            chunk_strategy: chunk.strategy || 'hierarchical',
-            chunk_index: chunk.index,
-            chunk_length: chunk.content.length,
-            word_count: chunk.content.split(/\s+/).length,
-            has_tables: /[\|<].*[\|>]|^\s*\|/m.test(chunk.content),
-            has_lists: /^\s*[-*•]\s+/m.test(chunk.content) || /^\s*\d+\.\s+/m.test(chunk.content),
-            has_code_numbers: /\b\d{3,}\b|\b[A-Z]{2,}\d+\b/.test(chunk.content),
-            section_type: chunk.menu_path?.toLowerCase().includes('troubleshoot') ? 'troubleshooting' :
-                         chunk.menu_path?.toLowerCase().includes('parts') ? 'parts_list' :
-                         chunk.menu_path?.toLowerCase().includes('specification') ? 'specifications' :
-                         chunk.menu_path?.toLowerCase().includes('installation') ? 'installation' :
-                         chunk.menu_path?.toLowerCase().includes('maintenance') ? 'maintenance' :
-                         chunk.menu_path?.toLowerCase().includes('warranty') ? 'warranty' : 'general'
-          };
-          
-          const insertData = {
-            manual_id: chunk.manual_id,
-            content: chunk.content,
-            page_start: chunk.page_start,
-            page_end: chunk.page_end,
-            menu_path: chunk.menu_path,
-            embedding: embedding,
-            fec_tenant_id: document.fec_tenant_id,
-            metadata: chunkMetadata,
-            chunk_id: chunk.chunk_id,
-            doc_id: chunk.doc_id,
-            doc_version: chunk.doc_version,
-            start_char: chunk.start_char,
-            end_char: chunk.end_char,
-            embedding_model: 'text-embedding-3-small',
-            section_heading: chunk.section_heading,
-            quality_score: chunk.quality_score,
-            human_reviewed: chunk.human_reviewed,
-            usage_count: chunk.usage_count,
-            source_filename: chunk.source_filename,
-            ingest_date: new Date().toISOString()
-          };
-          
-          console.log("📝 Insert data:", JSON.stringify(insertData, null, 2));
-          
-          const { error: insertError, data: insertResult } = await supabase
-            .from('chunks_text')
-            .insert(insertData);
-            
-          if (insertError) {
-            console.error(`❌ CRITICAL: Failed to insert chunk ${chunk.index}:`, insertError);
-            console.error("- Insert data was:", insertData);
-          } else {
-            processedCount++;
-            console.log(`✅ SUCCESS: Chunk ${processedCount}/${allChunks.length} saved with ID:`, insertResult);
-          }
-        } catch (error) {
-          console.error(`❌ CRITICAL: Error processing chunk ${chunk.index}:`, error);
-          console.error("- Chunk data:", chunk);
-        }
-      }));
-      
+    // Create queue rows with all metadata needed for processing
+    const queueRows = allChunks.map((chunk, index) => ({
+      manual_id: document.manual_id,
+      chunk_id: chunk.chunk_id,
+      chunk_index: index,
+      content: chunk.content,
+      token_count: chunk.content.split(/\s+/).length,
+      content_hash: chunk.chunk_id, // Use chunk_id as hash since it's unique
+      status: 'pending',
+      // Include metadata for full chunk reconstruction
+      metadata: {
+        page_start: chunk.page_start,
+        page_end: chunk.page_end,
+        menu_path: chunk.menu_path,
+        chunk_type: chunk.chunk_type,
+        section_heading: chunk.section_heading,
+        quality_score: chunk.quality_score,
+        doc_id: chunk.doc_id,
+        start_char: chunk.start_char,
+        end_char: chunk.end_char,
+        source_filename: chunk.source_filename
+      }
+    }));
+    
+    // Upsert chunks into queue (idempotent)
+    const { error: queueError } = await supabase
+      .from('manual_chunk_queue')
+      .upsert(queueRows, { onConflict: 'manual_id,chunk_id' });
+    
+    if (queueError) {
+      console.error('❌ Failed to enqueue chunks:', queueError);
+      throw queueError;
     }
+    
+    console.log(`✅ Enqueued ${queueRows.length} chunks`);
+    
+    // Create/update processing job
+    const { error: jobError } = await supabase
+      .from('manual_processing_jobs')
+      .upsert({
+        manual_id: document.manual_id,
+        total_chunks: allChunks.length,
+        processed_chunks: 0,
+        status: 'queued',
+        last_error: null
+      }, { onConflict: 'manual_id' });
+    
+    if (jobError) {
+      console.error('❌ Failed to create processing job:', jobError);
+      throw jobError;
+    }
+    
+    console.log(`✅ Processing job created for ${document.manual_id}`);
 
     // STAGE 5: Database Persistence Layer
     await supabase
       .from('processing_status')
       .update({
-        stage: 'database_persistence',
-        current_task: `Persisting ${processedCount} semantic chunks to vector database with metadata enrichment`,
-        chunks_processed: processedCount,
+        stage: 'chunk_queued',
+        current_task: `${allChunks.length} chunks queued for batch processing`,
+        chunks_processed: 0,
+        total_chunks: allChunks.length,
         progress_percent: 70
       })
       .eq('job_id', jobId);
@@ -829,25 +793,42 @@ serve(async (req) => {
       })
       .eq('job_id', jobId);
 
-    // STAGE 11: Text Processing Complete - Mark initial status (70-85% range)
+    // STAGE 11: Text Processing Complete - Start batch processing
     await supabase
       .from('processing_status')
       .update({
         status: 'processing',
-        stage: imagesToProcess.length > 0 ? 'image_downloading' : 'completed',
+        stage: imagesToProcess.length > 0 ? 'image_downloading' : 'chunk_processing',
         current_task: imagesToProcess.length > 0 
-          ? `Text complete: ${processedCount} chunks. Downloading ${imagesToProcess.length} images...`
-          : `Upload complete: ${processedCount} text chunks, no images`,
-        progress_percent: imagesToProcess.length > 0 ? 70 : 100,
-        chunks_processed: processedCount,
-        total_chunks: processedCount,
+          ? `Chunks queued. Downloading ${imagesToProcess.length} images...`
+          : `Processing ${allChunks.length} chunks in background...`,
+        progress_percent: imagesToProcess.length > 0 ? 70 : 50,
+        chunks_processed: 0,
+        total_chunks: allChunks.length,
         total_figures: imagesToProcess.length,
         figures_processed: 0
       })
       .eq('job_id', jobId);
 
-    console.log(`✅ Text processing complete: ${processedCount} chunks`);
-    console.log(`🔄 Starting background image download for ${imagesToProcess.length} images...`);
+    console.log(`✅ Chunks queued for batch processing`);
+    
+    // Trigger first batch of chunk processing
+    console.log(`🚀 Triggering first batch for ${document.manual_id}...`);
+    EdgeRuntime.waitUntil((async () => {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/process-chunk-batch`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ manualId: document.manual_id })
+        });
+        console.log(`✅ First batch triggered for ${document.manual_id}`);
+      } catch (err) {
+        console.error(`❌ Failed to trigger first batch:`, err);
+      }
+    })());
     
     // Trigger image download + OCR processing in background
     if (imagesToProcess.length > 0) {

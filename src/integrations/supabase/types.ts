@@ -2950,9 +2950,40 @@ export type Database = {
         Args: { p_ip_address: string }
         Returns: Json
       }
+      increment_processed_chunks: {
+        Args: { p_increment: number; p_manual_id: string }
+        Returns: undefined
+      }
       increment_user_query_count: {
         Args: { p_tenant_id: string }
         Returns: Json
+      }
+      manual_chunk_queue_increment_retry: {
+        Args: { p_queue_id: string }
+        Returns: undefined
+      }
+      manual_chunk_queue_lock_batch: {
+        Args: { p_limit: number; p_manual_id: string }
+        Returns: {
+          chunk_id: string
+          chunk_index: number
+          content: string
+          content_hash: string
+          created_at: string
+          error: string | null
+          id: string
+          manual_id: string
+          retry_count: number
+          status: string
+          token_count: number
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "manual_chunk_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       match_chunks: {
         Args: {

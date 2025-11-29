@@ -209,3 +209,6 @@ verify_jwt = false
 
 [functions.evaluate-answer]
 verify_jwt = false
+
+[functions.process-chunk-batch]
+verify_jwt = false

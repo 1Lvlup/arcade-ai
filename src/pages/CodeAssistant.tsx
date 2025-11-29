@@ -564,8 +564,15 @@ export function CodeAssistant() {
           content: userQuery
         });
 
+      // Helper to get selected files regardless of selection mode (ID or path)
+      const getSelectedFiles = () => {
+        return indexedFiles.filter(f => 
+          selectedFileIds.has(f.id) || selectedFileIds.has(f.file_path)
+        );
+      };
+
       // Build codebase context from selected files and chunks
-      const selectedFiles = indexedFiles.filter(f => selectedFileIds.has(f.id));
+      const selectedFiles = getSelectedFiles();
       
       const codebaseContext = selectedFiles.map(file => {
         const selectedChunkIds = chunkSelections.get(file.id);
@@ -807,7 +814,9 @@ export function CodeAssistant() {
           
           <div className="p-3 border-t">
             <ContextSizeIndicator
-              selectedFiles={indexedFiles.filter(f => selectedFileIds.has(f.id))}
+              selectedFiles={indexedFiles.filter(f => 
+                selectedFileIds.has(f.id) || selectedFileIds.has(f.file_path)
+              )}
               chunkSelections={chunkSelections}
             />
           </div>

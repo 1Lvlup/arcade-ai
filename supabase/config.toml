@@ -16,6 +16,9 @@ verify_jwt = true
 [functions.retry-failed-chunks]
 verify_jwt = true
 
+[functions.cleanup-duplicate-chunks]
+verify_jwt = true
+
 [db]
 port = 54322
 shadow_port = 54320

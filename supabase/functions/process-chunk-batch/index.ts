@@ -117,7 +117,7 @@ async function processChunk(chunk: QueueItem, tenantId: string): Promise<void> {
       source_filename: meta.source_filename,
       ingest_date: new Date().toISOString()
     }, { 
-      onConflict: 'manual_id,content_hash',
+      onConflict: 'manual_id,chunk_id',
       ignoreDuplicates: false
     });
   

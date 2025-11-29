@@ -349,6 +349,20 @@ serve(async (req) => {
       });
     }
     
+    // IDEMPOTENCY CHECK: Skip if already processed
+    const { data: existingStatus } = await supabase
+      .from('processing_status')
+      .select('status, progress_percent')
+      .eq('job_id', jobId)
+      .single();
+    
+    if (existingStatus?.status === 'completed' || existingStatus?.progress_percent >= 100) {
+      console.log(`⏭️ Job ${jobId} already processed (status: ${existingStatus.status}, progress: ${existingStatus.progress_percent}%), skipping`);
+      return new Response(JSON.stringify({ skipped: true, reason: 'already_processed' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     // CRITICAL: Persist raw webhook immediately
     try {
       console.log('💾 Persisting raw webhook payload and headers...');

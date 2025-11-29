@@ -12,176 +12,9 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const llamacloudApiKey = Deno.env.get('LLAMACLOUD_API_KEY')!
 const webhookSecret = Deno.env.get('LLAMACLOUD_WEBHOOK_SECRET') || 'your-secret-verification-token'
 
-// Poll LlamaCloud job status until complete, then trigger webhook processing
-async function pollJobCompletion(jobId: string, manualId: string, tenantId: string) {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false }
-  })
-  
-  await supabase.rpc('set_tenant_context', { tenant_id: tenantId })
-  
-  // Check if this job is already being polled by looking for recent updates
-  const { data: existingStatus } = await supabase
-    .from('processing_status')
-    .select('updated_at, status')
-    .eq('job_id', jobId)
-    .single()
-  
-  if (existingStatus) {
-    const updatedAt = new Date(existingStatus.updated_at)
-    const now = new Date()
-    const secondsSinceUpdate = (now.getTime() - updatedAt.getTime()) / 1000
-    
-    // If updated within last 10 seconds, another polling task is active
-    if (secondsSinceUpdate < 10 && existingStatus.status === 'processing') {
-      console.log(`⏭️ Job ${jobId} is already being polled, skipping duplicate`)
-      return
-    }
-    
-    // If job is already completed or errored, don't poll again
-    if (existingStatus.status === 'completed' || existingStatus.status === 'error') {
-      console.log(`⏭️ Job ${jobId} already finished with status: ${existingStatus.status}`)
-      return
-    }
-  }
-  
-  console.log(`📊 Starting polling for job: ${jobId}`)
-  const maxAttempts = 240 // 20 minutes max (5 second intervals)
-  let attempt = 0
-  
-  while (attempt < maxAttempts) {
-    attempt++
-    
-    try {
-      // Check job status
-      const statusResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}`, {
-        headers: { 'Authorization': `Bearer ${llamacloudApiKey}` }
-      })
-      
-      if (!statusResponse.ok) {
-        console.error(`❌ Failed to check job status: ${statusResponse.status}`)
-        await new Promise(resolve => setTimeout(resolve, 5000))
-        continue
-      }
-      
-      const statusData = await statusResponse.json()
-      console.log(`📊 Job ${jobId} status: ${statusData.status} (attempt ${attempt}/${maxAttempts})`)
-      
-      // Update progress
-      const progressPercent = Math.min(5 + (attempt * 1.5), 95)
-      await supabase
-        .from('processing_status')
-        .update({ 
-          progress_percent: Math.round(progressPercent),
-          current_task: `LlamaCloud parsing: ${statusData.status}`
-        })
-        .eq('job_id', jobId)
-      
-      if (statusData.status === 'SUCCESS') {
-        console.log(`✅ Job ${jobId} completed successfully, triggering webhook processing`)
-        
-        // Fetch the results
-        const [markdownResponse, jsonResponse] = await Promise.all([
-          fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/markdown`, {
-            headers: { 'Authorization': `Bearer ${llamacloudApiKey}` }
-          }),
-          fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/json`, {
-            headers: { 'Authorization': `Bearer ${llamacloudApiKey}` }
-          })
-        ])
-        
-        if (!markdownResponse.ok || !jsonResponse.ok) {
-          throw new Error(`Failed to fetch results: md=${markdownResponse.status}, json=${jsonResponse.status}`)
-        }
-        
-        const markdownResult = await markdownResponse.json()
-        const jsonResult = await jsonResponse.json()
-        
-        // Call our webhook function directly with the data
-        const webhookPayload = {
-          data: { job_id: jobId },
-          jobId: jobId,
-          md: markdownResult.markdown,
-          json: jsonResult,
-          images: jsonResult.images || [],
-          charts: jsonResult.charts || [],
-          pages: jsonResult.pages || []
-        }
-        
-        console.log(`🎯 Calling llama-webhook with ${webhookPayload.images.length} images, ${webhookPayload.pages.length} pages`)
-        console.log(`📦 Webhook payload keys:`, Object.keys(webhookPayload))
-        
-        try {
-          const webhookResponse = await supabase.functions.invoke('llama-webhook', {
-            body: webhookPayload,
-            headers: {
-              'x-webhook-event-type': 'parse.success',
-              'x-webhook-event-id': `poll-${jobId}`,
-              'x-signature': webhookSecret
-            }
-          })
-          
-          console.log(`📨 Webhook response:`, JSON.stringify(webhookResponse, null, 2))
-          
-          if (webhookResponse.error) {
-            console.error(`❌ Webhook call failed:`, webhookResponse.error)
-            await supabase
-              .from('processing_status')
-              .update({
-                status: 'error',
-                error_message: `Webhook processing failed: ${JSON.stringify(webhookResponse.error)}`
-              })
-              .eq('job_id', jobId)
-          } else {
-            console.log(`✅ Webhook processing completed successfully`)
-          }
-        } catch (webhookError) {
-          console.error(`❌ Exception calling webhook:`, webhookError)
-          await supabase
-            .from('processing_status')
-            .update({
-              status: 'error',
-              error_message: `Webhook exception: ${webhookError instanceof Error ? webhookError.message : String(webhookError)}`
-            })
-            .eq('job_id', jobId)
-        }
-        
-        return
-      }
-      
-      if (statusData.status === 'ERROR' || statusData.status === 'FAILED') {
-        console.error(`❌ Job ${jobId} failed with status: ${statusData.status}`)
-        await supabase
-          .from('processing_status')
-          .update({
-            status: 'error',
-            stage: 'failed',
-            error_message: `LlamaCloud parsing failed: ${statusData.status}`,
-            progress_percent: 0
-          })
-          .eq('job_id', jobId)
-        return
-      }
-      
-    } catch (error) {
-      console.error(`❌ Error polling job ${jobId}:`, error)
-    }
-    
-    // Wait 5 seconds before next poll
-    await new Promise(resolve => setTimeout(resolve, 5000))
-  }
-  
-  // Timeout
-  console.error(`❌ Job ${jobId} timed out after ${maxAttempts} attempts`)
-  await supabase
-    .from('processing_status')
-    .update({
-      status: 'error',
-      error_message: 'Processing timed out after 20 minutes',
-      progress_percent: 0
-    })
-    .eq('job_id', jobId)
-}
+// NOTE: Removed pollJobCompletion function - we rely solely on LlamaCloud webhook
+// The webhook is configured during upload and fires when parsing completes.
+// Background polling was unreliable due to Edge Function timeouts (~120-150s max).
 
 
 serve(async (req) => {
@@ -341,13 +174,14 @@ serve(async (req) => {
     const llamaData = await llamaResponse.json()
     console.log('✅ LlamaCloud PREMIUM response:', llamaData)
 
-    // Store document info in database
+    // Store document info in database with full storage path
     const { error: insertError } = await supabase
       .from('documents')
       .insert({
         manual_id,
         title,
         source_filename: storagePath.split('/').pop(),
+        storage_path: storagePath, // Store full path for later deletion/signed URL generation
         job_id: llamaData.id,
         fec_tenant_id: profile.fec_tenant_id
       })
@@ -388,11 +222,8 @@ serve(async (req) => {
       console.error('Error creating processing status:', statusError)
     }
     
-    // Start background polling for job completion (don't wait for it)
-    console.log('🔄 Starting background job polling...')
-    EdgeRuntime.waitUntil(pollJobCompletion(llamaData.id, manual_id, profile.fec_tenant_id))
-
-    console.log('🎉 Document uploaded with LLM parsing, polling started')
+    // Webhook will handle processing completion - no polling needed
+    console.log('✅ Document uploaded, webhook configured for completion notification')
 
     return new Response(JSON.stringify({ 
       success: true, 

@@ -736,6 +736,7 @@ export type Database = {
           job_id: string | null
           manual_id: string
           source_filename: string | null
+          storage_path: string | null
           title: string | null
           updated_at: string | null
         }
@@ -746,6 +747,7 @@ export type Database = {
           job_id?: string | null
           manual_id: string
           source_filename?: string | null
+          storage_path?: string | null
           title?: string | null
           updated_at?: string | null
         }
@@ -756,6 +758,7 @@ export type Database = {
           job_id?: string | null
           manual_id?: string
           source_filename?: string | null
+          storage_path?: string | null
           title?: string | null
           updated_at?: string | null
         }

@@ -78,10 +78,10 @@ serve(async (req) => {
 
     console.log(`User is admin: ${isAdmin}`)
 
-    // Verify the document exists
+    // Verify the document exists and get storage path
     let documentQuery = supabase
       .from('documents')
-      .select('id, manual_id, fec_tenant_id')
+      .select('id, manual_id, fec_tenant_id, storage_path, source_filename')
       .eq('manual_id', manual_id)
 
     // If not admin, restrict to user's tenant
@@ -207,20 +207,34 @@ serve(async (req) => {
       if (removePostparseError) console.error('Error removing postparse files:', removePostparseError)
     }
 
-    // Delete storage files from manuals bucket
-    console.log('Deleting files from manuals bucket...')
-    const { data: manualsFiles, error: listManualsError } = await supabase.storage
-      .from('manuals')
-      .list(manual_id)
-    
-    if (listManualsError) {
-      console.error('Error listing manuals files:', listManualsError)
-    } else if (manualsFiles && manualsFiles.length > 0) {
-      const filePaths = manualsFiles.map(file => `${manual_id}/${file.name}`)
-      const { error: removeManualsError } = await supabase.storage
+    // Delete original PDF using stored path
+    console.log('Deleting original PDF from manuals bucket...')
+    if (document.storage_path) {
+      console.log(`Deleting file at path: ${document.storage_path}`)
+      const { error: removePdfError } = await supabase.storage
         .from('manuals')
-        .remove(filePaths)
-      if (removeManualsError) console.error('Error removing manuals files:', removeManualsError)
+        .remove([document.storage_path])
+      if (removePdfError) {
+        console.error('Error removing original PDF:', removePdfError)
+      } else {
+        console.log('✅ Successfully deleted original PDF')
+      }
+    } else {
+      console.warn('⚠️ No storage_path found, attempting fallback deletion...')
+      // Fallback: try manual_id folder for backwards compatibility
+      const { data: manualsFiles, error: listManualsError } = await supabase.storage
+        .from('manuals')
+        .list(manual_id)
+      
+      if (listManualsError) {
+        console.error('Error listing manuals files:', listManualsError)
+      } else if (manualsFiles && manualsFiles.length > 0) {
+        const filePaths = manualsFiles.map(file => `${manual_id}/${file.name}`)
+        const { error: removeManualsError } = await supabase.storage
+          .from('manuals')
+          .remove(filePaths)
+        if (removeManualsError) console.error('Error removing manuals files:', removeManualsError)
+      }
     }
 
     // Finally delete the document record

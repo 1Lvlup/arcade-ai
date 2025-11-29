@@ -69,6 +69,7 @@ export function ManualDetail() {
   const [retryingOCR, setRetryingOCR] = useState(false);
   const [retryingTextChunks, setRetryingTextChunks] = useState(false);
   const [failedChunksCount, setFailedChunksCount] = useState<number>(0);
+  const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
 
   useEffect(() => {
     if (manualId) {
@@ -505,46 +506,89 @@ export function ManualDetail() {
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mt-6">
               {failedChunksCount > 0 && (
-                <Button 
-                  onClick={async () => {
-                    setRetryingTextChunks(true);
-                    try {
-                      const { data, error } = await supabase.functions.invoke('retry-text-chunks', {
-                        body: { manual_id: manualId }
-                      });
+                <>
+                  <Button 
+                    onClick={async () => {
+                      setRetryingTextChunks(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke('retry-text-chunks', {
+                          body: { manual_id: manualId }
+                        });
 
-                      if (error) throw error;
+                        if (error) throw error;
 
-                      toast({
-                        title: 'Text Chunks Retry Started',
-                        description: `Retrying ${failedChunksCount} failed chunks. Processing will continue in the background.`,
-                      });
+                        toast({
+                          title: 'Text Chunks Retry Started',
+                          description: `Retrying ${failedChunksCount} failed chunks. Processing will continue in the background.`,
+                        });
 
-                      // Refresh stats after a short delay
-                      setTimeout(() => {
-                        fetchStats();
-                      }, 2000);
-                    } catch (error) {
-                      console.error('Error retrying chunks:', error);
-                      toast({
-                        title: 'Retry Failed',
-                        description: error instanceof Error ? error.message : 'Unknown error',
-                        variant: 'destructive',
-                      });
-                    } finally {
-                      setRetryingTextChunks(false);
-                    }
-                  }}
-                  disabled={retryingTextChunks}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-                >
-                  {retryingTextChunks ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Database className="h-4 w-4 mr-2" />
-                  )}
-                  Retry Failed Text Chunks ({failedChunksCount})
-                </Button>
+                        // Refresh stats after a short delay
+                        setTimeout(() => {
+                          fetchStats();
+                        }, 2000);
+                      } catch (error) {
+                        console.error('Error retrying chunks:', error);
+                        toast({
+                          title: 'Retry Failed',
+                          description: error instanceof Error ? error.message : 'Unknown error',
+                          variant: 'destructive',
+                        });
+                      } finally {
+                        setRetryingTextChunks(false);
+                      }
+                    }}
+                    disabled={retryingTextChunks}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                  >
+                    {retryingTextChunks ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Database className="h-4 w-4 mr-2" />
+                    )}
+                    Retry Failed Text Chunks ({failedChunksCount})
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      setCleaningDuplicates(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke('cleanup-duplicate-chunks', {
+                          body: { manual_id: manualId }
+                        });
+
+                        if (error) throw error;
+
+                        toast({
+                          title: 'Cleanup Complete',
+                          description: `Removed ${data.deleted_count} duplicate failed chunks`,
+                        });
+
+                        // Refresh stats
+                        setTimeout(() => {
+                          fetchStats();
+                        }, 1000);
+                      } catch (error) {
+                        console.error('Error cleaning duplicates:', error);
+                        toast({
+                          title: 'Cleanup Failed',
+                          description: error instanceof Error ? error.message : 'Unknown error',
+                          variant: 'destructive',
+                        });
+                      } finally {
+                        setCleaningDuplicates(false);
+                      }
+                    }}
+                    disabled={cleaningDuplicates}
+                    variant="outline"
+                    className="border-amber-500/50 hover:bg-amber-500/10"
+                  >
+                    {cleaningDuplicates ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Database className="h-4 w-4 mr-2" />
+                    )}
+                    Clean Duplicates
+                  </Button>
+                </>
               )}
               {processingStatus?.status === 'processing' && processingStatus.progress_percent > 90 && processingStatus.progress_percent < 100 && (
                 <Button 

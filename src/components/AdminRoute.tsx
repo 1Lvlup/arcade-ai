@@ -13,7 +13,6 @@ export function AdminRoute({ children }: AdminRouteProps) {
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checkingRole, setCheckingRole] = useState(true);
-  const [lastCheck, setLastCheck] = useState<number>(0);
 
   useEffect(() => {
     async function checkAdminRole() {
@@ -37,7 +36,6 @@ export function AdminRoute({ children }: AdminRouteProps) {
           const adminStatus = data === true;
           console.log('🔐 AdminRoute: Admin status =', adminStatus);
           setIsAdmin(adminStatus);
-          setLastCheck(Date.now());
         }
       } catch (err) {
         console.error('❌ AdminRoute: Failed to check admin role:', err);
@@ -51,15 +49,12 @@ export function AdminRoute({ children }: AdminRouteProps) {
 
     // Re-verify admin status every 30 seconds
     const interval = setInterval(() => {
-      const timeSinceLastCheck = Date.now() - lastCheck;
-      if (timeSinceLastCheck > 25000) { // Re-check if 25+ seconds since last check
-        console.log('🔐 AdminRoute: Periodic re-verification...');
-        checkAdminRole();
-      }
+      console.log('🔐 AdminRoute: Periodic re-verification...');
+      checkAdminRole();
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [user, lastCheck]);
+  }, [user]);
 
   if (loading || checkingRole) {
     return (

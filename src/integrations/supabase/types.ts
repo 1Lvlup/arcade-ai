@@ -1438,6 +1438,51 @@ export type Database = {
           },
         ]
       }
+      manual_chunk_queue: {
+        Row: {
+          chunk_id: string
+          chunk_index: number
+          content: string
+          content_hash: string
+          created_at: string
+          error: string | null
+          id: string
+          manual_id: string
+          retry_count: number
+          status: string
+          token_count: number
+          updated_at: string
+        }
+        Insert: {
+          chunk_id: string
+          chunk_index: number
+          content: string
+          content_hash: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          manual_id: string
+          retry_count?: number
+          status?: string
+          token_count: number
+          updated_at?: string
+        }
+        Update: {
+          chunk_id?: string
+          chunk_index?: number
+          content?: string
+          content_hash?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          manual_id?: string
+          retry_count?: number
+          status?: string
+          token_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       manual_metadata: {
         Row: {
           aliases: string[] | null

@@ -30,6 +30,7 @@ export function ManualUpload() {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [checkingAdmin, setCheckingAdmin] = useState<boolean>(true);
   const [checkingStuck, setCheckingStuck] = useState(false);
+  const [retryingChunks, setRetryingChunks] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -88,6 +89,41 @@ export function ManualUpload() {
       });
     } finally {
       setCheckingStuck(false);
+    }
+  };
+
+  const retryFailedChunks = async () => {
+    if (!processingJobs.length) {
+      toast({
+        title: 'No active jobs',
+        description: 'No processing jobs to retry',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setRetryingChunks(true);
+    try {
+      const manual_id = processingJobs[0].manual_id;
+      const { data, error } = await supabase.functions.invoke('retry-failed-chunks', {
+        body: { manual_id }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Retry triggered',
+        description: data.message || 'Processing chunks...',
+      });
+    } catch (error) {
+      console.error('Error retrying chunks:', error);
+      toast({
+        title: 'Retry failed',
+        description: error.message || 'Could not retry failed chunks',
+        variant: 'destructive',
+      });
+    } finally {
+      setRetryingChunks(false);
     }
   };
 
@@ -347,7 +383,7 @@ export function ManualUpload() {
           onClick={checkStuckUploads}
           disabled={checkingStuck}
           variant="outline"
-          className="w-full mt-4"
+          className="w-full"
         >
           {checkingStuck ? (
             <>
@@ -358,6 +394,25 @@ export function ManualUpload() {
             <>
               <RefreshCw className="h-4 w-4 mr-2" />
               Check for Stuck Uploads
+            </>
+          )}
+        </Button>
+
+        <Button
+          onClick={retryFailedChunks}
+          disabled={retryingChunks || processingJobs.length === 0}
+          variant="outline"
+          className="w-full mt-2"
+        >
+          {retryingChunks ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+              Retrying...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry Failed Chunks
             </>
           )}
         </Button>

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Upload, FileText, CheckCircle, AlertCircle, Lock } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Lock, RefreshCw } from 'lucide-react';
 import { ProcessingMonitor } from './ProcessingMonitor';
 
 interface UploadStatus {
@@ -29,6 +29,7 @@ export function ManualUpload() {
   const [processingJobs, setProcessingJobs] = useState<ProcessingJob[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [checkingAdmin, setCheckingAdmin] = useState<boolean>(true);
+  const [checkingStuck, setCheckingStuck] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -58,6 +59,37 @@ export function ManualUpload() {
 
     checkAdminStatus();
   }, [user]);
+
+  const checkStuckUploads = async () => {
+    setCheckingStuck(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-stuck-uploads');
+      
+      if (error) throw error;
+      
+      if (data.updated > 0) {
+        toast({
+          title: 'Stuck uploads detected',
+          description: `Found and marked ${data.updated} timed-out uploads as errors.`,
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'All clear',
+          description: 'No stuck uploads found.',
+        });
+      }
+    } catch (error) {
+      console.error('Error checking stuck uploads:', error);
+      toast({
+        title: 'Check failed',
+        description: 'Could not check for stuck uploads',
+        variant: 'destructive',
+      });
+    } finally {
+      setCheckingStuck(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -310,6 +342,25 @@ export function ManualUpload() {
           <p>• Large manuals may take several minutes to process</p>
           <p>• You can leave this page while processing continues</p>
         </div>
+
+        <Button
+          onClick={checkStuckUploads}
+          disabled={checkingStuck}
+          variant="outline"
+          className="w-full mt-4"
+        >
+          {checkingStuck ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+              Checking...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Check for Stuck Uploads
+            </>
+          )}
+        </Button>
       </CardContent>
     </Card>
 

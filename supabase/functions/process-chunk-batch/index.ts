@@ -20,17 +20,18 @@ interface QueueItem {
   chunk_index: number;
   token_count: number;
   content_hash: string;
-  // Store additional metadata in queue for full chunk reconstruction
-  page_start?: number;
-  page_end?: number;
-  menu_path?: string;
-  chunk_type?: string;
-  section_heading?: string;
-  quality_score?: number;
-  doc_id?: string;
-  start_char?: number;
-  end_char?: number;
-  source_filename?: string;
+  metadata?: {
+    page_start?: number;
+    page_end?: number;
+    menu_path?: string;
+    chunk_type?: string;
+    section_heading?: string;
+    quality_score?: number;
+    doc_id?: string;
+    start_char?: number;
+    end_char?: number;
+    source_filename?: string;
+  };
 }
 
 interface ProcessResult {
@@ -65,12 +66,15 @@ async function createEmbedding(text: string): Promise<number[]> {
 async function processChunk(chunk: QueueItem, tenantId: string): Promise<void> {
   console.log(`📝 Processing chunk ${chunk.chunk_index} for manual ${chunk.manual_id}`);
   
+  // Extract metadata from queue item
+  const meta = chunk.metadata || {};
+  
   // Generate embedding
   const embedding = await createEmbedding(chunk.content);
   
   // Build enriched metadata
   const chunkMetadata = {
-    chunk_type: chunk.chunk_type || 'content',
+    chunk_type: meta.chunk_type || 'content',
     chunk_strategy: 'hierarchical',
     chunk_index: chunk.chunk_index,
     chunk_length: chunk.content.length,
@@ -78,12 +82,12 @@ async function processChunk(chunk: QueueItem, tenantId: string): Promise<void> {
     has_tables: /[\|<].*[\|>]|^\s*\|/m.test(chunk.content),
     has_lists: /^\s*[-*•]\s+/m.test(chunk.content) || /^\s*\d+\.\s+/m.test(chunk.content),
     has_code_numbers: /\b\d{3,}\b|\b[A-Z]{2,}\d+\b/.test(chunk.content),
-    section_type: chunk.menu_path?.toLowerCase().includes('troubleshoot') ? 'troubleshooting' :
-                 chunk.menu_path?.toLowerCase().includes('parts') ? 'parts_list' :
-                 chunk.menu_path?.toLowerCase().includes('specification') ? 'specifications' :
-                 chunk.menu_path?.toLowerCase().includes('installation') ? 'installation' :
-                 chunk.menu_path?.toLowerCase().includes('maintenance') ? 'maintenance' :
-                 chunk.menu_path?.toLowerCase().includes('warranty') ? 'warranty' : 'general'
+    section_type: meta.menu_path?.toLowerCase().includes('troubleshoot') ? 'troubleshooting' :
+                 meta.menu_path?.toLowerCase().includes('parts') ? 'parts_list' :
+                 meta.menu_path?.toLowerCase().includes('specification') ? 'specifications' :
+                 meta.menu_path?.toLowerCase().includes('installation') ? 'installation' :
+                 meta.menu_path?.toLowerCase().includes('maintenance') ? 'maintenance' :
+                 meta.menu_path?.toLowerCase().includes('warranty') ? 'warranty' : 'general'
   };
   
   // Upsert into chunks_text with full metadata
@@ -98,18 +102,18 @@ async function processChunk(chunk: QueueItem, tenantId: string): Promise<void> {
       embedding_model: 'text-embedding-3-small',
       fec_tenant_id: tenantId,
       metadata: chunkMetadata,
-      page_start: chunk.page_start,
-      page_end: chunk.page_end,
-      menu_path: chunk.menu_path,
-      doc_id: chunk.doc_id || chunk.manual_id,
+      page_start: meta.page_start,
+      page_end: meta.page_end,
+      menu_path: meta.menu_path,
+      doc_id: meta.doc_id || chunk.manual_id,
       doc_version: 'v1',
-      start_char: chunk.start_char || 0,
-      end_char: chunk.end_char || chunk.content.length,
-      section_heading: chunk.section_heading,
-      quality_score: chunk.quality_score || 0.8,
+      start_char: meta.start_char || 0,
+      end_char: meta.end_char || chunk.content.length,
+      section_heading: meta.section_heading,
+      quality_score: meta.quality_score || 0.8,
       human_reviewed: false,
       usage_count: 0,
-      source_filename: chunk.source_filename,
+      source_filename: meta.source_filename,
       ingest_date: new Date().toISOString()
     }, { 
       onConflict: 'manual_id,content_hash',

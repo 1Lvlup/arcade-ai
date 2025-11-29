@@ -1448,6 +1448,7 @@ export type Database = {
           error: string | null
           id: string
           manual_id: string
+          metadata: Json | null
           retry_count: number
           status: string
           token_count: number
@@ -1462,6 +1463,7 @@ export type Database = {
           error?: string | null
           id?: string
           manual_id: string
+          metadata?: Json | null
           retry_count?: number
           status?: string
           token_count: number
@@ -1476,6 +1478,7 @@ export type Database = {
           error?: string | null
           id?: string
           manual_id?: string
+          metadata?: Json | null
           retry_count?: number
           status?: string
           token_count?: number
@@ -2973,6 +2976,7 @@ export type Database = {
           error: string | null
           id: string
           manual_id: string
+          metadata: Json | null
           retry_count: number
           status: string
           token_count: number

@@ -110,33 +110,33 @@ export const SystemArchitectureSelector = ({
                 <AccordionItem
                   key={category.id}
                   value={category.id}
-                  className="border rounded-lg bg-card/50"
+                  className="border rounded-md bg-card/50"
                 >
-                  <AccordionTrigger className="px-3 py-2 hover:no-underline hover:bg-muted/50">
+                  <AccordionTrigger className="px-2 py-1.5 hover:no-underline hover:bg-muted/50">
                     <div className="flex items-center gap-2 text-left flex-1">
-                      <span className="text-lg">{category.icon}</span>
+                      <span className="text-base">{category.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-xs font-semibold truncate">{category.title}</h3>
-                        <p className="text-[10px] text-muted-foreground truncate">{category.description}</p>
+                        <h3 className="text-sm font-semibold truncate">{category.title}</h3>
+                        <p className="text-xs text-muted-foreground truncate">{category.description}</p>
                       </div>
                       {someSelected && !allSelected && (
-                        <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                        <Badge variant="secondary" className="text-xs h-5 px-1.5">
                           {category.files.filter((f) => selectedFileIds.has(f.path)).length}/{category.files.length}
                         </Badge>
                       )}
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-3 pb-2 space-y-1">
-                    <div className="flex justify-end mb-1">
+                  <AccordionContent className="px-2 pb-1 space-y-0.5">
+                    <div className="flex justify-end mb-0.5">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleSelectAllInCategory(category.id)}
-                        className="h-6 text-[10px] px-2"
+                        className="h-6 text-xs px-2"
                       >
                         {allSelected ? (
                           <>
-                            <Check className="h-2.5 w-2.5 mr-1" />
+                            <Check className="h-3 w-3 mr-1" />
                             Deselect All
                           </>
                         ) : (
@@ -151,22 +151,22 @@ export const SystemArchitectureSelector = ({
                       return (
                         <div
                           key={file.id}
-                          className="flex items-start gap-1.5 p-1.5 rounded-md hover:bg-muted/50 transition-colors"
+                          className="flex items-start gap-1.5 p-1 rounded hover:bg-muted/50 transition-colors"
                         >
                           <Checkbox
                             id={file.id}
                             checked={isSelected}
                             onCheckedChange={() => onToggleFile(file.id)}
-                            className="mt-0.5 h-3.5 w-3.5"
+                            className="mt-0.5"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <label
                                       htmlFor={file.id}
-                                      className="text-[10px] font-mono cursor-pointer block truncate"
+                                      className="text-xs font-mono cursor-pointer block truncate"
                                     >
                                       {file.path.split('/').pop()}
                                     </label>
@@ -182,7 +182,7 @@ export const SystemArchitectureSelector = ({
                               </TooltipProvider>
                               {getStatusBadge(file.status)}
                             </div>
-                            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            <p className="text-xs text-muted-foreground truncate">
                               {file.purpose}
                             </p>
                           </div>
@@ -192,13 +192,13 @@ export const SystemArchitectureSelector = ({
 
                     {/* Additional context info */}
                     {(category.database || category.edgeFunctions) && (
-                      <div className="mt-2 pt-2 border-t space-y-1.5">
+                      <div className="mt-1 pt-1 border-t space-y-1">
                         {category.database && (
                           <div>
-                            <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Database:</p>
+                            <p className="text-xs font-semibold text-muted-foreground mb-0.5">Database:</p>
                             <div className="flex flex-wrap gap-1">
                               {category.database.map((table) => (
-                                <Badge key={table} variant="outline" className="text-[9px] font-mono h-4 px-1">
+                                <Badge key={table} variant="outline" className="text-xs font-mono h-5">
                                   {table}
                                 </Badge>
                               ))}
@@ -207,10 +207,10 @@ export const SystemArchitectureSelector = ({
                         )}
                         {category.edgeFunctions && (
                           <div>
-                            <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Edge Functions:</p>
+                            <p className="text-xs font-semibold text-muted-foreground mb-0.5">Edge Functions:</p>
                             <div className="flex flex-wrap gap-1">
                               {category.edgeFunctions.map((fn) => (
-                                <Badge key={fn} variant="secondary" className="text-[9px] font-mono h-4 px-1">
+                                <Badge key={fn} variant="secondary" className="text-xs font-mono h-5">
                                   ⚡ {fn}
                                 </Badge>
                               ))}

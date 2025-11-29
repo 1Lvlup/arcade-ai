@@ -538,38 +538,40 @@ export function CodeAssistant() {
                   {conversations.length > 0 && (
                     <div className="space-y-3">
                       <h3 className="font-semibold">Recent Conversations</h3>
-                      <ScrollArea className="h-[300px]">
-                        <div className="space-y-2">
-                          {conversations.map(conv => (
-                            <div
-                              key={conv.id}
-                              className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                              onClick={() => setCurrentConversation(conv.id)}
-                            >
-                              <div className="flex items-center gap-3">
-                                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                                <div>
-                                  <div className="font-medium text-sm">{conv.title}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {new Date(conv.updated_at).toLocaleString()}
+                      <div className="border rounded-lg">
+                        <ScrollArea className="h-[300px]">
+                          <div className="space-y-2 p-2">
+                            {conversations.map(conv => (
+                              <div
+                                key={conv.id}
+                                className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                                onClick={() => setCurrentConversation(conv.id)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <div className="font-medium text-sm">{conv.title}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {new Date(conv.updated_at).toLocaleString()}
+                                    </div>
                                   </div>
                                 </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteConversation(conv.id);
+                                  }}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteConversation(conv.id);
-                                }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
                     </div>
                   )}
                 </CardContent>

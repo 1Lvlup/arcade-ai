@@ -517,65 +517,69 @@ export function CodeAssistant() {
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {!currentConversation ? (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <Card className="max-w-2xl w-full">
-                <CardContent className="pt-8 space-y-8">
-                  <div className="text-center space-y-3">
-                    <div className="inline-flex p-4 rounded-full bg-primary/10">
-                      <MessageSquare className="h-12 w-12 text-primary" />
-                    </div>
-                    <h2 className="text-2xl font-bold">Welcome to AI Code Assistant</h2>
-                    <p className="text-muted-foreground">
-                      Your intelligent pair programmer. Select files from the sidebar and start asking questions about your codebase.
-                    </p>
-                  </div>
-
-                  <Button onClick={createNewConversation} size="lg" className="w-full">
-                    <Plus className="h-5 w-5 mr-2" />
-                    Start New Conversation
-                  </Button>
-
-                  {conversations.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="font-semibold">Recent Conversations</h3>
-                      <div className="border rounded-lg">
-                        <ScrollArea className="h-[300px]">
-                          <div className="space-y-2 p-2">
-                            {conversations.map(conv => (
-                              <div
-                                key={conv.id}
-                                className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                                onClick={() => setCurrentConversation(conv.id)}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                                  <div>
-                                    <div className="font-medium text-sm">{conv.title}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {new Date(conv.updated_at).toLocaleString()}
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteConversation(conv.id);
-                                  }}
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="flex items-center justify-center p-8 min-h-full">
+                  <Card className="max-w-2xl w-full">
+                    <CardContent className="pt-8 space-y-8">
+                      <div className="text-center space-y-3">
+                        <div className="inline-flex p-4 rounded-full bg-primary/10">
+                          <MessageSquare className="h-12 w-12 text-primary" />
+                        </div>
+                        <h2 className="text-2xl font-bold">Welcome to AI Code Assistant</h2>
+                        <p className="text-muted-foreground">
+                          Your intelligent pair programmer. Select files from the sidebar and start asking questions about your codebase.
+                        </p>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+
+                      <Button onClick={createNewConversation} size="lg" className="w-full">
+                        <Plus className="h-5 w-5 mr-2" />
+                        Start New Conversation
+                      </Button>
+
+                      {conversations.length > 0 && (
+                        <div className="space-y-3">
+                          <h3 className="font-semibold">Recent Conversations</h3>
+                          <div className="border rounded-lg">
+                            <ScrollArea className="h-[300px]">
+                              <div className="space-y-2 p-2">
+                                {conversations.map(conv => (
+                                  <div
+                                    key={conv.id}
+                                    className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                                    onClick={() => setCurrentConversation(conv.id)}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                                      <div>
+                                        <div className="font-medium text-sm">{conv.title}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {new Date(conv.updated_at).toLocaleString()}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteConversation(conv.id);
+                                      }}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </ScrollArea>
             </div>
           ) : (
             <>

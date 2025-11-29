@@ -101,7 +101,7 @@ export const SystemArchitectureSelector = ({
             type="multiple"
             value={Array.from(expandedCategories)}
             onValueChange={(value) => setExpandedCategories(new Set(value))}
-            className="space-y-1"
+            className="space-y-0"
           >
             {filteredCategories.map((category) => {
               const { allSelected, someSelected } = getCategorySelectionState(category.id);
@@ -112,7 +112,7 @@ export const SystemArchitectureSelector = ({
                   value={category.id}
                   className="border rounded-md bg-card/50"
                 >
-                  <AccordionTrigger className="px-2 py-1.5 hover:no-underline hover:bg-muted/50">
+                  <AccordionTrigger className="px-2 py-0.5 hover:no-underline hover:bg-muted/50">
                     <div className="flex items-center gap-2 text-left flex-1">
                       <span className="text-base">{category.icon}</span>
                       <div className="flex-1 min-w-0">
@@ -126,7 +126,7 @@ export const SystemArchitectureSelector = ({
                       )}
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-2 pb-1 space-y-0.5">
+                  <AccordionContent className="px-2 pb-0 space-y-0.5">
                     <div className="flex justify-end mb-0.5">
                       <Button
                         variant="ghost"

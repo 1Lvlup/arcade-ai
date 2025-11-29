@@ -11,18 +11,21 @@ import {
   Plus, 
   Trash2, 
   MessageSquare, 
-  Search, 
-  Loader2,
+  Search,
   Settings,
   RefreshCw,
   FolderGit2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Code,
+  FileCode
 } from 'lucide-react';
 import { ChatInput } from '@/components/code-assistant/ChatInput';
 import { ModernChatInterface } from '@/components/code-assistant/ModernChatInterface';
 import { SimplifiedFileTree } from '@/components/code-assistant/SimplifiedFileTree';
+import { SystemArchitectureSelector } from '@/components/code-assistant/SystemArchitectureSelector';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Sheet,
   SheetContent,
@@ -31,6 +34,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -71,6 +81,7 @@ export function CodeAssistant() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [sourceMode, setSourceMode] = useState<'github' | 'architecture'>('github');
 
   // Load initial data
   useEffect(() => {
@@ -357,10 +368,10 @@ export function CodeAssistant() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background">
       <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
       
-      <main className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - File Browser */}
         <div className={`${isSidebarCollapsed ? 'w-0' : 'w-80'} flex-shrink-0 border-r border-border bg-card/50 flex flex-col transition-all duration-300 overflow-hidden`}>
           {!isSidebarCollapsed && (
@@ -373,15 +384,17 @@ export function CodeAssistant() {
                     <h2 className="font-semibold">Project Files</h2>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={syncGitHub}
-                      disabled={isSyncing}
-                      className="h-8 w-8 p-0"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                    </Button>
+                    {sourceMode === 'github' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={syncGitHub}
+                        disabled={isSyncing}
+                        className="h-8 w-8 p-0"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                      </Button>
+                    )}
                     <Sheet>
                       <SheetTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -421,7 +434,28 @@ export function CodeAssistant() {
                   </div>
                 </div>
 
-                {lastSync && (
+                {/* Source Mode Selector */}
+                <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'github' | 'architecture')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="github">
+                      <div className="flex items-center gap-2">
+                        <Code className="h-4 w-4" />
+                        <span>GitHub Repository</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="architecture">
+                      <div className="flex items-center gap-2">
+                        <FileCode className="h-4 w-4" />
+                        <span>System Architecture</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {lastSync && sourceMode === 'github' && (
                   <p className="text-xs text-muted-foreground">
                     Last synced: {lastSync.toLocaleTimeString()}
                   </p>
@@ -430,27 +464,37 @@ export function CodeAssistant() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search files..."
+                    placeholder={sourceMode === 'github' ? "Search files..." : "Search features..."}
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
                     className="pl-9"
                   />
                 </div>
 
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {selectedFileIds.size} of {indexedFiles.length} selected
-                  </span>
-                </div>
+                {sourceMode === 'github' && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {selectedFileIds.size} of {indexedFiles.length} selected
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* File Tree */}
-              <SimplifiedFileTree
-                files={indexedFiles}
-                selectedFileIds={selectedFileIds}
-                onToggleFile={handleToggleFile}
-                searchFilter={searchFilter}
-              />
+              {/* File Tree or Architecture Selector */}
+              {sourceMode === 'github' ? (
+                <SimplifiedFileTree
+                  files={indexedFiles}
+                  selectedFileIds={selectedFileIds}
+                  onToggleFile={handleToggleFile}
+                  searchFilter={searchFilter}
+                />
+              ) : (
+                <SystemArchitectureSelector
+                  selectedFileIds={selectedFileIds}
+                  onToggleFile={handleToggleFile}
+                  searchFilter={searchFilter}
+                />
+              )}
             </>
           )}
         </div>
@@ -471,7 +515,7 @@ export function CodeAssistant() {
         </Button>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {!currentConversation ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <Card className="max-w-2xl w-full">
@@ -573,7 +617,7 @@ export function CodeAssistant() {
             </>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

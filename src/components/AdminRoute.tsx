@@ -24,6 +24,17 @@ export function AdminRoute({ children }: AdminRouteProps) {
 
       try {
         console.log('🔐 AdminRoute: Verifying admin role for user:', user.id);
+        
+        // Check localStorage cache first for faster loading
+        const cachedAdmin = localStorage.getItem(`admin_status_${user.id}`);
+        if (cachedAdmin !== null) {
+          const cached = JSON.parse(cachedAdmin);
+          if (Date.now() - cached.timestamp < 300000) { // 5 min cache
+            setIsAdmin(cached.isAdmin);
+            setCheckingRole(false);
+          }
+        }
+        
         const { data, error } = await supabase.rpc('has_role', {
           _user_id: user.id,
           _role: 'admin'
@@ -36,6 +47,12 @@ export function AdminRoute({ children }: AdminRouteProps) {
           const adminStatus = data === true;
           console.log('🔐 AdminRoute: Admin status =', adminStatus);
           setIsAdmin(adminStatus);
+          
+          // Cache the result
+          localStorage.setItem(`admin_status_${user.id}`, JSON.stringify({
+            isAdmin: adminStatus,
+            timestamp: Date.now()
+          }));
         }
       } catch (err) {
         console.error('❌ AdminRoute: Failed to check admin role:', err);
@@ -46,14 +63,6 @@ export function AdminRoute({ children }: AdminRouteProps) {
     }
 
     checkAdminRole();
-
-    // Re-verify admin status every 30 seconds
-    const interval = setInterval(() => {
-      console.log('🔐 AdminRoute: Periodic re-verification...');
-      checkAdminRole();
-    }, 30000);
-
-    return () => clearInterval(interval);
   }, [user]);
 
   if (loading || checkingRole) {

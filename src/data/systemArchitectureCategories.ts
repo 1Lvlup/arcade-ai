@@ -134,4 +134,23 @@ export const systemArchitectureCategories: FeatureCategory[] = [
     database: ['subscriptions (if exists)', 'profiles.has_ever_subscribed'],
     edgeFunctions: ['create-checkout', 'customer-portal', 'check-subscription'],
   },
+  {
+    id: 'code-assistant',
+    icon: '🧑‍💻',
+    title: 'Code Assistant / System Architecture',
+    description: 'AI code assistant with file selection, system architecture browser, and GitHub sync',
+    files: [
+      { path: 'src/pages/CodeAssistant.tsx', purpose: 'Main code assistant page with chat and file selection', status: 'working' },
+      { path: 'src/data/systemArchitectureCategories.ts', purpose: 'System architecture category definitions', status: 'working' },
+      { path: 'src/hooks/useValidatedArchitectureCategories.ts', purpose: 'Hook to fetch and validate categories against indexed_codebase', status: 'working' },
+      { path: 'src/components/code-assistant/SystemArchitectureSelector.tsx', purpose: 'UI for browsing and selecting files by feature category', status: 'working' },
+      { path: 'src/components/code-assistant/FileTreeView.tsx', purpose: 'File tree browser with folder structure', status: 'working' },
+      { path: 'src/components/code-assistant/FileChunkSelector.tsx', purpose: 'Chunk-level file selection for granular context', status: 'working' },
+      { path: 'supabase/functions/ai-code-assistant/index.ts', purpose: 'AI assistant edge function for code questions', status: 'working' },
+      { path: 'supabase/functions/sync-github-repo/index.ts', purpose: 'GitHub repository sync to indexed_codebase', status: 'working' },
+      { path: 'supabase/functions/index-codebase/index.ts', purpose: 'Codebase indexing and parsing', status: 'working' },
+    ],
+    database: ['indexed_codebase', 'profiles.github_repository', 'profiles.github_branch', 'profiles.github_auto_sync_enabled'],
+    edgeFunctions: ['ai-code-assistant', 'sync-github-repo', 'index-codebase'],
+  },
 ];

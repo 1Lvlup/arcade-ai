@@ -1621,6 +1621,36 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_processing_jobs: {
+        Row: {
+          created_at: string
+          last_error: string | null
+          manual_id: string
+          processed_chunks: number
+          status: string
+          total_chunks: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          last_error?: string | null
+          manual_id: string
+          processed_chunks?: number
+          status?: string
+          total_chunks?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          last_error?: string | null
+          manual_id?: string
+          processed_chunks?: number
+          status?: string
+          total_chunks?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       model_feedback: {
         Row: {
           actual_answer: string | null

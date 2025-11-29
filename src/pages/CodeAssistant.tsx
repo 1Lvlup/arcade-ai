@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { SharedHeader } from '@/components/SharedHeader';
-import { Send, Code, Copy, Bot, User, FileCode, Plus, Trash2, MessageSquare, X, Search, Loader2, CheckSquare, Square } from 'lucide-react';
+import { Send, Code, Copy, Bot, User, FileCode, Plus, Trash2, MessageSquare, X, Search, Loader2, CheckSquare, Square, ChevronLeft, ChevronRight } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -82,10 +82,20 @@ export function CodeAssistant() {
   const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
   const [templates, setTemplates] = useState<ConversationTemplate[]>([]);
   const [sourceMode, setSourceMode] = useState<'github' | 'architecture'>('github');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('codeAssistantSidebarCollapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
   
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const toggleSidebar = () => {
+    const newState = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newState);
+    localStorage.setItem('codeAssistantSidebarCollapsed', JSON.stringify(newState));
+  };
 
   useEffect(() => {
     loadUserSettings();
@@ -677,149 +687,170 @@ export function CodeAssistant() {
       
       <main className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
         {/* Left Sidebar - File Tree */}
-        <div className="w-[350px] flex-shrink-0 border-r bg-background flex flex-col overflow-hidden">
+        <div className={`${isSidebarCollapsed ? 'w-12' : 'w-[350px]'} flex-shrink-0 border-r bg-background flex flex-col overflow-hidden transition-all duration-200`}>
           <div className="p-4 border-b flex items-center justify-between">
-            <h2 className="font-semibold text-sm">Project Files</h2>
-            <CodeAssistantSettings
-              repository={repository}
-              branch={branch}
-              autoSyncInterval={autoSyncInterval}
-              onSave={saveSettings}
-            />
-          </div>
-          
-          {/* Source Mode Selector */}
-          <div className="p-4 border-b">
-            <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'github' | 'architecture')}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="github">
-                  <div className="flex items-center gap-2">
-                    <Code className="h-4 w-4" />
-                    GitHub Repo
-                  </div>
-                </SelectItem>
-                <SelectItem value="architecture">
-                  <div className="flex items-center gap-2">
-                    <FileCode className="h-4 w-4" />
-                    System Architecture
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {sourceMode === 'github' && (
-            <SyncStatusBar
-              repository={repository}
-              branch={branch}
-              lastSync={lastSync}
-              isSyncing={isSyncing}
-              syncError={syncError}
-              fileCount={indexedFiles.length}
-              onSync={syncGitHub}
-            />
-          )}
-
-          {sourceMode === 'architecture' && (
-            <div className="p-4 bg-muted/30">
-              <p className="text-xs text-muted-foreground">
-                Browse by feature area to chat about specific system components
-              </p>
-            </div>
-          )}
-          
-          <div className="p-4 border-b">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={sourceMode === 'github' ? "Search files..." : "Search features..."}
-                value={searchFilter}
-                onChange={(e) => setSearchFilter(e.target.value)}
-                className="pl-8 h-9"
-              />
-            </div>
-          </div>
-          
-          <div className="flex-1 overflow-hidden flex flex-col">
-            {sourceMode === 'github' ? (
-              <Tabs defaultValue="files" className="flex flex-col h-full">
-                <TabsList className="grid w-full grid-cols-4 mx-3 mt-2 flex-shrink-0">
-                  <TabsTrigger value="files">Files</TabsTrigger>
-                  <TabsTrigger value="chunks">Chunks</TabsTrigger>
-                  <TabsTrigger value="related">Related</TabsTrigger>
-                  <TabsTrigger value="preview">Preview</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="files" className="flex-1 mt-2 px-3 overflow-hidden">
-                  <FileTreeView
-                    files={indexedFiles}
-                    selectedFileIds={selectedFileIds}
-                    onToggleFile={handleToggleFile}
-                    onToggleFolder={handleToggleFolder}
-                    searchFilter={searchFilter}
-                    onPreviewFile={setPreviewFile}
-                    onSelectAll={handleSelectAll}
-                    onDeselectAll={handleDeselectAll}
-                    onSelectByType={handleSelectByType}
-                    recentlyUsedFiles={recentlyUsedFiles}
-                    onSelectRecentFiles={handleSelectRecentFiles}
-                  />
-                </TabsContent>
-
-                <TabsContent value="chunks" className="flex-1 mt-2 overflow-hidden">
-                  <FileChunkSelector
-                    files={indexedFiles}
-                    selectedFileIds={Array.from(selectedFileIds)}
-                    chunkSelections={chunkSelections}
-                    onChunkSelectionChange={(fileId, chunkIds) => {
-                      const newSelections = new Map(chunkSelections);
-                      newSelections.set(fileId, chunkIds);
-                      setChunkSelections(newSelections);
-                    }}
-                  />
-                </TabsContent>
-
-                <TabsContent value="related" className="flex-1 mt-2 px-3 overflow-hidden">
-                  <RelatedFilesPanel
-                    files={indexedFiles}
-                    selectedFileIds={selectedFileIds}
-                    onToggleFile={handleToggleFile}
-                  />
-                </TabsContent>
-
-                <TabsContent value="preview" className="flex-1 mt-2 px-3 overflow-hidden">
-                  <FilePreviewPanel
-                    file={previewFile}
-                    isSelected={previewFile ? selectedFileIds.has(previewFile.id) : false}
-                    onClose={() => setPreviewFile(null)}
-                    onToggleSelection={() => {
-                      if (previewFile) {
-                        handleToggleFile(previewFile.id);
-                      }
-                    }}
-                  />
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <SystemArchitectureSelector
-                selectedFileIds={selectedFileIds}
-                onToggleFile={handleToggleFile}
-                searchFilter={searchFilter}
-              />
-            )}
-          </div>
-          
-          <div className="p-3 border-t">
-            <ContextSizeIndicator
-              selectedFiles={indexedFiles.filter(f => 
-                selectedFileIds.has(f.id) || selectedFileIds.has(f.file_path)
+            {!isSidebarCollapsed && <h2 className="font-semibold text-sm">Project Files</h2>}
+            <div className="flex items-center gap-2">
+              {!isSidebarCollapsed && (
+                <CodeAssistantSettings
+                  repository={repository}
+                  branch={branch}
+                  autoSyncInterval={autoSyncInterval}
+                  onSave={saveSettings}
+                />
               )}
-              chunkSelections={chunkSelections}
-            />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSidebar}
+                className="h-8 w-8 p-0"
+                title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
+          
+          {!isSidebarCollapsed && (
+            <>
+              {/* Source Mode Selector */}
+              <div className="p-4 border-b">
+                <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'github' | 'architecture')}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="github">
+                      <div className="flex items-center gap-2">
+                        <Code className="h-4 w-4" />
+                        GitHub Repo
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="architecture">
+                      <div className="flex items-center gap-2">
+                        <FileCode className="h-4 w-4" />
+                        System Architecture
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {sourceMode === 'github' && (
+                <SyncStatusBar
+                  repository={repository}
+                  branch={branch}
+                  lastSync={lastSync}
+                  isSyncing={isSyncing}
+                  syncError={syncError}
+                  fileCount={indexedFiles.length}
+                  onSync={syncGitHub}
+                />
+              )}
+
+              {sourceMode === 'architecture' && (
+                <div className="p-4 bg-muted/30">
+                  <p className="text-xs text-muted-foreground">
+                    Browse by feature area to chat about specific system components
+                  </p>
+                </div>
+              )}
+              
+              <div className="p-4 border-b">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={sourceMode === 'github' ? "Search files..." : "Search features..."}
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    className="pl-8 h-9"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+          
+          {!isSidebarCollapsed && (
+            <>
+              <div className="flex-1 overflow-hidden flex flex-col">
+                {sourceMode === 'github' ? (
+                  <Tabs defaultValue="files" className="flex flex-col h-full">
+                    <TabsList className="grid w-full grid-cols-4 mx-3 mt-2 flex-shrink-0">
+                      <TabsTrigger value="files">Files</TabsTrigger>
+                      <TabsTrigger value="chunks">Chunks</TabsTrigger>
+                      <TabsTrigger value="related">Related</TabsTrigger>
+                      <TabsTrigger value="preview">Preview</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="files" className="flex-1 mt-2 px-3 overflow-hidden">
+                      <FileTreeView
+                        files={indexedFiles}
+                        selectedFileIds={selectedFileIds}
+                        onToggleFile={handleToggleFile}
+                        onToggleFolder={handleToggleFolder}
+                        searchFilter={searchFilter}
+                        onPreviewFile={setPreviewFile}
+                        onSelectAll={handleSelectAll}
+                        onDeselectAll={handleDeselectAll}
+                        onSelectByType={handleSelectByType}
+                        recentlyUsedFiles={recentlyUsedFiles}
+                        onSelectRecentFiles={handleSelectRecentFiles}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="chunks" className="flex-1 mt-2 overflow-hidden">
+                      <FileChunkSelector
+                        files={indexedFiles}
+                        selectedFileIds={Array.from(selectedFileIds)}
+                        chunkSelections={chunkSelections}
+                        onChunkSelectionChange={(fileId, chunkIds) => {
+                          const newSelections = new Map(chunkSelections);
+                          newSelections.set(fileId, chunkIds);
+                          setChunkSelections(newSelections);
+                        }}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="related" className="flex-1 mt-2 px-3 overflow-hidden">
+                      <RelatedFilesPanel
+                        files={indexedFiles}
+                        selectedFileIds={selectedFileIds}
+                        onToggleFile={handleToggleFile}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="preview" className="flex-1 mt-2 px-3 overflow-hidden">
+                      <FilePreviewPanel
+                        file={previewFile}
+                        isSelected={previewFile ? selectedFileIds.has(previewFile.id) : false}
+                        onClose={() => setPreviewFile(null)}
+                        onToggleSelection={() => {
+                          if (previewFile) {
+                            handleToggleFile(previewFile.id);
+                          }
+                        }}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  <SystemArchitectureSelector
+                    selectedFileIds={selectedFileIds}
+                    onToggleFile={handleToggleFile}
+                    searchFilter={searchFilter}
+                  />
+                )}
+              </div>
+              
+              <div className="p-3 border-t">
+                <ContextSizeIndicator
+                  selectedFiles={indexedFiles.filter(f => 
+                    selectedFileIds.has(f.id) || selectedFileIds.has(f.file_path)
+                  )}
+                  chunkSelections={chunkSelections}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Right Side - Conversations + Chat */}

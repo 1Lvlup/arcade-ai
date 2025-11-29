@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { systemArchitectureCategories, FileReference } from '@/data/systemArchitectureCategories';
 import { Check } from 'lucide-react';
+import { useValidatedArchitectureCategories } from '@/hooks/useValidatedArchitectureCategories';
 
 interface SystemArchitectureSelectorProps {
   selectedFileIds: Set<string>;
@@ -20,18 +21,19 @@ export const SystemArchitectureSelector = ({
   searchFilter,
 }: SystemArchitectureSelectorProps) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const { categories, isLoading } = useValidatedArchitectureCategories();
 
   const filteredCategories = searchFilter
-    ? systemArchitectureCategories.filter(
+    ? categories.filter(
         (cat) =>
           cat.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
           cat.description.toLowerCase().includes(searchFilter.toLowerCase()) ||
           cat.files.some((f) => f.path.toLowerCase().includes(searchFilter.toLowerCase()))
       )
-    : systemArchitectureCategories;
+    : categories;
 
   const handleSelectAllInCategory = (categoryId: string) => {
-    const category = systemArchitectureCategories.find((c) => c.id === categoryId);
+    const category = categories.find((c) => c.id === categoryId);
     if (!category) return;
 
     const allSelected = category.files.every((f) => selectedFileIds.has(f.path));
@@ -46,7 +48,7 @@ export const SystemArchitectureSelector = ({
   };
 
   const getCategorySelectionState = (categoryId: string) => {
-    const category = systemArchitectureCategories.find((c) => c.id === categoryId);
+    const category = categories.find((c) => c.id === categoryId);
     if (!category) return { allSelected: false, someSelected: false };
 
     const selectedCount = category.files.filter((f) => selectedFileIds.has(f.path)).length;
@@ -78,6 +80,14 @@ export const SystemArchitectureSelector = ({
       </TooltipProvider>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-sm text-muted-foreground">Loading categories...</div>
+      </div>
+    );
+  }
 
   return (
     <ScrollArea className="h-full">
@@ -150,30 +160,42 @@ export const SystemArchitectureSelector = ({
                             className="mt-1"
                           />
                           <div className="flex-1 min-w-0">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <label
-                                    htmlFor={file.path}
-                                    className="text-xs font-mono cursor-pointer block truncate"
-                                  >
-                                    {file.path.split('/').pop()}
-                                  </label>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="max-w-md">
-                                  <p className="font-mono text-xs mb-1">{file.path}</p>
-                                  <p className="text-xs text-muted-foreground">{file.purpose}</p>
-                                  {file.lines && (
-                                    <p className="text-xs text-muted-foreground mt-1">Lines: {file.lines}</p>
-                                  )}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <label
+                                      htmlFor={file.path}
+                                      className={`text-xs font-mono cursor-pointer block truncate ${
+                                        !file.exists ? 'line-through text-muted-foreground' : ''
+                                      }`}
+                                    >
+                                      {file.path.split('/').pop()}
+                                    </label>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-md">
+                                    <p className="font-mono text-xs mb-1">{file.path}</p>
+                                    <p className="text-xs text-muted-foreground">{file.purpose}</p>
+                                    {file.lines && (
+                                      <p className="text-xs text-muted-foreground mt-1">Lines: {file.lines}</p>
+                                    )}
+                                    {!file.exists && (
+                                      <p className="text-xs text-amber-600 mt-1">⚠️ Not found in indexed_codebase</p>
+                                    )}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              {!file.exists && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-600 text-amber-600">
+                                  Missing
+                                </Badge>
+                              )}
+                              {getStatusBadge(file.status)}
+                            </div>
                             <p className="text-xs text-muted-foreground truncate mt-0.5">
                               {file.purpose}
                             </p>
                           </div>
-                          {getStatusBadge(file.status)}
                         </div>
                       );
                     })}

@@ -267,8 +267,10 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete, hideDetailsBu
 
   const getProcessingPhase = () => {
     const stage = processingStatus?.stage || '';
+    const progress = processingStatus?.progress_percent || 0;
     const currentTask = processingStatus?.current_task || '';
     
+    // Completed state
     if (processingStatus?.status === 'completed') {
       return { 
         phase: 3, 
@@ -281,94 +283,48 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete, hideDetailsBu
       };
     }
     
-    // Parse current_task for figure processing progress
-    const figureMatch = currentTask.match(/Processing figures: (\d+)\/(\d+)/);
-    const hasFigureProgress = figureMatch && figureMatch[1] && figureMatch[2];
-    
-    // Phase 1: LlamaCloud processing (50% of total)
-    const llamaComplete = jobStatus?.status === 'SUCCESS' || stage.includes('figure') || stage.includes('chunk');
-    if (!llamaComplete && (stage.includes('waiting') || stage.includes('llama') || jobStatus?.status === 'PENDING' || jobStatus?.status === 'PROCESSING')) {
-      const progress = Math.min(jobStatus?.progress || 10, 100);
-      
-      let description = 'Preparing to process your manual...';
-      if (currentTask && !hasFigureProgress) {
-        description = currentTask;
-      } else if (progress < 20) {
-        description = 'Uploading PDF to LlamaCloud for processing...';
-      } else if (progress < 40) {
-        description = 'Analyzing document structure and layout...';
-      } else if (progress < 60) {
-        description = 'Extracting text from pages...';
-      } else if (progress < 80) {
-        description = 'Identifying and extracting images and diagrams...';
-      } else {
-        description = 'Finalizing text extraction and preparing metadata...';
-      }
-      
+    // Phase 1: Text extraction (0-70%)
+    if (progress < 70 || stage.includes('validation') || stage.includes('chunking') || stage.includes('embedding')) {
       return { 
         phase: 1, 
         total: 3, 
-        progress, 
+        progress: Math.min(progress, 70) * (100/70), // Scale to 0-100% for phase
         label: 'Extracting Text & Images',
         icon: FileUp,
-        description,
-        overallProgress: progress * 0.5 // LlamaCloud is 50% of total
+        description: currentTask || 'Processing document structure and text...',
+        overallProgress: progress
       };
     }
     
-    // Phase 2: Figure processing (40% of total)
-    const figuresExist = processingStatus?.total_figures > 0 || hasFigureProgress;
-    const figuresComplete = processingStatus?.total_figures > 0 && 
-                           processingStatus?.figures_processed >= processingStatus?.total_figures;
-    
-    if (figuresExist && !figuresComplete && (stage.includes('figure') || stage.includes('image_enhancement') || hasFigureProgress)) {
-      let figProgress = 0;
-      let processed = 0;
-      let total = 0;
-      
-      if (hasFigureProgress) {
-        processed = parseInt(figureMatch[1]);
-        total = parseInt(figureMatch[2]);
-        figProgress = (processed / total) * 100;
-      } else if (processingStatus?.total_figures > 0) {
-        processed = processingStatus.figures_processed;
-        total = processingStatus.total_figures;
-        figProgress = (processed / total) * 100;
-      }
-      
-      const description = total > 0 
-        ? `Processing figure ${processed}/${total}...`
-        : currentTask || 'Analyzing images and diagrams...';
-      
+    // Phase 2: Image processing (70-85%)
+    if (progress < 85 || stage.includes('image') || stage.includes('downloading')) {
+      const phaseProgress = ((progress - 70) / 15) * 100; // Scale 70-85% to 0-100%
       return { 
         phase: 2, 
         total: 3, 
-        progress: figProgress, 
+        progress: Math.max(0, phaseProgress),
         label: 'Processing Figures',
         icon: ImageIcon,
-        description,
-        overallProgress: 50 + (figProgress * 0.4) // 50% done + up to 40% more
+        description: currentTask || 'Downloading and preparing images...',
+        overallProgress: progress
       };
     }
     
-    // Phase 3: Final processing/chunks (10% of total)
-    if (stage.includes('chunk') || jobStatus?.chunks_created || figuresComplete) {
-      let description = currentTask || 'Breaking down content for optimal search performance...';
-      if (processingStatus?.chunks_processed > 0) {
-        description = `Creating searchable chunks (${processingStatus.chunks_processed}/${processingStatus.total_chunks || '?'})...`;
-      }
-      
+    // Phase 3: Caption generation (85-100%)
+    if (progress >= 85 || stage.includes('caption')) {
+      const phaseProgress = ((progress - 85) / 15) * 100; // Scale 85-100% to 0-100%
       return { 
         phase: 3, 
         total: 3, 
-        progress: 90, 
-        label: 'Creating Searchable Chunks',
+        progress: Math.max(0, phaseProgress),
+        label: 'Creating Captions & OCR',
         icon: Sparkles,
-        description,
-        overallProgress: 90 // 50% + 40% done, doing final 10%
+        description: currentTask || 'Generating captions and extracting text from images...',
+        overallProgress: progress
       };
     }
     
+    // Default/initializing
     return { 
       phase: 1, 
       total: 3, 
@@ -376,7 +332,7 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete, hideDetailsBu
       label: 'Initializing',
       icon: Clock,
       description: currentTask || 'Preparing to process your manual...',
-      overallProgress: 2.5
+      overallProgress: progress || 2.5
     };
   };
 
@@ -462,38 +418,53 @@ export function ProcessingMonitor({ job_id, manual_id, onComplete, hideDetailsBu
               <div className="flex justify-between text-sm">
                 <span className="font-medium">Overall Progress</span>
                 <span className="text-muted-foreground">
-                  {Math.round(((phaseInfo.phase - 1) / phaseInfo.total * 100) + (phaseInfo.progress / phaseInfo.total))}%
+                  {Math.round(phaseInfo.overallProgress)}%
                 </span>
               </div>
               <Progress 
-                value={((phaseInfo.phase - 1) / phaseInfo.total * 100) + (phaseInfo.progress / phaseInfo.total)} 
+                value={phaseInfo.overallProgress} 
                 className="h-2" 
               />
             </div>
 
             {/* Detailed metrics */}
-            {processingStatus && processingStatus.total_figures > 0 && (
-              <div className="p-3 bg-muted/20 rounded-md border border-border/50">
-                <div className="text-sm font-medium mb-2 flex items-center">
-                  <ImageIcon className="h-4 w-4 mr-2 text-primary" />
-                  Figure Processing Details
-                </div>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <div className="flex justify-between">
-                    <span>Figures Analyzed:</span>
-                    <span className="font-medium text-foreground">
-                      {processingStatus.figures_processed}/{processingStatus.total_figures}
-                    </span>
-                  </div>
-                  {processingStatus.figures_processed > 0 && (
-                    <div className="flex justify-between">
-                      <span>Success Rate:</span>
-                      <span className="font-medium text-green-600">
-                        {Math.round((processingStatus.figures_processed / processingStatus.total_figures) * 100)}%
-                      </span>
+            {processingStatus && (
+              <div className="p-3 bg-muted/20 rounded-md border border-border/50 space-y-3">
+                {/* Text chunks */}
+                {processingStatus.total_chunks > 0 && (
+                  <div>
+                    <div className="text-sm font-medium mb-2 flex items-center">
+                      <Sparkles className="h-4 w-4 mr-2 text-primary" />
+                      Text Chunks
                     </div>
-                  )}
-                </div>
+                    <div className="text-sm text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Created:</span>
+                        <span className="font-medium text-foreground">
+                          {processingStatus.chunks_processed}/{processingStatus.total_chunks}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Figures */}
+                {processingStatus.total_figures > 0 && (
+                  <div>
+                    <div className="text-sm font-medium mb-2 flex items-center">
+                      <ImageIcon className="h-4 w-4 mr-2 text-primary" />
+                      Figures
+                    </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Captioned:</span>
+                        <span className="font-medium text-foreground">
+                          {processingStatus.figures_processed}/{processingStatus.total_figures}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

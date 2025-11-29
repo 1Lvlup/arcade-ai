@@ -108,22 +108,33 @@ serve(async (req) => {
     
     console.log(`🔄 Processing batch of ${figuresToProcess.length} figures (${hasMoreToProcess ? 'more batches needed' : 'final batch'})`);
 
+    // Fetch existing status to preserve chunks_processed/total_chunks
+    const { data: existingStatus } = await supabase
+      .from('processing_status')
+      .select('job_id, chunks_processed, total_chunks')
+      .eq('manual_id', manual_id)
+      .single();
+
+    // Calculate weighted progress: 85-100% range for caption generation
+    const figureProgress = (alreadyCaptioned / total) * 100;
+    const overallProgress = 85 + (figureProgress * 0.15); // 85% + (0-15%)
+
     // Update processing status to continue from where we left off
     await supabase
       .from('processing_status')
-      .upsert({
-        manual_id,
-        job_id: `caption-${manual_id}-${Date.now()}`,
+      .update({
         status: 'processing',
         stage: 'caption_generation',
-        current_task: `Processing batch: ${alreadyCaptioned}/${total} complete`,
+        current_task: `Captioning: ${alreadyCaptioned}/${total} complete`,
         total_figures: total,
         figures_processed: alreadyCaptioned,
-        progress_percent: Math.round((alreadyCaptioned / total) * 100),
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'manual_id'
-      });
+        progress_percent: Math.round(overallProgress),
+        updated_at: new Date().toISOString(),
+        // Preserve existing chunk data
+        chunks_processed: existingStatus?.chunks_processed || 0,
+        total_chunks: existingStatus?.total_chunks || 0
+      })
+      .eq('manual_id', manual_id);
 
     // Process with higher concurrency for faster throughput
     const processBatch = async () => {
@@ -366,17 +377,18 @@ Return JSON:
           }
         });
 
-        // Calculate total progress including already captioned
+        // Calculate weighted progress including already captioned
         const totalProcessed = alreadyCaptioned + succeeded;
-        const progressPercent = Math.round((totalProcessed / total) * 100);
+        const figureProgress = (totalProcessed / total) * 100;
+        const overallProgress = 85 + (figureProgress * 0.15); // 85-100% range
         
-        // Update progress in database
+        // Update progress in database (preserve chunks)
         await supabase
           .from('processing_status')
           .update({
             figures_processed: totalProcessed,
-            progress_percent: progressPercent,
-            current_task: `Processing: ${totalProcessed}/${total} complete`,
+            progress_percent: Math.round(overallProgress),
+            current_task: `Captioning: ${totalProcessed}/${total} complete`,
             updated_at: new Date().toISOString()
           })
           .eq('manual_id', manual_id);
@@ -426,6 +438,13 @@ Return JSON:
       // All done! Mark as complete
       console.log(`🎉 All figures processed! Total: ${finalProcessed}/${total}`);
       
+      // Fetch existing status to preserve chunks data
+      const { data: finalStatus } = await supabase
+        .from('processing_status')
+        .select('chunks_processed, total_chunks')
+        .eq('manual_id', manual_id)
+        .single();
+
       await supabase
         .from('processing_status')
         .update({
@@ -434,6 +453,8 @@ Return JSON:
           figures_processed: finalProcessed,
           progress_percent: 100,
           current_task: `Completed: ${finalProcessed}/${total} figures with captions+OCR`,
+          chunks_processed: finalStatus?.chunks_processed || 0,
+          total_chunks: finalStatus?.total_chunks || 0,
           updated_at: new Date().toISOString()
         })
         .eq('manual_id', manual_id);

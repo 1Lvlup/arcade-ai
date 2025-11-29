@@ -515,7 +515,6 @@ serve(async (req) => {
       });
 
     console.log("🔍 Stage 1: Document validation and schema analysis");
-    await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause for status visibility
 
     // STAGE 2: Semantic Chunking Initiation
     await supabase
@@ -562,8 +561,6 @@ serve(async (req) => {
         progress_percent: 35
       })
       .eq('job_id', jobId);
-
-    await new Promise(resolve => setTimeout(resolve, 500));
 
     // STEP 4: Process chunks with embeddings in batches
     let processedCount = 0;
@@ -808,8 +805,6 @@ serve(async (req) => {
       })
       .eq('job_id', jobId);
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-
     // STAGE 10: Index Optimization & Finalization
     await supabase
       .from('processing_status')
@@ -820,18 +815,16 @@ serve(async (req) => {
       })
       .eq('job_id', jobId);
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // STAGE 11: Text Processing Complete - Mark initial status
+    // STAGE 11: Text Processing Complete - Mark initial status (70-85% range)
     await supabase
       .from('processing_status')
       .update({
         status: 'processing',
         stage: imagesToProcess.length > 0 ? 'image_downloading' : 'completed',
         current_task: imagesToProcess.length > 0 
-          ? `Text complete: ${processedCount} chunks. Downloading ${imagesToProcess.length} images in background...`
+          ? `Text complete: ${processedCount} chunks. Downloading ${imagesToProcess.length} images...`
           : `Upload complete: ${processedCount} text chunks, no images`,
-        progress_percent: imagesToProcess.length > 0 ? 85 : 100,
+        progress_percent: imagesToProcess.length > 0 ? 70 : 100,
         chunks_processed: processedCount,
         total_chunks: processedCount,
         total_figures: imagesToProcess.length,
@@ -997,14 +990,14 @@ serve(async (req) => {
           
           console.log(`✅ Background image download complete: ${figuresProcessed}/${imagesToProcess.length} images stored`);
           
-          // Update status to show images are ready for OCR
+          // Update status to show images are ready for OCR (85% range)
           await adminClient
             .from('processing_status')
             .update({
               stage: 'images_ready',
-              current_task: `Images downloaded: ${figuresProcessed}/${imagesToProcess.length}. Starting OCR...`,
+              current_task: `Images downloaded: ${figuresProcessed}/${imagesToProcess.length}. Starting caption generation...`,
               figures_processed: figuresProcessed,
-              progress_percent: 95
+              progress_percent: 85
             })
             .eq('job_id', jobId);
           
@@ -1017,13 +1010,13 @@ serve(async (req) => {
           console.log(`🤖 AUTO-TRIGGERING caption generation for manual: ${document.manual_id}`);
           console.log(`📊 Figures ready for processing: ${figuresProcessed}`);
           
-          // Update status to show caption generation is starting
+          // Update status to show caption generation is starting (85-100% range)
           await adminClient
             .from('processing_status')
             .update({
               stage: 'caption_generation',
-              current_task: `Auto-starting caption generation for ${figuresProcessed} figures`,
-              progress_percent: 47,
+              current_task: `Starting caption generation for ${figuresProcessed} figures`,
+              progress_percent: 85,
               status: 'processing'
             })
             .eq('manual_id', document.manual_id);

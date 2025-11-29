@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { systemArchitectureCategories, FileReference } from '@/data/systemArchitectureCategories';
+import { FileReference } from '@/data/systemArchitectureCategories';
 import { Check } from 'lucide-react';
 import { useValidatedArchitectureCategories } from '@/hooks/useValidatedArchitectureCategories';
 
 interface SystemArchitectureSelectorProps {
   selectedFileIds: Set<string>;
-  onToggleFile: (filePath: string) => void;
+  onToggleFile: (fileId: string) => void;
   searchFilter: string;
 }
 
@@ -36,13 +36,13 @@ export const SystemArchitectureSelector = ({
     const category = categories.find((c) => c.id === categoryId);
     if (!category) return;
 
-    const allSelected = category.files.every((f) => selectedFileIds.has(f.path));
+    const allSelected = category.files.every((f) => selectedFileIds.has(f.id));
     
     category.files.forEach((file) => {
-      if (allSelected && selectedFileIds.has(file.path)) {
-        onToggleFile(file.path);
-      } else if (!allSelected && !selectedFileIds.has(file.path)) {
-        onToggleFile(file.path);
+      if (allSelected && selectedFileIds.has(file.id)) {
+        onToggleFile(file.id);
+      } else if (!allSelected && !selectedFileIds.has(file.id)) {
+        onToggleFile(file.id);
       }
     });
   };
@@ -51,7 +51,7 @@ export const SystemArchitectureSelector = ({
     const category = categories.find((c) => c.id === categoryId);
     if (!category) return { allSelected: false, someSelected: false };
 
-    const selectedCount = category.files.filter((f) => selectedFileIds.has(f.path)).length;
+    const selectedCount = category.files.filter((f) => selectedFileIds.has(f.id)).length;
     return {
       allSelected: selectedCount === category.files.length && category.files.length > 0,
       someSelected: selectedCount > 0 && selectedCount < category.files.length,
@@ -146,17 +146,17 @@ export const SystemArchitectureSelector = ({
                     </div>
                     
                     {category.files.map((file) => {
-                      const isSelected = selectedFileIds.has(file.path);
+                      const isSelected = selectedFileIds.has(file.id);
                       
                       return (
                         <div
-                          key={file.path}
+                          key={file.id}
                           className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors"
                         >
                           <Checkbox
-                            id={file.path}
+                            id={file.id}
                             checked={isSelected}
-                            onCheckedChange={() => onToggleFile(file.path)}
+                            onCheckedChange={() => onToggleFile(file.id)}
                             className="mt-1"
                           />
                           <div className="flex-1 min-w-0">
@@ -165,10 +165,8 @@ export const SystemArchitectureSelector = ({
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <label
-                                      htmlFor={file.path}
-                                      className={`text-xs font-mono cursor-pointer block truncate ${
-                                        !file.exists ? 'line-through text-muted-foreground' : ''
-                                      }`}
+                                      htmlFor={file.id}
+                                      className="text-xs font-mono cursor-pointer block truncate"
                                     >
                                       {file.path.split('/').pop()}
                                     </label>
@@ -179,17 +177,9 @@ export const SystemArchitectureSelector = ({
                                     {file.lines && (
                                       <p className="text-xs text-muted-foreground mt-1">Lines: {file.lines}</p>
                                     )}
-                                    {!file.exists && (
-                                      <p className="text-xs text-amber-600 mt-1">⚠️ Not found in indexed_codebase</p>
-                                    )}
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
-                              {!file.exists && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-600 text-amber-600">
-                                  Missing
-                                </Badge>
-                              )}
                               {getStatusBadge(file.status)}
                             </div>
                             <p className="text-xs text-muted-foreground truncate mt-0.5">

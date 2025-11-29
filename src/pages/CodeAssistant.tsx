@@ -1,45 +1,41 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { SharedHeader } from '@/components/SharedHeader';
-import { Send, Code, Copy, Bot, User, FileCode, Plus, Trash2, MessageSquare, X, Search, Loader2, CheckSquare, Square, ChevronLeft, ChevronRight } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { FeedbackDialog } from '@/components/FeedbackDialog';
-import { CodeSuggestion } from '@/components/CodeSuggestion';
-import { FileTreeView } from '@/components/code-assistant/FileTreeView';
-import { FileChunkSelector } from '@/components/code-assistant/FileChunkSelector';
-import { SyncStatusBar } from '@/components/code-assistant/SyncStatusBar';
-import { ContextSizeIndicator } from '@/components/code-assistant/ContextSizeIndicator';
-import { CodeAssistantSettings } from '@/components/code-assistant/CodeAssistantSettings';
-import { FilePreviewPanel } from '@/components/code-assistant/FilePreviewPanel';
-import { TemplateManager, ConversationTemplate } from '@/components/code-assistant/TemplateManager';
-import { RelatedFilesPanel } from '@/components/code-assistant/RelatedFilesPanel';
+import { 
+  Plus, 
+  Trash2, 
+  MessageSquare, 
+  Search, 
+  Loader2,
+  Settings,
+  RefreshCw,
+  FolderGit2,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { ChatInput } from '@/components/code-assistant/ChatInput';
-import { SystemArchitectureSelector } from '@/components/code-assistant/SystemArchitectureSelector';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { parseFileIntoChunks } from '@/lib/codeParser';
+import { ModernChatInterface } from '@/components/code-assistant/ModernChatInterface';
+import { SimplifiedFileTree } from '@/components/code-assistant/SimplifiedFileTree';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
-}
-
-interface ParsedCodeBlock {
-  filePath: string;
-  code: string;
-  language: string;
-  action: 'CREATE' | 'EDIT';
 }
 
 interface Conversation {
@@ -60,49 +56,27 @@ interface IndexedFile {
 
 export function CodeAssistant() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  
+  // State
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
-  const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(null);
-  
-  // GitHub & File Management
-  const [repository, setRepository] = useState('');
-  const [branch, setBranch] = useState('main');
-  const [autoSyncInterval, setAutoSyncInterval] = useState(300000); // 5 mins default
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [lastSync, setLastSync] = useState<Date | null>(null);
   const [indexedFiles, setIndexedFiles] = useState<IndexedFile[]>([]);
   const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
-  const [chunkSelections, setChunkSelections] = useState<Map<string, Set<string>>>(new Map());
   const [searchFilter, setSearchFilter] = useState('');
-  const [previewFile, setPreviewFile] = useState<IndexedFile | null>(null);
-  const [recentlyUsedFiles, setRecentlyUsedFiles] = useState<string[]>([]);
-  const [templates, setTemplates] = useState<ConversationTemplate[]>([]);
-  const [sourceMode, setSourceMode] = useState<'github' | 'architecture'>('github');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('codeAssistantSidebarCollapsed');
-    return saved ? JSON.parse(saved) : false;
-  });
-  
-  const { toast } = useToast();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [repository, setRepository] = useState('');
+  const [branch, setBranch] = useState('main');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const toggleSidebar = () => {
-    const newState = !isSidebarCollapsed;
-    setIsSidebarCollapsed(newState);
-    localStorage.setItem('codeAssistantSidebarCollapsed', JSON.stringify(newState));
-  };
-
+  // Load initial data
   useEffect(() => {
     loadUserSettings();
     loadConversations();
     loadIndexedFiles();
-    loadRecentlyUsedFiles();
-    loadTemplates();
   }, []);
 
   useEffect(() => {
@@ -110,28 +84,6 @@ export function CodeAssistant() {
       loadConversationData();
     }
   }, [currentConversation]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-
-  // Auto-sync effect
-  useEffect(() => {
-    if (autoSyncInterval > 0 && repository) {
-      syncGitHub();
-      syncIntervalRef.current = setInterval(() => {
-        syncGitHub();
-      }, autoSyncInterval);
-
-      return () => {
-        if (syncIntervalRef.current) {
-          clearInterval(syncIntervalRef.current);
-        }
-      };
-    }
-  }, [autoSyncInterval, repository]);
 
   const loadUserSettings = async () => {
     if (!user) return;
@@ -185,7 +137,6 @@ export function CodeAssistant() {
       })));
     }
 
-    // Load selected files for this conversation
     const { data: convData } = await supabase
       .from('code_assistant_conversations')
       .select('selected_file_ids')
@@ -200,10 +151,16 @@ export function CodeAssistant() {
   };
 
   const syncGitHub = async () => {
-    if (!repository) return;
+    if (!repository) {
+      toast({
+        title: 'Repository Required',
+        description: 'Please configure your GitHub repository in settings',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setIsSyncing(true);
-    setSyncError(null);
     
     try {
       const { data, error } = await supabase.functions.invoke('sync-github-repo', {
@@ -216,7 +173,6 @@ export function CodeAssistant() {
         throw new Error('No files found in repository');
       }
 
-      // Clear existing indexed files and insert new ones
       await supabase.from('indexed_codebase').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
       const filesToInsert = data.files.map((file: any) => ({
@@ -232,24 +188,15 @@ export function CodeAssistant() {
 
       if (insertError) throw insertError;
 
-      // Preserve current file selections before reloading
-      const currentSelections = new Set(selectedFileIds);
       await loadIndexedFiles();
-      
-      // Restore selections after reload
-      if (currentSelections.size > 0) {
-        setSelectedFileIds(currentSelections);
-      }
-      
       setLastSync(new Date());
       
       toast({
-        title: 'GitHub Synced',
+        title: 'Sync Complete',
         description: `Indexed ${data.files.length} files from ${repository}`,
       });
     } catch (error: any) {
       console.error('GitHub sync error:', error);
-      setSyncError(error.message);
       toast({
         title: 'Sync Failed',
         description: error.message || 'Failed to sync with GitHub',
@@ -260,27 +207,20 @@ export function CodeAssistant() {
     }
   };
 
-  const saveSettings = async (settings: { repository: string; branch: string; autoSyncInterval: number }) => {
-    if (!user) return;
+  const saveSettings = async () => {
+    if (!user || !repository) return;
     
     const { error } = await supabase
       .from('profiles')
       .update({
-        github_repository: settings.repository,
-        github_branch: settings.branch,
+        github_repository: repository,
+        github_branch: branch,
       })
       .eq('user_id', user.id);
     
     if (!error) {
-      setRepository(settings.repository);
-      setBranch(settings.branch);
-      setAutoSyncInterval(settings.autoSyncInterval);
-      
-      toast({ title: 'Settings Saved', description: 'Your settings have been updated' });
-      
-      if (settings.repository !== repository) {
-        syncGitHub();
-      }
+      toast({ title: 'Settings Saved' });
+      syncGitHub();
     } else {
       toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' });
     }
@@ -305,7 +245,6 @@ export function CodeAssistant() {
 
     setCurrentConversation(data.id);
     setMessages([]);
-    setSelectedFileIds(new Set());
     loadConversations();
   };
 
@@ -319,7 +258,6 @@ export function CodeAssistant() {
     if (currentConversation === id) {
       setCurrentConversation(null);
       setMessages([]);
-      setSelectedFileIds(new Set());
     }
   };
 
@@ -332,223 +270,12 @@ export function CodeAssistant() {
     }
     setSelectedFileIds(newSelection);
     
-    // Track recently used files
-    if (newSelection.has(fileId)) {
-      updateRecentlyUsedFiles(fileId);
-    }
-    
-    // Save selection to conversation
     if (currentConversation) {
       supabase
         .from('code_assistant_conversations')
         .update({ selected_file_ids: Array.from(newSelection) })
         .eq('id', currentConversation)
         .then();
-    }
-  };
-
-  const handleToggleFolder = (folderPath: string, select: boolean) => {
-    const folderFiles = indexedFiles.filter(f => f.file_path.startsWith(folderPath));
-    const newSelection = new Set(selectedFileIds);
-    
-    folderFiles.forEach(file => {
-      if (select) {
-        newSelection.add(file.id);
-        updateRecentlyUsedFiles(file.id);
-      } else {
-        newSelection.delete(file.id);
-      }
-    });
-    
-    setSelectedFileIds(newSelection);
-    
-    // Save selection to conversation
-    if (currentConversation) {
-      supabase
-        .from('code_assistant_conversations')
-        .update({ selected_file_ids: Array.from(newSelection) })
-        .eq('id', currentConversation)
-        .then();
-    }
-  };
-
-  const handleSelectAll = () => {
-    const allFileIds = new Set(indexedFiles.map(f => f.id));
-    setSelectedFileIds(allFileIds);
-    
-    if (currentConversation) {
-      supabase
-        .from('code_assistant_conversations')
-        .update({ selected_file_ids: Array.from(allFileIds) })
-        .eq('id', currentConversation)
-        .then();
-    }
-  };
-
-  const handleDeselectAll = () => {
-    setSelectedFileIds(new Set());
-    
-    if (currentConversation) {
-      supabase
-        .from('code_assistant_conversations')
-        .update({ selected_file_ids: [] })
-        .eq('id', currentConversation)
-        .then();
-    }
-  };
-
-  const handleSelectByType = (type: string) => {
-    let filteredFiles: IndexedFile[] = [];
-    
-    switch (type) {
-      case 'typescript':
-        filteredFiles = indexedFiles.filter(f => 
-          f.language === 'typescript' || 
-          f.language === 'javascript' ||
-          f.file_path.endsWith('.ts') ||
-          f.file_path.endsWith('.tsx') ||
-          f.file_path.endsWith('.js') ||
-          f.file_path.endsWith('.jsx')
-        );
-        break;
-      case 'edge-functions':
-        filteredFiles = indexedFiles.filter(f => f.file_path.includes('supabase/functions'));
-        break;
-      case 'components':
-        filteredFiles = indexedFiles.filter(f => 
-          f.file_path.includes('/components/') && 
-          (f.file_path.endsWith('.tsx') || f.file_path.endsWith('.jsx'))
-        );
-        break;
-      case 'migrations':
-        filteredFiles = indexedFiles.filter(f => f.file_path.includes('migrations'));
-        break;
-    }
-    
-    const newSelection = new Set(filteredFiles.map(f => f.id));
-    setSelectedFileIds(newSelection);
-    
-    filteredFiles.forEach(file => updateRecentlyUsedFiles(file.id));
-    
-    if (currentConversation) {
-      supabase
-        .from('code_assistant_conversations')
-        .update({ selected_file_ids: Array.from(newSelection) })
-        .eq('id', currentConversation)
-        .then();
-    }
-  };
-
-  const handleSelectRecentFiles = () => {
-    const recentFiles = indexedFiles.filter(f => recentlyUsedFiles.includes(f.id));
-    const newSelection = new Set(recentFiles.map(f => f.id));
-    setSelectedFileIds(newSelection);
-    
-    if (currentConversation) {
-      supabase
-        .from('code_assistant_conversations')
-        .update({ selected_file_ids: Array.from(newSelection) })
-        .eq('id', currentConversation)
-        .then();
-    }
-  };
-
-  const loadRecentlyUsedFiles = () => {
-    const stored = localStorage.getItem('codeAssistantRecentFiles');
-    if (stored) {
-      try {
-        setRecentlyUsedFiles(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse recent files:', e);
-      }
-    }
-  };
-
-  const loadTemplates = () => {
-    const stored = localStorage.getItem('codeAssistantTemplates');
-    if (stored) {
-      try {
-        setTemplates(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse templates:', e);
-      }
-    }
-  };
-
-  const updateRecentlyUsedFiles = (fileId: string) => {
-    setRecentlyUsedFiles(prev => {
-      const updated = [fileId, ...prev.filter(id => id !== fileId)].slice(0, 10);
-      localStorage.setItem('codeAssistantRecentFiles', JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  const handleSaveTemplate = (name: string, description?: string) => {
-    const newTemplate: ConversationTemplate = {
-      id: Date.now().toString(),
-      name,
-      description,
-      selectedFileIds: Array.from(selectedFileIds),
-      fileCount: selectedFileIds.size,
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedTemplates = [...templates, newTemplate];
-    setTemplates(updatedTemplates);
-    localStorage.setItem('codeAssistantTemplates', JSON.stringify(updatedTemplates));
-  };
-
-  const handleLoadTemplate = (template: ConversationTemplate) => {
-    setSelectedFileIds(new Set(template.selectedFileIds));
-    
-    if (currentConversation) {
-      supabase
-        .from('code_assistant_conversations')
-        .update({ selected_file_ids: template.selectedFileIds })
-        .eq('id', currentConversation)
-        .then();
-    }
-  };
-
-  const handleDeleteTemplate = (templateId: string) => {
-    const updatedTemplates = templates.filter(t => t.id !== templateId);
-    setTemplates(updatedTemplates);
-    localStorage.setItem('codeAssistantTemplates', JSON.stringify(updatedTemplates));
-  };
-
-  const handleRenameTemplate = (templateId: string, newName: string, newDescription?: string) => {
-    const updatedTemplates = templates.map(t =>
-      t.id === templateId ? { ...t, name: newName, description: newDescription } : t
-    );
-    setTemplates(updatedTemplates);
-    localStorage.setItem('codeAssistantTemplates', JSON.stringify(updatedTemplates));
-  };
-
-  const submitFeedback = async (rating: string, feedbackText: string, expectedAnswer?: string) => {
-    if (!feedbackMessageId || !user) return;
-
-    const message = messages.find(m => m.timestamp === feedbackMessageId);
-    if (!message) return;
-
-    const { error } = await supabase
-      .from('model_feedback')
-      .insert({
-        user_id: user.id,
-        model_type: 'code_assistant',
-        conversation_id: currentConversation,
-        rating,
-        feedback_text: feedbackText,
-        expected_answer: expectedAnswer,
-        actual_answer: message.content,
-        context: { selectedFiles: Array.from(selectedFileIds) }
-      });
-
-    if (!error) {
-      toast({ title: 'Success', description: 'Feedback submitted! This will help improve the model.' });
-      setShowFeedbackDialog(false);
-      setFeedbackMessageId(null);
-    } else {
-      toast({ title: 'Error', description: 'Failed to submit feedback', variant: 'destructive' });
     }
   };
 
@@ -562,7 +289,6 @@ export function CodeAssistant() {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const userQuery = messageText;
     setIsLoading(true);
 
     try {
@@ -571,52 +297,18 @@ export function CodeAssistant() {
         .insert({
           conversation_id: currentConversation,
           role: 'user',
-          content: userQuery
+          content: messageText
         });
 
-      // Helper to get selected files regardless of selection mode (ID or path)
-      const getSelectedFiles = () => {
-        return indexedFiles.filter(f => 
-          selectedFileIds.has(f.id) || selectedFileIds.has(f.file_path)
-        );
-      };
-
-      // Build codebase context from selected files and chunks
-      const selectedFiles = getSelectedFiles();
-      
-      const codebaseContext = selectedFiles.map(file => {
-        const selectedChunkIds = chunkSelections.get(file.id);
-        
-        if (selectedChunkIds && selectedChunkIds.size > 0) {
-          // Use only selected chunks
-          const chunks = parseFileIntoChunks(file.file_path, file.file_content);
-          const selectedChunks = chunks.filter(c => selectedChunkIds.has(c.id));
-          
-          if (selectedChunks.length === 0) return null;
-          
-          let fileContext = `File: ${file.file_path}\n`;
-          selectedChunks.forEach(chunk => {
-            fileContext += `\n### ${chunk.name} (lines ${chunk.startLine}-${chunk.endLine})\n`;
-            fileContext += `\`\`\`${file.language || 'plaintext'}\n${chunk.content}\n\`\`\`\n`;
-          });
-          
-          // Add summary of excluded chunks
-          const excludedChunks = chunks.filter(c => !selectedChunkIds.has(c.id));
-          if (excludedChunks.length > 0) {
-            fileContext += `\n<!-- EXCLUDED CHUNKS: ${excludedChunks.map(c => c.name).join(', ')} -->\n`;
-          }
-          
-          return fileContext;
-        } else {
-          // Use full file if no chunks selected
-          return `File: ${file.file_path}\n\`\`\`${file.language || 'plaintext'}\n${file.file_content}\n\`\`\``;
-        }
-      }).filter(Boolean).join('\n\n');
+      const selectedFiles = indexedFiles.filter(f => selectedFileIds.has(f.id));
+      const codebaseContext = selectedFiles.map(file => 
+        `File: ${file.file_path}\n\`\`\`${file.language || 'plaintext'}\n${file.file_content}\n\`\`\``
+      ).join('\n\n');
 
       const { data, error } = await supabase.functions.invoke('ai-code-assistant', {
         body: {
           messages: messages.map(m => ({ role: m.role, content: m.content })).concat([
-            { role: 'user', content: userQuery }
+            { role: 'user', content: messageText }
           ]),
           codebaseContext
         }
@@ -661,244 +353,178 @@ export function CodeAssistant() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({ title: 'Copied!', description: 'Code copied to clipboard' });
-  };
-
-  const parseCodeBlocks = (content: string): ParsedCodeBlock[] => {
-    const blocks: ParsedCodeBlock[] = [];
-    const pattern = /📄\s*\*\*File:\s*`([^`]+)`\*\*\s*\[(CREATE|EDIT)\]\s*\n```(\w+)\n([\s\S]*?)```/g;
-    
-    let match;
-    while ((match = pattern.exec(content)) !== null) {
-      blocks.push({
-        filePath: match[1],
-        action: match[2] as 'CREATE' | 'EDIT',
-        language: match[3],
-        code: match[4].trim()
-      });
-    }
-    
-    return blocks;
+    toast({ title: 'Copied to clipboard' });
   };
 
   return (
-    <div className="min-h-screen mesh-gradient">
+    <div className="min-h-screen bg-background">
       <SharedHeader title="AI Code Assistant" showBackButton={true} backTo="/" />
       
       <main className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
-        {/* Left Sidebar - File Tree */}
-        <div className={`${isSidebarCollapsed ? 'w-12' : 'w-[350px]'} flex-shrink-0 border-r bg-background flex flex-col overflow-hidden transition-all duration-200`}>
-          <div className="p-4 border-b flex items-center justify-between">
-            {!isSidebarCollapsed && <h2 className="font-semibold text-sm">Project Files</h2>}
-            <div className="flex items-center gap-2">
-              {!isSidebarCollapsed && (
-                <CodeAssistantSettings
-                  repository={repository}
-                  branch={branch}
-                  autoSyncInterval={autoSyncInterval}
-                  onSave={saveSettings}
-                />
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSidebar}
-                className="h-8 w-8 p-0"
-                title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-          
+        {/* Sidebar - File Browser */}
+        <div className={`${isSidebarCollapsed ? 'w-0' : 'w-80'} flex-shrink-0 border-r border-border bg-card/50 flex flex-col transition-all duration-300 overflow-hidden`}>
           {!isSidebarCollapsed && (
             <>
-              {/* Source Mode Selector */}
-              <div className="p-4 border-b">
-                <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'github' | 'architecture')}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="github">
-                      <div className="flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        GitHub Repo
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="architecture">
-                      <div className="flex items-center gap-2">
-                        <FileCode className="h-4 w-4" />
-                        System Architecture
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {sourceMode === 'github' && (
-                <SyncStatusBar
-                  repository={repository}
-                  branch={branch}
-                  lastSync={lastSync}
-                  isSyncing={isSyncing}
-                  syncError={syncError}
-                  fileCount={indexedFiles.length}
-                  onSync={syncGitHub}
-                />
-              )}
-
-              {sourceMode === 'architecture' && (
-                <div className="p-4 bg-muted/30">
-                  <p className="text-xs text-muted-foreground">
-                    Browse by feature area to chat about specific system components
-                  </p>
+              {/* Sidebar Header */}
+              <div className="p-4 border-b border-border space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FolderGit2 className="h-5 w-5 text-primary" />
+                    <h2 className="font-semibold">Project Files</h2>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={syncGitHub}
+                      disabled={isSyncing}
+                      className="h-8 w-8 p-0"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent>
+                        <SheetHeader>
+                          <SheetTitle>GitHub Settings</SheetTitle>
+                          <SheetDescription>
+                            Configure your GitHub repository to sync code
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="space-y-4 mt-6">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Repository</label>
+                            <Input
+                              placeholder="owner/repo"
+                              value={repository}
+                              onChange={(e) => setRepository(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Branch</label>
+                            <Input
+                              placeholder="main"
+                              value={branch}
+                              onChange={(e) => setBranch(e.target.value)}
+                            />
+                          </div>
+                          <Button onClick={saveSettings} className="w-full">
+                            Save & Sync
+                          </Button>
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                  </div>
                 </div>
-              )}
-              
-              <div className="p-4 border-b">
+
+                {lastSync && (
+                  <p className="text-xs text-muted-foreground">
+                    Last synced: {lastSync.toLocaleTimeString()}
+                  </p>
+                )}
+
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder={sourceMode === 'github' ? "Search files..." : "Search features..."}
+                    placeholder="Search files..."
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="pl-8 h-9"
+                    className="pl-9"
                   />
                 </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {selectedFileIds.size} of {indexedFiles.length} selected
+                  </span>
+                </div>
               </div>
-            </>
-          )}
-          
-          {!isSidebarCollapsed && (
-            <>
-              <div className="flex-1 overflow-hidden flex flex-col">
-                {sourceMode === 'github' ? (
-                  <Tabs defaultValue="files" className="flex flex-col h-full">
-                    <TabsList className="grid w-full grid-cols-4 mx-3 mt-2 flex-shrink-0">
-                      <TabsTrigger value="files">Files</TabsTrigger>
-                      <TabsTrigger value="chunks">Chunks</TabsTrigger>
-                      <TabsTrigger value="related">Related</TabsTrigger>
-                      <TabsTrigger value="preview">Preview</TabsTrigger>
-                    </TabsList>
 
-                    <TabsContent value="files" className="flex-1 mt-2 px-3 overflow-hidden">
-                      <FileTreeView
-                        files={indexedFiles}
-                        selectedFileIds={selectedFileIds}
-                        onToggleFile={handleToggleFile}
-                        onToggleFolder={handleToggleFolder}
-                        searchFilter={searchFilter}
-                        onPreviewFile={setPreviewFile}
-                        onSelectAll={handleSelectAll}
-                        onDeselectAll={handleDeselectAll}
-                        onSelectByType={handleSelectByType}
-                        recentlyUsedFiles={recentlyUsedFiles}
-                        onSelectRecentFiles={handleSelectRecentFiles}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="chunks" className="flex-1 mt-2 overflow-hidden">
-                      <FileChunkSelector
-                        files={indexedFiles}
-                        selectedFileIds={Array.from(selectedFileIds)}
-                        chunkSelections={chunkSelections}
-                        onChunkSelectionChange={(fileId, chunkIds) => {
-                          const newSelections = new Map(chunkSelections);
-                          newSelections.set(fileId, chunkIds);
-                          setChunkSelections(newSelections);
-                        }}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="related" className="flex-1 mt-2 px-3 overflow-hidden">
-                      <RelatedFilesPanel
-                        files={indexedFiles}
-                        selectedFileIds={selectedFileIds}
-                        onToggleFile={handleToggleFile}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="preview" className="flex-1 mt-2 px-3 overflow-hidden">
-                      <FilePreviewPanel
-                        file={previewFile}
-                        isSelected={previewFile ? selectedFileIds.has(previewFile.id) : false}
-                        onClose={() => setPreviewFile(null)}
-                        onToggleSelection={() => {
-                          if (previewFile) {
-                            handleToggleFile(previewFile.id);
-                          }
-                        }}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                ) : (
-                  <SystemArchitectureSelector
-                    selectedFileIds={selectedFileIds}
-                    onToggleFile={handleToggleFile}
-                    searchFilter={searchFilter}
-                  />
-                )}
-              </div>
-              
-              <div className="p-3 border-t">
-                <ContextSizeIndicator
-                  selectedFiles={indexedFiles.filter(f => 
-                    selectedFileIds.has(f.id) || selectedFileIds.has(f.file_path)
-                  )}
-                  chunkSelections={chunkSelections}
-                />
-              </div>
+              {/* File Tree */}
+              <SimplifiedFileTree
+                files={indexedFiles}
+                selectedFileIds={selectedFileIds}
+                onToggleFile={handleToggleFile}
+                searchFilter={searchFilter}
+              />
             </>
           )}
         </div>
 
-        {/* Right Side - Conversations + Chat */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Collapse Toggle Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute left-80 top-20 z-10 h-8 w-8 p-0 rounded-full border border-border bg-background shadow-md hover:shadow-lg transition-all"
+          style={{ left: isSidebarCollapsed ? '0' : '320px' }}
+        >
+          {isSidebarCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </Button>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col min-w-0">
           {!currentConversation ? (
-            <div className="flex items-center justify-center h-full">
-              <Card className="max-w-lg mx-auto">
-                <CardContent className="pt-6 space-y-6">
-                  <div className="text-center space-y-2">
-                    <h3 className="text-xl font-semibold">Welcome to AI Code Assistant</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your AI pair programmer with full project understanding
+            <div className="flex-1 flex items-center justify-center p-8">
+              <Card className="max-w-2xl w-full">
+                <CardContent className="pt-8 space-y-8">
+                  <div className="text-center space-y-3">
+                    <div className="inline-flex p-4 rounded-full bg-primary/10">
+                      <MessageSquare className="h-12 w-12 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-bold">Welcome to AI Code Assistant</h2>
+                    <p className="text-muted-foreground">
+                      Your intelligent pair programmer. Select files from the sidebar and start asking questions about your codebase.
                     </p>
                   </div>
 
-                  <Button onClick={createNewConversation} className="w-full" size="lg">
+                  <Button onClick={createNewConversation} size="lg" className="w-full">
                     <Plus className="h-5 w-5 mr-2" />
                     Start New Conversation
                   </Button>
 
                   {conversations.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Recent Conversations</h4>
+                    <div className="space-y-3">
+                      <h3 className="font-semibold">Recent Conversations</h3>
                       <ScrollArea className="h-[300px]">
-                        {conversations.map(conv => (
-                          <div 
-                            key={conv.id} 
-                            className="flex items-center justify-between p-3 border rounded-lg mb-2 hover:bg-muted/50 cursor-pointer" 
-                            onClick={() => setCurrentConversation(conv.id)}
-                          >
-                            <div className="flex items-center gap-2">
-                              <MessageSquare className="h-4 w-4" />
-                              <div>
-                                <div className="font-medium text-sm">{conv.title}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {new Date(conv.updated_at).toLocaleString()}
+                        <div className="space-y-2">
+                          {conversations.map(conv => (
+                            <div
+                              key={conv.id}
+                              className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                              onClick={() => setCurrentConversation(conv.id)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <div className="font-medium text-sm">{conv.title}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {new Date(conv.updated_at).toLocaleString()}
+                                  </div>
                                 </div>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteConversation(conv.id);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </ScrollArea>
                     </div>
                   )}
@@ -908,129 +534,46 @@ export function CodeAssistant() {
           ) : (
             <>
               {/* Chat Header */}
-              <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="flex items-center gap-2">
-                  <TemplateManager
-                    templates={templates}
-                    selectedFileIds={selectedFileIds}
-                    onSaveTemplate={handleSaveTemplate}
-                    onLoadTemplate={handleLoadTemplate}
-                    onDeleteTemplate={handleDeleteTemplate}
-                    onRenameTemplate={handleRenameTemplate}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={createNewConversation}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    New
-                  </Button>
-                  <span className="text-sm font-medium">
-                    {conversations.find(c => c.id === currentConversation)?.title}
-                  </span>
+              <div className="border-b border-border px-6 py-4 bg-card/50 backdrop-blur-sm">
+                <div className="flex items-center justify-between max-w-5xl mx-auto">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={createNewConversation}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Chat
+                    </Button>
+                    <span className="text-sm font-medium">
+                      {conversations.find(c => c.id === currentConversation)?.title}
+                    </span>
+                  </div>
+                  <Badge variant="secondary">
+                    {selectedFileIds.size} files in context
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  {selectedFileIds.size} {selectedFileIds.size === 1 ? 'file' : 'files'} loaded
-                </Badge>
               </div>
 
-              {/* Messages Area */}
-              <ScrollArea className="flex-1 p-6">
-                <div className="max-w-4xl mx-auto space-y-6">
-                  {messages.map((message, idx) => (
-                    <div key={idx} className="flex gap-4">
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                        message.role === 'user' ? 'bg-primary' : 'bg-muted'
-                      }`}>
-                        {message.role === 'user' ? (
-                          <User className="h-4 w-4 text-primary-foreground" />
-                        ) : (
-                          <Bot className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="relative group">
-                          <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown
-                              components={{
-                                code({ className, children, ...props }: any) {
-                                  const match = /language-(\w+)/.exec(className || '');
-                                  const codeString = String(children).replace(/\n$/, '');
-                                  const inline = !className;
-                                  
-                                  return !inline && match ? (
-                                    <div className="relative group">
-                                      <SyntaxHighlighter
-                                        language={match[1]}
-                                        PreTag="div"
-                                        {...props}
-                                      >
-                                        {codeString}
-                                      </SyntaxHighlighter>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => copyToClipboard(codeString)}
-                                      >
-                                        <Copy className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <code className={className} {...props}>
-                                      {children}
-                                    </code>
-                                  );
-                                },
-                              }}
-                            >
-                              {message.content}
-                            </ReactMarkdown>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => copyToClipboard(message.content)}
-                            title="Copy message"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        {message.role === 'assistant' && parseCodeBlocks(message.content).length > 0 && (
-                          <div className="space-y-2">
-                            {parseCodeBlocks(message.content).map((block, blockIdx) => (
-                              <CodeSuggestion
-                                key={blockIdx}
-                                filePath={block.filePath}
-                                code={block.code}
-                                language={block.language}
-                                action={block.action}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={scrollRef} />
-                </div>
-              </ScrollArea>
+              {/* Messages */}
+              <ModernChatInterface
+                messages={messages}
+                onCopyCode={copyToClipboard}
+              />
 
-              {/* Input Area */}
-              <ChatInput onSendMessage={sendMessage} isLoading={isLoading} />
+              {/* Chat Input */}
+              <div className="border-t border-border bg-card/50 backdrop-blur-sm">
+                <div className="max-w-4xl mx-auto p-4">
+                  <ChatInput
+                    onSendMessage={sendMessage}
+                    isLoading={isLoading}
+                  />
+                </div>
+              </div>
             </>
           )}
         </div>
       </main>
-
-      <FeedbackDialog
-        open={showFeedbackDialog}
-        onOpenChange={setShowFeedbackDialog}
-        onSubmit={submitFeedback}
-      />
     </div>
   );
 }
